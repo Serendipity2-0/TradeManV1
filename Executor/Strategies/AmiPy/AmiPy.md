@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: AmiPy
 Status:
 Description:
 SampleData:

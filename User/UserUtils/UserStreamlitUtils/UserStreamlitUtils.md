@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: UserStreamlitUtils
 Status:
 Description:
 SampleData:

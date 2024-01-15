@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: TickerDB
 Status:
 Description:
 SampleData:

@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: SignalInfoLogAdapter
 Status:
 Description:
 SampleData:

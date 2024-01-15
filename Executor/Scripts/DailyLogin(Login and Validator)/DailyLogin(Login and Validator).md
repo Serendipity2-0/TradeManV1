@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: DailyLogin(Login and Validator)
 Status:
 Description:
 SampleData:

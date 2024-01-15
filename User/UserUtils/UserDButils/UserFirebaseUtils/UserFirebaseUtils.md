@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: UserFirebaseUtils
 Status:
 Description:
 SampleData:

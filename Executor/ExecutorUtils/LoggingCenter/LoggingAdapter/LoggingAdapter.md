@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: LoggingAdapter
 Status:
 Description:
 SampleData:

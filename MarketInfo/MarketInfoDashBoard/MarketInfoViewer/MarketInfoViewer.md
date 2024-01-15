@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: MarketInfoViewer
 Status:
 Description:
 SampleData:

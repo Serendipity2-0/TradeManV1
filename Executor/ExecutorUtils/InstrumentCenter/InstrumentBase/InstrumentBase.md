@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: InstrumentBase
 Status:
 Description:
 SampleData:

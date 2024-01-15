@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: TelegramOrderBot
 Status:
 Description:
 SampleData:

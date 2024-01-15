@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: SignalLogging
 Status:
 Description:
 SampleData:

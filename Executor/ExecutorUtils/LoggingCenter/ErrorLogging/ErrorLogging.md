@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: ErrorLogging
 Status:
 Description:
 SampleData:

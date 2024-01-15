@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: LoggingPage
 Status:
 Description:
 SampleData:

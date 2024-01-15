@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: DailyInstrumentAggregator
 Status:
 Description:
 SampleData:

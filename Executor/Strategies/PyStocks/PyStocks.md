@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: PyStocks
 Status:
 Description:
 SampleData:

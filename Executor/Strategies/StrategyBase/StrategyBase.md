@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: StrategyBase
 Status:
 Description:
 SampleData:

@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: ProfileViewer
 Status:
 Description:
 SampleData:

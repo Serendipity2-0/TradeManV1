@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: StrategyViewerUtils
 Status:
 Description:
 SampleData:

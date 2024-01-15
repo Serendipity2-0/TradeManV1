@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: Coin
 Status:
 Description:
 SampleData:

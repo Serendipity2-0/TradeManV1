@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: FirebaseUtils
 Status:
 Description:
 SampleData:

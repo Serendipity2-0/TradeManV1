@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: LoggingValidator
 Status:
 Description:
 SampleData:

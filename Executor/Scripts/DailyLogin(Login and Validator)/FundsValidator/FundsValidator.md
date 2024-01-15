@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: FundsValidator
 Status:
 Description:
 SampleData:

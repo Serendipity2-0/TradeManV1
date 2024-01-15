@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: SignalsTradebookValidator
 Status:
 Description:
 SampleData:

@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: EODScripts
 Status:
 Description:
 SampleData:

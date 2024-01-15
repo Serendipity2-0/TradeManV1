@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: LoggingCenter
 Status:
 Description:
 SampleData:

@@ -1,0 +1,7 @@
+.env
+*.pyc
+*.csv
+*.log
+*.json
+*.xlsx
+*.DS_Store

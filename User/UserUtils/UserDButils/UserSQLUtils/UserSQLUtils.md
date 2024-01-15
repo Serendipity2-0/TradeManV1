@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: UserSQLUtils
 Status:
 Description:
 SampleData:

@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: Strategies
 Status:
 Description:
 SampleData:

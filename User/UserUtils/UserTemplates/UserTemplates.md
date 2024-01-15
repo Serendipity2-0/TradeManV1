@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: UserTemplates
 Status:
 Description:
 SampleData:

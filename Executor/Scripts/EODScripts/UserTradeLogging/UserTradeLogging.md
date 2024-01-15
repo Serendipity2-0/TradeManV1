@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: UserTradeLogging
 Status:
 Description:
 SampleData:

@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: StrategyScripts
 Status:
 Description:
 SampleData:

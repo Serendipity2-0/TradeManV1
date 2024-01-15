@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: Scripts
 Status:
 Description:
 SampleData:

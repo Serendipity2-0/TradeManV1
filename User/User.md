@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: User
 Status:
 Description:
 SampleData:

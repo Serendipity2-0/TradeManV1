@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: Telegram
 Status:
 Description:
 SampleData:

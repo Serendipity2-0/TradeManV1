@@ -1,4 +1,4 @@
-Name: UserUtils
+Name: NotificationCenterUtils
 Status:
 Description:
 SampleData:
