@@ -6,10 +6,12 @@ TradeMan.env
 1. User
     1.1 UserDashboard
         1.1.1 Register
+        1.1.1 LoginPage
         1.1.2 ProfileViewer
         1.1.3 PortfolioViewer
         1.1.4 StrategyViewer
         1.1.5 TransactionViewer
+   
     1.2 UserUtils
         1.2.1 Validators
             1.2.1.1 LedgerTransactionsValidator
@@ -17,14 +19,21 @@ TradeMan.env
         1.2.2 UserTemplates
             1.2.2.1 TelegramMessageTemplates
             1.2.2.2 UserDocumentationPDF
+        1.2.3 UserDButils
+            1.2.3.1 UserFirebaseUtils
+            1.2.3.2 UserSQLUtils
+        1.2.4 UserStreamlitUtils
+            1.2.4.1 PortfolioViewerUtils
+            1.2.4.2 StrategyViewerUtils
+            1.2.4.3 TransactionViewerUtils
 
-
-2. Executor
+3. Executor
     2.1 ExecutorDashBoard
-        2.1.1 OrderPage
-        2.1.2 LiveTradeState
+        2.1.1 LoginPage
+        2.1.1 OrderExecutionPage
+        2.1.2 LiveTradeViewer
         2.1.3 LoggingPage
-            2.1.3.1 ErrorLog
+            2.1.3.1 ErrorLogProcessor
         2.1.4 ModifyStrategy
 
     2.2 ExecutorUtils
@@ -39,7 +48,7 @@ TradeMan.env
             2.2.2.2 SignalLogging
             2.2.2.3 UserLogging
             2.2.2.4 ErrorLogging
-            2.2.2.5 SignalInfoLogging
+            2.2.2.5 SignalInfoLogAdapter
             2.2.2.6 LoggingAdapter
             2.2.2.7 OrderSegregator
         2.2.3 OrderCenter
@@ -47,6 +56,8 @@ TradeMan.env
             2.2.3.2 OrderAdapter
         2.2.4 BrokerCenter
             2.2.4.1 Brokers
+               2.2.4.1.1 AliceBlue
+               2.2.4.1.2 Zerodha
             2.2.4.2 BrokerUtils
                 2.2.4.2.1 TaxAndBrokerageCalculations
         2.2.5 InstrumentCenter
