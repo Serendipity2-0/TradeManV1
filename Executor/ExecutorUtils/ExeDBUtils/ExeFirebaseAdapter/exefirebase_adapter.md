@@ -1,4 +1,4 @@
-Name: FirebaseUtils
+Name: exefirebase_adapter
 Status:
 Description:
 SampleData:
