@@ -30,6 +30,7 @@ import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_ut
 active_users = broker_center_utils.all_broker_login(broker_center_utils.fetch_active_users_from_firebase())
 
 
+
 # def calculate_qty(active_users):
 #     for user in active_users:
 #         lots = qty_calc.calculate_lots(user)
@@ -39,21 +40,4 @@ active_users = broker_center_utils.all_broker_login(broker_center_utils.fetch_ac
 
 # active_users_json = calculate_qty(active_users)
 
-# def download_csv(active_users):
-#     # Flags to check if we have downloaded for each broker
-#     zerodha_downloaded = False
-#     aliceblue_downloaded = False
 
-#     for user in active_users:
-#         if not zerodha_downloaded and user['broker_name'] == 'zerodha':
-#             kite_utils.get_csv_kite(user)  # Get CSV for this user
-#             zerodha_downloaded = True  # Set the flag to True after download
-#         elif not aliceblue_downloaded and user['broker_name'] == 'aliceblue':
-#             alice_utils.get_csv_alice(user)  # Get CSV for this user
-#             aliceblue_downloaded = True  # Set the flag to True after download
-
-#         # If we have downloaded both, we can break the loop
-#         if zerodha_downloaded and aliceblue_downloaded:
-#             break
-
-# download_csv(active_users)

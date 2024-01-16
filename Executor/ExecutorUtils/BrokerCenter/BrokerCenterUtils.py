@@ -13,6 +13,8 @@ ALICEBLUE = os.getenv('ALICEBLUE_BROKER')
 import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
 import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
+import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
+import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
 
 def all_broker_login(active_users):
     for user in active_users:
@@ -28,8 +30,6 @@ def all_broker_login(active_users):
             firebase_utils.update_fields_firebase('new_clients',user['Tr_No'],{'SessionId':session_id}, 'Broker')
         else:
             print("Broker not supported") 
-
-
     return active_users
 
 def fetch_active_users_from_firebase():
@@ -39,3 +39,22 @@ def fetch_active_users_from_firebase():
         if account_details[account]['Active'] == True:
             active_users.append(account_details[account])
     return active_users
+
+def fetch_freecash_brokers(active_users):
+    """Retrieves the cash margin available for a user based on their broker."""
+    for user in active_users:
+        if user['Broker']['BrokerName'] == ZERODHA:
+            cash_margin = zerodha_adapter.zerodha_fetch_free_cash(user['Broker'])
+        elif user['Broker']['BrokerName'] == ALICEBLUE:
+            cash_margin = alice_adapter.alice_fetch_free_cash(user['Broker'])
+        # Ensure cash_margin is a float
+        return float(cash_margin) if cash_margin else 0.0
+    return 0.0  # If user or broker not found
+
+def download_csv_for_brokers(primary_account):
+    if  primary_account['Broker']['BrokerName'] == ZERODHA:
+        zerodha_adapter.get_csv_kite(primary_account)  # Get CSV for this user
+    elif primary_account['Broker']['BrokerName'] == ALICEBLUE:
+        alice_adapter.get_csv_alice(primary_account)  # Get CSV for this user
+
+

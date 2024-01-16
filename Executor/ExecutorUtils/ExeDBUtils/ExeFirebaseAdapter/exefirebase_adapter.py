@@ -22,7 +22,7 @@ def fetch_collection_data_firebase(collection):
     data = ref.get()
     return data
 
-def update_fields_firebase(collection, username,data, field_key=None):
+def update_fields_firebase(collection, username, data, field_key=None):
     # Create a reference to the user or to the specific field
     if field_key is None:
         ref = db.reference(f'{collection}/{username}')
