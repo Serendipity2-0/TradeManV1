@@ -1,5 +1,5 @@
 Name: MarketInfoDashBoard
-Status:
-Description:
-SampleData:
-Dependencies:
+Status:TBI
+Description: App housing for marketinfo viewer,backtest and machine learning
+SampleData: 
+Dependencies: [DBUtils]

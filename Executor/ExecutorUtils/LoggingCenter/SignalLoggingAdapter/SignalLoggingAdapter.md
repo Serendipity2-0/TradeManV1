@@ -1,4 +1,4 @@
-Name: LoggingAdapter
+Name: SignalLoggingAdapter
 Status:TBI
 Description:1. Process trades in user strategy and log it to user/strategy log
             2. Validate user and eod broker order details and match them 

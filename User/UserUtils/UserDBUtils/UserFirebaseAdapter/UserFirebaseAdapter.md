@@ -1,4 +1,4 @@
-Name: NotificationCenterUtils
+Name: UserFirebaseAdapter
 Status:
 Description:
 SampleData:

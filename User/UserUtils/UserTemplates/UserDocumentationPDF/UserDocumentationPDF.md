@@ -1,5 +1,5 @@
 Name: UserDocumentationPDF
-Status:
-Description:
-SampleData:
+Status:TBI
+Description: Official User Documentation for TradeManV1
+SampleData: 
 Dependencies:

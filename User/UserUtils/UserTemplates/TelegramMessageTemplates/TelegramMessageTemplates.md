@@ -1,5 +1,5 @@
 Name: TelegramMessageTemplates
-Status:
-Description:
-SampleData:
-Dependencies:
+Status: In Progress
+Description: List of the message templates used for various events 
+SampleData: Telegram Templates
+Dependencies: []

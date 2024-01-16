@@ -1,5 +1,5 @@
 Name: MarketInfoViewer
-Status:
-Description:
-SampleData:
-Dependencies:
+Status: In Progress
+Description:General Dashboard for marketinfo
+SampleData: TickerData
+Dependencies:[DBUtils]

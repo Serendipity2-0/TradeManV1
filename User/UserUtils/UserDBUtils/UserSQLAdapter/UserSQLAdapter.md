@@ -1,4 +1,4 @@
-Name: UserSQLUtils
+Name: UserSQLAdapter
 Status:
 Description:
 SampleData:

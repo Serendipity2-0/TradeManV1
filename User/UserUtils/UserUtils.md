@@ -1,5 +1,5 @@
 Name: UserUtils
 Status:
-Description:
+Description: Function to convert the 5 questions to strategy selection
 SampleData:
 Dependencies:

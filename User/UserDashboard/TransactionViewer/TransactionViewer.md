@@ -1,5 +1,5 @@
 Name: TransactionViewer
-Status:
-Description:
-SampleData:
-Dependencies:
+Status:Refactor
+Description: Show the transactions from the UserTradeBook
+SampleData:UserTradeBook
+Dependencies:[UserDBUtils]

@@ -1,5 +1,5 @@
 Name: ProfileViewer
-Status:
-Description:
-SampleData:
-Dependencies:
+Status:Refactor
+Description: Show the profile details of the user
+SampleData: UserProfile
+Dependencies:[UserDBUtils]

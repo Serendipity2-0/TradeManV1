@@ -124,9 +124,27 @@ Databases
     2.2 UserTradeBook
     2.3 Instruments
     2.4 SignalsInfo
+    2.5 ErrorLog
 
 3. SQL
     3.1 TickerData
+
+4. Templates
+    4.1 Discord Templates
+    4.2 Telegram Templates
+    
+5. Dict
+    5.1 order_details_dict
+
+Utils
+1. FireBaseUtils
+2. LoggingCenterUtils
+3. BrokerUtils
+4. DBUtils
+5. OrderCenterUtils
+6. StrategyUtils
+7. UserDBUtils
+
 
 
 NOTES 
