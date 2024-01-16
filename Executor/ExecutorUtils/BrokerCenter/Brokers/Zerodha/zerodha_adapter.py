@@ -20,8 +20,8 @@ def zerodha_fetch_free_cash(user_details):
     return cash_balance
 
 def get_csv_kite(user_details):
-    kite = KiteConnect(api_key=user_details['ApiKey'])
-    kite.set_access_token(user_details['SessionId'])
+    kite = KiteConnect(api_key=user_details['Broker']['ApiKey'])
+    kite.set_access_token(user_details['Broker']['SessionId'])
     instrument_dump = kite.instruments()
-    kite_instrument_df = pd.DataFrame(instrument_dump)
-    return kite_instrument_df
+    instrument_df = pd.DataFrame(instrument_dump)
+    return instrument_df 

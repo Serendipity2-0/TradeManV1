@@ -40,6 +40,13 @@ def fetch_active_users_from_firebase():
             active_users.append(account_details[account])
     return active_users
 
+def fetch_primary_accounts_from_firebase(primary_account):
+    #fetch the tr_no from .env file and fetch the primary account from firebase
+    account_details = firebase_utils.fetch_collection_data_firebase('new_clients')
+    for account in account_details:
+        if account_details[account]['Tr_No'] == primary_account:
+            return account_details[account]
+
 def fetch_freecash_brokers(active_users):
     """Retrieves the cash margin available for a user based on their broker."""
     for user in active_users:
@@ -53,8 +60,8 @@ def fetch_freecash_brokers(active_users):
 
 def download_csv_for_brokers(primary_account):
     if  primary_account['Broker']['BrokerName'] == ZERODHA:
-        zerodha_adapter.get_csv_kite(primary_account)  # Get CSV for this user
+        return zerodha_adapter.get_csv_kite(primary_account)  # Get CSV for this user
     elif primary_account['Broker']['BrokerName'] == ALICEBLUE:
-        alice_adapter.get_csv_alice(primary_account)  # Get CSV for this user
+        return alice_adapter.get_csv_alice(primary_account)  # Get CSV for this user
 
 
