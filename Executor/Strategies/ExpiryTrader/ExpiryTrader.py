@@ -4,15 +4,14 @@ import datetime as dt
 from time import sleep
 from dotenv import load_dotenv
 
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentMonitor import InstrumentMonitor
-from Executor.ExecutorUtils.OrderCenter.QtyCalculator.qty_calculator import qty_calculator
-from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import OrderCenterUtils
-from Executor.ExecutorUtils.ExeUtils import ExeUtils
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import InstrumentCenterUtils
-from Executor.Strategies.StrategiesUtil import StrategyBase
-
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
+
+from Executor.Strategies.StrategiesUtil import StrategyBase
+import Executor.ExecutorUtils.OrderCenter.OrderCenterUtils as OrderCenterUtils
+import Executor.ExecutorUtils.ExeUtils as ExeUtils
+import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
+
 
 
 ENV_PATH = os.path.join(DIR_PATH, '.env')
@@ -61,9 +60,9 @@ hedge_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol
 main_exchange_token = instrument_obj.get_exchange_token_for_option(base_symbol,main_strikeprc, main_option_type,today_expiry)
 main_instrument_token = instrument_obj.get_instoken_by_exchange_token(main_exchange_token)
 
-ltp = InstrumentMonitor.get_single_ltp(main_instrument_token)
+ltp = InstrumentCenterUtils.get_single_ltp(main_instrument_token)
 
-qty_calculator.calculate_quantity_based_on_ltp(ltp,expiry_trader_obj.get_strategy_name(),base_symbol)
+OrderCenterUtils.calculate_quantity_based_on_ltp(ltp,expiry_trader_obj.get_strategy_name(),base_symbol)
 
 trade_id = OrderCenterUtils.get_trade_id(strategy_name, "entry")
 

@@ -229,11 +229,11 @@ class Instrument:
         # Return the token for the given base symbol, or a default message if not found
         return symbol_to_token.get(base_symbol, "No token found for given symbol")
     
-    def get_single_ltp(self,token):
-        zerodha_primary = os.getenv('ZERODHA_BROKER')
-        primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(zerodha_primary)[0]
-        print("primary_account_api_key",primary_account_session_id)
-        kite = KiteConnect(api_key=primary_account_session_id) 
-        kite.set_access_token(access_token=primary_account_session_id)
-        ltp = kite.ltp(token)  
-        return ltp[str(token)]['last_price']
+def get_single_ltp(token):
+    zerodha_primary = os.getenv('ZERODHA_BROKER')
+    primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(zerodha_primary)[0]
+    print("primary_account_api_key",primary_account_session_id)
+    kite = KiteConnect(api_key=primary_account_session_id) 
+    kite.set_access_token(access_token=primary_account_session_id)
+    ltp = kite.ltp(token)  
+    return ltp[str(token)]['last_price']

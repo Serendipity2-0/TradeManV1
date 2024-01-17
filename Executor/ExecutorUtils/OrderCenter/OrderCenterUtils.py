@@ -1,3 +1,20 @@
+import datetime as dt
+import os, sys
+import math
+
+
+def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size, strategy_name):
+    if avg_sl_points is not None:
+        raw_quantity = (risk * capital) / avg_sl_points   #avg_sl_points can be ltp/price_ref/avg trade points
+        quantity = int((raw_quantity // lot_size) * lot_size)
+        if quantity == 0:
+            quantity = lot_size
+    else:
+        # For other strategies, risk values represent the capital allocated
+        lots = capital / risk
+        quantity = math.ceil(lots) * lot_size
+    return quantity
+
 def get_trade_id(strategy_name, trade_type):
     global trade_id_state
 

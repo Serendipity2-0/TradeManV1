@@ -20,6 +20,18 @@ strategy_obj = StrategyBase.Strategy.read_strategy_json(STRATEGY_PATH)
 
 api_key, access_token = Broker.get_primary_account()
 
+def get_price_reference_firebase(strategy_name, instrument):
+    # Here we are using a mock strategy JSON for demonstration purposes
+    strategy_data = fetch_collection_data_firebase('strategies')
+    today_index = dt.datetime.today().weekday()
+    key = f"{instrument}OptRef"
+    price_ref_values = strategy_data[strategy_name]['ExtraInformation'].get(key, [])
+    if price_ref_values:
+        return price_ref_values[today_index]
+    else:
+        return 0
+
+
 def calculate_average_range(historical_data):
     """
     Calculate the average range (High - Low) from the historical data.
