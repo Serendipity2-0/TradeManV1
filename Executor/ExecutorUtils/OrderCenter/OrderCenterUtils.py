@@ -69,3 +69,24 @@ def place_order_for_strategy(strategy_name, order_details):
                     if 'Hedge' in order_to_place.get('order_mode', []):
                         sleep(1)
                     order_qty -= current_qty
+                    
+def log_usr_ordr_firebase(order_id, order_details):
+    # Getting the json data and path for the user
+    user_data, json_path = get_orders_json(order_details['account_name'])
+    # Creating the order_dict structure
+    order_dict = {
+        "order_id": order_id,
+        "qty": int(order_details['qty']),
+        "timestamp": str(dt.datetime.now()),
+        "exchange_token": int(order_details['exchange_token']),
+        "trade_id" : order_details['trade_id']
+    }
+    # Checking for 'signal' and 'transaction_type' and setting the trade_type accordingly
+    trade_type = order_details.get('signal', order_details.get('transaction_type'))
+    
+    # Constructing the user_data JSON structure
+    orders = user_data.setdefault('orders', {})
+    strategy_orders = orders.setdefault(order_details.get("strategy"), {})
+    order_type_list = strategy_orders.setdefault(trade_type, [])
+    order_type_list.append(order_dict)
+    write_json_file(json_path, user_data)

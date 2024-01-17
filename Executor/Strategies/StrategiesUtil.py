@@ -86,13 +86,7 @@ class StrategyBase(BaseModel):
             print(f"Error reading file: {e}")
             return None
 
-        
-        
-    
 ###########################################################################
-    
-  
-    
     def get_option_type(self,prediction,strategy_option_mode):
         if strategy_option_mode == "OS":
             return 'CE' if prediction == 'Bearish' else 'PE'
@@ -198,3 +192,17 @@ class StrategyBase(BaseModel):
         if len(stoploss_multiplier) == 0:
             return f"{base_symbol} not found"
         return stoploss_multiplier[0]
+    
+def get_previous_dates(num_dates):
+    dates = []
+    current_date = dt.date.today()
+
+    while len(dates) < num_dates:
+        current_date -= dt.timedelta(days=1)
+
+        if current_date.weekday() >= 5 or current_date in holidays:
+            continue
+
+        dates.append(current_date.strftime("%Y-%m-%d"))
+
+    return dates

@@ -1,4 +1,4 @@
-Name: WeekklyReports
+Name: WeeklyReports
 Status:
 Description:
 SampleData:
