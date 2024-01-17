@@ -1,4 +1,5 @@
 import sqlite3
+import pandas as pd
 
 def get_db_connection(db_path):
     """Create a database connection to the SQLite database specified by db_path."""
@@ -14,3 +15,4 @@ def dump_df_to_sqlite(df, table_name, conn):
     df.to_sql(table_name, conn, if_exists='replace', index=False)
     print(f"Dumped {table_name} to SQLite database.")
     
+

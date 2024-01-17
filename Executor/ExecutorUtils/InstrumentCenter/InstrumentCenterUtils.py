@@ -1,8 +1,12 @@
 import pandas as pd
 import os
+from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
-insrument_csv_path = os.path.join(DIR_PATH,'instruments.csv')
+ENV_PATH = os.path.join(DIR_PATH, '.env')
+load_dotenv(ENV_PATH)
+
+ins_db_path = os.getenv('SQLITE_INS_PATH')
 
 from datetime import datetime
 from calendar import monthrange
@@ -10,11 +14,12 @@ from calendar import monthrange
 from datetime import timedelta  # Importing the missing timedelta
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
 from kiteconnect import KiteConnect
+import Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter as exesql_adapter
 
 #TODO: Read the merged DB instead of the csv file
-class Instrument:
-    def __init__(self, csv_path=insrument_csv_path):
-        self._dataframe = pd.read_csv(csv_path)
+class  Instrument:
+    def __init__(self):
+        self._dataframe = get_ins_df()
         self._instrument_token = None
         self._exchange_token = None
 
@@ -237,3 +242,11 @@ def get_single_ltp(token):
     kite.set_access_token(access_token=primary_account_session_id)
     ltp = kite.ltp(token)  
     return ltp[str(token)]['last_price']
+
+def get_ins_df():
+    conn = exesql_adapter.get_db_connection(ins_db_path)
+    data = pd.read_sql_query("select * from instrument_master", conn)
+    # data to dataframe
+    ins_df = pd.DataFrame(data)
+    print(ins_df.head())
+    return ins_df
