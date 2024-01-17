@@ -1,0 +1,74 @@
+"Tr00": {
+      "Accounts": {
+        "FreeCash": 20000,
+        "Holdings": 0,
+        "NetAdditions": 0,
+        "NetCharges": 0,
+        "NetCommission": 0,
+        "NetPnL": 0,
+        "NetWithdrawals": 0
+      },
+      "Active": true,
+      "Broker": {
+        "ApiKey": "6b0dp5ussukmo67h",
+        "ApiSecret": "eln2qrqob5neowjuedmbv0f0hzq6lhby",
+        "BrokerName": "Zerodha",
+        "BrokerPassword": "K@nnada444",
+        "BrokerUsername": "YY0222",
+        "SessionId": "GNMurkkmTJPiCN8YLbaV9vkwsQF3dPmB",
+        "TotpAccess": "3GN2DNUD35FZQDIIWJUK6CSUIWBPXSYJ"
+      },
+      "Profile": {
+        "AadharCardNo": "825686845371",
+        "AccountStartDate": "03Jul23",
+        "BankAccountNo": "00000064047663479",
+        "BankName": "State Bank of India",
+        "DOB": "25Apr90",
+        "Email": "nightyskykk@gmail.com",
+        "GmailPassword": "",
+        "Name": "Omkar Hedge",
+        "PANCardNo": "ABBPO2350F",
+        "PhoneNumber": "9902106162",
+        "RiskProfile": {
+          "AreaOfInvestment": [
+            "Debt",
+            "Equity",
+            "FnO"
+          ],
+          "Commission": "50-50",
+          "DrawdownTolerance": "35",
+          "Duration": "12 months",
+          "WithdrawalFrequency": "OnRequest"
+        }
+      },
+      "Strategies": {
+        "ExpiryTrader": {
+          "Qty": 50,
+          "RiskPerTrade": 1,
+          "TradeState": [
+            {
+              "LastModified": "2020-03-22 11:23:22",
+              "Status": "Active",
+              "TradeId": "ET48",
+              "orders": [
+                {
+                  "avg_prc": "1232",
+                  "order_id": "123456",
+                  "time": "12:23",
+                  "trade_id": "ET12_entry",
+                  "trading_symbol": "NIFTY"
+                },
+                {
+                  "avg_prc": "1232",
+                  "order_id": "123456",
+                  "time": "12:23",
+                  "trade_id": "ET12_entry",
+                  "trading_symbol": "NIFTY"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "Tr_No": "Tr00"
+    }

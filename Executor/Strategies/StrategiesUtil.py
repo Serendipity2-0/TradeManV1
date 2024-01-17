@@ -3,11 +3,20 @@ from typing import List, Dict, Union, Optional
 from datetime import time
 import os,sys
 import json
+import datetime as dt
+import pandas as pd
+from dotenv import load_dotenv
 
 DIR = os.getcwd()
 sys.path.append(DIR)
+ENV_PATH = os.path.join(DIR, '.env')
+load_dotenv(ENV_PATH)
+fno_info_path = os.getenv('FNO_INFO_PATH')
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
+from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import calculate_qty_for_strategies
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):
@@ -54,7 +63,8 @@ class StrategyBase(BaseModel):
     GeneralParams: GeneralParams
     Instruments: List[str]
     NextTradeId: str
-    StrategyName: str 
+    StrategyName: str
+    StrategyPrefix: str
     TodayOrders: Dict[str, TodayOrder]
 
     @classmethod
@@ -124,7 +134,7 @@ class StrategyBase(BaseModel):
     def calculate_current_atm_strike_prc(self,base_symbol, token = None, prediction=None, strike_prc_multiplier=None):
         if token is None:
             token = int(self.get_token_from_info(base_symbol))
-        ltp = self.get_single_ltp(token)
+        ltp = get_single_ltp(token)
         base_strike = self.round_strike_prc(ltp, base_symbol)
         multiplier = self.get_strike_step(base_symbol)
         if strike_prc_multiplier:
@@ -134,7 +144,7 @@ class StrategyBase(BaseModel):
             return base_strike
         
     def get_hedge_strikeprc(self,base_symbol,token, prediction, hedge_multiplier): 
-        ltp = self.get_single_ltp(token)
+        ltp = get_single_ltp(token)
         strike_prc = self.round_strike_prc(ltp, base_symbol)
         strike_prc_multiplier = self.get_strike_step(base_symbol)
         bear_strikeprc = strike_prc + (hedge_multiplier * strike_prc_multiplier)
@@ -184,3 +194,41 @@ def get_previous_dates(num_dates):
         dates.append(current_date.strftime("%Y-%m-%d"))
 
     return dates
+
+def fetch_users_for_strategy(strategy_name):
+    active_users = fetch_active_users_from_firebase()
+    strategy_users = []
+    for user in active_users:
+        if strategy_name in user['Strategies']:
+            strategy_users.append(user)
+    return strategy_users
+
+def fetch_freecash_firebase(strategy_name):
+    accounts = fetch_users_for_strategy(strategy_name)  # Assuming there is a function to fetch accounts from Firebase
+    freecash_dict = {}
+    for account in accounts:
+        freecash_dict[account['Tr_No']] = account['Accounts']['FreeCash']
+    return freecash_dict
+
+def fetch_risk_per_trade_firebase(strategy_name):
+    users = fetch_users_for_strategy(strategy_name)
+    risk_per_trade = {}
+    for user in users:
+        risk_per_trade[user['Tr_No']] = user['Strategies'][strategy_name]['RiskPerTrade']
+    return risk_per_trade
+
+def update_qty_user_firebase(strategy_name,avg_sl_points,lot_size):
+    strategy_users = fetch_users_for_strategy(strategy_name)
+    free_cash_dict = fetch_freecash_firebase(strategy_name)
+    risk_per_trade = fetch_risk_per_trade_firebase(strategy_name)
+    for user in strategy_users:
+        if user['Tr_No'] in risk_per_trade:
+            risk = risk_per_trade[user['Tr_No']]
+        if user['Tr_No'] in free_cash_dict:
+            capital = free_cash_dict[user['Tr_No']]        
+        qty = calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size)
+        #update this to firebase
+        
+    
+    
+        

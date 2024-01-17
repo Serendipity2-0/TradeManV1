@@ -3,7 +3,7 @@ import os, sys
 import math
 
 
-def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size, strategy_name):
+def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
     if avg_sl_points is not None:
         raw_quantity = (risk * capital) / avg_sl_points   #avg_sl_points can be ltp/price_ref/avg trade points
         quantity = int((raw_quantity // lot_size) * lot_size)
@@ -18,9 +18,7 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size, strateg
 def get_trade_id(strategy_name, trade_type):
     global trade_id_state
 
-    # Load strategy object
-    _, strategy_path = get_strategy_json(strategy_name)
-    strategy_obj = Strategy.Strategy.read_strategy_json(strategy_path)
+    #Fetch the st
 
     # Resolve strategy name to prefix
     strategy_prefix = strategy_prefix_map.get(strategy_name)

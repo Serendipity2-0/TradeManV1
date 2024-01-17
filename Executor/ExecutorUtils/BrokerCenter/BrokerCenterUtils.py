@@ -10,8 +10,8 @@ load_dotenv(ENV_PATH)
 ZERODHA = os.getenv('ZERODHA_BROKER')
 ALICEBLUE = os.getenv('ALICEBLUE_BROKER')
 
-import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
-import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
+# import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
+# import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
 import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
 import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter

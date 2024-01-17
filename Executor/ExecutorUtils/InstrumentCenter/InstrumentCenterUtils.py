@@ -86,7 +86,7 @@ class  Instrument:
             else:
                 return "next_month"
 
-    def get_exchange_token_for_option(self, base_symbol, strike_price, option_type,expiry_type="current_week"):
+    def get_expiry_by_criteria(self, base_symbol, strike_price, option_type,expiry_type="current_week"):
         filtered_data = self._filter_data(base_symbol, option_type, strike_price)
         today = datetime.now().date()
         future_expiries = filtered_data[filtered_data['expiry'].apply(lambda x: datetime.strptime(x, "%Y-%m-%d").date()) >= today]['expiry'].tolist()
@@ -117,10 +117,10 @@ class  Instrument:
         else:
             return None
     
-    def get_token_by_exchange_token(self, exchange_token):
+    def get_kite_token_by_exchange_token(self, exchange_token):
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
         if not filtered_data.empty:
-            return filtered_data.iloc[0]['instrument_token']
+            return int(filtered_data.iloc[0]['instrument_token'])
         else:
             return None
 
@@ -235,12 +235,13 @@ class  Instrument:
         return symbol_to_token.get(base_symbol, "No token found for given symbol")
     
 def get_single_ltp(token):
-    zerodha_primary = os.getenv('ZERODHA_BROKER')
-    primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(zerodha_primary)[0]
-    print("primary_account_api_key",primary_account_session_id)
-    kite = KiteConnect(api_key=primary_account_session_id) 
-    kite.set_access_token(access_token=primary_account_session_id)
+    zerodha_primary = os.getenv('ZERODHA_PRIMARY_ACCOUNT')
+    primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(zerodha_primary)
+    print("primary_account_api_key",primary_account_session_id['Broker']['SessionId'])
+    kite = KiteConnect(api_key=primary_account_session_id['Broker']['ApiKey']) 
+    kite.set_access_token(access_token=primary_account_session_id['Broker']['SessionId'])
     ltp = kite.ltp(token)  
+    print("ltp",ltp)
     return ltp[str(token)]['last_price']
 
 def get_ins_df():
@@ -248,5 +249,4 @@ def get_ins_df():
     data = pd.read_sql_query("select * from instrument_master", conn)
     # data to dataframe
     ins_df = pd.DataFrame(data)
-    print(ins_df.head())
     return ins_df
