@@ -28,7 +28,7 @@ class ExpiryTrader(StrategyBase):
         return self.ExitParams
     
 # Testing the class with ExpiryTrader data
-expiry_trader_obj = ExpiryTrader.load_from_db('ExpiryTrader')  
+expiry_trader_obj = ExpiryTrader.load_from_db('ExpiryTrader')
 instrument_obj = InstrumentCenterUtils.Instrument()
 
 hedge_transaction_type = expiry_trader_obj.get_general_params().HedgeTransactionType
