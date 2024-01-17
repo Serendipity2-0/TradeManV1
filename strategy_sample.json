@@ -1,0 +1,79 @@
+{
+"strategies": {
+    "MPWizard": {
+      "GeneralParams":{
+        "Description": "Strategy based on Market Profile Points ",
+        "Duration": "6 months",
+        "DrawdownTolerance":"35",
+        "AreaOfInvestment": "FnO"
+      },
+      "EntryParams": {
+        "EntryTime": "10:15:00"
+      },
+      "ExitParams": {
+        "SLType": "TrailingSL",
+        "SqroffTime": "15:05:00"
+      },
+      "CalculationParams": {
+        "QtyCalc": "PrcRef",
+        "DataFetchEnd": "15:30:00",
+        "DataFetchStart": "09:15:00",
+        "TimeFrame": "1Min",
+        "MarginPerLot": 20000 
+      },
+      "MarketInfoParams": {
+        "ATRPeriod": 5,
+        "TradeView": "Bearish",
+        "QtyAmplifier": 1
+      },
+      "OrderDetailParams": {
+        "TransactionType": "BUY",
+        "OrderType": "Market",
+        "ProductType": "MIS",
+        "Segment": "NFO",
+        "ExpiryType": "Weekly"
+      },
+      "Instruments": [
+        "NIFTY",
+        "BANKNIFTY",
+        "FINNIFTY"
+      ],
+      "NextTradeId": "MP15",
+      "StrategyName": "MPWizard",
+      "TradeState": [
+                {
+                "TradeId": "MP200",
+                "Status":"Active",
+                "LastModified":"2020-03-22 11:23:22",
+                "SignalInfo":{
+                            "ATR5D": 149.39,
+                            "IBLevel": "Medium",
+                            "IBValue": 69.65000000000146,
+                            "Name": "NIFTY",
+                            "PriceRef": 25,
+                            "TSLStepSize": 0.5,
+                            "TriggerPoints": {
+                              "IBHigh": 21634.2,
+                              "IBLow": 21564.55
+                            }
+                },
+                "SignalLog":[
+                            {  
+                              "avg_prc": "1232",
+                              "order_id": "123456",
+                              "time": "12:23",
+                              "trade_id": "MP200_entry",
+                              "trading_symbol": "NIFTY"
+                            },
+                            {
+                              "avg_prc": "1232",
+                              "order_id": "123456",
+                              "time": "12:23",
+                              "trade_id": "MP200_exit",
+                              "trading_symbol": "NIFTY"
+                            }
+                            ]
+              }]       
+
+        }
+      }}

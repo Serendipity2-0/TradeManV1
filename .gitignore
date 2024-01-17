@@ -1,6 +1,4 @@
-.env
 *.pyc
 *.log
-*.json
 *.xlsx
 *.DS_Store
