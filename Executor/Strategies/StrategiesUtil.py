@@ -1,90 +1,68 @@
 from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Union, Optional
 from datetime import time
+import os,sys
+import json
 
-# Helper function to validate time format
-def validate_time_format(time_string: str) -> time:
-    # Implement logic to parse and validate time format
-    pass
+DIR = os.getcwd()
+sys.path.append(DIR)
+
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):
-    EMAPeriod: Optional[int]
-    EntryTime: str
-    HeikinAshiMAPeriod: Optional[int]
-    SupertrendMultiplier: Optional[int]
-    SupertrendPeriod: Optional[int]
-    TSLStepSize: Optional[float]
-    # Additional fields for other strategies
-    # ...
+    EntryTime: time
+    HedgeMultiplier: int
+    InstrumentToday: str
+    SLMultipler: int
+    StrikeMultiplier: int
 
 class ExitParams(BaseModel):
-    LastBuyTime: Optional[str]
     SLType: str
-    SquareOffTime: Optional[str]
-    # Additional fields for other strategies
-    # ...
+    SqroffTime: time
 
 class ExtraInformation(BaseModel):
-    HedgeDistance: Optional[int]
-    Interval: Optional[str]
-    # Additional fields for other strategies
-    # ...
+    QtyCalc: str
 
 class GeneralParams(BaseModel):
-    ExpiryType: Union[str, List[str]]
-    NiftyToken: Optional[str]
+    ExpiryType: str
+    HedgeTransactionType: str
+    MainTransactionType: str
     OrderType: str
     ProductType: str
-    Segment: str
+    StrategyType: str
     TimeFrame: str
     TradeView: str
-    # Additional fields for other strategies
-    # ...
 
-class SignalEntry(BaseModel):
-    ShortCoverSignal: Optional[dict]
-    ShortSignal: Optional[dict]
-    # Additional fields for other strategies
-    # ...
+class TodayOrder(BaseModel):
+    EntryPrc: float
+    EntryTime: time
+    ExitPrc: float
+    ExitTime: time
+    MarginUsed: float
+    MaxLoss: float
+    PeakProfit: float
+    Signal: str
+    StartegyStats: Dict[str, str]
+    Trade_id: str
 
-# Main strategy model
-class Strategy(BaseModel):
-    Description: str
-    EntryParams: Optional[EntryParams]
-    ExitParams: Optional[ExitParams]
-    ExtraInformation: Optional[ExtraInformation]
-    GeneralParams: Optional[GeneralParams]
-    Instruments: List[str]
-    NextTradeId: Optional[str]
-    SignalEntry: Optional[SignalEntry]
-    StrategyName: str
-    TodayOrders: List[str]
-
-# Main collection model
 class StrategyBase(BaseModel):
-    strategies: Dict[str, Strategy]
+    Description: str
+    EntryParams: EntryParams
+    ExitParams: ExitParams
+    ExtraInformation: ExtraInformation
+    GeneralParams: GeneralParams
+    Instruments: List[str]
+    NextTradeId: str
+    StrategyName: str 
+    TodayOrders: Dict[str, TodayOrder]
 
-    @validator('strategies', pre=True)
-    def validate_strategies(cls, value):
-        # Custom validation logic for strategies
-        return value
-
-#TODO: give strategy name and return strategyobj
     @classmethod
-    def load_strategy(cls, strategy_name: str) -> Optional[Strategy]:
-        try:
-            
-            # Parse and extract the specific strategy data
-            strategies_collection = cls.parse_obj(data)
-            if strategy_name in strategies_collection.strategies:
-                return strategies_collection.strategies[strategy_name]
-            else:
-                return None
-        except (FileNotFoundError, IOError, json.JSONDecodeError) as e:
-            # Handle file not found, I/O errors, or JSON parsing errors
-            print(f"Error reading file: {e}")
-            return None
+    def load_from_db(cls, strategy_name: str):
+        data = fetch_collection_data_firebase('strategies', document=strategy_name)
+        if data is None:
+            raise ValueError(f"No data found for strategy {strategy_name}")
+        return cls.parse_obj(data)
 
 ###########################################################################
     def get_option_type(self,prediction,strategy_option_mode):

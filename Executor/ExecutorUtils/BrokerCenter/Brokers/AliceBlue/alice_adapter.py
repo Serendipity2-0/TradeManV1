@@ -15,28 +15,39 @@ def alice_fetch_free_cash(user_details):
             cash_margin_available = item.get('cashmarginavailable', 0)
             return float(cash_margin_available)
         
-#This function merges them into a single csv file and returns the merged csv file as df.
-def merge_ins_csv_files(merge_column='Token'):
-    #i will provide the folder path of the csv and the list of file names to be merged
+def merge_ins_csv_files():
+    columns_to_keep = [
+    "Exch", "Exchange Segment", "Symbol", "Token",
+    "Instrument Type", "Option Type", "Strike Price",
+    "Instrument Name", "Formatted Ins Name", "Trading Symbol",
+    "Expiry Date", "Lot Size", "Tick Size"
+    ]
+
     folder_path = os.path.join(DIR_PATH, 'SampleData')
     ins_files = ['NFO.csv', 'BFO.csv', 'NSE.csv']
     file_paths = [os.path.join(folder_path, file) for file in ins_files]
-    # Initialize an empty DataFrame for the merged data
-    merged_df = pd.DataFrame()
+    
+    nfo_df = pd.read_csv(file_paths[0])
+    bfo_df = pd.read_csv(file_paths[1])
+    nse_df = pd.read_csv(file_paths[2])
 
-    for file_path in file_paths:
-        # Read the current CSV file
-        current_df = pd.read_csv(file_path)
+    # Add empty columns for 'Option Type', 'Strike Price', and 'Expiry Date' to NSE DataFrame
+    nse_df['Option Type'] = None
+    nse_df['Strike Price'] = None
+    nse_df['Expiry Date'] = None
 
-        # Merge with the existing DataFrame
-        if merged_df.empty:
-            merged_df = current_df
-        else:
-            merged_df = pd.merge(merged_df, current_df, on=merge_column, how='outer', suffixes=('', '_dup'))
+    # Filter each DataFrame to keep only the specified columns
+    nfo_df_filtered = nfo_df[columns_to_keep]
+    nse_df_filtered = nse_df[columns_to_keep]
+    bfo_df_filtered = bfo_df[columns_to_keep]
 
-    # Remove duplicate columns generated from merging
-    merged_df = merged_df.loc[:,~merged_df.columns.str.endswith('_dup')]
+    # Merge the DataFrames
+    merged_df = pd.concat([nfo_df_filtered, nse_df_filtered, bfo_df_filtered], ignore_index=True)
+    merged_df['Token'] = merged_df['Token'].astype(str)
+    merged_df.to_csv('merged_alice_ins.csv', index=False)
     return merged_df
+
+
 
 #This function downloads the instrument csv files from Aliceblue trading platform
 def get_ins_csv_alice(user_details):

@@ -18,10 +18,14 @@ firebase_admin.initialize_app(cred, {
         'databaseURL': firebase_db_url
     })
 
-def fetch_collection_data_firebase(collection):
+def fetch_collection_data_firebase(collection,document=None):
+    # Create a reference to the collection
     ref = db.reference(collection)
-    data = ref.get()
-    return data
+    if document is None:
+        return ref.get()
+    else:
+        data= ref.child(document).get()
+        return data
 
 def update_fields_firebase(collection, username, data, field_key=None):
     # Create a reference to the user or to the specific field

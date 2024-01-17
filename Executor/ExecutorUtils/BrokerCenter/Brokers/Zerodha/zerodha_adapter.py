@@ -24,6 +24,7 @@ def get_csv_kite(user_details):
     kite.set_access_token(user_details['Broker']['SessionId'])
     instrument_dump = kite.instruments()
     instrument_df = pd.DataFrame(instrument_dump)
+    instrument_df['exchange_token'] = instrument_df['exchange_token'].astype(str)
     return instrument_df 
 
 def fetch_zerodha_holdings(api_key, access_token):

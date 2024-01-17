@@ -17,22 +17,22 @@ import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as Instrume
 ENV_PATH = os.path.join(DIR_PATH, '.env')
 load_dotenv(ENV_PATH)
 
-class ExpiryTrader(StrategyBase.Strategy):
+class ExpiryTrader(StrategyBase):
     def get_general_params(self):
-        return self.general_params
+        return self.GeneralParams
     
     def get_entry_params(self):
-        return self.entry_params
+        return self.EntryParams
     
     def get_exit_params(self):
-        return self.exit_params
+        return self.ExitParams
     
 # Testing the class with ExpiryTrader data
-expiry_trader_obj = ExpiryTrader.load_strategy('ExpiryTrader')  
+expiry_trader_obj = ExpiryTrader.load_from_db('ExpiryTrader')  
 instrument_obj = InstrumentCenterUtils.Instrument()
 
-hedge_transcation_type = expiry_trader_obj.get_general_params().get('HedgeTransactionType')
-main_transcation_type = expiry_trader_obj.get_general_params().get('MainTransactionType')
+hedge_transaction_type = expiry_trader_obj.get_general_params().HedgeTransactionType
+main_transaction_type = expiry_trader_obj.get_general_params().MainTransactionType
 
 
 # Extract strategy parameters
