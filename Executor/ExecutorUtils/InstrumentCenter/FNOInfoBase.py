@@ -1,3 +1,4 @@
+#TODO read the db instead of csv
 import pandas as pd
 import os
 

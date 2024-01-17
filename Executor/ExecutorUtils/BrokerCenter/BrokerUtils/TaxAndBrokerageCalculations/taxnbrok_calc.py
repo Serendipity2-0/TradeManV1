@@ -1,3 +1,9 @@
+def calculate_options_taxes(broker, qty, entry_prc, exit_prc, orders):
+    pass
+
+def calculate_futures_taxes(broker, qty, entry_prc, exit_prc, orders):
+    pass
+
 def zerodha_taxes(qty, entry_prc, exit_prc,orders):
     if orders == 1:
        instruments = 2

@@ -43,6 +43,9 @@ def get_trade_id(strategy_name, trade_type):
     return trade_id
 
 def place_order_for_strategy(strategy_name, order_details):
+    #TODO: Once the order is placed it should log the lld in the firebase(user/strategy/tradestate/orders)
+    #TODO: Add order_tag for main order in this format MP12_main_long_entry and MP12_main_long_exit
+    #TODO: Add order_tag for hedge order in this format MP12_hedge_long_entry and MP12_hedge_long_exit
     active_users = Broker.get_active_subscribers(strategy_name)  
     for broker, usernames in active_users.items():
         for username in usernames:

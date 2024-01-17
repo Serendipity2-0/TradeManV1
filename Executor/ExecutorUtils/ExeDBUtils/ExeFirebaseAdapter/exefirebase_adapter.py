@@ -11,10 +11,11 @@ ENV_PATH = os.path.join(DIR_PATH, '.env')
 load_dotenv(ENV_PATH)
 
 cred_filepath = os.getenv('FIREBASE_CRED_PATH')
+firebase_db_url = os.getenv('FIREBASE_DATABASE_URL')
 
 cred = credentials.Certificate(cred_filepath)
 firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://trading-app-caf8e-default-rtdb.firebaseio.com/'
+        'databaseURL': firebase_db_url
     })
 
 def fetch_collection_data_firebase(collection):
@@ -28,6 +29,4 @@ def update_fields_firebase(collection, username, data, field_key=None):
         ref = db.reference(f'{collection}/{username}')
     else:
         ref = db.reference(f'{collection}/{username}/{field_key}')
-
-    
     ref.update(data)  # Update only the specific field

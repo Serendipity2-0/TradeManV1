@@ -20,31 +20,17 @@ from formats import format_value, format_stat_value, indian_format
 # Load environment variables from .env file
 load_dotenv()
 
-# Retrieve values from .env
-script_dir = os.path.dirname(os.path.realpath(__file__))
-firebase_credentials_path = os.path.join(
-    script_dir, 'firebasecredentials.json')
-database_url = os.getenv('DATABASE_URL')
-storage_bucket = os.getenv('STORAGE_BUCKET')
 
-# Initialize Firebase app
-if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_credentials_path)
-    firebase_admin.initialize_app(cred, {
-        'databaseURL': database_url,
-        'storageBucket': storage_bucket
-    })
+
 
 # Create a SessionState class to manage session state variables
 
 
-class SessionState:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+
 
 
 # Create a session state variable
-session_state = SessionState(logged_in=False, client_data=None)
+session_state = SessionState(logged_in=False, client_data=None) #Session state update from get_firebase_conn_for_page
 
 
 def login_page():

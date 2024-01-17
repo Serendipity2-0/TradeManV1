@@ -125,6 +125,7 @@ Databases
     2.3 Instruments
     2.4 SignalsInfo
     2.5 ErrorLog
+    2.6 FnOInfo
 
 3. SQL
     3.1 TickerData

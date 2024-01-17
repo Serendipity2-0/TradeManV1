@@ -11,6 +11,7 @@ from datetime import timedelta  # Importing the missing timedelta
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
 from kiteconnect import KiteConnect
 
+#TODO: Read the merged DB instead of the csv file
 class Instrument:
     def __init__(self, csv_path=insrument_csv_path):
         self._dataframe = pd.read_csv(csv_path)

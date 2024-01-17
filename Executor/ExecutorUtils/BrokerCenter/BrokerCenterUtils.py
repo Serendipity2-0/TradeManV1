@@ -62,6 +62,12 @@ def download_csv_for_brokers(primary_account):
     if  primary_account['Broker']['BrokerName'] == ZERODHA:
         return zerodha_adapter.get_csv_kite(primary_account)  # Get CSV for this user
     elif primary_account['Broker']['BrokerName'] == ALICEBLUE:
-        return alice_adapter.get_csv_alice(primary_account)  # Get CSV for this user
+        return alice_adapter.get_ins_csv_alice(primary_account)  # Get CSV for this user
+    
+def fetch_holdings_for_brokers(user):
+    if  user['Broker']['BrokerName'] == ZERODHA:
+        return zerodha_adapter.fetch_zerodha_holdings(user)  
+    elif user['Broker']['BrokerName'] == ALICEBLUE:
+        return alice_adapter.fetch_aliceblue_holdings(user)  
 
 
