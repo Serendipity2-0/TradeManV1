@@ -27,10 +27,10 @@ def fetch_collection_data_firebase(collection,document=None):
         data= ref.child(document).get()
         return data
 
-def update_fields_firebase(collection, username, data, field_key=None):
+def update_fields_firebase(collection, document, data, field_key=None):
     # Create a reference to the user or to the specific field
     if field_key is None:
-        ref = db.reference(f'{collection}/{username}')
+        ref = db.reference(f'{collection}/{document}')
     else:
-        ref = db.reference(f'{collection}/{username}/{field_key}')
+        ref = db.reference(f'{collection}/{document}/{field_key}')
     ref.update(data)  # Update only the specific field

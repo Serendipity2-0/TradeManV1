@@ -13,6 +13,7 @@ ENV_PATH = os.path.join(DIR, '.env')
 load_dotenv(ENV_PATH)
 fno_info_path = os.getenv('FNO_INFO_PATH')
 
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import update_fields_firebase
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
@@ -20,7 +21,7 @@ from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import calculate_qty_fo
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):
-    EntryTime: time
+    EntryTime: str
     HedgeMultiplier: int
     InstrumentToday: str
     SLMultipler: int
@@ -227,7 +228,30 @@ def update_qty_user_firebase(strategy_name,avg_sl_points,lot_size):
         if user['Tr_No'] in free_cash_dict:
             capital = free_cash_dict[user['Tr_No']]        
         qty = calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size)
-        #update this to firebase
+        user['Strategies'][strategy_name]['Qty'] = qty
+        
+        update_fields_firebase('new_clients', user['Tr_No'], {'Qty': qty}, f'Strategies/{strategy_name}')
+
+# method to take        
+def assign_trade_id(orders_to_place):
+    for order in orders_to_place:
+        # Determine the last part of the trade_id based on order_mode
+        if order['order_mode'] in ['Main', 'HedgeEntry']:
+            trade_id_suffix = 'entry'
+        elif order['order_mode'] == 'SL':
+            trade_id_suffix = 'exit'
+        else:
+            trade_id_suffix = 'unknown'
+
+        # Reconstruct the trade_id
+        trade_id = f"{order['trade_id']}_{order['signal'].lower()}_{order['order_mode'].lower()}_{trade_id_suffix}"
+
+        # Update the trade_id in the order
+        order['trade_id'] = trade_id
+
+    return orders_to_place
+
+        
         
     
     

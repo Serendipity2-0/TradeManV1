@@ -8,7 +8,7 @@ DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
-from Executor.Strategies.StrategiesUtil import update_qty_user_firebase
+from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id
 import Executor.ExecutorUtils.OrderCenter.OrderCenterUtils as OrderCenterUtils
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
@@ -37,19 +37,17 @@ main_transaction_type = expiry_trader_obj.get_general_params().MainTransactionTy
 # Extract strategy parameters
 base_symbol, today_expiry_token = expiry_trader_obj.determine_expiry_index()
 strategy_name = expiry_trader_obj.StrategyName
-strategy_prefix = expiry_trader_obj.StrategyPrefix
+next_trade_prefix = expiry_trader_obj.NextTradeId
 prediction = expiry_trader_obj.get_general_params().TradeView
 order_type = expiry_trader_obj.get_general_params().OrderType
-# segment_type = expiry_trader_obj.get_general_params().S
 product_type = expiry_trader_obj.get_general_params().ProductType
 
 strike_prc_multiplier = expiry_trader_obj.get_strike_multiplier(base_symbol)
 hedge_multiplier = expiry_trader_obj.get_hedge_multiplier(base_symbol)
 stoploss_mutiplier = expiry_trader_obj.get_stoploss_multiplier(base_symbol)
-desired_start_time = expiry_trader_obj.get_entry_params().EntryTime
+desired_start_time_str = expiry_trader_obj.get_entry_params().EntryTime
 
-
-# start_hour, start_minute, start_second = map(int, desired_start_time_str.split(':'))
+start_hour, start_minute, start_second = map(int, desired_start_time_str.split(':'))
 
 main_strikeprc = expiry_trader_obj.calculate_current_atm_strike_prc(base_symbol,today_expiry_token, prediction, strike_prc_multiplier)
 hedge_strikeprc = expiry_trader_obj.get_hedge_strikeprc(base_symbol, today_expiry_token, prediction, hedge_multiplier)
@@ -60,16 +58,12 @@ today_expiry = instrument_obj.get_expiry_by_criteria(base_symbol,main_strikeprc,
 hedge_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol,hedge_strikeprc,hedge_option_type, today_expiry)
 main_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol,main_strikeprc, main_option_type,today_expiry)
 main_instrument_token = instrument_obj.get_kite_token_by_exchange_token(main_exchange_token)
-print(main_instrument_token)
 
 ltp = InstrumentCenterUtils.get_single_ltp(main_instrument_token)
 lot_size = instrument_obj.get_lot_size_by_exchange_token(main_exchange_token)
 
-print("LTP: ", ltp)
 
 update_qty_user_firebase(strategy_name,ltp,lot_size)
-
-trade_id = OrderCenterUtils.get_trade_id(strategy_name, "entry")
 
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(main_exchange_token)
 hedge_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(hedge_exchange_token)
@@ -77,33 +71,46 @@ hedge_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(hedge_e
 orders_to_place = [
     {  
         "strategy": strategy_name,
+        "signal":"Short",
         "base_symbol": base_symbol,
         "exchange_token" : hedge_exchange_token,     
-        # "segment" : segment_type,
         "transaction_type": hedge_transaction_type,  
         "order_type" : order_type, 
         "product_type" : product_type,
-        "order_mode" : ["Hedge"],
-        "trade_id" : trade_id 
+        "order_mode" : "Hedge",
+        "trade_id" : next_trade_prefix 
     },
     {
         "strategy": strategy_name,
+        "signal":"Short",
         "base_symbol": base_symbol,
         "exchange_token" : main_exchange_token,     
-        # "segment" : segment_type,
         "transaction_type": main_transaction_type, 
         "order_type" : order_type, 
         "product_type" : product_type,
+        "order_mode" : "Main",
+        "trade_id" : next_trade_prefix
+    },
+    {
+        "strategy": strategy_name,
+        "signal":"Short",
+        "base_symbol": base_symbol,
+        "exchange_token" : main_exchange_token,     
+        "transaction_type": hedge_transaction_type, 
+        "order_type" : "Stoploss",
+        "product_type" : product_type,
         "stoploss_mutiplier": stoploss_mutiplier,
-        "order_mode" : ["Main","SL"],
-        "trade_id" : trade_id
+        "order_mode" : "SL",
+        "trade_id" : next_trade_prefix
     }
     ]
+orders_to_place = assign_trade_id(orders_to_place)
+print('orders_to_place',orders_to_place)
+
 
 def message_for_orders(trade_type,prediction,main_trade_symbol,hedge_trade_symbol):
-    strategy_name = expiry_trader_obj.get_strategy_name()
 
-    message = ( f"{trade_type} Trade for {expiry_trader_obj.get_strategy_name()}\n"
+    message = ( f"{trade_type} Trade for {strategy_name}\n"
             f"Direction : {prediction}\n"
             f"Main Trade : {main_trade_symbol}\n"
             f"Hedge Trade {hedge_trade_symbol} \n")    
@@ -120,7 +127,8 @@ def main():
     if now.time() < dt.time(9, 0):
         print("Time is before 9:00 AM, Waiting to execute.")
     else:
-        wait_time = desired_start_time - now
+        wait_time = dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
+        
         if wait_time.total_seconds() > 0:
             print(f"Waiting for {wait_time} before starting the bot")
             sleep(wait_time.total_seconds())

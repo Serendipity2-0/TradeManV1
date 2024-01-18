@@ -15,47 +15,7 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
         quantity = math.ceil(lots) * lot_size
     return quantity
 
-def get_trade_id(strategy_name, trade_type):
-    global trade_id_state
-
-    #Fetch the st
-
-    # Resolve strategy name to prefix
-    strategy_prefix = strategy_prefix_map.get(strategy_name)
-    if not strategy_prefix:
-        raise ValueError(f"Unknown strategy name: {strategy_name}")
-
-    # Initialize strategy in state if not present
-    if strategy_prefix not in trade_id_state:
-        trade_id_state[strategy_prefix] = 1
-
-    # Generate trade ID for entry
-    if trade_type.lower() == 'entry':
-        current_id = trade_id_state[strategy_prefix]
-        trade_id_state[strategy_prefix] += 1
-        trade_id = f"{strategy_prefix}{current_id}_entry"
-        next_trade_id = f"{strategy_prefix}{trade_id_state[strategy_prefix]}"
-        # Save new trade ID in strategy JSON
-        strategy_obj.set_next_trade_id(next_trade_id)
-        strategy_obj.write_strategy_json(strategy_path)
-
-    # Use the same ID for exit
-    elif trade_type.lower() == 'exit':
-        current_id = trade_id_state[strategy_prefix] - 1
-        trade_id = f"{strategy_prefix}{current_id}_exit"
-
-    # Add trade_id to today's orders after completion
-    base_trade_id = f"{strategy_prefix}{current_id}"
-    today_orders = strategy_obj.get_today_orders()
-    if base_trade_id not in today_orders:
-        today_orders.append(base_trade_id)
-        strategy_obj.set_today_orders(today_orders)
-        strategy_obj.write_strategy_json(strategy_path)
-
-    # Save state after each ID generation
-    save_current_state(trade_id_state)
-    print(f"Generated trade ID: {trade_id}")
-    return trade_id
+    
 
 def place_order_for_strategy(strategy_name, order_details):
     #TODO: Once the order is placed it should log the lld in the firebase(user/strategy/tradestate/orders)
