@@ -1,7 +1,13 @@
 import datetime as dt
 import os, sys
 import math
+import os,sys
 
+DIR = os.getcwd()
+sys.path.append(DIR)
+
+from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_user_credentials_firebase,place_order_for_broker
 
 def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
     if avg_sl_points is not None:
@@ -17,34 +23,31 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
 
     
 
-def place_order_for_strategy(strategy_name, order_details):
+def place_order_for_strategy(strategy_users, order_details):
     #TODO: Once the order is placed it should log the lld in the firebase(user/strategy/tradestate/orders)
-    active_users = Broker.get_active_subscribers(strategy_name)  
-    for broker, usernames in active_users.items():
-        for username in usernames:
-            for order in order_details:
-                # Add the username and broker to the order details
-                order_with_user_and_broker = order.copy()  # Create a shallow copy to avoid modifying the original order
-                order_with_user_and_broker.update({
-                    "broker": broker,
-                    "username": username
-                })
+    
+    for user in strategy_users:
+        for order in order_details:
+            # Add the username and broker to the order details
+            order_with_user_and_broker = order.copy()  # Create a shallow copy to avoid modifying the original order
+            order_with_user_and_broker.update({
+                "broker": user['Broker']['BrokerName'],
+                "username": user['Broker']['BrokerUserName'],
+                "qty" : user['Strategies'][order.get('strategy')]['qty']
+            })
 
-                # Now get the quantity with the updated order details
-                order_qty = place_order_calc.get_qty(order_with_user_and_broker)
-
-                # Fetch the max order quantity for the specific base_symbol
-                max_qty = place_order_calc.read_max_order_qty_for_symbol(order_with_user_and_broker.get('base_symbol'))
-
-                # Split the order if the quantity exceeds the maximum
-                while order_qty > 0:
-                    current_qty = min(order_qty, max_qty)
-                    order_to_place = order_with_user_and_broker.copy()
-                    order_to_place["qty"] = current_qty
-                    place_order_for_broker(order_to_place)
-                    if 'Hedge' in order_to_place.get('order_mode', []):
-                        sleep(1)
-                    order_qty -= current_qty
+            # Fetch the max order quantity for the specific base_symbol
+            max_qty = FNOInfo().get_max_order_qty_by_base_symbol(order_with_user_and_broker.get('base_symbol'))
+            user_credentials = fetch_user_credentials_firebase(user['Broker']['BrokerUserName'])
+            # Split the order if the quantity exceeds the maximum
+            while order_qty > 0:
+                current_qty = min(order_qty, max_qty)
+                order_to_place = order_with_user_and_broker.copy()
+                order_to_place["qty"] = current_qty
+                place_order_for_broker(order_to_place,user_credentials)
+                if 'Hedge' in order_to_place.get('order_mode', []):
+                    sleep(1)
+                order_qty -= current_qty
                     
 def log_usr_ordr_firebase(order_id, order_details):
     # Getting the json data and path for the user

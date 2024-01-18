@@ -8,8 +8,8 @@ DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
-from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase
-import Executor.ExecutorUtils.OrderCenter.OrderCenterUtils as OrderCenterUtils
+from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users
+
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
@@ -105,6 +105,7 @@ orders_to_place = [
         "trade_id" : next_trade_prefix
     }
     ]
+
 orders_to_place = assign_trade_id(orders_to_place)
 
 def message_for_orders(trade_type,prediction,main_trade_symbol,hedge_trade_symbol):
@@ -140,10 +141,11 @@ def main():
                         "Status" : "Open"}
 
         update_signal_firebase(strategy_name,signals_to_log)
-        message_for_orders("Live",prediction,main_trade_symbol,hedge_trade_symbol)
-        
 
+        message_for_orders("Live",prediction,main_trade_symbol,hedge_trade_symbol)
+    
         # OrderCenterUtils.place_order_for_strategy(strategy_name,orders_to_place)
+        place_order_strategy_users(strategy_name,next_trade_prefix)
 
 if __name__ == "__main__":
     main()

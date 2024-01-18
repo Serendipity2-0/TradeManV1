@@ -16,6 +16,12 @@ import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter 
 import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
 
+def place_order_for_broker(order_details,user_credentials):
+    if order_details['broker'] == ZERODHA:
+        return zerodha_adapter.place_order_zerodha(order_details,user_credentials)
+    elif order_details['broker'] == ALICEBLUE:
+        return alice_adapter.place_order_aliceblue(order_details,user_credentials)
+
 def all_broker_login(active_users):
     for user in active_users:
         if user['Broker']['BrokerName'] == ZERODHA:
@@ -69,5 +75,11 @@ def fetch_holdings_for_brokers(user):
         return zerodha_adapter.fetch_zerodha_holdings(user)  
     elif user['Broker']['BrokerName'] == ALICEBLUE:
         return alice_adapter.fetch_aliceblue_holdings(user)  
+    
+def fetch_user_credentials_firebase(broker_user_name):
+    user_credentials = firebase_utils.fetch_collection_data_firebase('new_clients')
+    for user in user_credentials:
+        if user_credentials[user]['Broker']['BrokerUserName'] == broker_user_name:
+            return user_credentials[user]['Broker']
 
 

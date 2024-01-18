@@ -1,10 +1,13 @@
 #TODO read the db instead of csv
 import pandas as pd
 import os
+from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
-fno_info_csv_path = os.path.join(DIR_PATH,'fno_info.csv')
+ENV_PATH = os.path.join(DIR_PATH, '.env')
+load_dotenv(ENV_PATH)
 
+fno_info_csv_path = os.getenv('FNO_INFO_PATH')
 
 class FNOInfo:
     def __init__(self, file_path=fno_info_csv_path):

@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Union, Optional
 from datetime import time
 import os,sys
-import json
+import re
 import datetime as dt
 import pandas as pd
 from dotenv import load_dotenv
@@ -18,6 +18,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
 from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import calculate_qty_for_strategies
+from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import place_order_for_strategy
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):
@@ -266,8 +267,22 @@ def update_signal_firebase(strategy_name,signal):
     #Log the signals in  strategies/{strategy_name}/TodayOrders/orders
     update_fields_firebase('strategies', strategy_name, {signal['TradeId']: signal}, 'TodayOrders')
     update_fields_firebase('strategies', strategy_name, {'StrategyInfo': strategy_info}, f'TodayOrders/{signal["TradeId"]}')
+    update_next_trade_id_firebase(strategy_name,signal['TradeId'])
+
+def update_next_trade_id_firebase(strategy_name,trade_id):
+    #trade_id = MP123
+    numeric_digits = re.findall(r'\d+', trade_id)
+    if numeric_digits:
+        # Increment the numeric digits by 1
+        next_trade_id = str(int(numeric_digits[0]) + 1)
+        # Replace the numeric digits in trade_id with the incremented value
+        trade_id = trade_id.replace(numeric_digits[0], next_trade_id)
     
-        
+    update_fields_firebase('strategies', strategy_name, {'NextTradeId': trade_id})
     
+def place_order_strategy_users(strategy_name,orders_to_place):
+    strategy_users = fetch_users_for_strategy(strategy_name)
+    place_order_for_strategy(strategy_users,orders_to_place)
+    pass
     
         
