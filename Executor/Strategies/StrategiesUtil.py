@@ -44,17 +44,22 @@ class GeneralParams(BaseModel):
     TimeFrame: str
     TradeView: str
 
+class StrategyInfo(BaseModel):
+    Direction: Optional[str]
+    MarginUsed: Optional[float]
+    PeakLoss: Optional[float]
+    PeakProfit: Optional[float]
+
 class TodayOrder(BaseModel):
-    EntryPrc: float
-    EntryTime: time
-    ExitPrc: float
-    ExitTime: time
-    MarginUsed: float
-    MaxLoss: float
-    PeakProfit: float
+    EntryPrc: Optional[float] = None
+    EntryTime: Optional[time] = None
+    ExitPrc: Optional[float] = None
+    ExitTime: Optional[time] = None
     Signal: str
-    StartegyStats: Dict[str, str]
-    Trade_id: str
+    StrategyInfo: Optional[StrategyInfo]
+    TradeId: str
+
+
 
 class StrategyBase(BaseModel):
     Description: str
@@ -251,7 +256,17 @@ def assign_trade_id(orders_to_place):
 
     return orders_to_place
 
-        
+def update_signal_firebase(strategy_name,signal):
+    strategy_info = {
+            "Direction": "Bearish",
+            "MarginUsed": 122,
+            "PeakLoss": 1,
+            "PeakProfit": 312321
+          }
+    #Log the signals in  strategies/{strategy_name}/TodayOrders/orders
+    update_fields_firebase('strategies', strategy_name, {signal['TradeId']: signal}, 'TodayOrders')
+    update_fields_firebase('strategies', strategy_name, {'StrategyInfo': strategy_info}, f'TodayOrders/{signal["TradeId"]}')
+    
         
     
     

@@ -8,10 +8,11 @@ DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
-from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id
+from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase
 import Executor.ExecutorUtils.OrderCenter.OrderCenterUtils as OrderCenterUtils
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
 ENV_PATH = os.path.join(DIR_PATH, '.env')
 load_dotenv(ENV_PATH)
@@ -105,16 +106,15 @@ orders_to_place = [
     }
     ]
 orders_to_place = assign_trade_id(orders_to_place)
-print('orders_to_place',orders_to_place)
-
 
 def message_for_orders(trade_type,prediction,main_trade_symbol,hedge_trade_symbol):
-
+    #TODO: add noftication for the orders 
     message = ( f"{trade_type} Trade for {strategy_name}\n"
             f"Direction : {prediction}\n"
             f"Main Trade : {main_trade_symbol}\n"
             f"Hedge Trade {hedge_trade_symbol} \n")    
     print(message)
+    discord_bot(message, strategy_name)
     
 
 def main():
@@ -133,8 +133,17 @@ def main():
             print(f"Waiting for {wait_time} before starting the bot")
             sleep(wait_time.total_seconds())
         
+        signals_to_log = {
+                        "TradeId" : next_trade_prefix,
+                        "Signal" : "Short",
+                        "EntryTime" : dt.datetime.now().strftime("%H:%M"),
+                        "Status" : "Open"}
+
+        update_signal_firebase(strategy_name,signals_to_log)
         message_for_orders("Live",prediction,main_trade_symbol,hedge_trade_symbol)
-        OrderCenterUtils.place_order_for_strategy(strategy_name,orders_to_place)
+        
+
+        # OrderCenterUtils.place_order_for_strategy(strategy_name,orders_to_place)
 
 if __name__ == "__main__":
     main()

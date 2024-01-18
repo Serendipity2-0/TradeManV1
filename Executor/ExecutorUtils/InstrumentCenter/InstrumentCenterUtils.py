@@ -237,11 +237,9 @@ class  Instrument:
 def get_single_ltp(token):
     zerodha_primary = os.getenv('ZERODHA_PRIMARY_ACCOUNT')
     primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(zerodha_primary)
-    print("primary_account_api_key",primary_account_session_id['Broker']['SessionId'])
     kite = KiteConnect(api_key=primary_account_session_id['Broker']['ApiKey']) 
     kite.set_access_token(access_token=primary_account_session_id['Broker']['SessionId'])
     ltp = kite.ltp(token)  
-    print("ltp",ltp)
     return ltp[str(token)]['last_price']
 
 def get_ins_df():
