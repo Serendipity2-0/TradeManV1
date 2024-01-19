@@ -1,143 +1,113 @@
 Description: TradeMan
 
-Folder Structure For TradeMan
-
 TradeMan.env
-1. User
-    1.1 UserDashboard
-        1.1.1 Register
-        1.1.1 LoginPage
-        1.1.2 ProfileViewer
-        1.1.3 PortfolioViewer
-        1.1.4 StrategyViewer
-        1.1.5 TransactionViewer
-   
-    1.2 UserUtils
-        1.2.1 Validators
-            1.2.1.1 LedgerTransactionsValidator
-            1.2.1.2 SignalsTradebookValidator
-        1.2.2 UserTemplates
-            1.2.2.1 TelegramMessageTemplates
-            1.2.2.2 UserDocumentationPDF
-        1.2.3 UserDButils
-            1.2.3.1 UserFirebaseUtils
-            1.2.3.2 UserSQLUtils
-        1.2.4 UserStreamlitUtils
-            1.2.4.1 PortfolioViewerUtils
-            1.2.4.2 StrategyViewerUtils
-            1.2.4.3 TransactionViewerUtils
 
-3. Executor
-    2.1 ExecutorDashBoard
-        2.1.1 LoginPage
-        2.1.1 OrderExecutionPage
-        2.1.2 LiveTradeViewer
-        2.1.3 LoggingPage
-            2.1.3.1 ErrorLogProcessor
-        2.1.4 ModifyStrategy
+1. **User**
+   1.1. **UserDashBoard**
+   1.1.1. **PortfolioViewer** - portfoliostats_view.py
+   1.1.2. **ProfileViewer** - admin.py - script.py - styles.css
+   1.1.3. **Register** - register.py
+   1.1.4. **StrategyViewer** - stats.py - strategyapp.py
+   1.2. **UserUtils**
+   1.2.1. **UserDBUtils**
+   1.2.1.1. **UserFirebaseAdapter** - UserFirebaseAdapter.md
+   1.2.1.2. **UserSQLAdapter** - UserSQLAdapter.md
+   1.2.2. **UserTemplates**
+   1.2.2.1. **TelegramMessageTemplates** - TelegramMessageTemplates.md
+   1.2.2.2. **UserDocumentationPDF** - UserDocumentationPDF.md
 
-    2.2 ExecutorUtils
-        2.2.1 NotificationCenter
-            2.2.1.1 Telegram
-            2.2.1.2 Discord
-            2.2.1.3 Whatsapp
-            2.2.1.4 NotificationCenterUtils
-                2.2.1.4.1 EmergencyNotifications
-        2.2.2 LoggingCenter
-            2.2.2.1 LoggingValidator
-            2.2.2.2 SignalLogging
-            2.2.2.3 UserLogging
-            2.2.2.4 ErrorLogging
-            2.2.2.5 SignalInfoLogAdapter
-            2.2.2.6 LoggingAdapter
-            2.2.2.7 OrderSegregator
-        2.2.3 OrderCenter
-            2.2.3.1 QtyCalculator
-            2.2.3.2 OrderAdapter
-        2.2.4 BrokerCenter
-            2.2.4.1 Brokers
-               2.2.4.1.1 AliceBlue
-               2.2.4.1.2 Zerodha
-            2.2.4.2 BrokerUtils
-                2.2.4.2.1 TaxAndBrokerageCalculations
-        2.2.5 InstrumentCenter
-            2.2.5.1 InstrumentMonitor
-            2.2.5.2 DailyInstrumentAggregator
-            2.2.5.3 InstrumentBase
-        2.2.6 DBInterface
-            2.2.6.1 FirebaseUtils
-            2.2.6.2 SQLUtils
-    2.3 Strategies
-        2.3.1 AmiPy
-        2.3.2 ExpiryTrader
-        2.3.3 MPWizard
-        2.3.4 OvernightFutures
-        2.3.5 Coin
-        2.3.6 PyStocks
-        2.3.7 VPOCOptions
-        2.3.8 StrategyBase
-    2.4 Scripts
-        2.4.1 DailyLogin(Login and Validator)
-            2.4.1.1 Login
-            2.4.1.2 FundsValidator
-            2.4.1.3 DailyInstrumentAggregator
-            2.4.1.4 AmiplifierUpdate
-        2.4.2 StrategyScripts
-        2.4.3 EODScripts
-            2.4.3.1 SweepOrders
-            2.4.3.2 ValidateData
-            2.4.3.3 SignalsLogging
-            2.4.3.4 UserTradeLogging
-                2.4.3.4.1 DTDUpdate
-                2.4.3.4.2 UpdateDB
-            2.4.3.5 SendReports
-            2.4.3.6 TickerDB
-        2.4.4 RestartScripts
-        2.4.5 WeekklyReports
-            2.4.5.1 LedgerTransactionsValidator
-    2.5 OrderBot
-        2.5.1 TelegramOrderBot
-        2.5.2 OrderBotUtils
+2. **Executor**
+   2.1. **ExecutorDashBoard**
+   2.1.1. **ErrorLoggingPage** - ErrorLogProcessor.md - error_logging_page.py
+   2.1.2. **ExeLoginPage** - LoginPage.md - exe_login.py
+   2.1.3. **LiveTradeViewer** - LiveTradeViewer.md - live_trade_viewer.py
+   2.1.4. **ModifyStrategy** - ModifyStrategy.md - modify_strategy.py - usermanagerapp.py
+   2.1.5. **OrderExecutionPage** - OrderExecutionPage.md - order_exe_page.py
+   2.2. **ExecutorUtils**
+   2.2.1. **BrokerCenter**
+   2.2.1.1. **Brokers**
+   2.2.1.1.1. **AliceBlue** - AliceBlue.md - alice_adapter.py - alice_login.py
+   2.2.1.1.2. **Zerodha** - Zerodha.md - kite_login.py - zerodha_adapter.py
+   2.2.1.2. **BrokerUtils**
+   2.2.1.2.1. **TaxAndBrokerageCalculations** - TaxAndBrokerageCalculations.md - taxnbrok_calc.py
+   2.2.2. **InstrumentCenter**
+   2.2.2.1. **DailyInstrumentAggregator** - DailyInstrumentAggregator.md - DailyInstrumentAggregator.py
+   2.2.2.2. **InstrumentMonitor** - InstrumentMonitor.md - instrument_monitor.py
+   2.2.3. **LoggingCenter**
+   2.2.3.1. **SignalInfoLogAdapter** - SignalInfoLogAdapter.md - signal_info_adapter.py
+   2.2.4. **NotificationCenter**
+   2.2.4.1. **Discord** - Discord.md - discord_adapter.py
+   2.2.4.2. **Telegram** - Telegram.md - telegram_adapter.py
+   2.2.5. **OrderCenter** - OrderCenter.md - OrderCenterUtils.py
 
+   2.3. **Strategies**
+   2.3.1. **AmiPy** - AmiPy.md - AmiPyLive.py - README.md - amipy_place_orders.py - chart.py - straddlecalculation.py
+   2.3.2. **Coin** - Coin.md - Coin.py
+   2.3.3. **ExpiryTrader** - ExpiryTrader.md - ExpiryTrader.py
+   2.3.4. **MPWizard** - MPWizard.md - MPWizard.py - MPWizard_calc.py - MPWizard_monitor.py
+   2.3.5. **OvernightFutures** - OvernightFutures.md - OvernightFutures_calc.py - Screenipy_futures_afternoon.py - Screenipy_futures_morning.py - nifty_model_v2.h5 - nifty_model_v2.pkl
+   2.3.6. **PyStocks** - PyStocks.md - Readme.md - StopLoss.py - TA_indicators.py - fetcher.py - pystocks.py - strategies.py - strategies_temp - Mean_reversion.py - golden_crossover.py - momentumStrategy.py - nr4.py - rsiStrategy.py - volumeBO.py - test.py
+   2.3.7. **VPOCOptions** - VPOCOptions.md
 
-3. MarketInfo
-    3.1 MarketInfoDashBoard
-        3.1.1 Backtest
-        3.1.2 MarketInfoViewer
-        3.1.3 MachineLearning
-    3.2 MarketInfoUtils
-    3.3 Backtest
-        3.3.1 MarketSimulator
-        3.3.2 GFDLIngest
-    3.4 DataCenter
-        3.4.1 DBUtils
+   2.4. **Scripts**
+   2.4.1. **DailyLogin** - DailyLogin(Login and Validator).md
+   2.4.1.1. **Login** - DailyLogin.md - DailyLogin.py
+   2.4.1.2. **FundsValidator** - FundValidator.py - FundsValidator.md
+   2.4.1.3. **DailyInstrumentAggregator** - DailyInstrumentAggregator.md
+   2.4.1.4. **AmiplifierUpdate** - AmiplifierUpdate.md
+   2.4.2. **StrategyScripts** - StrategyScripts.md - Various Shell Scripts (e.g., \*.sh)
+   2.4.3. **EODScripts** - EODScripts.md
+   2.4.3.1. **SweepOrders** - SweepOrders.md
+   2.4.3.2. **ValidateData** - ValidateData.md
+   2.4.3.3. **SignalsLogging** - SignalsLogging.md
+   2.4.3.4. **UserTradeLogging** - UserTradeLogging.md
+   2.4.3.4.1. **DTDUpdate** - DTDUpdate.md
+   2.4.3.4.2. **UpdateDB** - UpdateDB.md
+   2.4.3.5. **SendReports** - SendReports.md
+   2.4.3.6. **TickerDB** - TickerDB.md
+   2.4.4. **RestartScripts** - RestartScripts.md
+   2.4.5. **WeeklyReports** - WeeklyReports.md
+   2.4.5.1. **LedgerTransactionsValidator** - LedgerTransactionsValidator.md
+   2.5. **OrderBot**
+   2.5.1. **TelegramOrderBot** - TelegramOrderBot.md - teleorderbot.py
+   2.5.2. **OrderBotUtils**
 
+3. **MarketInfo**
+   3.1. **MarketInfoDashBoard**
+   3.1.1. **Backtest** - Backtest.md
+   3.1.2. **MarketInfoViewer** - MarketInfoViewer.md
+   3.1.3. **MachineLearning** - MachineLearning.md
+   3.2. **Backtest** - Backtest.md
+   3.2.1. **MarketSimulator** - MarketSimulator.md - MarketSim.py
+   3.2.2. **GFDLIngest** - GFDLIngest.md
+   3.3. **DataCenter** - DataCenter.md - DailyEODDB.py - KiteHistoricalDatatoCSV.ipynb - TimeScaleDBGFDLImport.py
 
 Databases
+
 1. Firebase
-    1.1 UserProfile
-    1.2 StrategyCard
-    1.3 MarketInfoStudy
+   1.1 UserProfile
+   1.2 StrategyCard
+   1.3 MarketInfoStudy
 
 2. SQLite
-    2.1 Signals
-    2.2 UserTradeBook
-    2.3 Instruments
-    2.4 SignalsInfo
-    2.5 ErrorLog
-    2.6 FnOInfo
+   2.1 Signals
+   2.2 UserTradeBook
+   2.3 Instruments
+   2.4 SignalsInfo
+   2.5 ErrorLog
+   2.6 FnOInfo
 
 3. SQL
-    3.1 TickerData
+   3.1 TickerData
 
 4. Templates
-    4.1 Discord Templates
-    4.2 Telegram Templates
-    
+   4.1 Discord Templates
+   4.2 Telegram Templates
 5. Dict
-    5.1 order_details_dict
+   5.1 order_details_dict
 
 Utils
+
 1. FireBaseUtils
 2. LoggingCenterUtils
 3. BrokerUtils
@@ -146,7 +116,6 @@ Utils
 6. StrategyUtils
 7. UserDBUtils
 
+NOTES
 
-
-NOTES 
 1. TradeStateImplementation: If the program stops abruptly It should run all the scripts under strategy folder and generate Signals for each strategy. It should check the strategyDB and match with the signals. If there is any mismatch notify us through telegram
