@@ -1,11 +1,16 @@
+import os
+import sys
+
 from pya3 import *
-import os, sys
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import \
+    Instrument
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import \
+    discord_bot
+
 
 #This function fetches the available free cash balance for a user from the Aliceblue trading platform.
 def alice_fetch_free_cash(user_details):
@@ -137,78 +142,47 @@ def get_order_status(alice, order_id):
     if order_status['reporttype'] != 'fill' : 
         return "FAIL"
 
-def alice_place_order(order_details,user_credentials):
-    """
-    Place an order with Aliceblue broker.
+def ant_place_orders_for_users(orders_to_place, users_credentials):
+    results = []
 
-    Args:
-        alice (Aliceblue): The Aliceblue instance.
-        order_details (dict): The details of the order.
-        qty (int): The quantity of the order.
+    for user in users_credentials:
+        alice = create_alice_obj(user['Broker'])  # Create an Aliceblue instance with user's broker credentials
 
-    Returns:
-        float: The average price of the order.
+        for order_details in orders_to_place:
+            strategy = order_details['strategy']
+            exchange_token = order_details['exchange_token']
+            qty = order_details.get('qty', 1)  # Default quantity to 1 if not specified
 
-    Raises:
-        Exception: If the order placement fails.
-    """  
-    alice = create_alice_obj(user_credentials)
-    strategy = order_details.get('strategy')
-    exchange_token = order_details.get('exchange_token')
-    qty = int(order_details.get('qty'))
-    product = order_details.get('product_type')
+            # Remaining order setup code (as in your provided function)
+            # ...
 
-    transaction_type = calculate_transaction_type(order_details.get('transaction_type'))
-    order_type = calculate_order_type(order_details.get('order_type'))
-    product_type = calculate_product_type(product)
-    if product == 'CNC':
-        segment = 'NSE'
-    else:
-        segment = Instrument().get_segment_by_exchange_token(exchange_token)
+            try:
+                order_id = alice.place_order(...)  # Place the order with the appropriate parameters
+                order_status = get_order_status(alice, order_id['NOrdNo'])
+                if order_status == "FAIL":
+                    order_history = alice.get_order_history(order_id['NOrdNo'])
+                    message = f"Order placement failed, Reason: {order_history['RejReason']} for {order_details['account_name']}"
+                else:
+                    message = "Order placed successfully"
 
+                # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
+                avg_prc = 0
+                # avg_prc = fetch_avg_price(alice, order_id['NOrdNo'])  # This function needs to be defined
 
-    limit_prc = order_details.get('limit_prc', None) 
-    trigger_price = order_details.get('trigger_prc', None)
+                results.append({
+                    "avg_prc": avg_prc,
+                    "exchange_token": exchange_token,
+                    "order_id": order_id['NOrdNo'],
+                    "qty": qty,
+                    "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "trade_id": order_details.get('trade_id', ''),
+                    "message": message
+                })
 
-    if limit_prc is not None:
-        limit_prc = round(float(limit_prc), 2)
-        if limit_prc < 0:
-            limit_prc = 1.0
-    else:
-        limit_prc = 0.0
-    
-    if trigger_price is not None:
-        trigger_price = round(float(trigger_price), 2)
-        if trigger_price < 0:
-            trigger_price = 1.5
-    
-    try:
-        order_id = alice.place_order(transaction_type = transaction_type, 
-                                        instrument = alice.get_instrument_by_token(segment, int(exchange_token)),
-                                        quantity = qty ,
-                                        order_type = order_type,
-                                        product_type = product_type,
-                                        price = limit_prc,
-                                        trigger_price = trigger_price,
-                                        stop_loss = None,
-                                        square_off = None,
-                                        trailing_sl = None,
-                                        is_amo = False,
-                                        order_tag = order_details.get('trade_id', None))
-        
-        print(f"Order placed. ID is: {order_id}")
+            except Exception as e:
+                print(f"An error occurred: {e}")
 
-        order_status = get_order_status(alice, order_id['NOrdNo'])
-        if order_status == "FAIL":
-            order_history = alice.get_order_history(order_id['NOrdNo'])
-            message = (f"Order placement failed, Reason: {order_history['RejReason']} for {order_details['account_name']}")
-            discord.discord_bot(message,strategy)
-
-        return order_id['NOrdNo']
-  
-    except Exception as e:
-        discord.discord_bot(e,strategy)
-        return None
+    return results
 
 def update_alice_stoploss(order_details,alice= None):
     user_details = general_calc.assign_user_details(order_details.get('account_name'))

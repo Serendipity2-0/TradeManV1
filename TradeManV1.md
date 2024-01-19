@@ -119,3 +119,7 @@ Utils
 NOTES
 
 1. TradeStateImplementation: If the program stops abruptly It should run all the scripts under strategy folder and generate Signals for each strategy. It should check the strategyDB and match with the signals. If there is any mismatch notify us through telegram
+
+Work to be done:
+
+1.

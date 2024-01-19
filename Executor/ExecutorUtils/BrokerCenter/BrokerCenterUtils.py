@@ -1,4 +1,6 @@
-import os, sys
+import os
+import sys
+
 from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
@@ -10,17 +12,19 @@ load_dotenv(ENV_PATH)
 ZERODHA = os.getenv('ZERODHA_BROKER')
 ALICEBLUE = os.getenv('ALICEBLUE_BROKER')
 
-# import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
-# import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
-import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
 import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
+import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
+import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
+import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
+
 
 def place_order_for_broker(order_details,user_credentials):
     if order_details['broker'] == ZERODHA:
-        return zerodha_adapter.place_order_zerodha(order_details,user_credentials)
+        print("user_credentials: ",user_credentials)
+        return zerodha_adapter.kite_place_orders_for_users(order_details,user_credentials)
     elif order_details['broker'] == ALICEBLUE:
-        return alice_adapter.place_order_aliceblue(order_details,user_credentials)
+        return alice_adapter.ant_place_orders_for_users(order_details,user_credentials)
 
 def all_broker_login(active_users):
     for user in active_users:

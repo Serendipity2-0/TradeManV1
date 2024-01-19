@@ -1,13 +1,15 @@
 import datetime as dt
-import os, sys
 import math
-import os,sys
+import os
+import sys
 
 DIR = os.getcwd()
 sys.path.append(DIR)
 
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+    fetch_user_credentials_firebase, place_order_for_broker)
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_user_credentials_firebase,place_order_for_broker
+
 
 def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
     if avg_sl_points is not None:
@@ -25,6 +27,12 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
 
 def place_order_for_strategy(strategy_users, order_details):
     #TODO: Once the order is placed it should log the lld in the firebase(user/strategy/tradestate/orders)
+#     https://github.com/Serendipity2-0/TradeManV1/blob/main/Executor/ExecutorUtils/OrderCenter/OrderCenterUtils.py:
+
+# I need to modify the place_order_for_strategy(strategy_users, order_details) function in this file. The strategy_users contains list of users in the given format(firebase document). It contains info create broker object. order_details contains the list of orders to be placesdfor a particular user.
+# It should do the following things:
+# 1.  Need to call place_order_for_broker(strategy_users,order_details) from BrokerCenterUtils.py.
+# 2. place_order_for_broker(strategy_users,order_details) should route to either route to 
     
     for user in strategy_users:
         for order in order_details:

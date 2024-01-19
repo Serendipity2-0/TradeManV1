@@ -46,16 +46,15 @@
           "Qty":50,
           "TradeState": [
             {
-              "TradeId": "ET48",
               "Status":"Active",
               "LastModified":"2020-03-22 11:23:22",
               "orders": [
-                        {
-                          "avg_prc": "1232",
+                {
+                          "TradeId": "ET48_short_main_entry",
                           "order_id": "123456",
                           "time": "12:23",
-                          "trade_id": "ET12_entry",
-                          "trading_symbol": "NIFTY"
+                          "qty": 200,
+                          "avg_prc": "1232"
                         },
                         {
                           "avg_prc": "1232",
