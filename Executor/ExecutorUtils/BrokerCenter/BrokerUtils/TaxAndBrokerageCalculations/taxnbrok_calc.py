@@ -1,134 +1,35 @@
-def calculate_options_taxes(broker, qty, entry_prc, exit_prc, orders):
-    pass
 
-def calculate_futures_taxes(broker, qty, entry_prc, exit_prc, orders):
-    pass
-
-def zerodha_taxes(qty, entry_prc, exit_prc,orders):
-    if orders == 1:
-       instruments = 2
-    elif orders == 2:
-        instruments = 4
-    elif orders == 3:
-        instruments = 6 
-    # Brokerage
-    brokerage = 20 * instruments  # Flat Rs. 20 per executed order
-
-    # STT/CTT
-    intrinsic_value = max(0, exit_prc - entry_prc) * qty
-    stt_on_exercise = 0.125 / 100 * intrinsic_value
-    stt_on_sell = 0.0625 / 100 * exit_prc * qty
-
-    # Transaction charges
-    transaction_charges = 0.05 / 100 * exit_prc * qty
-
-    # GST
-    sebi_charges = 10 / 10000000 * exit_prc * qty  # Rs. 10 / crore
-
-    # SEBI charges
-    gst = 18 / 100 * (brokerage + sebi_charges + transaction_charges)  # SEBI charges are Rs. 10 / crore
-
-    # Stamp charges
-    stamp_charges = 0.003 / 100 * entry_prc * qty
-
-    total_charges = brokerage + stt_on_exercise + stt_on_sell + transaction_charges + gst + sebi_charges + stamp_charges
-
-    return total_charges
-
-def aliceblue_taxes(qty, entry_prc, exit_prc,orders):
-    if orders == 1:
-       instruments = 2
-    elif orders == 2:
-        instruments = 4
-    # Brokerage
-    brokerage = 15 * instruments # Flat Rs. 20 per executed order
-
-    # STT/CTT
-    intrinsic_value = max(0, exit_prc - entry_prc) * qty
-    stt_on_exercise = 0.125 / 100 * intrinsic_value
-    stt_on_sell = 0.0625 / 100 * exit_prc * qty
-
-    # Transaction charges
-    transaction_charges = 0.05 / 100 * exit_prc * qty
-    
-    # SEBI charges
-    sebi_charges = 10 / 10000000 * exit_prc * qty  # Rs. 10 / crore
-
-    # GST
-    gst = 18 / 100 * (brokerage + sebi_charges + transaction_charges)  # SEBI charges are Rs. 10 / crore
-
-    # Stamp charges
-    stamp_charges = 0.003 / 100 * exit_prc * qty
-
-    total_charges = brokerage + stt_on_exercise + stt_on_sell + transaction_charges + gst + sebi_charges + stamp_charges
-
-    return total_charges
-
-def zerodha_futures_taxes(qty, entry_prc, exit_prc, orders):
-    if orders == 1:
-        instruments = 2
-    elif orders == 2:
-        instruments = 4
+# This function calculates the taxes and brokerage for a given broker for a given set of orders
+# trade_type is 'regular' for regular trades and 'futures' for future trades
+def calculate_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
 
     # Brokerage
-    brokerage_rate = 0.03 / 100
-    brokerage = min(entry_prc * qty * brokerage_rate, 20) * instruments
+    if broker == 'zerodha':
+        brokerage_rate = 20 if trade_type == 'regular' else 0.03 / 100
+    elif broker == 'aliceblue':
+        brokerage_rate = 15 if trade_type == 'regular' else 0.03 / 100
+    brokerage = brokerage_rate * no_of_orders
 
     # STT/CTT
-    stt_ctt_rate = 0.0125 / 100
-    stt_ctt = stt_ctt_rate * exit_prc * qty
+    intrinsic_value = max(0, net_exit_prc - net_entry_prc) * qty
+    stt_ctt_rate = 0.125 / 100 if trade_type == 'regular' else 0.0125 / 100
+    stt_ctt = stt_ctt_rate * intrinsic_value
 
     # Transaction charges
-    transaction_charges_rate = 0.0019 / 100
-    transaction_charges = transaction_charges_rate * exit_prc * qty
+    transaction_charges_rate = 0.05 / 100 if trade_type == 'regular' else 0.0019 / 100
+    transaction_charges = transaction_charges_rate * net_exit_prc * qty
 
     # SEBI charges
-    sebi_charges_rate = 10 / 100000000
-    sebi_charges = sebi_charges_rate * exit_prc * qty
+    sebi_charges_rate = 10 / 10000000
+    sebi_charges = sebi_charges_rate * net_exit_prc * qty
 
     # GST
     gst_rate = 18 / 100
     gst = gst_rate * (brokerage + sebi_charges + transaction_charges)
 
     # Stamp charges
-    stamp_charges_rate = 0.002 / 100
-    stamp_charges = max(stamp_charges_rate * entry_prc * qty, 200)
+    stamp_charges_rate = 0.003 / 100 if trade_type == 'regular' else 0.002 / 100
+    stamp_charges = stamp_charges_rate * net_entry_prc * qty
 
     total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
-
     return total_charges
-
-def aliceblue_futures_taxes(qty, entry_prc, exit_prc, orders):
-    if orders == 1:
-        instruments = 2
-    elif orders == 2:
-        instruments = 4
-
-    # Brokerage
-    brokerage_rate = 0.03 / 100
-    brokerage = min(entry_prc * qty * brokerage_rate, 20) * instruments
-
-    # STT/CTT
-    stt_ctt_rate = 0.0125 / 100
-    stt_ctt = stt_ctt_rate * exit_prc * qty
-
-    # Transaction charges
-    transaction_charges_rate = 0.0019 / 100
-    transaction_charges = transaction_charges_rate * exit_prc * qty
-
-    # SEBI charges
-    sebi_charges_rate = 10 / 100000000
-    sebi_charges = sebi_charges_rate * exit_prc * qty
-
-    # GST
-    gst_rate = 18 / 100
-    gst = gst_rate * (brokerage + sebi_charges + transaction_charges)
-
-    # Stamp charges
-    stamp_charges_rate = 0.002 / 100
-    stamp_charges = max(stamp_charges_rate * entry_prc * qty, 200)
-
-    total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
-
-    return total_charges
-
