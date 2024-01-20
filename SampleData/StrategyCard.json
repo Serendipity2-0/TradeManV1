@@ -1,0 +1,58 @@
+"AmiPy": {
+      "Description": "Signals are generated using SuperTrend",
+      "EntryParams": {
+        "EMAPeriod": 324,
+        "EntryTime": "09:20:00",
+        "HeikinAshiMAPeriod": 13,
+        "SupertrendMultiplier": 12,
+        "SupertrendPeriod": 7,
+        "TSLStepSize": 0.5
+      },
+      "ExitParams": {
+        "LastBuyTime": "14:50:00",
+        "SLType": "StrategySL",
+        "SquareOffTime": "14:55:00"
+      },
+      "ExtraInformation": {
+        "HedgeDistance": 500,
+        "Interval": "minute"
+      },
+      "GeneralParams": {
+        "ExpiryType": "Weekly",
+        "NiftyToken": "256265",
+        "OrderType": "Market",
+        "ProductType": "MIS",
+        "Segment": "NFO",
+        "TimeFrame": "1Min",
+        "TradeView": "InBuilt"
+      },
+      "Instruments": [
+        "NIFTY"
+      ],
+      "NextTradeId": "AP6",
+      "SignalEntry": {
+        "ShortCoverSignal": {
+          "Date": "2023-12-20",
+          "NetTradePoints": 20.349999999999994,
+          "Strike_Price": 21600,
+          "TradeEntryPrice": 137.8,
+          "TradeEntryTime": "09:21:00",
+          "TradeExitPrice": 158.15,
+          "TradeExitTime": "11:53:00",
+          "Trade_No": 1,
+          "Trade_Type": "ShortSignal"
+        },
+        "ShortSignal": {
+          "Date": "2024-01-04",
+          "Strike_Price": 21600,
+          "TradeEntryPrice": 78.4,
+          "TradeEntryTime": "09:21:00",
+          "Trade_No": 1,
+          "Trade_Type": "ShortSignal"
+        }
+      },
+      "StrategyName": "AmiPy",
+      "TodayOrders": [
+        "AP5"
+      ]
+    }

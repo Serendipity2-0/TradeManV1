@@ -181,25 +181,7 @@ def calculate_commission_and_drawdown(user, actual_account_value, base_capital):
 
     return commission, drawdown
 
-# Main function to execute the script for generating weekly reports
-def main():
-    # csv_file_path = r'C:\Users\user\OneDrive\Desktop\TradeManV1\SampleData\Sample_Kite_ledger.csv'
-    # # Example usage
-    # kite_categorized_dfs = process_kite_ledger(csv_file_path)
-    # kite_net_values = calculate_kite_net_values(kite_categorized_dfs)
-
-    # # Print the net values
-    # print(kite_net_values)
-    
-    # Example usage
-    excel_file_path = r'C:\Users\user\OneDrive\Desktop\TradeManV1\SampleData\ledger\alice\Sample_alice_ledger.xlsx'  # Replace with your Excel file path
-    process_alice_ledger(excel_file_path)
-    # alice_net_values = calculate_alice_net_values(categorized_dfs_v2)
-
-
-    # Print the net values
-    # print(alice_net_values)  
-                    
+                  
 
 def process_kite_ledger(csv_file_path):
     # Define patterns for categorizing transactions
@@ -207,7 +189,7 @@ def process_kite_ledger(csv_file_path):
         "Deposits": ["Funds added using UPI", "Opening Balance", "Funds added using payment gateway from YY0222"],
         "Withdrawals": ["Funds transferred back as part of quarterly settlement", "Payout of"],
         "Charges": ["Being payment gateway charges debited", "DPCharges", "Reversal of Brokerage", "Kite Connect API Charges", "Call and Trade charges", "AMC for Demat Account", "DP Charges for Sale of"],
-        "Trades": ["Span margin blocked for NSE F&O", "Exposure margin blocked for NSE F&O", "Span margin reversed for NSE F&O", "Exposure margin reversed for NSE F&O", "Net obligation for Equity F&O", "Net settlement for Equity", "Net obligation for Currency F&O"]
+        "Trades": ["Net obligation for Equity F&O", "Net settlement for Equity", "Net obligation for Currency F&O"]
     }
 
     # Load the CSV file
@@ -230,9 +212,12 @@ def process_kite_ledger(csv_file_path):
     # Create dataframes for each category
     categorized_dfs = {category: ledger_data_filtered[ledger_data_filtered['Category'] == category] for category in patterns.keys()}
     
+    other_transactions_final = ledger_data_filtered[ledger_data_filtered['Category'] == 'Other']
+    other_transactions_final.to_csv(f"kite_other.csv", index=False)
+    
     #save categorized_dfs to csv as {category}.csv
     for category, df in categorized_dfs.items():
-        df.to_csv(f"{category}.csv")
+        df.to_csv(f"kite_{category}.csv", index=False)
 
     return categorized_dfs
 
@@ -242,49 +227,20 @@ def calculate_kite_net_values(categorized_dfs):
     return net_values
 
 def process_alice_ledger(excel_file_path):
-    # Load the workbook and access the worksheet
-    workbook = openpyxl.load_workbook(excel_file_path)
-    sheet = workbook.active
+    # Read the Excel file starting from row 4 (5th row, 0-indexed)
+    all_data = pd.read_excel(excel_file_path, header=None, skiprows=4)
 
-    # List to store rows
-    rows = []
-
-    # Get a list of all merged cells ranges
-    merged_ranges = [mr.bounds for mr in sheet.merged_cells.ranges]
-
-    # Iterate over the rows starting from the 5th row
-    for row in sheet.iter_rows(min_row=5):
-        row_data = []
-        for cell in row:
-            merged_range = next(((start_row, start_col, end_row, end_col) for start_row, start_col, end_row, end_col in merged_ranges
-                                if cell.row in range(start_row, end_row+1) and cell.column in range(start_col, end_col+1)), None)
-            if merged_range:
-                if (cell.row, cell.column) == (merged_range[0], merged_range[1]):
-                    row_data.append(cell.value)
-                continue
-            else:
-                row_data.append(cell.value)
-        rows.append(row_data[:9])
-        
-    print(rows)
-        
-    # Create a DataFrame from the rows
-    filtered_data = pd.DataFrame(rows, columns=['Date', 'Voucher', 'VoucherNo', 'Code', 'Narration', 'ChqNo', 'Debit', 'Credit', 'Running Bal'])
-
-    # Filtering out rows where any values are NaN across columns A:K (indexes 0 to 10)
-    filtered_data = filtered_data.dropna(how='any', subset=filtered_data.columns[:9])
-    print(filtered_data)
+    # Filtering out rows where all values are NaN across columns A:K (indexes 0 to 10)
+    filtered_data = all_data.dropna(how='all', subset=all_data.columns[:11])
+    
+    
+    # Drop the NaN column headers by selecting only those columns whose first row is not NaN
+    filtered_data = filtered_data.loc[:, filtered_data.iloc[0].notna()]
 
     # Filtering out header rows by identifying rows that match the header pattern
     headers = ['Date', 'Voucher', 'VoucherNo', 'Code', 'Narration', 'ChqNo', 'Debit', 'Credit', 'Running Bal']
     filtered_data = filtered_data[~filtered_data[0].astype(str).str.contains('Date')]
 
-    # Combine 'VoucherNo' and 'Running Bal' columns which are split across two columns
-    filtered_data['VoucherNo'] = filtered_data[2].astype(str) + filtered_data[3].astype(str)
-    filtered_data['Running Bal'] = filtered_data[9].astype(str) + filtered_data[10].astype(str)
-
-    # Drop the original split columns from the dataframe
-    filtered_data.drop(columns=[2, 3, 9, 10], inplace=True)
     
     # Assigning proper header to the filtered data
     filtered_data.columns = headers + list(filtered_data.columns[len(headers):])
@@ -336,13 +292,6 @@ def process_alice_ledger(excel_file_path):
         for category in patterns if category != "ignore"
 }
 
-    # # Convert 'Debit' and 'Credit' columns to numeric and fill NaNs with 0
-    # for df in categorized_dfs_final.values():
-    #     df['Debit'] = pd.to_numeric(df['Debit'], errors='coerce').fillna(0)
-    #     df['Credit'] = pd.to_numeric(df['Credit'], errors='coerce').fillna(0)
-
-    # Calculate net values for each category
-    # net_values_final = {category: df['Debit'].sum() - df['Credit'].sum() for category, df in categorized_dfs_final.items()}
 
     # Save each categorized dataframe to a CSV file
     for category, df in categorized_dfs_final.items():
@@ -353,12 +302,30 @@ def process_alice_ledger(excel_file_path):
     other_transactions_final = filtered_data[filtered_data['Category'] == 'Other']
     other_transactions_final.to_csv('Other_transactions_final.csv', index=False)
 
-    return categorized_dfs_final, other_transactions_final
+    return categorized_dfs_final
 
 def calculate_alice_net_values(categorized_dfs):
     # Calculate net values for each category
     net_values = {category: df['Debit'].sum() - df['Credit'].sum() for category, df in categorized_dfs.items()}
     return net_values
+
+# Main function to execute the script for generating weekly reports
+def main():
+    csv_file_path = r'C:\Users\user\OneDrive\Desktop\TradeManV1\SampleData\ledger\kite\Sample_Kite_ledger.csv'
+    # Example usage
+    kite_categorized_dfs = process_kite_ledger(csv_file_path)
+    kite_net_values = calculate_kite_net_values(kite_categorized_dfs)
+
+    # Print the net values
+    print(kite_net_values)
+    
+    # Example usage
+    # excel_file_path = r'C:\Users\user\OneDrive\Desktop\TradeManV1\SampleData\ledger\alice\Sample_alice_ledger.xlsx'  # Replace with your Excel file path
+    # alice_cat_dfs= process_alice_ledger(excel_file_path)
+    # alice_net_values = calculate_alice_net_values(alice_cat_dfs)
+
+    # # Print the net values
+    # print(alice_net_values)  
 
 if __name__ == "__main__":
     main()
