@@ -1,3 +1,5 @@
+import datetime
+
 import pandas as pd
 from kiteconnect import KiteConnect
 
@@ -77,79 +79,6 @@ def zerodha_todays_tradebook(user):
     kite = create_kite_obj(api_key=user['api_key'],access_token=user['access_token'])
     orders = kite.orders()
     return orders
-
-def kite_place_orders_for_users(order_details,user_credentials):
-    """
-    Place an order with Zerodha broker.
-
-    Args:
-        kite (KiteConnect): The KiteConnect instance.
-        order_details (dict): The details of the order.
-        qty (int): The quantity of the order.
-
-    Returns:
-        float: The average price of the order.
-
-    Raises:
-        Exception: If the order placement fails.
-    """
-    strategy = order_details.get('strategy')
-    exchange_token = order_details.get('exchange_token')
-    qty = int(order_details.get('qty'))
-    product = order_details.get('product_type')
-    
-    if kite is None:
-        kite = create_kite_obj(user_credentials['BrokerName'])
-
-    transaction_type = calculate_transaction_type(kite,order_details.get('transaction_type'))
-    order_type = calculate_order_type(kite,order_details.get('order_type'))
-    product_type = calculate_product_type(kite,product)
-    if product == 'CNC':
-        segment_type = kite.EXCHANGE_NSE
-        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(exchange_token, "NSE")
-    else:
-        segment_type = Instrument().get_segment_by_exchange_token(exchange_token)
-        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(exchange_token)
-    
-    limit_prc = order_details.get('limit_prc', None) 
-    trigger_price = order_details.get('trigger_prc', None)
-
-    if limit_prc is not None:
-        limit_prc = round(float(limit_prc), 2)
-        if limit_prc < 0:
-            limit_prc = 1.0
-    else:
-        limit_prc = 0.0
-    
-    if trigger_price is not None:
-        trigger_price = round(float(trigger_price), 2)
-        if trigger_price < 0:
-            trigger_price = 1.5
-
-    try:
-        order_id = kite.place_order(
-            variety=kite.VARIETY_REGULAR,
-            exchange= segment_type, 
-            price= limit_prc,
-            tradingsymbol=trading_symbol,
-            transaction_type=transaction_type, 
-            quantity= qty,
-            trigger_price=trigger_price,
-            product=product_type,
-            order_type=order_type,
-            tag= order_details.get('trade_id', None)
-        )
-        order_status = 'Placed'
-        print(f"Order placed. ID is: {order_id}")
-        return strategy,order_id['NOrdNo'], order_status, message
-    
-    except Exception as e:
-        message = f"Order placement failed: {e} for {order_details['username']}"
-        print(message)
-        return None
-    
-import datetime
-
 
 def kite_place_orders_for_users(orders_to_place, users_credentials):
     results = []

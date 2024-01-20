@@ -1,0 +1,74 @@
+{
+    "Accounts": {
+        "FreeCash": 2900000,
+        "Holdings": 0,
+        "NetAdditions": 0,
+        "NetCharges": 0,
+        "NetCommission": 0,
+        "NetPnL": 0,
+        "NetWithdrawals": 0
+    },
+    "Active": true,
+    "Broker": {
+        "ApiKey": "6b0dp5ussukmo67h",
+        "ApiSecret": "eln2qrqob5neowjuedmbv0f0hzq6lhby",
+        "BrokerName": "Zerodha",
+        "BrokerPassword": "K@nnada444",
+        "BrokerUsername": "YY0222",
+        "SessionId": "ZWCP9gUWUJmrBJiZh7n1CvyVr1iTa5AR",
+        "TotpAccess": "3GN2DNUD35FZQDIIWJUK6CSUIWBPXSYJ"
+    },
+    "Profile": {
+        "AadharCardNo": "825686845371",
+        "AccountStartDate": "03Jul23",
+        "BankAccountNo": "00000064047663479",
+        "BankName": "State Bank of India",
+        "DOB": "25Apr90",
+        "Email": "nightyskykk@gmail.com",
+        "GmailPassword": "",
+        "Name": "Omkar Hedge",
+        "PANCardNo": "ABBPO2350F",
+        "PhoneNumber": "9902106162",
+        "RiskProfile": {
+            "AreaOfInvestment": [
+                "Debt",
+                "Equity",
+                "FnO"
+            ],
+            "Commission": "50-50",
+            "DrawdownTolerance": "35",
+            "Duration": "12 months",
+            "WithdrawalFrequency": "OnRequest"
+        }
+    },
+    "Strategies": {
+        "ExpiryTrader": {
+            "Qty": 11400,
+            "RiskPerTrade": 1,
+            "TradeState": [
+                {
+                    "LastModified": "2020-03-22 11:23:22",
+                    "Status": "Active",
+                    "orders": [
+                        {
+                            "avg_prc": 0,
+                            "exchange_token": 48301,
+                            "order_id": "123456",
+                            "qty": 200,
+                            "timestamp": "2023-11-20 22:55:19.798995",
+                            "trade_id": "ET12_entry"
+                        },
+                        {
+                            "avg_prc": "1232",
+                            "order_id": "123456",
+                            "time": "12:23",
+                            "trade_id": "ET12_entry",
+                            "trading_symbol": "NIFTY"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "Tr_No": "Tr00"
+}

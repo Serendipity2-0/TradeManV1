@@ -19,7 +19,7 @@ import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as ze
 import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
 
 
-def place_order_for_broker(order_details,user_credentials):
+def place_order_for_brokers(order_details,user_credentials):
     if order_details['broker'] == ZERODHA:
         print("user_credentials: ",user_credentials)
         return zerodha_adapter.kite_place_orders_for_users(order_details,user_credentials)
@@ -30,9 +30,9 @@ def all_broker_login(active_users):
     for user in active_users:
         if user['Broker']['BrokerName'] == ZERODHA:
             print("Logging in for Zerodha")
-            session_id = zerodha.login_in_zerodha(user['Broker'])
-            print(f"Session id for {user['Broker']['BrokerUsername']}: {session_id}")
-            firebase_utils.update_fields_firebase('new_clients',user['Tr_No'],{'SessionId':session_id}, 'Broker')          
+            # session_id = zerodha.login_in_zerodha(user['Broker'])
+            # print(f"Session id for {user['Broker']['BrokerUsername']}: {session_id}")
+            # firebase_utils.update_fields_firebase('new_clients',user['Tr_No'],{'SessionId':session_id}, 'Broker')          
         elif user['Broker']['BrokerName'] == ALICEBLUE:
             print("Logging in for AliceBlue")
             session_id = alice_blue.login_in_aliceblue(user['Broker'])
