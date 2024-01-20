@@ -69,3 +69,15 @@ def place_order_for_strategy(strategy_users, order_details):
 
 
     return all_order_statuses
+
+#TODO: sweep_orders from user/strategies/todayorders for sweep order enabled strategies
+def place_sweep_orders_for_strategy(strategy_users, order_details):
+    # get sweep enabled order_ids and prepare a counter order_details
+    # call place_order_for_strategy with appropriate details
+    pass
+
+#TODO: place morning SL orders for user/strategies/todayorders for morning_sl enabled strategies
+def place_morning_sl_orders_for_strategy(strategy_users, order_details):
+    # get morning_sl enabled order_ids and prepare a counter order_details
+    # call place_order_for_strategy with appropriate details
+    pass

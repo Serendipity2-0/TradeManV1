@@ -1,11 +1,13 @@
-from pydantic import BaseModel, Field, validator
-from typing import List, Dict, Union, Optional
-from datetime import time
-import os,sys
-import re
 import datetime as dt
+import os
+import re
+import sys
+from datetime import time
+from typing import Dict, List, Optional, Union
+
 import pandas as pd
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field, validator
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -13,12 +15,15 @@ ENV_PATH = os.path.join(DIR, '.env')
 load_dotenv(ENV_PATH)
 fno_info_path = os.getenv('FNO_INFO_PATH')
 
-from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import update_fields_firebase
-from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
-from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import calculate_qty_for_strategies
-from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import place_order_for_strategy
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import \
+    fetch_active_users_from_firebase
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
+    fetch_collection_data_firebase, update_fields_firebase)
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import \
+    get_single_ltp
+from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
+    calculate_qty_for_strategies, place_order_for_strategy)
+
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):
@@ -284,5 +289,10 @@ def place_order_strategy_users(strategy_name,orders_to_place):
     strategy_users = fetch_users_for_strategy(strategy_name)
     place_order_for_strategy(strategy_users,orders_to_place)
     pass
+
+#TODO: get sweep order enabled strategy list from firebase strategies/'sweep_order'
+def get_sweep_order_enabled_strategy_list():
+    pass
+    
     
         

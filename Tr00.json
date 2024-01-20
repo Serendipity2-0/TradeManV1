@@ -43,7 +43,6 @@
     },
     "Strategies": {
         "ExpiryTrader": {
-            "Qty": 11400,
             "RiskPerTrade": 1,
             "TradeState": [
                 {
