@@ -1,0 +1,753 @@
+particulars,posting_date,cost_center,voucher_type,debit,credit,net_balance
+Opening Balance,,,,,,38552.106939
+Net obligation for Equity F&O,2023-04-03,NSE-F&O - Z,Book Voucher,5749.035472,0.000000,32803.071467
+Net obligation for Equity F&O,2023-04-05,NSE-F&O - Z,Book Voucher,1044.341198,0.000000,31758.730269
+AMC for Demat Account for 26-09-2022 to 25-12-2022,2023-04-06,NSE-EQ - Z,Journal Entry,88.500000,0.000000,31670.230269
+Funds transferred back as part of quarterly settlement  with reference number eba52c833225ad8462a1bc,2023-04-06,NSE-EQ - Z,Bank Payments,31670.230000,0.000000,0.000269
+Funds added using UPI from YY0222 with reference number 311834207527,2023-04-28,NSE-EQ - Z,Bank Receipts,0.000000,5000.000000,5000.000269
+Kite Connect API Charges (2023-05-02),2023-05-02,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,3000.000569
+Kite Connect API Charges (2023-05-02),2023-05-02,NSE-EQ - Z,Journal Entry,1300.000100,0.000000,1700.000469
+Net settlement for Equity with settlement number: 2023080,2023-05-02,NSE-EQ - Z,Book Voucher,2438.310978,0.000000,-738.310509
+Funds added using UPI from YY0222 with reference number 313183764487,2023-05-11,NSE-EQ - Z,Bank Receipts,0.000000,10000.000000,9261.689491
+Net obligation for Equity F&O,2023-05-11,NSE-F&O - Z,Book Voucher,1695.087569,0.000000,7566.601922
+AMC for Demat Account for 26-12-2022 to 26-03-2023,2023-05-15,NSE-EQ - Z,Journal Entry,88.500000,0.000000,7478.101922
+Funds added using UPI from YY0222 with reference number 313878913685,2023-05-18,NSE-EQ - Z,Bank Receipts,0.000000,43000.000000,50478.101922
+Net settlement for Equity with settlement number: 2023092,2023-05-18,NSE-EQ - Z,Book Voucher,3.374576,0.000000,50474.727346
+Net obligation for Equity F&O,2023-05-18,NSE-F&O - Z,Book Voucher,0.000000,22825.590298,73300.317644
+Call and Trade charges(Auto Square Off) for 2023-05-22,2023-05-22,NSE-F&O - Z,Journal Entry,118.000000,0.000000,73182.317644
+Net obligation for Equity F&O,2023-05-22,NSE-F&O - Z,Book Voucher,1004.053145,0.000000,72178.264499
+Net obligation for Equity F&O,2023-05-23,NSE-F&O - Z,Book Voucher,0.000000,12882.355799,85060.620298
+Net obligation for Equity F&O,2023-05-24,NSE-F&O - Z,Book Voucher,0.000000,8322.742924,93383.363222
+Net obligation for Equity F&O,2023-05-25,NSE-F&O - Z,Book Voucher,0.000000,29184.329113,122567.692335
+Net obligation for Equity F&O,2023-05-26,NSE-F&O - Z,Book Voucher,14223.966836,0.000000,108343.725499
+Payout of 70000.0/- to STATE BANK OF INDIA 00000064047663479 A/C number as per withdrawal request made on 2023-05-26 with reference number e40d43b8bd,2023-05-26,NSE-EQ - Z,Bank Payments,70000.000000,0.000000,38343.725499
+Kite Connect API Charges (2023-05-30),2023-05-30,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,36343.725799
+Kite Connect API Charges (2023-05-30),2023-05-30,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,34343.726099
+Net obligation for Equity F&O,2023-05-31,NSE-F&O - Z,Book Voucher,171.015288,0.000000,34172.710811
+Net obligation for Equity F&O,2023-06-01,NSE-F&O - Z,Book Voucher,70.415363,0.000000,34102.295448
+Payout of 30000.0/- to STATE BANK OF INDIA 00000064047663479 A/C number as per withdrawal request made on 2023-06-01 with reference number 09ea3f653a,2023-06-01,NSE-EQ - Z,Bank Payments,30000.000000,0.000000,4102.295448
+Call and Trade charges(Auto Square Off) for 2023-06-02,2023-06-02,NSE-F&O - Z,Journal Entry,59.000000,0.000000,4043.295448
+Net obligation for Equity F&O,2023-06-02,NSE-F&O - Z,Book Voucher,275.239192,0.000000,3768.056256
+Funds added using UPI from YY0222 with reference number 315755727039,2023-06-06,NSE-EQ - Z,Bank Receipts,0.000000,75000.000000,78768.056256
+Net obligation for Equity F&O,2023-06-06,NSE-F&O - Z,Book Voucher,0.000000,11738.036629,90506.092885
+Being payment gateway charges debited for YY0222,2023-06-07,NSE-EQ - Z,Journal Entry,10.620000,0.000000,90495.472885
+Funds added using payment gateway from YY0222 with reference number IGAPRTEQW3,2023-06-07,NSE-EQ - Z,Bank Receipts,0.000000,125000.000000,215495.472885
+Net obligation for Equity F&O,2023-06-08,NSE-F&O - Z,Book Voucher,0.000000,19760.595582,235256.068467
+Net obligation for Equity F&O,2023-06-09,NSE-F&O - Z,Book Voucher,0.000000,17415.763495,252671.831962
+Payout of 35000.0/- to STATE BANK OF INDIA 00000064047663479 A/C number as per withdrawal request made on 2023-06-09 with reference number 49a300b67f,2023-06-09,NSE-EQ - Z,Bank Payments,35000.000000,0.000000,217671.831962
+Net obligation for Equity F&O,2023-06-12,NSE-F&O - Z,Book Voucher,0.000000,16552.580128,234224.412090
+Net obligation for Equity F&O,2023-06-13,NSE-F&O - Z,Book Voucher,0.000000,20390.870089,254615.282179
+Payout of 54000.0/- to STATE BANK OF INDIA 00000064047663479 A/C number as per withdrawal request made on 2023-06-13 with reference number 078cdb2bb4,2023-06-13,NSE-EQ - Z,Bank Payments,54000.000000,0.000000,200615.282179
+Net obligation for Equity F&O,2023-06-14,NSE-F&O - Z,Book Voucher,43417.061918,0.000000,157198.220261
+Net obligation for Equity F&O,2023-06-15,NSE-F&O - Z,Book Voucher,24325.711486,0.000000,132872.508775
+Net obligation for Equity F&O,2023-06-16,NSE-F&O - Z,Book Voucher,30879.604131,0.000000,101992.904644
+Net obligation for Currency F&O,2023-06-19,NSE-CDS - Z,Book Voucher,10206.323309,0.000000,91786.581335
+Net obligation for Equity F&O,2023-06-19,NSE-F&O - Z,Book Voucher,0.000000,57451.591601,149238.172936
+Net obligation for Currency F&O,2023-06-20,NSE-CDS - Z,Book Voucher,0.000000,12444.044400,161682.217336
+Net obligation for Equity F&O,2023-06-20,NSE-F&O - Z,Book Voucher,0.000000,2922.574420,164604.791756
+Net obligation for Currency F&O,2023-06-21,NSE-CDS - Z,Book Voucher,0.000000,4724.320545,169329.112301
+Net obligation for Equity F&O,2023-06-21,NSE-F&O - Z,Book Voucher,0.000000,30719.074663,200048.186964
+Net obligation for Equity F&O,2023-06-22,NSE-F&O - Z,Book Voucher,17663.913482,0.000000,182384.273482
+Net obligation for Equity F&O,2023-06-23,NSE-F&O - Z,Book Voucher,8930.673420,0.000000,173453.600062
+Net obligation for Equity F&O,2023-06-26,NSE-F&O - Z,Book Voucher,9559.486270,0.000000,163894.113792
+Net obligation for Equity F&O,2023-06-28,NSE-F&O - Z,Book Voucher,0.000000,35834.988438,199729.102230
+Kite Connect API Charges (2023-06-30),2023-06-30,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,197729.102530
+Kite Connect API Charges (2023-06-30),2023-06-30,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,195729.102830
+Net obligation for Equity F&O,2023-06-30,NSE-F&O - Z,Book Voucher,0.000000,14071.979937,209801.082767
+Being payment gateway charges debited for YY0222,2023-07-02,NSE-EQ - Z,Journal Entry,10.620000,0.000000,209790.462767
+Being payment gateway charges debited for YY0222,2023-07-02,NSE-EQ - Z,Journal Entry,10.620000,0.000000,209779.842767
+Funds added using payment gateway from YY0222 with reference number IGAPUUNYZ2,2023-07-02,NSE-EQ - Z,Bank Receipts,0.000000,300000.000000,509779.842767
+Funds added using payment gateway from YY0222 with reference number IGAPUUJFX0,2023-07-02,NSE-EQ - Z,Bank Receipts,0.000000,500000.000000,1009779.842767
+Funds added using payment gateway from YY0222 with reference number IGAPUWQZX3,2023-07-03,NSE-EQ - Z,Bank Receipts,0.000000,500000.000000,1509779.842767
+Funds added using payment gateway from YY0222 with reference number IGAPUWRAJ3,2023-07-03,NSE-EQ - Z,Bank Receipts,0.000000,450000.000000,1959779.842767
+Being payment gateway charges debited for YY0222,2023-07-03,NSE-EQ - Z,Journal Entry,10.620000,0.000000,1959769.222767
+Being payment gateway charges debited for YY0222,2023-07-03,NSE-EQ - Z,Journal Entry,10.620000,0.000000,1959758.602767
+Net obligation for Equity F&O,2023-07-03,NSE-F&O - Z,Book Voucher,0.000000,655.887124,1960414.489891
+Funds added using payment gateway from YY0222 with reference number IGAPVBHNT4,2023-07-04,NSE-EQ - Z,Bank Receipts,0.000000,40000.000000,2000414.489891
+Funds added using payment gateway from YY0222 with reference number IGAPVAUNM7,2023-07-04,NSE-EQ - Z,Bank Receipts,0.000000,500000.000000,2500414.489891
+Being payment gateway charges debited for YY0222,2023-07-04,NSE-EQ - Z,Journal Entry,10.620000,0.000000,2500403.869891
+Being payment gateway charges debited for YY0222,2023-07-04,NSE-EQ - Z,Journal Entry,10.620000,0.000000,2500393.249891
+DPCharges for Sale of LIQUIDBEES on 04/07/2023,2023-07-04,NSE-EQ - Z,Journal Entry,9.440000,0.000000,2500383.809891
+DP Charges for Sale of BRITANNIA on 04/07/2023,2023-07-04,NSE-EQ - Z,Journal Entry,15.930000,0.000000,2500367.879891
+Net settlement for Equity with settlement number: 2023124,2023-07-04,NSE-EQ - Z,Book Voucher,0.000000,1303.449762,2501671.329653
+Net obligation for Equity F&O,2023-07-04,NSE-F&O - Z,Book Voucher,0.000000,26016.410962,2527687.740615
+Span margin blocked for NSE F&O,2023-07-04,NSE-F&O - Z,Delivery Voucher,705890.000000,0.000000,1821797.740615
+Exposure margin blocked for NSE F&O,2023-07-04,NSE-F&O - Z,Delivery Voucher,193890.000000,0.000000,1627907.740615
+Net obligation for Equity F&O,2023-07-05,NSE-F&O - Z,Book Voucher,22332.518459,0.000000,1605575.222156
+Span margin blocked for NSE F&O,2023-07-05,NSE-F&O - Z,Delivery Voucher,158303.000000,0.000000,1447272.222156
+Exposure margin blocked for NSE F&O,2023-07-05,NSE-F&O - Z,Delivery Voucher,194668.500000,0.000000,1252603.722156
+Span margin reversed for NSE F&O,2023-07-05,NSE-F&O - Z,Delivery Voucher,0.000000,705890.000000,1958493.722156
+Exposure margin reversed for NSE F&O,2023-07-05,NSE-F&O - Z,Delivery Voucher,0.000000,193890.000000,2152383.722156
+Span margin reversed for NSE F&O,2023-07-06,NSE-F&O - Z,Delivery Voucher,0.000000,158303.000000,2310686.722156
+Exposure margin reversed for NSE F&O,2023-07-06,NSE-F&O - Z,Delivery Voucher,0.000000,194668.500000,2505355.222156
+Net obligation for Equity F&O,2023-07-06,NSE-F&O - Z,Book Voucher,33136.599115,0.000000,2472218.623041
+Span margin blocked for NSE F&O,2023-07-06,NSE-F&O - Z,Delivery Voucher,189857.000000,0.000000,2282361.623041
+Exposure margin blocked for NSE F&O,2023-07-06,NSE-F&O - Z,Delivery Voucher,195361.000000,0.000000,2087000.623041
+Span margin reversed for NSE F&O,2023-07-07,NSE-F&O - Z,Delivery Voucher,0.000000,189857.000000,2276857.623041
+Exposure margin reversed for NSE F&O,2023-07-07,NSE-F&O - Z,Delivery Voucher,0.000000,195361.000000,2472218.623041
+Net obligation for Equity F&O,2023-07-07,NSE-F&O - Z,Book Voucher,0.000000,20740.150743,2492958.773784
+Funds transferred back as part of quarterly settlement with reference number 0c8efbd07d47360b5d1cd8,2023-07-07,NSE-EQ - Z,Bank Payments,2472218.620000,0.000000,20740.153784
+Being payment gateway charges debited for YY0222,2023-07-08,NSE-EQ - Z,Journal Entry,10.620000,0.000000,20729.533784
+Being payment gateway charges debited for YY0222,2023-07-08,NSE-EQ - Z,Journal Entry,10.620000,0.000000,20718.913784
+Funds added using payment gateway from YY0222 with reference number IGAPVRLUD5,2023-07-08,NSE-EQ - Z,Bank Receipts,0.000000,490000.000000,510718.913784
+Funds added using payment gateway from YY0222 with reference number IGAPVRMBS2,2023-07-08,NSE-EQ - Z,Bank Receipts,0.000000,495000.000000,1005718.913784
+Funds added using payment gateway from YY0222 with reference number IGAPVWIKM2,2023-07-10,NSE-EQ - Z,Bank Receipts,0.000000,499000.000000,1504718.913784
+Funds added using payment gateway from YY0222 with reference number IGAPVWICA5,2023-07-10,NSE-EQ - Z,Bank Receipts,0.000000,490000.000000,1994718.913784
+Being payment gateway charges debited for YY0222,2023-07-10,NSE-EQ - Z,Journal Entry,10.620000,0.000000,1994708.293784
+Being payment gateway charges debited for YY0222,2023-07-10,NSE-EQ - Z,Journal Entry,10.620000,0.000000,1994697.673784
+Net obligation for Equity F&O,2023-07-10,NSE-F&O - Z,Book Voucher,32330.202138,0.000000,1962367.471646
+Span margin blocked for NSE F&O,2023-07-10,NSE-F&O - Z,Delivery Voucher,175236.000000,0.000000,1787131.471646
+Exposure margin blocked for NSE F&O,2023-07-10,NSE-F&O - Z,Delivery Voucher,194095.500000,0.000000,1593035.971646
+Funds added using payment gateway from YY0222 with reference number IGAPWARWJ7,2023-07-11,NSE-EQ - Z,Bank Receipts,0.000000,498218.000000,2091253.971646
+Being payment gateway charges debited for YY0222,2023-07-11,NSE-EQ - Z,Journal Entry,10.620000,0.000000,2091243.351646
+Span margin reversed for NSE F&O,2023-07-11,NSE-F&O - Z,Delivery Voucher,0.000000,175236.000000,2266479.351646
+Exposure margin reversed for NSE F&O,2023-07-11,NSE-F&O - Z,Delivery Voucher,0.000000,194095.500000,2460574.851646
+Net obligation for Equity F&O,2023-07-11,NSE-F&O - Z,Book Voucher,40.660371,0.000000,2460534.191275
+Span margin blocked for NSE F&O,2023-07-11,NSE-F&O - Z,Delivery Voucher,166426.000000,0.000000,2294108.191275
+Exposure margin blocked for NSE F&O,2023-07-11,NSE-F&O - Z,Delivery Voucher,195008.500000,0.000000,2099099.691275
+Span margin reversed for NSE F&O,2023-07-12,NSE-F&O - Z,Delivery Voucher,0.000000,166426.000000,2265525.691275
+Exposure margin reversed for NSE F&O,2023-07-12,NSE-F&O - Z,Delivery Voucher,0.000000,195008.500000,2460534.191275
+Net obligation for Equity F&O,2023-07-12,NSE-F&O - Z,Book Voucher,0.000000,23012.078882,2483546.270157
+Span margin blocked for NSE F&O,2023-07-12,NSE-F&O - Z,Delivery Voucher,347129.000000,0.000000,2136417.270157
+Exposure margin blocked for NSE F&O,2023-07-12,NSE-F&O - Z,Delivery Voucher,194613.000000,0.000000,1941804.270157
+Span margin reversed for NSE F&O,2023-07-13,NSE-F&O - Z,Delivery Voucher,0.000000,347129.000000,2288933.270157
+Exposure margin reversed for NSE F&O,2023-07-13,NSE-F&O - Z,Delivery Voucher,0.000000,194613.000000,2483546.270157
+Net obligation for Equity F&O,2023-07-13,NSE-F&O - Z,Book Voucher,68195.640717,0.000000,2415350.629440
+Span margin blocked for NSE F&O,2023-07-13,NSE-F&O - Z,Delivery Voucher,204877.000000,0.000000,2210473.629440
+Exposure margin blocked for NSE F&O,2023-07-13,NSE-F&O - Z,Delivery Voucher,194748.000000,0.000000,2015725.629440
+Span margin reversed for NSE F&O,2023-07-14,NSE-F&O - Z,Delivery Voucher,0.000000,204877.000000,2220602.629440
+Exposure margin reversed for NSE F&O,2023-07-14,NSE-F&O - Z,Delivery Voucher,0.000000,194748.000000,2415350.629440
+Net obligation for Equity F&O,2023-07-14,NSE-F&O - Z,Book Voucher,29595.537958,0.000000,2385755.091482
+Span margin blocked for NSE F&O,2023-07-14,NSE-F&O - Z,Delivery Voucher,197526.000000,0.000000,2188229.091482
+Exposure margin blocked for NSE F&O,2023-07-14,NSE-F&O - Z,Delivery Voucher,195988.500000,0.000000,1992240.591482
+Span margin reversed for NSE F&O,2023-07-17,NSE-F&O - Z,Delivery Voucher,0.000000,197526.000000,2189766.591482
+Exposure margin reversed for NSE F&O,2023-07-17,NSE-F&O - Z,Delivery Voucher,0.000000,195988.500000,2385755.091482
+Net obligation for Equity F&O,2023-07-17,NSE-F&O - Z,Book Voucher,0.000000,194413.734127,2580168.825609
+Span margin blocked for NSE F&O,2023-07-17,NSE-F&O - Z,Delivery Voucher,170719.000000,0.000000,2409449.825609
+Exposure margin blocked for NSE F&O,2023-07-17,NSE-F&O - Z,Delivery Voucher,197212.000000,0.000000,2212237.825609
+Span margin reversed for NSE F&O,2023-07-18,NSE-F&O - Z,Delivery Voucher,0.000000,170719.000000,2382956.825609
+Exposure margin reversed for NSE F&O,2023-07-18,NSE-F&O - Z,Delivery Voucher,0.000000,197212.000000,2580168.825609
+Net obligation for Equity F&O,2023-07-18,NSE-F&O - Z,Book Voucher,16984.043503,0.000000,2563184.782106
+Span margin blocked for NSE F&O,2023-07-18,NSE-F&O - Z,Delivery Voucher,163748.000000,0.000000,2399436.782106
+Exposure margin blocked for NSE F&O,2023-07-18,NSE-F&O - Z,Delivery Voucher,197705.500000,0.000000,2201731.282106
+Span margin reversed for NSE F&O,2023-07-19,NSE-F&O - Z,Delivery Voucher,0.000000,163748.000000,2365479.282106
+Exposure margin reversed for NSE F&O,2023-07-19,NSE-F&O - Z,Delivery Voucher,0.000000,197705.500000,2563184.782106
+Net obligation for Equity F&O,2023-07-19,NSE-F&O - Z,Book Voucher,1406.483405,0.000000,2561778.298701
+Span margin blocked for NSE F&O,2023-07-19,NSE-F&O - Z,Delivery Voucher,151061.000000,0.000000,2410717.298701
+Exposure margin blocked for NSE F&O,2023-07-19,NSE-F&O - Z,Delivery Voucher,198471.000000,0.000000,2212246.298701
+Span margin reversed for NSE F&O,2023-07-20,NSE-F&O - Z,Delivery Voucher,0.000000,151061.000000,2363307.298701
+Exposure margin reversed for NSE F&O,2023-07-20,NSE-F&O - Z,Delivery Voucher,0.000000,198471.000000,2561778.298701
+Net obligation for Equity F&O,2023-07-20,NSE-F&O - Z,Book Voucher,0.000000,49958.238040,2611736.536741
+Span margin blocked for NSE F&O,2023-07-20,NSE-F&O - Z,Delivery Voucher,126240.000000,0.000000,2485496.536741
+Exposure margin blocked for NSE F&O,2023-07-20,NSE-F&O - Z,Delivery Voucher,199702.000000,0.000000,2285794.536741
+Span margin reversed for NSE F&O,2023-07-21,NSE-F&O - Z,Delivery Voucher,0.000000,126240.000000,2412034.536741
+Exposure margin reversed for NSE F&O,2023-07-21,NSE-F&O - Z,Delivery Voucher,0.000000,199702.000000,2611736.536741
+Net obligation for Equity F&O,2023-07-21,NSE-F&O - Z,Book Voucher,32666.254399,0.000000,2579070.282342
+Net obligation for Equity F&O,2023-07-24,NSE-F&O - Z,Book Voucher,17629.052254,0.000000,2561441.230088
+Span margin blocked for NSE F&O,2023-07-24,NSE-F&O - Z,Delivery Voucher,186680.000000,0.000000,2374761.230088
+Exposure margin blocked for NSE F&O,2023-07-24,NSE-F&O - Z,Delivery Voucher,196927.000000,0.000000,2177834.230088
+Span margin reversed for NSE F&O,2023-07-25,NSE-F&O - Z,Delivery Voucher,0.000000,186680.000000,2364514.230088
+Exposure margin reversed for NSE F&O,2023-07-25,NSE-F&O - Z,Delivery Voucher,0.000000,196927.000000,2561441.230088
+Net obligation for Equity F&O,2023-07-25,NSE-F&O - Z,Book Voucher,20858.625422,0.000000,2540582.604666
+Span margin blocked for NSE F&O,2023-07-25,NSE-F&O - Z,Delivery Voucher,112840.000000,0.000000,2427742.604666
+Exposure margin blocked for NSE F&O,2023-07-25,NSE-F&O - Z,Delivery Voucher,196911.500000,0.000000,2230831.104666
+Span margin reversed for NSE F&O,2023-07-26,NSE-F&O - Z,Delivery Voucher,0.000000,112840.000000,2343671.104666
+Exposure margin reversed for NSE F&O,2023-07-26,NSE-F&O - Z,Delivery Voucher,0.000000,196911.500000,2540582.604666
+Net obligation for Equity F&O,2023-07-26,NSE-F&O - Z,Book Voucher,72329.624324,0.000000,2468252.980342
+Span margin blocked for NSE F&O,2023-07-26,NSE-F&O - Z,Delivery Voucher,69735.000000,0.000000,2398517.980342
+Exposure margin blocked for NSE F&O,2023-07-26,NSE-F&O - Z,Delivery Voucher,197740.000000,0.000000,2200777.980342
+Net settlement for Equity with settlement number: 2023141,2023-07-27,NSE-EQ - Z,Book Voucher,0.006746,0.000000,2200777.973596
+Span margin reversed for NSE F&O,2023-07-27,NSE-F&O - Z,Delivery Voucher,0.000000,69735.000000,2270512.973596
+Exposure margin reversed for NSE F&O,2023-07-27,NSE-F&O - Z,Delivery Voucher,0.000000,197740.000000,2468252.973596
+Net obligation for Equity F&O,2023-07-27,NSE-F&O - Z,Book Voucher,32035.911832,0.000000,2436217.061764
+Span margin blocked for NSE F&O,2023-07-27,NSE-F&O - Z,Delivery Voucher,247659.000000,0.000000,2188558.061764
+Exposure margin blocked for NSE F&O,2023-07-27,NSE-F&O - Z,Delivery Voucher,198114.000000,0.000000,1990444.061764
+Span margin reversed for NSE F&O,2023-07-28,NSE-F&O - Z,Delivery Voucher,0.000000,247659.000000,2238103.061764
+Exposure margin reversed for NSE F&O,2023-07-28,NSE-F&O - Z,Delivery Voucher,0.000000,198114.000000,2436217.061764
+Net obligation for Equity F&O,2023-07-28,NSE-F&O - Z,Book Voucher,1001.300049,0.000000,2435215.761715
+Span margin blocked for NSE F&O,2023-07-28,NSE-F&O - Z,Delivery Voucher,194373.000000,0.000000,2240842.761715
+Exposure margin blocked for NSE F&O,2023-07-28,NSE-F&O - Z,Delivery Voucher,197518.000000,0.000000,2043324.761715
+Kite Connect API Charges (2023-07-31),2023-07-31,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,2041324.762015
+Kite Connect API Charges (2023-07-31),2023-07-31,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,2039324.762315
+Span margin reversed for NSE F&O,2023-07-31,NSE-F&O - Z,Delivery Voucher,0.000000,194373.000000,2233697.762315
+Exposure margin reversed for NSE F&O,2023-07-31,NSE-F&O - Z,Delivery Voucher,0.000000,197518.000000,2431215.762315
+Net obligation for Equity F&O,2023-07-31,NSE-F&O - Z,Book Voucher,21583.885398,0.000000,2409631.876917
+Span margin blocked for NSE F&O,2023-07-31,NSE-F&O - Z,Delivery Voucher,176737.000000,0.000000,2232894.876917
+Exposure margin blocked for NSE F&O,2023-07-31,NSE-F&O - Z,Delivery Voucher,198439.500000,0.000000,2034455.376917
+Span margin reversed for NSE F&O,2023-08-01,NSE-F&O - Z,Delivery Voucher,0.000000,176737.000000,2211192.376917
+Exposure margin reversed for NSE F&O,2023-08-01,NSE-F&O - Z,Delivery Voucher,0.000000,198439.500000,2409631.876917
+Net obligation for Equity F&O,2023-08-01,NSE-F&O - Z,Book Voucher,29443.670343,0.000000,2380188.206574
+Span margin blocked for NSE F&O,2023-08-01,NSE-F&O - Z,Delivery Voucher,164067.000000,0.000000,2216121.206574
+Exposure margin blocked for NSE F&O,2023-08-01,NSE-F&O - Z,Delivery Voucher,198125.500000,0.000000,2017995.706574
+Span margin reversed for NSE F&O,2023-08-02,NSE-F&O - Z,Delivery Voucher,0.000000,164067.000000,2182062.706574
+Exposure margin reversed for NSE F&O,2023-08-02,NSE-F&O - Z,Delivery Voucher,0.000000,198125.500000,2380188.206574
+Net obligation for Equity F&O,2023-08-02,NSE-F&O - Z,Book Voucher,99462.959160,0.000000,2280725.247414
+Span margin blocked for NSE F&O,2023-08-02,NSE-F&O - Z,Delivery Voucher,916635.000000,0.000000,1364090.247414
+Exposure margin blocked for NSE F&O,2023-08-02,NSE-F&O - Z,Delivery Voucher,195965.500000,0.000000,1168124.747414
+Span margin reversed for NSE F&O,2023-08-03,NSE-F&O - Z,Delivery Voucher,0.000000,916635.000000,2084759.747414
+Exposure margin reversed for NSE F&O,2023-08-03,NSE-F&O - Z,Delivery Voucher,0.000000,195965.500000,2280725.247414
+Net obligation for Equity F&O,2023-08-03,NSE-F&O - Z,Book Voucher,0.000000,4041.333128,2284766.580542
+Span margin blocked for NSE F&O,2023-08-03,NSE-F&O - Z,Delivery Voucher,277567.000000,0.000000,2007199.580542
+Exposure margin blocked for NSE F&O,2023-08-03,NSE-F&O - Z,Delivery Voucher,194681.500000,0.000000,1812518.080542
+Span margin reversed for NSE F&O,2023-08-04,NSE-F&O - Z,Delivery Voucher,0.000000,277567.000000,2090085.080542
+Exposure margin reversed for NSE F&O,2023-08-04,NSE-F&O - Z,Delivery Voucher,0.000000,194681.500000,2284766.580542
+Net obligation for Equity F&O,2023-08-04,NSE-F&O - Z,Book Voucher,61368.275799,0.000000,2223398.304743
+Net settlement for Equity with settlement number: 2023148,2023-08-07,NSE-EQ - Z,Book Voucher,1.337266,0.000000,2223396.967477
+Net obligation for Equity F&O,2023-08-07,NSE-F&O - Z,Book Voucher,24740.528710,0.000000,2198656.438767
+Span margin blocked for NSE F&O,2023-08-07,NSE-F&O - Z,Delivery Voucher,171819.000000,0.000000,2026837.438767
+Exposure margin blocked for NSE F&O,2023-08-07,NSE-F&O - Z,Delivery Voucher,196610.500000,0.000000,1830226.938767
+Net settlement for Equity with settlement number: 2023149,2023-08-08,NSE-EQ - Z,Book Voucher,334667.459759,0.000000,1495559.479008
+Span margin reversed for NSE F&O,2023-08-08,NSE-F&O - Z,Delivery Voucher,0.000000,171819.000000,1667378.479008
+Exposure margin reversed for NSE F&O,2023-08-08,NSE-F&O - Z,Delivery Voucher,0.000000,196610.500000,1863988.979008
+Net obligation for Equity F&O,2023-08-08,NSE-F&O - Z,Book Voucher,114234.294816,0.000000,1749754.684192
+Span margin blocked for NSE F&O,2023-08-08,NSE-F&O - Z,Delivery Voucher,27237.000000,0.000000,1722517.684192
+Exposure margin blocked for NSE F&O,2023-08-08,NSE-F&O - Z,Delivery Voucher,196112.500000,0.000000,1526405.184192
+DP Charges for Sale of VASCONEQ on 09/08/2023,2023-08-09,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1526389.254192
+Net settlement for Equity with settlement number: 2023150,2023-08-09,NSE-EQ - Z,Book Voucher,0.000000,95750.103400,1622139.357592
+Span margin reversed for NSE F&O,2023-08-09,NSE-F&O - Z,Delivery Voucher,0.000000,27237.000000,1649376.357592
+Exposure margin reversed for NSE F&O,2023-08-09,NSE-F&O - Z,Delivery Voucher,0.000000,196112.500000,1845488.857592
+Net obligation for Equity F&O,2023-08-09,NSE-F&O - Z,Book Voucher,0.000000,187830.913531,2033319.771123
+Span margin blocked for NSE F&O,2023-08-09,NSE-F&O - Z,Delivery Voucher,157961.000000,0.000000,1875358.771123
+Exposure margin blocked for NSE F&O,2023-08-09,NSE-F&O - Z,Delivery Voucher,196896.000000,0.000000,1678462.771123
+DP Charges for Sale of HISARMETAL on 10/08/2023,2023-08-10,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1678446.841123
+Net settlement for Equity with settlement number: 2023151,2023-08-10,NSE-EQ - Z,Book Voucher,115665.904992,0.000000,1562780.936131
+Span margin reversed for NSE F&O,2023-08-10,NSE-F&O - Z,Delivery Voucher,0.000000,157961.000000,1720741.936131
+Exposure margin reversed for NSE F&O,2023-08-10,NSE-F&O - Z,Delivery Voucher,0.000000,196896.000000,1917637.936131
+Net obligation for Equity F&O,2023-08-10,NSE-F&O - Z,Book Voucher,6083.866291,0.000000,1911554.069840
+Span margin blocked for NSE F&O,2023-08-10,NSE-F&O - Z,Delivery Voucher,220864.000000,0.000000,1690690.069840
+Exposure margin blocked for NSE F&O,2023-08-10,NSE-F&O - Z,Delivery Voucher,195968.000000,0.000000,1494722.069840
+DP Charges for Sale of ONMOBILE on 11/08/2023,2023-08-11,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1494706.139840
+DP Charges for Sale of ORIENTCEM on 11/08/2023,2023-08-11,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1494690.209840
+Net settlement for Equity with settlement number: 2023152,2023-08-11,NSE-EQ - Z,Book Voucher,0.000000,29460.863256,1524151.073096
+Span margin reversed for NSE F&O,2023-08-11,NSE-F&O - Z,Delivery Voucher,0.000000,220864.000000,1745015.073096
+Exposure margin reversed for NSE F&O,2023-08-11,NSE-F&O - Z,Delivery Voucher,0.000000,195968.000000,1940983.073096
+Net obligation for Equity F&O,2023-08-11,NSE-F&O - Z,Book Voucher,0.000000,21991.039362,1962974.112458
+AMC for Demat Account for 27-03-2023 to 25-06-2023,2023-08-11,NSE-EQ - Z,Journal Entry,88.500000,0.000000,1962885.612458
+DP Charges for Sale of BLKASHYAP on 14/08/2023,2023-08-14,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1962869.682458
+DP Charges for Sale of BFINVEST on 14/08/2023,2023-08-14,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1962853.752458
+DP Charges for Sale of MOTOGENFIN on 14/08/2023,2023-08-14,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1962837.822458
+DP Charges for Sale of ASAHISONG on 14/08/2023,2023-08-14,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1962821.892458
+DP Charges for Sale of DPABHUSHAN on 14/08/2023,2023-08-14,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1962805.962458
+DP Charges for Sale of ITDCEM on 14/08/2023,2023-08-14,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1962790.032458
+Net settlement for Equity with settlement number: 2023153,2023-08-14,NSE-EQ - Z,Book Voucher,0.000000,114789.230942,2077579.263400
+Net obligation for Equity F&O,2023-08-14,NSE-F&O - Z,Book Voucher,31364.637420,0.000000,2046214.625980
+Span margin blocked for NSE F&O,2023-08-14,NSE-F&O - Z,Delivery Voucher,187840.000000,0.000000,1858374.625980
+Exposure margin blocked for NSE F&O,2023-08-14,NSE-F&O - Z,Delivery Voucher,175305.150000,0.000000,1683069.475980
+Span margin reversed for NSE F&O,2023-08-16,NSE-F&O - Z,Delivery Voucher,0.000000,187840.000000,1870909.475980
+Exposure margin reversed for NSE F&O,2023-08-16,NSE-F&O - Z,Delivery Voucher,0.000000,175305.150000,2046214.625980
+Net settlement for Equity with settlement number: 2023154,2023-08-16,NSE-EQ - Z,Book Voucher,192277.395530,0.000000,1853937.230450
+Net obligation for Equity F&O,2023-08-16,NSE-F&O - Z,Book Voucher,0.000000,45298.360379,1899235.590829
+Span margin blocked for NSE F&O,2023-08-16,NSE-F&O - Z,Delivery Voucher,162164.000000,0.000000,1737071.590829
+Exposure margin blocked for NSE F&O,2023-08-16,NSE-F&O - Z,Delivery Voucher,194845.500000,0.000000,1542226.090829
+Net settlement for Equity with settlement number: 2023155,2023-08-17,NSE-EQ - Z,Book Voucher,101548.672699,0.000000,1440677.418130
+Span margin reversed for NSE F&O,2023-08-17,NSE-F&O - Z,Delivery Voucher,0.000000,162164.000000,1602841.418130
+Exposure margin reversed for NSE F&O,2023-08-17,NSE-F&O - Z,Delivery Voucher,0.000000,194845.500000,1797686.918130
+Net obligation for Equity F&O,2023-08-17,NSE-F&O - Z,Book Voucher,39527.959748,0.000000,1758158.958382
+Span margin blocked for NSE F&O,2023-08-17,NSE-F&O - Z,Delivery Voucher,154809.500000,0.000000,1603349.458382
+Exposure margin blocked for NSE F&O,2023-08-17,NSE-F&O - Z,Delivery Voucher,174545.100000,0.000000,1428804.358382
+DP Charges for Sale of KALYANKJIL on 18/08/2023,2023-08-18,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1428788.428382
+DP Charges for Sale of BAGFILMS on 18/08/2023,2023-08-18,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1428772.498382
+Net settlement for Equity with settlement number: 2023156,2023-08-18,NSE-EQ - Z,Book Voucher,0.000000,39219.396992,1467991.895374
+Span margin reversed for NSE F&O,2023-08-18,NSE-F&O - Z,Delivery Voucher,0.000000,154809.500000,1622801.395374
+Exposure margin reversed for NSE F&O,2023-08-18,NSE-F&O - Z,Delivery Voucher,0.000000,174545.100000,1797346.495374
+Net obligation for Equity F&O,2023-08-18,NSE-F&O - Z,Book Voucher,0.000000,31737.687870,1829084.183244
+DP Charges for Sale of GRSE on 21/08/2023,2023-08-21,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1829068.253244
+Net obligation for Equity F&O,2023-08-21,NSE-F&O - Z,Book Voucher,0.000000,29595.905167,1858664.158411
+Net settlement for Equity with settlement number: 2023157,2023-08-21,NSE-EQ - Z,Book Voucher,0.000000,18478.988446,1877143.146857
+Span margin blocked for NSE F&O,2023-08-21,NSE-F&O - Z,Delivery Voucher,133544.000000,0.000000,1743599.146857
+Exposure margin blocked for NSE F&O,2023-08-21,NSE-F&O - Z,Delivery Voucher,174595.950000,0.000000,1569003.196857
+Span margin reversed for NSE F&O,2023-08-22,NSE-F&O - Z,Delivery Voucher,0.000000,133544.000000,1702547.196857
+Exposure margin reversed for NSE F&O,2023-08-22,NSE-F&O - Z,Delivery Voucher,0.000000,174595.950000,1877143.146857
+Net obligation for Equity F&O,2023-08-22,NSE-F&O - Z,Book Voucher,22137.388153,0.000000,1855005.758704
+Span margin blocked for NSE F&O,2023-08-22,NSE-F&O - Z,Delivery Voucher,145271.000000,0.000000,1709734.758704
+Exposure margin blocked for NSE F&O,2023-08-22,NSE-F&O - Z,Delivery Voucher,174476.700000,0.000000,1535258.058704
+Span margin reversed for NSE F&O,2023-08-23,NSE-F&O - Z,Delivery Voucher,0.000000,145271.000000,1680529.058704
+Exposure margin reversed for NSE F&O,2023-08-23,NSE-F&O - Z,Delivery Voucher,0.000000,174476.700000,1855005.758704
+Net obligation for Equity F&O,2023-08-23,NSE-F&O - Z,Book Voucher,0.000000,150577.708625,2005583.467329
+Span margin blocked for NSE F&O,2023-08-23,NSE-F&O - Z,Delivery Voucher,164506.000000,0.000000,1841077.467329
+Exposure margin blocked for NSE F&O,2023-08-23,NSE-F&O - Z,Delivery Voucher,213739.900000,0.000000,1627337.567329
+Net settlement for Equity with settlement number: 2023159,2023-08-23,NSE-EQ - Z,Book Voucher,0.056135,0.000000,1627337.511194
+Span margin reversed for NSE F&O,2023-08-24,NSE-F&O - Z,Delivery Voucher,0.000000,164506.000000,1791843.511194
+Exposure margin reversed for NSE F&O,2023-08-24,NSE-F&O - Z,Delivery Voucher,0.000000,213739.900000,2005583.411194
+Net obligation for Equity F&O,2023-08-24,NSE-F&O - Z,Book Voucher,126915.581213,0.000000,1878667.829981
+Span margin blocked for NSE F&O,2023-08-24,NSE-F&O - Z,Delivery Voucher,119790.500000,0.000000,1758877.329981
+Exposure margin blocked for NSE F&O,2023-08-24,NSE-F&O - Z,Delivery Voucher,213351.600000,0.000000,1545525.729981
+Span margin reversed for NSE F&O,2023-08-25,NSE-F&O - Z,Delivery Voucher,0.000000,119790.500000,1665316.229981
+Exposure margin reversed for NSE F&O,2023-08-25,NSE-F&O - Z,Delivery Voucher,0.000000,213351.600000,1878667.829981
+Net obligation for Equity F&O,2023-08-25,NSE-F&O - Z,Book Voucher,16898.881129,0.000000,1861768.948852
+Net obligation for Equity F&O,2023-08-28,NSE-F&O - Z,Book Voucher,0.000000,13176.131173,1874945.080025
+Span margin blocked for NSE F&O,2023-08-28,NSE-F&O - Z,Delivery Voucher,106381.500000,0.000000,1768563.580025
+Exposure margin blocked for NSE F&O,2023-08-28,NSE-F&O - Z,Delivery Voucher,212534.300000,0.000000,1556029.280025
+Span margin reversed for NSE F&O,2023-08-29,NSE-F&O - Z,Delivery Voucher,0.000000,106381.500000,1662410.780025
+Exposure margin reversed for NSE F&O,2023-08-29,NSE-F&O - Z,Delivery Voucher,0.000000,212534.300000,1874945.080025
+Net obligation for Equity F&O,2023-08-29,NSE-F&O - Z,Book Voucher,29845.665163,0.000000,1845099.414862
+Span margin blocked for NSE F&O,2023-08-29,NSE-F&O - Z,Delivery Voucher,93934.500000,0.000000,1751164.914862
+Exposure margin blocked for NSE F&O,2023-08-29,NSE-F&O - Z,Delivery Voucher,212708.100000,0.000000,1538456.814862
+Span margin reversed for NSE F&O,2023-08-30,NSE-F&O - Z,Delivery Voucher,0.000000,93934.500000,1632391.314862
+Exposure margin reversed for NSE F&O,2023-08-30,NSE-F&O - Z,Delivery Voucher,0.000000,212708.100000,1845099.414862
+Net obligation for Equity F&O,2023-08-30,NSE-F&O - Z,Book Voucher,0.000000,65747.603930,1910847.018792
+Span margin blocked for NSE F&O,2023-08-30,NSE-F&O - Z,Delivery Voucher,88484.500000,0.000000,1822362.518792
+Exposure margin blocked for NSE F&O,2023-08-30,NSE-F&O - Z,Delivery Voucher,212767.500000,0.000000,1609595.018792
+Kite Connect API Charges (2023-08-31),2023-08-31,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,1607595.019092
+Kite Connect API Charges (2023-08-31),2023-08-31,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,1605595.019392
+Span margin reversed for NSE F&O,2023-08-31,NSE-F&O - Z,Delivery Voucher,0.000000,88484.500000,1694079.519392
+Exposure margin reversed for NSE F&O,2023-08-31,NSE-F&O - Z,Delivery Voucher,0.000000,212767.500000,1906847.019392
+Net obligation for Equity F&O,2023-08-31,NSE-F&O - Z,Book Voucher,90058.417386,0.000000,1816788.602006
+Span margin blocked for NSE F&O,2023-08-31,NSE-F&O - Z,Delivery Voucher,174057.500000,0.000000,1642731.102006
+Exposure margin blocked for NSE F&O,2023-08-31,NSE-F&O - Z,Delivery Voucher,213556.750000,0.000000,1429174.352006
+Span margin reversed for NSE F&O,2023-09-01,NSE-F&O - Z,Delivery Voucher,0.000000,174057.500000,1603231.852006
+Exposure margin reversed for NSE F&O,2023-09-01,NSE-F&O - Z,Delivery Voucher,0.000000,213556.750000,1816788.602006
+Net obligation for Equity F&O,2023-09-01,NSE-F&O - Z,Book Voucher,18635.936377,0.000000,1798152.665629
+Net obligation for Equity F&O,2023-09-04,NSE-F&O - Z,Book Voucher,0.000000,28768.247041,1826920.912670
+Span margin blocked for NSE F&O,2023-09-04,NSE-F&O - Z,Delivery Voucher,181990.000000,0.000000,1644930.912670
+Exposure margin blocked for NSE F&O,2023-09-04,NSE-F&O - Z,Delivery Voucher,215696.800000,0.000000,1429234.112670
+Span margin reversed for NSE F&O,2023-09-05,NSE-F&O - Z,Delivery Voucher,0.000000,181990.000000,1611224.112670
+Exposure margin reversed for NSE F&O,2023-09-05,NSE-F&O - Z,Delivery Voucher,0.000000,215696.800000,1826920.912670
+Net obligation for Equity F&O,2023-09-05,NSE-F&O - Z,Book Voucher,0.000000,6402.519059,1833323.431729
+Span margin blocked for NSE F&O,2023-09-05,NSE-F&O - Z,Delivery Voucher,176901.500000,0.000000,1656421.931729
+Exposure margin blocked for NSE F&O,2023-09-05,NSE-F&O - Z,Delivery Voucher,216189.050000,0.000000,1440232.881729
+Span margin reversed for NSE F&O,2023-09-06,NSE-F&O - Z,Delivery Voucher,0.000000,176901.500000,1617134.381729
+Exposure margin reversed for NSE F&O,2023-09-06,NSE-F&O - Z,Delivery Voucher,0.000000,216189.050000,1833323.431729
+Net obligation for Equity F&O,2023-09-06,NSE-F&O - Z,Book Voucher,4693.733384,0.000000,1828629.698345
+Span margin blocked for NSE F&O,2023-09-06,NSE-F&O - Z,Delivery Voucher,162974.000000,0.000000,1665655.698345
+Exposure margin blocked for NSE F&O,2023-09-06,NSE-F&O - Z,Delivery Voucher,216247.350000,0.000000,1449408.348345
+Span margin reversed for NSE F&O,2023-09-07,NSE-F&O - Z,Delivery Voucher,0.000000,162974.000000,1612382.348345
+Exposure margin reversed for NSE F&O,2023-09-07,NSE-F&O - Z,Delivery Voucher,0.000000,216247.350000,1828629.698345
+Net obligation for Equity F&O,2023-09-07,NSE-F&O - Z,Book Voucher,0.000000,15196.548479,1843826.246824
+Span margin blocked for NSE F&O,2023-09-07,NSE-F&O - Z,Delivery Voucher,224733.500000,0.000000,1619092.746824
+Exposure margin blocked for NSE F&O,2023-09-07,NSE-F&O - Z,Delivery Voucher,217455.700000,0.000000,1401637.046824
+Span margin reversed for NSE F&O,2023-09-08,NSE-F&O - Z,Delivery Voucher,0.000000,224733.500000,1626370.546824
+Exposure margin reversed for NSE F&O,2023-09-08,NSE-F&O - Z,Delivery Voucher,0.000000,217455.700000,1843826.246824
+Net obligation for Equity F&O,2023-09-08,NSE-F&O - Z,Book Voucher,0.000000,115919.186069,1959745.432893
+Net obligation for Equity F&O,2023-09-11,NSE-F&O - Z,Book Voucher,50600.273883,0.000000,1909145.159010
+Span margin blocked for NSE F&O,2023-09-11,NSE-F&O - Z,Delivery Voucher,202578.000000,0.000000,1706567.159010
+Exposure margin blocked for NSE F&O,2023-09-11,NSE-F&O - Z,Delivery Voucher,240440.400000,0.000000,1466126.759010
+DP Charges for Sale of BLKASHYAP on 12/09/2023,2023-09-12,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1466110.829010
+DP Charges for Sale of HUDCO on 12/09/2023,2023-09-12,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1466094.899010
+DP Charges for Sale of IIFLSEC on 12/09/2023,2023-09-12,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1466078.969010
+DP Charges for Sale of EVERESTIND on 12/09/2023,2023-09-12,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1466063.039010
+DP Charges for Sale of CAPLIPOINT on 12/09/2023,2023-09-12,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1466047.109010
+Span margin reversed for NSE F&O,2023-09-12,NSE-F&O - Z,Delivery Voucher,0.000000,202578.000000,1668625.109010
+Exposure margin reversed for NSE F&O,2023-09-12,NSE-F&O - Z,Delivery Voucher,0.000000,240440.400000,1909065.509010
+Net settlement for Equity with settlement number: 2023173,2023-09-12,NSE-EQ - Z,Book Voucher,0.000000,132072.805923,2041138.314933
+Net obligation for Equity F&O,2023-09-12,NSE-F&O - Z,Book Voucher,0.000000,51676.657034,2092814.971967
+Span margin blocked for NSE F&O,2023-09-12,NSE-F&O - Z,Delivery Voucher,195766.000000,0.000000,1897048.971967
+Exposure margin blocked for NSE F&O,2023-09-12,NSE-F&O - Z,Delivery Voucher,240555.600000,0.000000,1656493.371967
+DP Charges for Sale of COCHINSHIP on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656477.441967
+DP Charges for Sale of OLECTRA on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656461.511967
+DP Charges for Sale of ARVIND on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656445.581967
+DP Charges for Sale of BANCOINDIA on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656429.651967
+DP Charges for Sale of KOTARISUG on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656413.721967
+DP Charges for Sale of DREDGECORP on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656397.791967
+DP Charges for Sale of DBREALTY on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656381.861967
+DP Charges for Sale of JIOFIN on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656365.931967
+DP Charges for Sale of INDIGOPNTS on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656350.001967
+DP Charges for Sale of DPABHUSHAN on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656334.071967
+DP Charges for Sale of LICHSGFIN on 13/09/2023,2023-09-13,NSE-EQ - Z,Journal Entry,15.930000,0.000000,1656318.141967
+Net settlement for Equity with settlement number: 2023174,2023-09-13,NSE-EQ - Z,Book Voucher,0.000000,364785.611021,2021103.752988
+Span margin reversed for NSE F&O,2023-09-13,NSE-F&O - Z,Delivery Voucher,0.000000,195766.000000,2216869.752988
+Exposure margin reversed for NSE F&O,2023-09-13,NSE-F&O - Z,Delivery Voucher,0.000000,240555.600000,2457425.352988
+Net obligation for Equity F&O,2023-09-13,NSE-F&O - Z,Book Voucher,0.000000,105255.146258,2562680.499246
+Span margin blocked for NSE F&O,2023-09-13,NSE-F&O - Z,Delivery Voucher,182845.000000,0.000000,2379835.499246
+Exposure margin blocked for NSE F&O,2023-09-13,NSE-F&O - Z,Delivery Voucher,221376.650000,0.000000,2158458.849246
+Span margin reversed for NSE F&O,2023-09-14,NSE-F&O - Z,Delivery Voucher,0.000000,182845.000000,2341303.849246
+Exposure margin reversed for NSE F&O,2023-09-14,NSE-F&O - Z,Delivery Voucher,0.000000,221376.650000,2562680.499246
+Net obligation for Equity F&O,2023-09-14,NSE-F&O - Z,Book Voucher,0.000000,1437.532555,2564118.031801
+Span margin blocked for NSE F&O,2023-09-14,NSE-F&O - Z,Delivery Voucher,218785.500000,0.000000,2345332.531801
+Exposure margin blocked for NSE F&O,2023-09-14,NSE-F&O - Z,Delivery Voucher,221892.000000,0.000000,2123440.531801
+Span margin reversed for NSE F&O,2023-09-15,NSE-F&O - Z,Delivery Voucher,0.000000,218785.500000,2342226.031801
+Exposure margin reversed for NSE F&O,2023-09-15,NSE-F&O - Z,Delivery Voucher,0.000000,221892.000000,2564118.031801
+Net obligation for Equity F&O,2023-09-15,NSE-F&O - Z,Book Voucher,0.000000,85997.378544,2650115.410345
+Net obligation for Equity F&O,2023-09-18,NSE-F&O - Z,Book Voucher,55621.886190,0.000000,2594493.524155
+Span margin blocked for NSE F&O,2023-09-18,NSE-F&O - Z,Delivery Voucher,200964.500000,0.000000,2393529.024155
+Exposure margin blocked for NSE F&O,2023-09-18,NSE-F&O - Z,Delivery Voucher,262325.050000,0.000000,2131203.974155
+Span margin reversed for NSE F&O,2023-09-20,NSE-F&O - Z,Delivery Voucher,0.000000,200964.500000,2332168.474155
+Exposure margin reversed for NSE F&O,2023-09-20,NSE-F&O - Z,Delivery Voucher,0.000000,262325.050000,2594493.524155
+Net obligation for Equity F&O,2023-09-20,NSE-F&O - Z,Book Voucher,0.000000,35597.921550,2630091.445705
+Span margin blocked for NSE F&O,2023-09-20,NSE-F&O - Z,Delivery Voucher,189796.000000,0.000000,2440295.445705
+Exposure margin blocked for NSE F&O,2023-09-20,NSE-F&O - Z,Delivery Voucher,259636.650000,0.000000,2180658.795705
+Span margin reversed for NSE F&O,2023-09-21,NSE-F&O - Z,Delivery Voucher,0.000000,189796.000000,2370454.795705
+Exposure margin reversed for NSE F&O,2023-09-21,NSE-F&O - Z,Delivery Voucher,0.000000,259636.650000,2630091.445705
+Net obligation for Equity F&O,2023-09-21,NSE-F&O - Z,Book Voucher,0.000000,72924.339208,2703015.784913
+Span margin blocked for NSE F&O,2023-09-21,NSE-F&O - Z,Delivery Voucher,124403.500000,0.000000,2578612.284913
+Exposure margin blocked for NSE F&O,2023-09-21,NSE-F&O - Z,Delivery Voucher,257123.100000,0.000000,2321489.184913
+Span margin reversed for NSE F&O,2023-09-22,NSE-F&O - Z,Delivery Voucher,0.000000,124403.500000,2445892.684913
+Exposure margin reversed for NSE F&O,2023-09-22,NSE-F&O - Z,Delivery Voucher,0.000000,257123.100000,2703015.784913
+Net obligation for Equity F&O,2023-09-22,NSE-F&O - Z,Book Voucher,0.000000,45379.875026,2748395.659939
+Net obligation for Equity F&O,2023-09-25,NSE-F&O - Z,Book Voucher,27366.532745,0.000000,2721029.127194
+Span margin blocked for NSE F&O,2023-09-25,NSE-F&O - Z,Delivery Voucher,122629.000000,0.000000,2598400.127194
+Exposure margin blocked for NSE F&O,2023-09-25,NSE-F&O - Z,Delivery Voucher,256106.500000,0.000000,2342293.627194
+Span margin reversed for NSE F&O,2023-09-26,NSE-F&O - Z,Delivery Voucher,0.000000,122629.000000,2464922.627194
+Exposure margin reversed for NSE F&O,2023-09-26,NSE-F&O - Z,Delivery Voucher,0.000000,256106.500000,2721029.127194
+Net obligation for Equity F&O,2023-09-26,NSE-F&O - Z,Book Voucher,32326.484103,0.000000,2688702.643091
+Span margin blocked for NSE F&O,2023-09-26,NSE-F&O - Z,Delivery Voucher,121907.500000,0.000000,2566795.143091
+Exposure margin blocked for NSE F&O,2023-09-26,NSE-F&O - Z,Delivery Voucher,255801.650000,0.000000,2310993.493091
+Span margin reversed for NSE F&O,2023-09-27,NSE-F&O - Z,Delivery Voucher,0.000000,121907.500000,2432900.993091
+Exposure margin reversed for NSE F&O,2023-09-27,NSE-F&O - Z,Delivery Voucher,0.000000,255801.650000,2688702.643091
+Net obligation for Equity F&O,2023-09-27,NSE-F&O - Z,Book Voucher,0.000000,9597.915070,2698300.558161
+Span margin blocked for NSE F&O,2023-09-27,NSE-F&O - Z,Delivery Voucher,182793.500000,0.000000,2515507.058161
+Exposure margin blocked for NSE F&O,2023-09-27,NSE-F&O - Z,Delivery Voucher,256347.650000,0.000000,2259159.408161
+Span margin reversed for NSE F&O,2023-09-28,NSE-F&O - Z,Delivery Voucher,0.000000,182793.500000,2441952.908161
+Exposure margin reversed for NSE F&O,2023-09-28,NSE-F&O - Z,Delivery Voucher,0.000000,256347.650000,2698300.558161
+Net obligation for Equity F&O,2023-09-28,NSE-F&O - Z,Book Voucher,21298.879934,0.000000,2677001.678227
+Net obligation for Equity F&O,2023-09-29,NSE-F&O - Z,Book Voucher,0.000000,27652.649372,2704654.327599
+Kite Connect API Charges (2023-10-03),2023-10-03,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,2702654.327899
+Kite Connect API Charges (2023-10-03),2023-10-03,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,2700654.328199
+Net obligation for Equity F&O,2023-10-03,NSE-F&O - Z,Book Voucher,2852.255955,0.000000,2697802.072244
+Span margin blocked for NSE F&O,2023-10-03,NSE-F&O - Z,Delivery Voucher,213221.500000,0.000000,2484580.572244
+Exposure margin blocked for NSE F&O,2023-10-03,NSE-F&O - Z,Delivery Voucher,254429.500000,0.000000,2230151.072244
+Span margin reversed for NSE F&O,2023-10-04,NSE-F&O - Z,Delivery Voucher,0.000000,213221.500000,2443372.572244
+Exposure margin reversed for NSE F&O,2023-10-04,NSE-F&O - Z,Delivery Voucher,0.000000,254429.500000,2697802.072244
+Net obligation for Equity F&O,2023-10-04,NSE-F&O - Z,Book Voucher,0.000000,41382.709314,2739184.781558
+Span margin blocked for NSE F&O,2023-10-04,NSE-F&O - Z,Delivery Voucher,199411.500000,0.000000,2539773.281558
+Exposure margin blocked for NSE F&O,2023-10-04,NSE-F&O - Z,Delivery Voucher,253100.250000,0.000000,2286673.031558
+Span margin reversed for NSE F&O,2023-10-05,NSE-F&O - Z,Delivery Voucher,0.000000,199411.500000,2486084.531558
+Exposure margin reversed for NSE F&O,2023-10-05,NSE-F&O - Z,Delivery Voucher,0.000000,253100.250000,2739184.781558
+Net obligation for Equity F&O,2023-10-05,NSE-F&O - Z,Book Voucher,96036.206325,0.000000,2643148.575233
+Span margin blocked for NSE F&O,2023-10-05,NSE-F&O - Z,Delivery Voucher,242417.500000,0.000000,2400731.075233
+Exposure margin blocked for NSE F&O,2023-10-05,NSE-F&O - Z,Delivery Voucher,254384.000000,0.000000,2146347.075233
+Span margin reversed for NSE F&O,2023-10-06,NSE-F&O - Z,Delivery Voucher,0.000000,242417.500000,2388764.575233
+Exposure margin reversed for NSE F&O,2023-10-06,NSE-F&O - Z,Delivery Voucher,0.000000,254384.000000,2643148.575233
+Net obligation for Equity F&O,2023-10-06,NSE-F&O - Z,Book Voucher,0.000000,38574.862083,2681723.437316
+Funds transferred back as part of quarterly settlement  with reference number 6a32e8d69d09b12d6f1d9e,2023-10-06,NSE-EQ - Z,Bank Payments,2643148.575233,0.000000,38574.862083
+Funds added using payment gateway from YY0222 with reference number IGAQHEWAY9,2023-10-09,NSE-EQ - Z,Bank Receipts,0.000000,500000.000000,538574.862083
+Funds added using payment gateway from YY0222 with reference number IGAQHEWFE4,2023-10-09,NSE-EQ - Z,Bank Receipts,0.000000,499000.000000,1037574.862083
+Being payment gateway charges debited for YY0222,2023-10-09,NSE-EQ - Z,Journal Entry,10.620000,0.000000,1037564.242083
+Being payment gateway charges debited for YY0222,2023-10-09,NSE-EQ - Z,Journal Entry,10.620000,0.000000,1037553.622083
+Net obligation for Equity F&O,2023-10-09,NSE-F&O - Z,Book Voucher,0.000000,6309.231366,1043862.853449
+Span margin blocked for NSE F&O,2023-10-09,NSE-F&O - Z,Delivery Voucher,76333.000000,0.000000,967529.853449
+Exposure margin blocked for NSE F&O,2023-10-09,NSE-F&O - Z,Delivery Voucher,97695.750000,0.000000,869834.103449
+Being payment gateway charges debited for YY0222,2023-10-10,NSE-EQ - Z,Journal Entry,10.620000,0.000000,869823.483449
+Being payment gateway charges debited for YY0222,2023-10-10,NSE-EQ - Z,Journal Entry,10.620000,0.000000,869812.863449
+Funds added using payment gateway from YY0222 with reference number IGAQHIQLK4,2023-10-10,NSE-EQ - Z,Bank Receipts,0.000000,490000.000000,1359812.863449
+Funds added using payment gateway from YY0222 with reference number IGAQHIQLB8,2023-10-10,NSE-EQ - Z,Bank Receipts,0.000000,500000.000000,1859812.863449
+Span margin reversed for NSE F&O,2023-10-10,NSE-F&O - Z,Delivery Voucher,0.000000,76333.000000,1936145.863449
+Exposure margin reversed for NSE F&O,2023-10-10,NSE-F&O - Z,Delivery Voucher,0.000000,97695.750000,2033841.613449
+Net obligation for Equity F&O,2023-10-10,NSE-F&O - Z,Book Voucher,77210.978311,0.000000,1956630.635138
+Span margin blocked for NSE F&O,2023-10-10,NSE-F&O - Z,Delivery Voucher,155345.000000,0.000000,1801285.635138
+Exposure margin blocked for NSE F&O,2023-10-10,NSE-F&O - Z,Delivery Voucher,197381.000000,0.000000,1603904.635138
+Call and Trade charges(Auto Square Off) for 2023-10-11,2023-10-11,NSE-F&O - Z,Journal Entry,59.000000,0.000000,1603845.635138
+Being payment gateway charges debited for YY0222,2023-10-11,NSE-EQ - Z,Journal Entry,10.620000,0.000000,1603835.015138
+Funds added using payment gateway from YY0222 with reference number IGAQHMGQA1,2023-10-11,NSE-EQ - Z,Bank Receipts,0.000000,500000.000000,2103835.015138
+Span margin reversed for NSE F&O,2023-10-11,NSE-F&O - Z,Delivery Voucher,0.000000,155345.000000,2259180.015138
+Exposure margin reversed for NSE F&O,2023-10-11,NSE-F&O - Z,Delivery Voucher,0.000000,197381.000000,2456561.015138
+Net obligation for Equity F&O,2023-10-11,NSE-F&O - Z,Book Voucher,0.000000,31844.885930,2488405.901068
+Net obligation for Equity F&O,2023-10-12,NSE-F&O - Z,Book Voucher,34516.113185,0.000000,2453889.787883
+Span margin blocked for NSE F&O,2023-10-12,NSE-F&O - Z,Delivery Voucher,243796.250000,0.000000,2210093.537883
+Exposure margin blocked for NSE F&O,2023-10-12,NSE-F&O - Z,Delivery Voucher,200275.530000,0.000000,2009818.007883
+Span margin reversed for NSE F&O,2023-10-13,NSE-F&O - Z,Delivery Voucher,0.000000,243796.250000,2253614.257883
+Exposure margin reversed for NSE F&O,2023-10-13,NSE-F&O - Z,Delivery Voucher,0.000000,200275.530000,2453889.787883
+Net obligation for Equity F&O,2023-10-13,NSE-F&O - Z,Book Voucher,12074.392110,0.000000,2441815.395773
+Net obligation for Equity F&O,2023-10-16,NSE-F&O - Z,Book Voucher,37992.092127,0.000000,2403823.303646
+Span margin blocked for NSE F&O,2023-10-16,NSE-F&O - Z,Delivery Voucher,149076.000000,0.000000,2254747.303646
+Exposure margin blocked for NSE F&O,2023-10-16,NSE-F&O - Z,Delivery Voucher,177663.600000,0.000000,2077083.703646
+Span margin reversed for NSE F&O,2023-10-17,NSE-F&O - Z,Delivery Voucher,0.000000,149076.000000,2226159.703646
+Exposure margin reversed for NSE F&O,2023-10-17,NSE-F&O - Z,Delivery Voucher,0.000000,177663.600000,2403823.303646
+Net obligation for Equity F&O,2023-10-17,NSE-F&O - Z,Book Voucher,52830.432724,0.000000,2350992.870922
+Span margin blocked for NSE F&O,2023-10-17,NSE-F&O - Z,Delivery Voucher,200640.000000,0.000000,2150352.870922
+Exposure margin blocked for NSE F&O,2023-10-17,NSE-F&O - Z,Delivery Voucher,237733.200000,0.000000,1912619.670922
+Span margin reversed for NSE F&O,2023-10-18,NSE-F&O - Z,Delivery Voucher,0.000000,200640.000000,2113259.670922
+Exposure margin reversed for NSE F&O,2023-10-18,NSE-F&O - Z,Delivery Voucher,0.000000,237733.200000,2350992.870922
+Net obligation for Equity F&O,2023-10-18,NSE-F&O - Z,Book Voucher,0.000000,29675.043344,2380667.914266
+Span margin blocked for NSE F&O,2023-10-18,NSE-F&O - Z,Delivery Voucher,163646.000000,0.000000,2217021.914266
+Exposure margin blocked for NSE F&O,2023-10-18,NSE-F&O - Z,Delivery Voucher,236200.200000,0.000000,1980821.714266
+Span margin reversed for NSE F&O,2023-10-19,NSE-F&O - Z,Delivery Voucher,0.000000,163646.000000,2144467.714266
+Exposure margin reversed for NSE F&O,2023-10-19,NSE-F&O - Z,Delivery Voucher,0.000000,236200.200000,2380667.914266
+Net obligation for Equity F&O,2023-10-19,NSE-F&O - Z,Book Voucher,23572.087911,0.000000,2357095.826355
+Span margin blocked for NSE F&O,2023-10-19,NSE-F&O - Z,Delivery Voucher,90084.500000,0.000000,2267011.326355
+Exposure margin blocked for NSE F&O,2023-10-19,NSE-F&O - Z,Delivery Voucher,215806.250000,0.000000,2051205.076355
+Span margin reversed for NSE F&O,2023-10-20,NSE-F&O - Z,Delivery Voucher,0.000000,90084.500000,2141289.576355
+Exposure margin reversed for NSE F&O,2023-10-20,NSE-F&O - Z,Delivery Voucher,0.000000,215806.250000,2357095.826355
+Net obligation for Equity F&O,2023-10-20,NSE-F&O - Z,Book Voucher,0.000000,80521.015404,2437616.841759
+Net obligation for Equity F&O,2023-10-23,NSE-F&O - Z,Book Voucher,0.000000,165379.676278,2602996.518037
+Span margin blocked for NSE F&O,2023-10-23,NSE-F&O - Z,Delivery Voucher,77298.000000,0.000000,2525698.518037
+Exposure margin blocked for NSE F&O,2023-10-23,NSE-F&O - Z,Delivery Voucher,231230.400000,0.000000,2294468.118037
+Span margin reversed for NSE F&O,2023-10-25,NSE-F&O - Z,Delivery Voucher,0.000000,77298.000000,2371766.118037
+Exposure margin reversed for NSE F&O,2023-10-25,NSE-F&O - Z,Delivery Voucher,0.000000,231230.400000,2602996.518037
+Net obligation for Equity F&O,2023-10-25,NSE-F&O - Z,Book Voucher,0.000000,17415.620626,2620412.138663
+Span margin blocked for NSE F&O,2023-10-25,NSE-F&O - Z,Delivery Voucher,104328.000000,0.000000,2516084.138663
+Exposure margin blocked for NSE F&O,2023-10-25,NSE-F&O - Z,Delivery Voucher,229536.000000,0.000000,2286548.138663
+Span margin reversed for NSE F&O,2023-10-26,NSE-F&O - Z,Delivery Voucher,0.000000,104328.000000,2390876.138663
+Exposure margin reversed for NSE F&O,2023-10-26,NSE-F&O - Z,Delivery Voucher,0.000000,229536.000000,2620412.138663
+Net obligation for Equity F&O,2023-10-26,NSE-F&O - Z,Book Voucher,0.000000,42927.495947,2663339.634610
+Span margin blocked for NSE F&O,2023-10-26,NSE-F&O - Z,Delivery Voucher,180345.000000,0.000000,2482994.634610
+Exposure margin blocked for NSE F&O,2023-10-26,NSE-F&O - Z,Delivery Voucher,227671.200000,0.000000,2255323.434610
+Span margin reversed for NSE F&O,2023-10-27,NSE-F&O - Z,Delivery Voucher,0.000000,180345.000000,2435668.434610
+Exposure margin reversed for NSE F&O,2023-10-27,NSE-F&O - Z,Delivery Voucher,0.000000,227671.200000,2663339.634610
+Net obligation for Equity F&O,2023-10-27,NSE-F&O - Z,Book Voucher,0.000000,1032.942349,2664372.576959
+Net obligation for Equity F&O,2023-10-30,NSE-F&O - Z,Book Voucher,56768.663669,0.000000,2607603.913290
+Span margin blocked for NSE F&O,2023-10-30,NSE-F&O - Z,Delivery Voucher,208724.000000,0.000000,2398879.913290
+Exposure margin blocked for NSE F&O,2023-10-30,NSE-F&O - Z,Delivery Voucher,249871.700000,0.000000,2149008.213290
+Payout of 164372.0/- to STATE BANK OF INDIA 00000064047663479 A/C number as per withdrawal request made on 2023-10-29 with reference number 07519f5a53,2023-10-30,NSE-EQ - Z,Bank Payments,164372.000000,0.000000,1984636.213290
+Span margin reversed for NSE F&O,2023-10-31,NSE-F&O - Z,Delivery Voucher,0.000000,208724.000000,2193360.213290
+Exposure margin reversed for NSE F&O,2023-10-31,NSE-F&O - Z,Delivery Voucher,0.000000,249871.700000,2443231.913290
+Net obligation for Equity F&O,2023-10-31,NSE-F&O - Z,Book Voucher,14331.757958,0.000000,2428900.155332
+Span margin blocked for NSE F&O,2023-10-31,NSE-F&O - Z,Delivery Voucher,197730.500000,0.000000,2231169.655332
+Exposure margin blocked for NSE F&O,2023-10-31,NSE-F&O - Z,Delivery Voucher,249056.600000,0.000000,1982113.055332
+Span margin reversed for NSE F&O,2023-11-01,NSE-F&O - Z,Delivery Voucher,0.000000,197730.500000,2179843.555332
+Exposure margin reversed for NSE F&O,2023-11-01,NSE-F&O - Z,Delivery Voucher,0.000000,249056.600000,2428900.155332
+Net obligation for Equity F&O,2023-11-01,NSE-F&O - Z,Book Voucher,45787.433765,0.000000,2383112.721567
+Span margin blocked for NSE F&O,2023-11-01,NSE-F&O - Z,Delivery Voucher,194189.500000,0.000000,2188923.221567
+Exposure margin blocked for NSE F&O,2023-11-01,NSE-F&O - Z,Delivery Voucher,247783.250000,0.000000,1941139.971567
+Call and Trade charges(Auto Square Off) for 2023-11-02,2023-11-02,NSE-F&O - Z,Journal Entry,59.000000,0.000000,1941080.971567
+Kite Connect API Charges (2023-11-02),2023-11-02,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,1939080.971867
+Kite Connect API Charges (2023-11-02),2023-11-02,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,1937080.972167
+Span margin reversed for NSE F&O,2023-11-02,NSE-F&O - Z,Delivery Voucher,0.000000,194189.500000,2131270.472167
+Exposure margin reversed for NSE F&O,2023-11-02,NSE-F&O - Z,Delivery Voucher,0.000000,247783.250000,2379053.722167
+Net obligation for Equity F&O,2023-11-02,NSE-F&O - Z,Book Voucher,129281.457048,0.000000,2249772.265119
+Span margin blocked for NSE F&O,2023-11-02,NSE-F&O - Z,Delivery Voucher,260239.500000,0.000000,1989532.765119
+Exposure margin blocked for NSE F&O,2023-11-02,NSE-F&O - Z,Delivery Voucher,250105.050000,0.000000,1739427.715119
+Call and Trade charges(Auto Square Off) for 2023-11-03,2023-11-03,NSE-F&O - Z,Journal Entry,118.000000,0.000000,1739309.715119
+Span margin reversed for NSE F&O,2023-11-03,NSE-F&O - Z,Delivery Voucher,0.000000,260239.500000,1999549.215119
+Exposure margin reversed for NSE F&O,2023-11-03,NSE-F&O - Z,Delivery Voucher,0.000000,250105.050000,2249654.265119
+Net obligation for Equity F&O,2023-11-03,NSE-F&O - Z,Book Voucher,0.000000,46293.594680,2295947.859799
+Net obligation for Equity F&O,2023-11-06,NSE-F&O - Z,Book Voucher,25875.673567,0.000000,2270072.186232
+Span margin blocked for NSE F&O,2023-11-06,NSE-F&O - Z,Delivery Voucher,208701.000000,0.000000,2061371.186232
+Exposure margin blocked for NSE F&O,2023-11-06,NSE-F&O - Z,Delivery Voucher,233838.000000,0.000000,1827533.186232
+Span margin reversed for NSE F&O,2023-11-07,NSE-F&O - Z,Delivery Voucher,0.000000,208701.000000,2036234.186232
+Exposure margin reversed for NSE F&O,2023-11-07,NSE-F&O - Z,Delivery Voucher,0.000000,233838.000000,2270072.186232
+Net obligation for Equity F&O,2023-11-07,NSE-F&O - Z,Book Voucher,0.000000,88624.528086,2358696.714318
+Span margin blocked for NSE F&O,2023-11-07,NSE-F&O - Z,Delivery Voucher,318946.000000,0.000000,2039750.714318
+Exposure margin blocked for NSE F&O,2023-11-07,NSE-F&O - Z,Delivery Voucher,259434.680000,0.000000,1780316.034318
+Span margin reversed for NSE F&O,2023-11-08,NSE-F&O - Z,Delivery Voucher,0.000000,318946.000000,2099262.034318
+Exposure margin reversed for NSE F&O,2023-11-08,NSE-F&O - Z,Delivery Voucher,0.000000,259434.680000,2358696.714318
+Net obligation for Equity F&O,2023-11-08,NSE-F&O - Z,Book Voucher,0.000000,23461.301159,2382158.015477
+Span margin blocked for NSE F&O,2023-11-08,NSE-F&O - Z,Delivery Voucher,201883.500000,0.000000,2180274.515477
+Exposure margin blocked for NSE F&O,2023-11-08,NSE-F&O - Z,Delivery Voucher,253381.050000,0.000000,1926893.465477
+Span margin reversed for NSE F&O,2023-11-09,NSE-F&O - Z,Delivery Voucher,0.000000,201883.500000,2128776.965477
+Exposure margin reversed for NSE F&O,2023-11-09,NSE-F&O - Z,Delivery Voucher,0.000000,253381.050000,2382158.015477
+Net obligation for Equity F&O,2023-11-09,NSE-F&O - Z,Book Voucher,47622.689831,0.000000,2334535.325646
+Span margin blocked for NSE F&O,2023-11-09,NSE-F&O - Z,Delivery Voucher,222416.750000,0.000000,2112118.575646
+Exposure margin blocked for NSE F&O,2023-11-09,NSE-F&O - Z,Delivery Voucher,253299.800000,0.000000,1858818.775646
+Span margin reversed for NSE F&O,2023-11-10,NSE-F&O - Z,Delivery Voucher,0.000000,222416.750000,2081235.525646
+Exposure margin reversed for NSE F&O,2023-11-10,NSE-F&O - Z,Delivery Voucher,0.000000,253299.800000,2334535.325646
+Net obligation for Equity F&O,2023-11-10,NSE-F&O - Z,Book Voucher,0.000000,306686.455486,2641221.781132
+Net settlement for Equity with settlement number: 2023214,2023-11-12,NSE-EQ - Z,Book Voucher,25179.535636,0.000000,2616042.245496
+Reversal of Brokerage  on 2023-11-12 for 2023214,2023-11-12,NSE-EQ - Z,Journal Entry,0.000000,0.011800,2616042.257296
+Net obligation for Equity F&O,2023-11-13,NSE-F&O - Z,Book Voucher,0.000000,42218.012489,2658260.269785
+Span margin blocked for NSE F&O,2023-11-13,NSE-F&O - Z,Delivery Voucher,219831.900000,0.000000,2438428.369785
+Exposure margin blocked for NSE F&O,2023-11-13,NSE-F&O - Z,Delivery Voucher,253462.950000,0.000000,2184965.419785
+Payout of 141221.78/- to STATE BANK OF INDIA 00000064047663479 A/C number as per withdrawal request made on 2023-11-11 with reference number a785df4085,2023-11-13,NSE-EQ - Z,Bank Payments,141221.780000,0.000000,2043743.639785
+Span margin reversed for NSE F&O,2023-11-15,NSE-F&O - Z,Delivery Voucher,0.000000,219831.900000,2263575.539785
+Exposure margin reversed for NSE F&O,2023-11-15,NSE-F&O - Z,Delivery Voucher,0.000000,253462.950000,2517038.489785
+Net obligation for Equity F&O,2023-11-15,NSE-F&O - Z,Book Voucher,0.000000,18596.846567,2535635.336352
+Span margin blocked for NSE F&O,2023-11-15,NSE-F&O - Z,Delivery Voucher,192859.100000,0.000000,2342776.236352
+Exposure margin blocked for NSE F&O,2023-11-15,NSE-F&O - Z,Delivery Voucher,256402.900000,0.000000,2086373.336352
+Call and Trade charges(Auto Square Off) for 2023-11-16,2023-11-16,NSE-F&O - Z,Journal Entry,59.000000,0.000000,2086314.336352
+Span margin reversed for NSE F&O,2023-11-16,NSE-F&O - Z,Delivery Voucher,0.000000,192859.100000,2279173.436352
+Exposure margin reversed for NSE F&O,2023-11-16,NSE-F&O - Z,Delivery Voucher,0.000000,256402.900000,2535576.336352
+Net obligation for Equity F&O,2023-11-16,NSE-F&O - Z,Book Voucher,1973.366068,0.000000,2533602.970284
+Span margin blocked for NSE F&O,2023-11-16,NSE-F&O - Z,Delivery Voucher,256745.500000,0.000000,2276857.470284
+Exposure margin blocked for NSE F&O,2023-11-16,NSE-F&O - Z,Delivery Voucher,257786.100000,0.000000,2019071.370284
+Span margin reversed for NSE F&O,2023-11-17,NSE-F&O - Z,Delivery Voucher,0.000000,256745.500000,2275816.870284
+Exposure margin reversed for NSE F&O,2023-11-17,NSE-F&O - Z,Delivery Voucher,0.000000,257786.100000,2533602.970284
+Net obligation for Equity F&O,2023-11-17,NSE-F&O - Z,Book Voucher,0.000000,52804.851317,2586407.821601
+Net obligation for Equity F&O,2023-11-20,NSE-F&O - Z,Book Voucher,27083.638106,0.000000,2559324.183495
+Span margin blocked for NSE F&O,2023-11-20,NSE-F&O - Z,Delivery Voucher,221011.000000,0.000000,2338313.183495
+Exposure margin blocked for NSE F&O,2023-11-20,NSE-F&O - Z,Delivery Voucher,276516.800000,0.000000,2061796.383495
+Span margin reversed for NSE F&O,2023-11-21,NSE-F&O - Z,Delivery Voucher,0.000000,221011.000000,2282807.383495
+Exposure margin reversed for NSE F&O,2023-11-21,NSE-F&O - Z,Delivery Voucher,0.000000,276516.800000,2559324.183495
+Net obligation for Equity F&O,2023-11-21,NSE-F&O - Z,Book Voucher,0.000000,20928.618340,2580252.801835
+Span margin blocked for NSE F&O,2023-11-21,NSE-F&O - Z,Delivery Voucher,221416.000000,0.000000,2358836.801835
+Exposure margin blocked for NSE F&O,2023-11-21,NSE-F&O - Z,Delivery Voucher,277778.200000,0.000000,2081058.601835
+Span margin reversed for NSE F&O,2023-11-22,NSE-F&O - Z,Delivery Voucher,0.000000,221416.000000,2302474.601835
+Exposure margin reversed for NSE F&O,2023-11-22,NSE-F&O - Z,Delivery Voucher,0.000000,277778.200000,2580252.801835
+Net obligation for Equity F&O,2023-11-22,NSE-F&O - Z,Book Voucher,43852.398043,0.000000,2536400.403792
+Span margin blocked for NSE F&O,2023-11-22,NSE-F&O - Z,Delivery Voucher,199079.000000,0.000000,2337321.403792
+Exposure margin blocked for NSE F&O,2023-11-22,NSE-F&O - Z,Delivery Voucher,278377.400000,0.000000,2058944.003792
+Span margin reversed for NSE F&O,2023-11-23,NSE-F&O - Z,Delivery Voucher,0.000000,199079.000000,2258023.003792
+Exposure margin reversed for NSE F&O,2023-11-23,NSE-F&O - Z,Delivery Voucher,0.000000,278377.400000,2536400.403792
+Net obligation for Equity F&O,2023-11-23,NSE-F&O - Z,Book Voucher,9750.793583,0.000000,2526649.610209
+Span margin blocked for NSE F&O,2023-11-23,NSE-F&O - Z,Delivery Voucher,291498.500000,0.000000,2235151.110209
+Exposure margin blocked for NSE F&O,2023-11-23,NSE-F&O - Z,Delivery Voucher,291237.940000,0.000000,1943913.170209
+Call and Trade charges(Auto Square Off) for 2023-11-24,2023-11-24,NSE-F&O - Z,Journal Entry,59.000000,0.000000,1943854.170209
+Span margin reversed for NSE F&O,2023-11-24,NSE-F&O - Z,Delivery Voucher,0.000000,291498.500000,2235352.670209
+Exposure margin reversed for NSE F&O,2023-11-24,NSE-F&O - Z,Delivery Voucher,0.000000,291237.940000,2526590.610209
+Net obligation for Equity F&O,2023-11-24,NSE-F&O - Z,Book Voucher,0.000000,53506.358402,2580096.968611
+Span margin blocked for NSE F&O,2023-11-24,NSE-F&O - Z,Delivery Voucher,134153.000000,0.000000,2445943.968611
+Exposure margin blocked for NSE F&O,2023-11-24,NSE-F&O - Z,Delivery Voucher,32926.690000,0.000000,2413017.278611
+Span margin reversed for NSE F&O,2023-11-28,NSE-F&O - Z,Delivery Voucher,0.000000,134153.000000,2547170.278611
+Exposure margin reversed for NSE F&O,2023-11-28,NSE-F&O - Z,Delivery Voucher,0.000000,32926.690000,2580096.968611
+Net obligation for Equity F&O,2023-11-28,NSE-F&O - Z,Book Voucher,0.000000,56548.223171,2636645.191782
+Span margin blocked for NSE F&O,2023-11-28,NSE-F&O - Z,Delivery Voucher,116466.000000,0.000000,2520179.191782
+Exposure margin blocked for NSE F&O,2023-11-28,NSE-F&O - Z,Delivery Voucher,279113.800000,0.000000,2241065.391782
+Net settlement for Equity with settlement number: 2023224,2023-11-28,NSE-EQ - Z,Book Voucher,37082.019597,0.000000,2203983.372185
+Span margin reversed for NSE F&O,2023-11-29,NSE-F&O - Z,Delivery Voucher,0.000000,116466.000000,2320449.372185
+Exposure margin reversed for NSE F&O,2023-11-29,NSE-F&O - Z,Delivery Voucher,0.000000,279113.800000,2599563.172185
+Net settlement for Equity with settlement number: 2023225,2023-11-29,NSE-EQ - Z,Book Voucher,32168.319812,0.000000,2567394.852373
+Net obligation for Equity F&O,2023-11-29,NSE-F&O - Z,Book Voucher,0.000000,264394.895090,2831789.747463
+Span margin blocked for NSE F&O,2023-11-29,NSE-F&O - Z,Delivery Voucher,261458.000000,0.000000,2570331.747463
+Exposure margin blocked for NSE F&O,2023-11-29,NSE-F&O - Z,Delivery Voucher,311956.140000,0.000000,2258375.607463
+Span margin reversed for NSE F&O,2023-11-30,NSE-F&O - Z,Delivery Voucher,0.000000,261458.000000,2519833.607463
+Exposure margin reversed for NSE F&O,2023-11-30,NSE-F&O - Z,Delivery Voucher,0.000000,311956.140000,2831789.747463
+Net obligation for Equity F&O,2023-11-30,NSE-F&O - Z,Book Voucher,97576.449362,0.000000,2734213.298101
+Span margin blocked for NSE F&O,2023-11-30,NSE-F&O - Z,Delivery Voucher,153851.000000,0.000000,2580362.298101
+Exposure margin blocked for NSE F&O,2023-11-30,NSE-F&O - Z,Delivery Voucher,30393.300000,0.000000,2549968.998101
+Net settlement for Equity with settlement number: 2023227,2023-12-01,NSE-EQ - Z,Book Voucher,32702.741527,0.000000,2517266.256574
+Span margin reversed for NSE F&O,2023-12-01,NSE-F&O - Z,Delivery Voucher,0.000000,153851.000000,2671117.256574
+Exposure margin reversed for NSE F&O,2023-12-01,NSE-F&O - Z,Delivery Voucher,0.000000,30393.300000,2701510.556574
+Net obligation for Equity F&O,2023-12-01,NSE-F&O - Z,Book Voucher,14.963839,0.000000,2701495.592735
+Span margin blocked for NSE F&O,2023-12-01,NSE-F&O - Z,Delivery Voucher,152264.000000,0.000000,2549231.592735
+Exposure margin blocked for NSE F&O,2023-12-01,NSE-F&O - Z,Delivery Voucher,30160.730000,0.000000,2519070.862735
+Kite Connect API Charges (2023-12-04),2023-12-04,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,2517070.863035
+Kite Connect API Charges (2023-12-04),2023-12-04,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,2515070.863335
+Span margin reversed for NSE F&O,2023-12-04,NSE-F&O - Z,Delivery Voucher,0.000000,152264.000000,2667334.863335
+Exposure margin reversed for NSE F&O,2023-12-04,NSE-F&O - Z,Delivery Voucher,0.000000,30160.730000,2697495.593335
+Net obligation for Equity F&O,2023-12-04,NSE-F&O - Z,Book Voucher,98838.017060,0.000000,2598657.576275
+Span margin blocked for NSE F&O,2023-12-04,NSE-F&O - Z,Delivery Voucher,393069.500000,0.000000,2205588.076275
+Exposure margin blocked for NSE F&O,2023-12-04,NSE-F&O - Z,Delivery Voucher,341971.240000,0.000000,1863616.836275
+Span margin reversed for NSE F&O,2023-12-05,NSE-F&O - Z,Delivery Voucher,0.000000,393069.500000,2256686.336275
+Exposure margin reversed for NSE F&O,2023-12-05,NSE-F&O - Z,Delivery Voucher,0.000000,341971.240000,2598657.576275
+Net obligation for Equity F&O,2023-12-05,NSE-F&O - Z,Book Voucher,0.000000,31635.467618,2630293.043893
+Span margin blocked for NSE F&O,2023-12-05,NSE-F&O - Z,Delivery Voucher,234133.000000,0.000000,2396160.043893
+Exposure margin blocked for NSE F&O,2023-12-05,NSE-F&O - Z,Delivery Voucher,293196.400000,0.000000,2102963.643893
+Span margin reversed for NSE F&O,2023-12-06,NSE-F&O - Z,Delivery Voucher,0.000000,234133.000000,2337096.643893
+Exposure margin reversed for NSE F&O,2023-12-06,NSE-F&O - Z,Delivery Voucher,0.000000,293196.400000,2630293.043893
+Net obligation for Equity F&O,2023-12-06,NSE-F&O - Z,Book Voucher,0.000000,10792.761121,2641085.805014
+Span margin blocked for NSE F&O,2023-12-06,NSE-F&O - Z,Delivery Voucher,219111.000000,0.000000,2421974.805014
+Exposure margin blocked for NSE F&O,2023-12-06,NSE-F&O - Z,Delivery Voucher,294550.200000,0.000000,2127424.605014
+Span margin reversed for NSE F&O,2023-12-07,NSE-F&O - Z,Delivery Voucher,0.000000,219111.000000,2346535.605014
+Exposure margin reversed for NSE F&O,2023-12-07,NSE-F&O - Z,Delivery Voucher,0.000000,294550.200000,2641085.805014
+Net obligation for Equity F&O,2023-12-07,NSE-F&O - Z,Book Voucher,14194.430112,0.000000,2626891.374902
+Span margin blocked for NSE F&O,2023-12-07,NSE-F&O - Z,Delivery Voucher,229718.000000,0.000000,2397173.374902
+Exposure margin blocked for NSE F&O,2023-12-07,NSE-F&O - Z,Delivery Voucher,294431.200000,0.000000,2102742.174902
+Span margin reversed for NSE F&O,2023-12-08,NSE-F&O - Z,Delivery Voucher,0.000000,229718.000000,2332460.174902
+Exposure margin reversed for NSE F&O,2023-12-08,NSE-F&O - Z,Delivery Voucher,0.000000,294431.200000,2626891.374902
+Net obligation for Equity F&O,2023-12-08,NSE-F&O - Z,Book Voucher,0.000000,38349.772343,2665241.147245
+Net obligation for Equity F&O,2023-12-11,NSE-F&O - Z,Book Voucher,0.000000,10150.942912,2675392.090157
+Span margin blocked for NSE F&O,2023-12-11,NSE-F&O - Z,Delivery Voucher,241324.000000,0.000000,2434068.090157
+Exposure margin blocked for NSE F&O,2023-12-11,NSE-F&O - Z,Delivery Voucher,295182.300000,0.000000,2138885.790157
+Span margin reversed for NSE F&O,2023-12-12,NSE-F&O - Z,Delivery Voucher,0.000000,241324.000000,2380209.790157
+Exposure margin reversed for NSE F&O,2023-12-12,NSE-F&O - Z,Delivery Voucher,0.000000,295182.300000,2675392.090157
+Net obligation for Equity F&O,2023-12-12,NSE-F&O - Z,Book Voucher,65666.267899,0.000000,2609725.822258
+Span margin blocked for NSE F&O,2023-12-12,NSE-F&O - Z,Delivery Voucher,226633.500000,0.000000,2383092.322258
+Exposure margin blocked for NSE F&O,2023-12-12,NSE-F&O - Z,Delivery Voucher,315344.250000,0.000000,2067748.072258
+Span margin reversed for NSE F&O,2023-12-13,NSE-F&O - Z,Delivery Voucher,0.000000,226633.500000,2294381.572258
+Exposure margin reversed for NSE F&O,2023-12-13,NSE-F&O - Z,Delivery Voucher,0.000000,315344.250000,2609725.822258
+Net obligation for Equity F&O,2023-12-13,NSE-F&O - Z,Book Voucher,0.000000,52903.585390,2662629.407648
+Span margin blocked for NSE F&O,2023-12-13,NSE-F&O - Z,Delivery Voucher,202563.000000,0.000000,2460066.407648
+Exposure margin blocked for NSE F&O,2023-12-13,NSE-F&O - Z,Delivery Voucher,294475.300000,0.000000,2165591.107648
+Span margin reversed for NSE F&O,2023-12-14,NSE-F&O - Z,Delivery Voucher,0.000000,202563.000000,2368154.107648
+Exposure margin reversed for NSE F&O,2023-12-14,NSE-F&O - Z,Delivery Voucher,0.000000,294475.300000,2662629.407648
+Net obligation for Equity F&O,2023-12-14,NSE-F&O - Z,Book Voucher,81390.111473,0.000000,2581239.296175
+Span margin blocked for NSE F&O,2023-12-14,NSE-F&O - Z,Delivery Voucher,323149.500000,0.000000,2258089.796175
+Exposure margin blocked for NSE F&O,2023-12-14,NSE-F&O - Z,Delivery Voucher,319914.750000,0.000000,1938175.046175
+Span margin reversed for NSE F&O,2023-12-15,NSE-F&O - Z,Delivery Voucher,0.000000,323149.500000,2261324.546175
+Exposure margin reversed for NSE F&O,2023-12-15,NSE-F&O - Z,Delivery Voucher,0.000000,319914.750000,2581239.296175
+Net obligation for Equity F&O,2023-12-15,NSE-F&O - Z,Book Voucher,0.000000,18964.038007,2600203.334182
+Net obligation for Equity F&O,2023-12-18,NSE-F&O - Z,Book Voucher,58114.284096,0.000000,2542089.050086
+Span margin blocked for NSE F&O,2023-12-18,NSE-F&O - Z,Delivery Voucher,244783.000000,0.000000,2297306.050086
+Exposure margin blocked for NSE F&O,2023-12-18,NSE-F&O - Z,Delivery Voucher,300681.500000,0.000000,1996624.550086
+Span margin reversed for NSE F&O,2023-12-19,NSE-F&O - Z,Delivery Voucher,0.000000,244783.000000,2241407.550086
+Exposure margin reversed for NSE F&O,2023-12-19,NSE-F&O - Z,Delivery Voucher,0.000000,300681.500000,2542089.050086
+Net obligation for Equity F&O,2023-12-19,NSE-F&O - Z,Book Voucher,0.000000,77303.288443,2619392.338529
+Span margin blocked for NSE F&O,2023-12-19,NSE-F&O - Z,Delivery Voucher,226115.000000,0.000000,2393277.338529
+Exposure margin blocked for NSE F&O,2023-12-19,NSE-F&O - Z,Delivery Voucher,301388.500000,0.000000,2091888.838529
+Span margin reversed for NSE F&O,2023-12-20,NSE-F&O - Z,Delivery Voucher,0.000000,226115.000000,2318003.838529
+Exposure margin reversed for NSE F&O,2023-12-20,NSE-F&O - Z,Delivery Voucher,0.000000,301388.500000,2619392.338529
+Net obligation for Equity F&O,2023-12-20,NSE-F&O - Z,Book Voucher,79159.467491,0.000000,2540232.871038
+Span margin blocked for NSE F&O,2023-12-20,NSE-F&O - Z,Delivery Voucher,212459.000000,0.000000,2327773.871038
+Exposure margin blocked for NSE F&O,2023-12-20,NSE-F&O - Z,Delivery Voucher,297038.700000,0.000000,2030735.171038
+Span margin reversed for NSE F&O,2023-12-21,NSE-F&O - Z,Delivery Voucher,0.000000,212459.000000,2243194.171038
+Exposure margin reversed for NSE F&O,2023-12-21,NSE-F&O - Z,Delivery Voucher,0.000000,297038.700000,2540232.871038
+Net obligation for Equity F&O,2023-12-21,NSE-F&O - Z,Book Voucher,68886.474682,0.000000,2471346.396356
+Span margin blocked for NSE F&O,2023-12-21,NSE-F&O - Z,Delivery Voucher,156947.000000,0.000000,2314399.396356
+Exposure margin blocked for NSE F&O,2023-12-21,NSE-F&O - Z,Delivery Voucher,298905.600000,0.000000,2015493.796356
+Span margin reversed for NSE F&O,2023-12-22,NSE-F&O - Z,Delivery Voucher,0.000000,156947.000000,2172440.796356
+Exposure margin reversed for NSE F&O,2023-12-22,NSE-F&O - Z,Delivery Voucher,0.000000,298905.600000,2471346.396356
+Net obligation for Equity F&O,2023-12-22,NSE-F&O - Z,Book Voucher,0.000000,56535.865347,2527882.261703
+Net obligation for Equity F&O,2023-12-26,NSE-F&O - Z,Book Voucher,0.000000,9543.524503,2537425.786206
+Span margin blocked for NSE F&O,2023-12-26,NSE-F&O - Z,Delivery Voucher,105420.000000,0.000000,2432005.786206
+Exposure margin blocked for NSE F&O,2023-12-26,NSE-F&O - Z,Delivery Voucher,300612.200000,0.000000,2131393.586206
+Span margin reversed for NSE F&O,2023-12-27,NSE-F&O - Z,Delivery Voucher,0.000000,105420.000000,2236813.586206
+Exposure margin reversed for NSE F&O,2023-12-27,NSE-F&O - Z,Delivery Voucher,0.000000,300612.200000,2537425.786206
+Net obligation for Equity F&O,2023-12-27,NSE-F&O - Z,Book Voucher,0.000000,47984.211208,2585409.997414
+Span margin blocked for NSE F&O,2023-12-27,NSE-F&O - Z,Delivery Voucher,109249.000000,0.000000,2476160.997414
+Exposure margin blocked for NSE F&O,2023-12-27,NSE-F&O - Z,Delivery Voucher,303545.200000,0.000000,2172615.797414
+Span margin reversed for NSE F&O,2023-12-28,NSE-F&O - Z,Delivery Voucher,0.000000,109249.000000,2281864.797414
+Exposure margin reversed for NSE F&O,2023-12-28,NSE-F&O - Z,Delivery Voucher,0.000000,303545.200000,2585409.997414
+Net obligation for Equity F&O,2023-12-28,NSE-F&O - Z,Book Voucher,6728.438459,0.000000,2578681.558955
+Span margin blocked for NSE F&O,2023-12-28,NSE-F&O - Z,Delivery Voucher,254904.000000,0.000000,2323777.558955
+Exposure margin blocked for NSE F&O,2023-12-28,NSE-F&O - Z,Delivery Voucher,307192.200000,0.000000,2016585.358955
+Span margin reversed for NSE F&O,2023-12-29,NSE-F&O - Z,Delivery Voucher,0.000000,254904.000000,2271489.358955
+Exposure margin reversed for NSE F&O,2023-12-29,NSE-F&O - Z,Delivery Voucher,0.000000,307192.200000,2578681.558955
+Net obligation for Equity F&O,2023-12-29,NSE-F&O - Z,Book Voucher,0.000000,23396.124739,2602077.683694
+AMC for Demat Account for 26-06-2023 to 24-09-2023,2023-12-30,NSE-EQ - Z,Journal Entry,88.500000,0.000000,2601989.183694
+Net obligation for Equity F&O,2024-01-01,NSE-F&O - Z,Book Voucher,0.000000,33080.716746,2635069.900440
+Span margin blocked for NSE F&O,2024-01-01,NSE-F&O - Z,Delivery Voucher,269765.000000,0.000000,2365304.900440
+Exposure margin blocked for NSE F&O,2024-01-01,NSE-F&O - Z,Delivery Voucher,306444.600000,0.000000,2058860.300440
+Span margin reversed for NSE F&O,2024-01-02,NSE-F&O - Z,Delivery Voucher,0.000000,269765.000000,2328625.300440
+Exposure margin reversed for NSE F&O,2024-01-02,NSE-F&O - Z,Delivery Voucher,0.000000,306444.600000,2635069.900440
+Net obligation for Equity F&O,2024-01-02,NSE-F&O - Z,Book Voucher,137713.769757,0.000000,2497356.130683
+Span margin blocked for NSE F&O,2024-01-02,NSE-F&O - Z,Delivery Voucher,220985.000000,0.000000,2276371.130683
+Exposure margin blocked for NSE F&O,2024-01-02,NSE-F&O - Z,Delivery Voucher,304594.500000,0.000000,1971776.630683
+Span margin reversed for NSE F&O,2024-01-03,NSE-F&O - Z,Delivery Voucher,0.000000,220985.000000,2192761.630683
+Exposure margin reversed for NSE F&O,2024-01-03,NSE-F&O - Z,Delivery Voucher,0.000000,304594.500000,2497356.130683
+Net obligation for Equity F&O,2024-01-03,NSE-F&O - Z,Book Voucher,0.000000,54806.732226,2552162.862909
+Span margin blocked for NSE F&O,2024-01-03,NSE-F&O - Z,Delivery Voucher,211384.000000,0.000000,2340778.862909
+Exposure margin blocked for NSE F&O,2024-01-03,NSE-F&O - Z,Delivery Voucher,302400.000000,0.000000,2038378.862909
+Kite Connect API Charges (2024-01-04),2024-01-04,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,2036378.863209
+Kite Connect API Charges (2024-01-04),2024-01-04,NSE-EQ - Z,Journal Entry,1999.999700,0.000000,2034378.863509
+Span margin reversed for NSE F&O,2024-01-04,NSE-F&O - Z,Delivery Voucher,0.000000,211384.000000,2245762.863509
+Exposure margin reversed for NSE F&O,2024-01-04,NSE-F&O - Z,Delivery Voucher,0.000000,302400.000000,2548162.863509
+Net obligation for Equity F&O,2024-01-04,NSE-F&O - Z,Book Voucher,67625.658807,0.000000,2480537.204702
+Span margin blocked for NSE F&O,2024-01-04,NSE-F&O - Z,Delivery Voucher,285982.000000,0.000000,2194555.204702
+Exposure margin blocked for NSE F&O,2024-01-04,NSE-F&O - Z,Delivery Voucher,305003.300000,0.000000,1889551.904702
+Span margin reversed for NSE F&O,2024-01-05,NSE-F&O - Z,Delivery Voucher,0.000000,285982.000000,2175533.904702
+Exposure margin reversed for NSE F&O,2024-01-05,NSE-F&O - Z,Delivery Voucher,0.000000,305003.300000,2480537.204702
+Net obligation for Equity F&O,2024-01-05,NSE-F&O - Z,Book Voucher,0.000000,111884.368726,2592421.573428
+Funds transferred back as part of quarterly settlement with reference number 8027af1d6147f79e412ee2,2024-01-05,NSE-EQ - Z,Bank Payments,2480537.200000,0.000000,111884.373428
+Funds added using payment gateway from YY0222 with reference number IGAQRHLHN5,2024-01-06,NSE-EQ - Z,Bank Receipts,0.000000,500000.000000,611884.373428
+Funds added using payment gateway from YY0222 with reference number IGAQRHLKQ5,2024-01-06,NSE-EQ - Z,Bank Receipts,0.000000,490000.000000,1101884.373428
+Being payment gateway charges debited for YY0222,2024-01-06,NSE-EQ - Z,Journal Entry,10.620000,0.000000,1101873.753428
+Being payment gateway charges debited for YY0222,2024-01-06,NSE-EQ - Z,Journal Entry,10.620000,0.000000,1101863.133428
+Net obligation for Equity F&O,2024-01-08,NSE-F&O - Z,Book Voucher,0.000000,8012.947134,1109876.080562
+Span margin blocked for NSE F&O,2024-01-08,NSE-F&O - Z,Delivery Voucher,248624.000000,0.000000,861252.080562
+Exposure margin blocked for NSE F&O,2024-01-08,NSE-F&O - Z,Delivery Voucher,302113.700000,0.000000,559138.380562
+Being payment gateway charges debited for YY0222,2024-01-09,NSE-EQ - Z,Journal Entry,10.620000,0.000000,559127.760562
+Being payment gateway charges debited for YY0222,2024-01-09,NSE-EQ - Z,Journal Entry,10.620000,0.000000,559117.140562
+Funds added using payment gateway from YY0222 with reference number IGAQRRDVQ2,2024-01-09,NSE-EQ - Z,Bank Receipts,0.000000,499000.000000,1058117.140562
+Funds added using payment gateway from YY0222 with reference number IGAQRRDVA6,2024-01-09,NSE-EQ - Z,Bank Receipts,0.000000,500000.000000,1558117.140562
+Span margin reversed for NSE F&O,2024-01-09,NSE-F&O - Z,Delivery Voucher,0.000000,248624.000000,1806741.140562
+Exposure margin reversed for NSE F&O,2024-01-09,NSE-F&O - Z,Delivery Voucher,0.000000,302113.700000,2108854.840562
+Net obligation for Equity F&O,2024-01-09,NSE-F&O - Z,Book Voucher,0.000000,161141.724061,2269996.564623
+Span margin blocked for NSE F&O,2024-01-09,NSE-F&O - Z,Delivery Voucher,229419.000000,0.000000,2040577.564623
+Exposure margin blocked for NSE F&O,2024-01-09,NSE-F&O - Z,Delivery Voucher,302635.900000,0.000000,1737941.664623
+Funds added using payment gateway from YY0222 with reference number IGAQRYBRL1,2024-01-10,NSE-EQ - Z,Bank Receipts,0.000000,500000.000000,2237941.664623
+Being payment gateway charges debited for YY0222,2024-01-10,NSE-EQ - Z,Journal Entry,10.620000,0.000000,2237931.044623
+Span margin reversed for NSE F&O,2024-01-10,NSE-F&O - Z,Delivery Voucher,0.000000,229419.000000,2467350.044623
+Exposure margin reversed for NSE F&O,2024-01-10,NSE-F&O - Z,Delivery Voucher,0.000000,302635.900000,2769985.944623
+Net obligation for Equity F&O,2024-01-10,NSE-F&O - Z,Book Voucher,23732.634513,0.000000,2746253.310110
+Span margin blocked for NSE F&O,2024-01-10,NSE-F&O - Z,Delivery Voucher,238546.000000,0.000000,2507707.310110
+Exposure margin blocked for NSE F&O,2024-01-10,NSE-F&O - Z,Delivery Voucher,303927.400000,0.000000,2203779.910110
+Span margin reversed for NSE F&O,2024-01-11,NSE-F&O - Z,Delivery Voucher,0.000000,238546.000000,2442325.910110
+Exposure margin reversed for NSE F&O,2024-01-11,NSE-F&O - Z,Delivery Voucher,0.000000,303927.400000,2746253.310110
+Net obligation for Equity F&O,2024-01-11,NSE-F&O - Z,Book Voucher,25421.817982,0.000000,2720831.492128
+Span margin blocked for NSE F&O,2024-01-11,NSE-F&O - Z,Delivery Voucher,260747.000000,0.000000,2460084.492128
+Exposure margin blocked for NSE F&O,2024-01-11,NSE-F&O - Z,Delivery Voucher,303498.300000,0.000000,2156586.192128
+Span margin reversed for NSE F&O,2024-01-12,NSE-F&O - Z,Delivery Voucher,0.000000,260747.000000,2417333.192128
+Exposure margin reversed for NSE F&O,2024-01-12,NSE-F&O - Z,Delivery Voucher,0.000000,303498.300000,2720831.492128
+Net obligation for Equity F&O,2024-01-12,NSE-F&O - Z,Book Voucher,49788.620439,0.000000,2671042.871689
+Net obligation for Equity F&O,2024-01-15,NSE-F&O - Z,Book Voucher,106460.302659,0.000000,2564582.569030
+Span margin blocked for NSE F&O,2024-01-15,NSE-F&O - Z,Delivery Voucher,249085.000000,0.000000,2315497.569030
+Exposure margin blocked for NSE F&O,2024-01-15,NSE-F&O - Z,Delivery Voucher,331999.500000,0.000000,1983498.069030
+Span margin reversed for NSE F&O,2024-01-16,NSE-F&O - Z,Delivery Voucher,0.000000,249085.000000,2232583.069030
+Exposure margin reversed for NSE F&O,2024-01-16,NSE-F&O - Z,Delivery Voucher,0.000000,331999.500000,2564582.569030
+Net obligation for Equity F&O,2024-01-16,NSE-F&O - Z,Book Voucher,0.000000,19088.273085,2583670.842115
+Span margin blocked for NSE F&O,2024-01-16,NSE-F&O - Z,Delivery Voucher,236359.000000,0.000000,2347311.842115
+Exposure margin blocked for NSE F&O,2024-01-16,NSE-F&O - Z,Delivery Voucher,308413.000000,0.000000,2038898.842115
+Span margin reversed for NSE F&O,2024-01-17,NSE-F&O - Z,Delivery Voucher,0.000000,236359.000000,2275257.842115
+Exposure margin reversed for NSE F&O,2024-01-17,NSE-F&O - Z,Delivery Voucher,0.000000,308413.000000,2583670.842115
+Net obligation for Equity F&O,2024-01-17,NSE-F&O - Z,Book Voucher,0.000000,94393.328518,2678064.170633
+Span margin blocked for NSE F&O,2024-01-17,NSE-F&O - Z,Delivery Voucher,223597.000000,0.000000,2454467.170633
+Exposure margin blocked for NSE F&O,2024-01-17,NSE-F&O - Z,Delivery Voucher,302253.700000,0.000000,2152213.470633
+Span margin reversed for NSE F&O,2024-01-18,NSE-F&O - Z,Delivery Voucher,0.000000,223597.000000,2375810.470633
+Exposure margin reversed for NSE F&O,2024-01-18,NSE-F&O - Z,Delivery Voucher,0.000000,302253.700000,2678064.170633
+Net obligation for Equity F&O,2024-01-18,NSE-F&O - Z,Book Voucher,13857.049826,0.000000,2664207.120807
+Span margin blocked for NSE F&O,2024-01-18,NSE-F&O - Z,Delivery Voucher,78330.000000,0.000000,2585877.120807
+Exposure margin blocked for NSE F&O,2024-01-18,NSE-F&O - Z,Delivery Voucher,322911.750000,0.000000,2262965.370807
+Call and Trade charges(Auto Square Off) for 2024-01-19,2024-01-19,NSE-F&O - Z,Journal Entry,59.000000,0.000000,2262906.370807
+Span margin reversed for NSE F&O,2024-01-19,NSE-F&O - Z,Delivery Voucher,0.000000,78330.000000,2341236.370807
+Exposure margin reversed for NSE F&O,2024-01-19,NSE-F&O - Z,Delivery Voucher,0.000000,322911.750000,2664148.120807
+Net obligation for Equity F&O,2024-01-19,NSE-F&O - Z,Book Voucher,0.000000,156159.438095,2820307.558902
+Closing Balance,,,,,,2820307.558902
