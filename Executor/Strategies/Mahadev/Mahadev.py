@@ -28,7 +28,7 @@ class ExpiryTrader(StrategyBase):
         return self.ExitParams
     
 # Testing the class with ExpiryTrader data
-expiry_trader_obj = ExpiryTrader.load_from_db('ExpiryTrader')
+expiry_trader_obj = ExpiryTrader.load_from_db('Mahadev')
 instrument_obj = InstrumentCenterUtils.Instrument()
 
 hedge_transaction_type = expiry_trader_obj.get_general_params().HedgeTransactionType
@@ -64,7 +64,7 @@ ltp = InstrumentCenterUtils.get_single_ltp(main_instrument_token)
 lot_size = instrument_obj.get_lot_size_by_exchange_token(main_exchange_token)
 
 
-update_qty_user_firebase(strategy_name,ltp,lot_size)
+# update_qty_user_firebase(strategy_name,ltp,lot_size)
 
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(main_exchange_token)
 hedge_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(hedge_exchange_token)
@@ -140,12 +140,12 @@ def main():
                         "EntryTime" : dt.datetime.now().strftime("%H:%M"),
                         "Status" : "Open"}
 
-        update_signal_firebase(strategy_name,signals_to_log)
+        # update_signal_firebase(strategy_name,signals_to_log)
 
-        message_for_orders("Live",prediction,main_trade_symbol,hedge_trade_symbol)
+        # message_for_orders("Live",prediction,main_trade_symbol,hedge_trade_symbol)
     
-        # OrderCenterUtils.place_order_for_strategy(strategy_name,orders_to_place)
-        place_order_strategy_users(strategy_name,orders_to_place)
+        # # OrderCenterUtils.place_order_for_strategy(strategy_name,orders_to_place)
+        # place_order_strategy_users(strategy_name,orders_to_place)
 
 if __name__ == "__main__":
     main()

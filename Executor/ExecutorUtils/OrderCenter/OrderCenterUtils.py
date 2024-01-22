@@ -36,12 +36,12 @@ def place_order_for_strategy(strategy_users, order_details):
             order_with_user_and_broker = order.copy()
             order_with_user_and_broker.update({
                 "broker": user['Broker']['BrokerName'],
-                "username": user['Broker']['BrokerUserName'],
-                "qty": user['Strategies'][order.get('strategy')]['qty']
+                "username": user['Broker']['BrokerUsername'],
+                "qty": user['Strategies'][order.get('strategy')]['Qty']
             })
 
             max_qty = FNOInfo().get_max_order_qty_by_base_symbol(order_with_user_and_broker.get('base_symbol'))
-            user_credentials = fetch_user_credentials_firebase(user['Broker']['BrokerUserName'])
+            user_credentials = fetch_user_credentials_firebase(user['Broker']['BrokerUsername'])
 
             order_qty = order_with_user_and_broker["qty"]
 
@@ -59,13 +59,16 @@ def place_order_for_strategy(strategy_users, order_details):
                 order_qty -= current_qty
 
         # Update Firebase with order status
-        update_path = f"{user['Broker']['BrokerUserName']}/Strategies/{order.get('strategy')}/TradeState/orders"
-        update_fields_firebase('users', user['Broker']['BrokerUserName'], all_order_statuses, update_path)
+        update_path = f"Strategies/{order.get('strategy')}/TradeState"
+        print(all_order_statuses)
+        for data in all_order_statuses:
+            update_fields_firebase('new_clients', user['Tr_No'], data, update_path)
+        # update_fields_firebase('new_clients', user['Tr_No'], all_order_statuses, update_path)
 
         # Send notification if any orders failed # TODO: check for exact fail msgs and send notifications accordingly
         for status in all_order_statuses:
             if status.get('message', '') == 'Order placement failed':
-                discord_bot(f"Order failed for user {user['Broker']['BrokerUserName']} in strategy {order.get('strategy')}", order.get('strategy'))
+                discord_bot(f"Order failed for user {user['Broker']['BrokerUsername']} in strategy {order.get('strategy')}", order.get('strategy'))
 
 
     return all_order_statuses

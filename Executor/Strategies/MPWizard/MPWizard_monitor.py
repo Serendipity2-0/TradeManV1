@@ -42,8 +42,8 @@ class MPWInstrument:
 
 class OrderMonitor:
     def __init__(self, json_data, max_orders):
-        self.mood_data = json.loads(json_data)
-        self.instruments = self._create_instruments(self.mood_data['EntryParams'])
+        # self.mood_data = json.loads(json_data)
+        self.instruments = self._create_instruments(json_data)
         self.orders_placed_today = 0
         self.max_orders_per_day = max_orders
         self.today_date = dt.date.today()

@@ -27,28 +27,32 @@ from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):
+    #in some cases SLMultipler and HedgeMultiplier are not present
+    
     EntryTime: str
-    HedgeMultiplier: int
+    HedgeMultiplier: Optional[int] = None
     InstrumentToday: str
-    SLMultipler: int
-    StrikeMultiplier: int
+    SLMultipler: Optional[int] = None
+    StrikeMultiplier: Optional[int] = None
 
 class ExitParams(BaseModel):
     SLType: str
-    SqroffTime: time
+    SqroffTime: Optional[time] = None
 
 class ExtraInformation(BaseModel):
     QtyCalc: str
 
 class GeneralParams(BaseModel):
     ExpiryType: str
-    HedgeTransactionType: str
-    MainTransactionType: str
+    HedgeTransactionType: Optional[str] = None
+    MainTransactionType: Optional[str] = None
+    TransactionType: Optional[str] = None
     OrderType: str
     ProductType: str
     StrategyType: str
     TimeFrame: str
     TradeView: str
+    ATRPeriod: Optional[int] = None
 
 class StrategyInfo(BaseModel):
     Direction: Optional[str]

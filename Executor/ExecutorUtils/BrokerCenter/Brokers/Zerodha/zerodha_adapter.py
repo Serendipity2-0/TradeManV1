@@ -3,15 +3,14 @@ import datetime
 import pandas as pd
 from kiteconnect import KiteConnect
 
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import \
-    Instrument
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
 
 def create_kite_obj(user_details=None,api_key=None,access_token=None):
     if api_key and access_token:
         return KiteConnect(api_key=api_key,access_token=access_token)
     elif user_details:
-        return KiteConnect(api_key=user_details['api_key'],access_token=user_details['access_token'])
+        return KiteConnect(api_key=user_details['ApiKey'],access_token=user_details['SessionId'])
     else:
         raise ValueError("Either user_details or api_key and access_token must be provided")
 
@@ -81,83 +80,87 @@ def zerodha_todays_tradebook(user):
     return orders
 
 def kite_place_orders_for_users(orders_to_place, users_credentials):
-    results = []
+    results = {
+        "avg_prc": None,
+        "exchange_token": None,
+        "order_id": None,
+        "qty": None,
+        "time_stamp": None,
+        "trade_id": None,
+        "message": None
+    }
 
-    for user in users_credentials:
-        kite = create_kite_obj(user['Broker'])  # Create a KiteConnect instance with user's broker credentials
+    kite = create_kite_obj(user_details=users_credentials)  # Create a KiteConnect instance with user's broker credentials
+    order_id = None
 
-        for order_details in orders_to_place:
-            strategy = order_details['strategy']
-            exchange_token = order_details['exchange_token']
-            qty = order_details.get('qty', 1)  # Default quantity to 1 if not specified
-            product = order_details.get('product_type')
+    strategy = orders_to_place['strategy']
+    exchange_token = orders_to_place['exchange_token']
+    qty = orders_to_place.get('qty', 1)  # Default quantity to 1 if not specified
+    product = orders_to_place.get('product_type')
+
+    transaction_type = calculate_transaction_type(kite,orders_to_place.get('transaction_type'))
+    order_type = calculate_order_type(kite,orders_to_place.get('order_type'))
+    product_type = calculate_product_type(kite,product)
+    if product == 'CNC':
+        segment_type = kite.EXCHANGE_NSE
+        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(exchange_token, "NSE")
+    else:
+        segment_type = Instrument().get_segment_by_exchange_token(exchange_token)
+        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(exchange_token)
     
-        if kite is None:
-            kite = create_kite_obj(user['BrokerName'])
+    limit_prc = orders_to_place.get('limit_prc', None) 
+    trigger_price = orders_to_place.get('trigger_prc', None)
 
-        transaction_type = calculate_transaction_type(kite,order_details.get('transaction_type'))
-        order_type = calculate_order_type(kite,order_details.get('order_type'))
-        product_type = calculate_product_type(kite,product)
-        if product == 'CNC':
-            segment_type = kite.EXCHANGE_NSE
-            trading_symbol = Instrument().get_trading_symbol_by_exchange_token(exchange_token, "NSE")
-        else:
-            segment_type = Instrument().get_segment_by_exchange_token(exchange_token)
-            trading_symbol = Instrument().get_trading_symbol_by_exchange_token(exchange_token)
+    if limit_prc is not None:
+        limit_prc = round(float(limit_prc), 2)
+        if limit_prc < 0:
+            limit_prc = 1.0
+    else:
+        limit_prc = 0.0
+    
+    if trigger_price is not None:
+        trigger_price = round(float(trigger_price), 2)
+        if trigger_price < 0:
+            trigger_price = 1.5
+
+    try:
+        order_id = kite.place_order(
+            variety=kite.VARIETY_REGULAR,
+            exchange=segment_type, 
+            price=limit_prc,
+            tradingsymbol=trading_symbol,
+            transaction_type=transaction_type, 
+            quantity=qty,
+            trigger_price=trigger_price,
+            product=product_type,
+            order_type=order_type,
+            tag=orders_to_place.get('trade_id', None)
+        )
         
-        limit_prc = order_details.get('limit_prc', None) 
-        trigger_price = order_details.get('trigger_prc', None)
+        print(f"Order placed. ID is: {order_id}")
 
-        if limit_prc is not None:
-            limit_prc = round(float(limit_prc), 2)
-            if limit_prc < 0:
-                limit_prc = 1.0
-        else:
-            limit_prc = 0.0
+        # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
+        message = f"Order placed successfully for {orders_to_place['username']}"
+        # avg_prc = fetch_avg_price(kite, order_id['NOrdNo'])  # This function needs to be defined
+
         
-        if trigger_price is not None:
-            trigger_price = round(float(trigger_price), 2)
-            if trigger_price < 0:
-                trigger_price = 1.5
 
-            try:
-                order_id = kite.place_order(
-                    variety=kite.VARIETY_REGULAR,
-                    exchange=segment_type, 
-                    price=limit_prc,
-                    tradingsymbol=trading_symbol,
-                    transaction_type=transaction_type, 
-                    quantity=qty,
-                    trigger_price=trigger_price,
-                    product=product_type,
-                    order_type=order_type,
-                    tag=order_details.get('trade_id', None)
-                )
-                order_status = 'Placed'
-                print(f"Order placed. ID is: {order_id}")
-
-                # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
-                avg_prc = 0
-                # avg_prc = fetch_avg_price(kite, order_id['NOrdNo'])  # This function needs to be defined
-
-                results.append({
-                    "avg_prc": avg_prc,
-                    "exchange_token": exchange_token,
-                    "order_id": order_id['NOrdNo'],
-                    "qty": qty,
-                    "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    "trade_id": order_details.get('trade_id', ''),
-                    "message": "Order placed successfully"
-                })
-
-            except Exception as e:
-                message = f"Order placement failed: {e} for {order_details['username']}"
-                print(message)
-                results.append({
-                    "message": message
-                    # Additional error details can be added here if needed
-                })
-
+    except Exception as e:
+        message = f"Order placement failed: {e} for {orders_to_place['username']}"
+        print(message)
+        results.update({
+            "message": message
+            # Additional error details can be added here if needed
+        })
+    
+    results ={
+            "exchange_token": exchange_token,
+            "order_id": order_id,
+            "qty": qty,
+            "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "trade_id": orders_to_place.get('trade_id', ''),
+            "message": message
+        }
     return results
 
     

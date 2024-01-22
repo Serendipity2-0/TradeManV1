@@ -21,7 +21,6 @@ import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter 
 
 def place_order_for_brokers(order_details,user_credentials):
     if order_details['broker'] == ZERODHA:
-        print("user_credentials: ",user_credentials)
         return zerodha_adapter.kite_place_orders_for_users(order_details,user_credentials)
     elif order_details['broker'] == ALICEBLUE:
         return alice_adapter.ant_place_orders_for_users(order_details,user_credentials)
@@ -30,13 +29,11 @@ def all_broker_login(active_users):
     for user in active_users:
         if user['Broker']['BrokerName'] == ZERODHA:
             print("Logging in for Zerodha")
-            # session_id = zerodha.login_in_zerodha(user['Broker'])
-            # print(f"Session id for {user['Broker']['BrokerUsername']}: {session_id}")
-            # firebase_utils.update_fields_firebase('new_clients',user['Tr_No'],{'SessionId':session_id}, 'Broker')          
+            session_id = zerodha.login_in_zerodha(user['Broker'])
+            firebase_utils.update_fields_firebase('new_clients',user['Tr_No'],{'SessionId':session_id}, 'Broker')          
         elif user['Broker']['BrokerName'] == ALICEBLUE:
             print("Logging in for AliceBlue")
             session_id = alice_blue.login_in_aliceblue(user['Broker'])
-            print(f"Session id for {user['Broker']['BrokerUsername']}: {session_id}")
             firebase_utils.update_fields_firebase('new_clients',user['Tr_No'],{'SessionId':session_id}, 'Broker')
         else:
             print("Broker not supported") 
@@ -83,7 +80,7 @@ def fetch_holdings_for_brokers(user):
 def fetch_user_credentials_firebase(broker_user_name):
     user_credentials = firebase_utils.fetch_collection_data_firebase('new_clients')
     for user in user_credentials:
-        if user_credentials[user]['Broker']['BrokerUserName'] == broker_user_name:
+        if user_credentials[user]['Broker']['BrokerUsername'] == broker_user_name:
             return user_credentials[user]['Broker']
 
 

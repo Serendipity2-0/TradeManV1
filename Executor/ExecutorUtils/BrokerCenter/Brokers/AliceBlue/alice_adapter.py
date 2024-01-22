@@ -1,5 +1,6 @@
 import os
 import sys
+import datetime as dt
 
 from pya3 import *
 
@@ -31,7 +32,7 @@ def merge_ins_csv_files():
     "Expiry Date", "Lot Size", "Tick Size"
     ]
 
-    folder_path = os.path.join(DIR_PATH, 'SampleData')
+    folder_path = os.path.join(DIR_PATH, 'SampleData')#TODO: Change this file location to the actual location of the instrument csv files
     ins_files = ['NFO.csv', 'BFO.csv', 'NSE.csv']
     file_paths = [os.path.join(folder_path, file) for file in ins_files]
     
@@ -99,7 +100,7 @@ def simplify_aliceblue_order(detail):
     }
 
 def create_alice_obj(user_details):
-    return Aliceblue(user_id=user_details['username'],api_key=user_details['api_key'],session_id=user_details['session_id'])
+    return Aliceblue(user_id=user_details['BrokerUsername'],api_key=user_details['ApiKey'],session_id=user_details['SessionId'])
 
 def aliceblue_todays_tradebook(user):
     alice = create_alice_obj(user)
@@ -143,44 +144,84 @@ def get_order_status(alice, order_id):
         return "FAIL"
 
 def ant_place_orders_for_users(orders_to_place, users_credentials):
-    results = []
+    results = {
+        "exchange_token": None,
+        "order_id": None,
+        "qty": None,
+        "time_stamp": None,
+        "trade_id": None,
+        "message": None
+    }
 
-    for user in users_credentials:
-        alice = create_alice_obj(user['Broker'])  # Create an Aliceblue instance with user's broker credentials
+    alice = create_alice_obj(users_credentials)  # Create an Aliceblue instance with user's broker credentials
 
-        for order_details in orders_to_place:
-            strategy = order_details['strategy']
-            exchange_token = order_details['exchange_token']
-            qty = order_details.get('qty', 1)  # Default quantity to 1 if not specified
+    strategy = orders_to_place['strategy']
+    exchange_token = orders_to_place['exchange_token']
+    qty = orders_to_place.get('qty', 1)  # Default quantity to 1 if not specified
+    product = orders_to_place.get('product_type')
+    transaction_type = calculate_transaction_type(orders_to_place.get('transaction_type'))
+    order_type = calculate_order_type(orders_to_place.get('order_type'))
+    product_type = calculate_product_type(product)
 
-            # Remaining order setup code (as in your provided function)
-            # ...
+    if product == 'CNC':
+        segment = 'NSE'
+    else:
+        segment = Instrument().get_segment_by_exchange_token(exchange_token)
 
-            try:
-                order_id = alice.place_order(...)  # Place the order with the appropriate parameters
-                order_status = get_order_status(alice, order_id['NOrdNo'])
-                if order_status == "FAIL":
-                    order_history = alice.get_order_history(order_id['NOrdNo'])
-                    message = f"Order placement failed, Reason: {order_history['RejReason']} for {order_details['account_name']}"
-                else:
-                    message = "Order placed successfully"
+    limit_prc = orders_to_place.get('limit_prc', None) 
+    trigger_price = orders_to_place.get('trigger_prc', None)
 
-                # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
-                avg_prc = 0
-                # avg_prc = fetch_avg_price(alice, order_id['NOrdNo'])  # This function needs to be defined
+    if limit_prc is not None:
+        limit_prc = round(float(limit_prc), 2)
+        if limit_prc < 0:
+            limit_prc = 1.0
+    else:
+        limit_prc = 0.0
+    
+    if trigger_price is not None:
+        trigger_price = round(float(trigger_price), 2)
+        if trigger_price < 0:
+            trigger_price = 1.5
 
-                results.append({
-                    "avg_prc": avg_prc,
-                    "exchange_token": exchange_token,
-                    "order_id": order_id['NOrdNo'],
-                    "qty": qty,
-                    "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    "trade_id": order_details.get('trade_id', ''),
-                    "message": message
-                })
 
-            except Exception as e:
-                print(f"An error occurred: {e}")
+    try:
+        order_id = alice.place_order(transaction_type = transaction_type, 
+                                        instrument = alice.get_instrument_by_token(segment, int(exchange_token)),
+                                        quantity = qty ,
+                                        order_type = order_type,
+                                        product_type = product_type,
+                                        price = limit_prc,
+                                        trigger_price = trigger_price,
+                                        stop_loss = None,
+                                        square_off = None,
+                                        trailing_sl = None,
+                                        is_amo = False,
+                                        order_tag = orders_to_place.get('trade_id', None))
+        
+        print(f"Order placed. ID is: {order_id}")
+        order_status = get_order_status(alice, order_id['NOrdNo'])
+        print("order_status",order_status)
+        if order_status == "FAIL":
+            order_history = alice.get_order_history(order_id['NOrdNo'])
+            message = f"Order placement failed, Reason: {order_history['RejReason']} for {orders_to_place['username']}"
+        else:
+            message = "Order placed successfully"
+
+        # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
+        avg_prc = 0
+        # avg_prc = fetch_avg_price(alice, order_id['NOrdNo'])  # This function needs to be defined
+
+        results = {
+            "exchange_token": exchange_token,
+            "order_id": order_id['NOrdNo'],
+            "qty": qty,
+            "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "trade_id": orders_to_place.get('trade_id', ''),
+            "message": message
+        }
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
     return results
 

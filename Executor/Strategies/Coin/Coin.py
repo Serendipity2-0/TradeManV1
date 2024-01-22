@@ -1,20 +1,32 @@
 import random,time
 import os,sys
+import datetime as dt
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-import Brokers.place_order as place_order
-import Strategies.StrategyBase as StrategyBase
-import MarketUtils.InstrumentBase as InstrumentBase
-import Brokers.place_order_calc as place_order_calc
-import MarketUtils.general_calc as general_calc
-import MarketUtils.Calculations.qty_calc as qty_calc
-import MarketUtils.Discord.discordchannels as discord 
 
-_,coin_json = general_calc.get_strategy_json('Coin')
-strategy_obj = StrategyBase.Strategy.read_strategy_json(coin_json)
-instrument_obj = InstrumentBase.Instrument()
+from Executor.Strategies.StrategiesUtil import StrategyBase
+from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users
+
+import Executor.ExecutorUtils.ExeUtils as ExeUtils
+import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
+
+class Coin(StrategyBase):
+    def get_general_params(self):
+        return self.GeneralParams
+    
+    def get_entry_params(self):
+        return self.EntryParams
+    
+    def get_exit_params(self):
+        return self.ExitParams
+    
+
+coin_strategy_obj = Coin.load_from_db('Coin')
+instrument_obj = InstrumentCenterUtils.Instrument()
+next_trade_prefix = coin_strategy_obj.NextTradeId
 
 def flip_coin():
     # Randomly choose between 'Heads' and 'Tails'
@@ -24,51 +36,84 @@ def flip_coin():
 # Flipping the coin and printing the result
 
 def determine_strike_and_option():
-    base_symbol,_ = strategy_obj.determine_expiry_index()
-    print(base_symbol)
-    strike_prc = strategy_obj.calculate_current_atm_strike_prc(base_symbol)
+    base_symbol,_ = coin_strategy_obj.determine_expiry_index()
+    strike_prc = coin_strategy_obj.calculate_current_atm_strike_prc(base_symbol)
     option_type = 'CE' if flip_coin() == 'Heads' else 'PE'
+    return base_symbol,strike_prc, option_type
+
+def fetch_exchange_token(base_symbol,strike_prc, option_type):
     today_expiry = instrument_obj.get_expiry_by_criteria(base_symbol,strike_prc,option_type, "current_week")
     exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol,strike_prc, option_type,today_expiry)
+    return exchange_token
+
+def update_qty(base_symbol,strike_prc, option_type):
+    exchange_token = fetch_exchange_token(base_symbol,strike_prc, option_type)
+    token = instrument_obj.get_kite_token_by_exchange_token(exchange_token)
+    ltp = InstrumentCenterUtils.get_single_ltp(token)
+    lot_size = instrument_obj.get_lot_size_by_exchange_token(exchange_token)
+    update_qty_user_firebase(coin_strategy_obj.StrategyName,ltp,lot_size)
+
+def create_order_details(exchange_token,base_symbol):
     order_details = [
         {  
-        "strategy": strategy_obj.get_strategy_name(),
+        "strategy": coin_strategy_obj.StrategyName,
+        "signal":"Long",
         "base_symbol": base_symbol,
         "exchange_token" : exchange_token,     
-        "segment" : strategy_obj.get_general_params().get('Segment'),
-        "transaction_type": strategy_obj.get_general_params().get('TransactionType'),  
-        "order_type" : strategy_obj.get_general_params().get('OrderType'), 
-        "product_type" : strategy_obj.get_general_params().get('ProductType'),
-        "order_mode" : ["Main"],
-        "trade_id" : place_order_calc.get_trade_id(strategy_obj.get_strategy_name(), "entry")
+        "transaction_type": coin_strategy_obj.get_general_params().TransactionType,  
+        "order_type" : coin_strategy_obj.get_general_params().OrderType, 
+        "product_type" : coin_strategy_obj.get_general_params().ProductType,
+        "order_mode" : "Main",
+        "trade_id" : next_trade_prefix
         }]
     return order_details
 
-def calculate_qty(main_exchange_token,base_symbol):
-    token = instrument_obj.get_token_by_exchange_token(main_exchange_token)
-    ltp = strategy_obj.get_single_ltp(token)
-    qty_calc.update_qty_during_entry(ltp,strategy_obj.get_strategy_name(),base_symbol)
+def send_signal_msg(base_symbol,strike_prc,option_type):
+    message = "Order placed for " + base_symbol + " " + str(strike_prc) + " " + option_type
+    discord_bot(message, coin_strategy_obj.StrategyName)
+
 
 def main():
-    order_details = determine_strike_and_option()
-    message = "Order placed for " + order_details[0].get('base_symbol')
-    discord.discord_bot(message, strategy_obj.get_strategy_name())
-    calculate_qty(order_details[0].get('exchange_token'),order_details[0].get('base_symbol'))
-    print(order_details)
-    place_order.place_order_for_strategy(strategy_obj.get_strategy_name(),order_details)
+    base_symbol,strike_prc, option_type = determine_strike_and_option()
+    exchange_token = fetch_exchange_token(base_symbol,strike_prc, option_type)
+    update_qty(base_symbol,strike_prc, option_type)
+    send_signal_msg(base_symbol,strike_prc,option_type)
+    orders_to_place = create_order_details(exchange_token,base_symbol)
+    orders_to_place = assign_trade_id(orders_to_place)
+    signals_to_log = {
+                        "TradeId" : next_trade_prefix,
+                        "Signal" : "Long",
+                        "EntryTime" : dt.datetime.now().strftime("%H:%M"),
+                        "Status" : "Open"}
+    update_signal_firebase(coin_strategy_obj.StrategyName,signals_to_log)
+    place_order_strategy_users(coin_strategy_obj.StrategyName,orders_to_place)
 
-current_time = time.localtime()
-seconds_since_midnight = current_time.tm_hour * 3600 + current_time.tm_min * 60 + current_time.tm_sec
-seconds_until_10_am = 10 * 3600 - seconds_since_midnight
 
-# Calculate the total number of seconds in the 10 AM to 1 PM window
-seconds_in_window = 3 * 3600  # 3 hours
+# current_time = time.localtime()
+# seconds_since_midnight = current_time.tm_hour * 3600 + current_time.tm_min * 60 + current_time.tm_sec
+# seconds_until_10_am = 10 * 3600 - seconds_since_midnight
 
-# Generate a random number of seconds to wait within this window
-random_seconds = random.randint(0, seconds_in_window)
+# # Calculate the total number of seconds in the 10 AM to 1 PM window
+# seconds_in_window = 3 * 3600  # 3 hours
 
-# Wait until 10 AM, then an additional random amount of time
-time.sleep(seconds_until_10_am + random_seconds)
+# # Generate a random number of seconds to wait within this window
+# random_seconds = random.randint(0, seconds_in_window)
+
+# # Wait until 10 AM, then an additional random amount of time
+# time.sleep(seconds_until_10_am + random_seconds)
     
 
 main()
+
+
+# order_details = [
+#         {  
+#         "strategy": coin_strategy_obj.StrategyName,
+#         "base_symbol": base_symbol,
+#         "exchange_token" : exchange_token,     
+#         "transaction_type": coin_strategy_obj.get_general_params().MainTransactionType,  
+#         "order_type" : coin_strategy_obj.get_general_params().OrderType, 
+#         "product_type" : coin_strategy_obj.get_general_params().ProductType,
+#         "order_mode" : "Main",
+#         "trade_id" : place_order_calc.get_trade_id(coin_strategy_obj.get_strategy_name(), "entry")
+#         }]
