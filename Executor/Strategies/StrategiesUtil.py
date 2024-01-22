@@ -247,7 +247,7 @@ def update_qty_user_firebase(strategy_name,avg_sl_points,lot_size):
         
         update_fields_firebase('new_clients', user['Tr_No'], {'Qty': qty}, f'Strategies/{strategy_name}')
 
-# method to take        
+#TODO: shorten the trade_ids      
 def assign_trade_id(orders_to_place):
     for order in orders_to_place:
         # Determine the last part of the trade_id based on order_mode
