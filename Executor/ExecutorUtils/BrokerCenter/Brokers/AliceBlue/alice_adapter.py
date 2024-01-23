@@ -63,6 +63,7 @@ def get_ins_csv_alice(user_details):
     alice = Aliceblue(user_id=user_details['Broker']['BrokerUsername'], api_key=user_details['Broker']['ApiKey'], session_id=user_details['Broker']['SessionId'])
     alice.get_contract_master("NFO") #TODO rename the NFO.csv to alice_instruments.csv
     alice.get_contract_master("BFO") #TODO rename the NSE.csv to alice_instruments.csv
+    alice.get_contract_master("NSE") #TODO rename the BFO.csv to alice_instruments.csv
     alice_instrument_merged = merge_ins_csv_files()
     return alice_instrument_merged
 

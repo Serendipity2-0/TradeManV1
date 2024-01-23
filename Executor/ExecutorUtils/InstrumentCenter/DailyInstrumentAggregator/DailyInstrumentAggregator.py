@@ -40,6 +40,3 @@ def main():
     conn = sql_utils.get_db_connection(os.getenv('SQLITE_INS_PATH'))
     #print number of rows in the table
     sql_utils.dump_df_to_sqlite(merged_ins_df, 'instrument_master', conn)
-
-if __name__ == '__main__':
-    main()
