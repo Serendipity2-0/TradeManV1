@@ -1,37 +1,31 @@
 import os,sys
 import datetime as dt
-import pandas as pd
 import psycopg2
-from kiteconnect import KiteConnect
-from collections import namedtuple
 from datetime import timedelta
+from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-import Strategies.StrategyBase as StrategyBase
-import MarketUtils.general_calc as general_calc
-import MarketUtils.InstrumentBase as InstrumentBase
-from Brokers.BrokerUtils import Broker
+ENV_PATH = os.path.join(DIR_PATH, '.env')
+load_dotenv(ENV_PATH)
 
-_,strategy_path = general_calc.get_strategy_json("AmiPy")
-strategy_obj = StrategyBase.Strategy.read_strategy_json(strategy_path)
+from Executor.Strategies.StrategiesUtil import StrategyBase
+import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_primary_accounts_from_firebase
+from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import create_kite_obj
+from Executor.ExecutorUtils.ExeUtils import holidays
 
-kite = KiteConnect(api_key=Broker.get_primary_account()[0])
-kite.set_access_token(access_token=Broker.get_primary_account()[1])
+strategy_obj = StrategyBase.load_from_db('ExpiryTrader')
+primary_account = os.getenv('ZERODHA_PRIMARY_ACCOUNT')
+
+primary_account_details = fetch_primary_accounts_from_firebase(primary_account)
+kite = create_kite_obj(primary_account_details['Broker'])
 
 symbols_list = ['NIFTY', 'BANKNIFTY', 'FINNIFTY', 'SENSEX', 'MIDCPNIFTY']
 segments = ['NFO-OPT','BFO-OPT']
 
-def get_csv_kite():
-    instrument_dump = kite.instruments()
-    instrument_df = pd.DataFrame(instrument_dump)
-    instrument_df.to_csv(r'instruments.csv')
-    print("Download Complete!")
-
-# get_csv_kite()
-
-instru_obj = InstrumentBase.Instrument()
+instru_obj = InstrumentCenterUtils.Instrument()
 
 def connect_to_db(base_symbol):
     print(f"Connecting to database {base_symbol.lower()}...")
@@ -72,7 +66,7 @@ def store_data_in_postgres(trading_symbol_list, all_data, cursor):
 
 def fetch_token_and_name(base_symbol,strike_prc,option_type,expiry_date):
     exchange_token = instru_obj.get_exchange_token_by_criteria(base_symbol,int(strike_prc),option_type,expiry_date)
-    token = instru_obj.get_token_by_exchange_token(exchange_token)
+    token = instru_obj.get_kite_token_by_exchange_token(exchange_token)
     name = instru_obj.get_trading_symbol_by_exchange_token(exchange_token)
     return token,name
 
@@ -117,7 +111,7 @@ def main():
 
     print(base_symbols)
 
-    if today.date() in general_calc.holidays:
+    if today.date() in holidays:
         print("Today is a holiday")
         return
     
@@ -131,6 +125,3 @@ def main():
 
         cursor.close()
         conn.close()
-
-if __name__ == "__main__":
-    main()
