@@ -41,10 +41,11 @@
             "WithdrawalFrequency": "OnRequest"
         }
     },
-    "Strategies": {
+    "Strategies": [{
         "ExpiryTrader": {
-            "RiskPerTrade": 1,
-            "TradeState": [
+            "UserRiskPerTradePerc": 1,
+            "StrategyName":"ExpiryTrader",
+            "TradeState": 
                 {
                     "LastModified": "2020-03-22 11:23:22",
                     "Status": "Active",
@@ -66,8 +67,225 @@
                         }
                     ]
                 }
-            ]
-        }
-    },
+            
+        }},
+        {
+            "Amipy": {
+                "UserRiskPerTradePerc": 1,
+                "StrategyName":"Amipy",
+                "TradeState": 
+                    {
+                        "LastModified": "2020-03-22 14:55:22",
+                        "Status": "NotActive",
+                        "orders": [
+                            {
+                                "avg_prc": 0,
+                                "exchange_token": 48301,
+                                "order_id": "123456",
+                                "qty": 200,
+                                "timestamp": "2023-11-20 22:55:19.798995",
+                                "trade_id": "AP12_SH_MO_ET"
+                            },
+                            {
+                                "avg_prc": 0,
+                                "exchange_token": 48301,
+                                "order_id": "123456",
+                                "qty": 200,
+                                "timestamp": "2023-11-20 22:55:19.798995",
+                                "trade_id": "AP12_SH_MO_ET"
+                            },
+                            {
+                                "avg_prc": 0,
+                                "exchange_token": 48301,
+                                "order_id": "123456",
+                                "qty": 200,
+                                "timestamp": "2023-11-20 22:55:19.798995",
+                                "trade_id": "AP12_SH_HO_ET"
+                            },{
+                                "avg_prc": 0,
+                                "exchange_token": 48301,
+                                "order_id": "123456",
+                                "qty": 200,
+                                "timestamp": "2023-11-20 22:55:19.798995",
+                                "trade_id": "AP12_SH_HO_ET"
+                            },
+                            {
+                                "avg_prc": 0,
+                                "exchange_token": 48301,
+                                "order_id": "123456",
+                                "qty": 200,
+                                "timestamp": "2023-11-20 22:55:19.798995",
+                                "trade_id": "AP12_SH_MO_EX"
+                            },
+                            {
+                                "avg_prc": 0,
+                                "exchange_token": 48301,
+                                "order_id": "123456",
+                                "qty": 200,
+                                "timestamp": "2023-11-20 22:55:19.798995",
+                                "trade_id": "AP12_SH_MO_EX"
+                            },
+                            {
+                                "avg_prc": 0,
+                                "exchange_token": 48301,
+                                "order_id": "123456",
+                                "qty": 200,
+                                "timestamp": "2023-11-20 22:55:19.798995",
+                                "trade_id": "AP12_SH_HO_EX"
+                            },
+                            {
+                                "avg_prc": 0,
+                                "exchange_token": 48301,
+                                "order_id": "123456",
+                                "qty": 200,
+                                "timestamp": "2023-11-20 22:55:19.798995",
+                                "trade_id": "AP12_SH_HO_EX"
+                            }
+                        ]
+                    }
+                
+            }},
+            {
+                "MPWizard": {
+                    "UserRiskPerTradePerc": 1,
+                    "StrategyName":"MPWizard",
+                    "TradeState": 
+                        {
+                            "LastModified": "2020-03-22 11:23:22",
+                            "Status": "Active",
+                            "orders": [
+                                {
+                                    "avg_prc": 0,
+                                    "exchange_token": 48301,
+                                    "order_id": "123456",
+                                    "qty": 200,
+                                    "timestamp": "2023-11-20 22:55:19.798995",
+                                    "trade_id": "MP180_LG_MO_ET"
+                                },
+                                {
+                                    "avg_prc": 0,
+                                    "exchange_token": 48301,
+                                    "order_id": "123456",
+                                    "qty": 200,
+                                    "timestamp": "2023-11-20 22:55:19.798995",
+                                    "trade_id": "MP180_LG_MO_EX"
+                                },
+                                {
+                                    "avg_prc": "1232",
+                                    "order_id": "123456",
+                                    "time": "12:23",
+                                    "trade_id": "MP181_LG_MO_ET"
+                                }
+                            ]
+                        }
+                    
+                }},
+                {
+                    "OverNightFutures": {
+                        "UserRiskPerTradePerc": 1,
+                        "StrategyName":"OverNightFutures",
+                        "TradeState": 
+                            {
+                                "LastModified": "2020-03-22 9:18:22",
+                                "Status": "NotActive",
+                                "orders": [
+                                    {
+                                        "avg_prc": 0,
+                                        "exchange_token": 48301,
+                                        "order_id": "123456",
+                                        "qty": 200,
+                                        "timestamp": "2023-11-20 9:18:22",
+                                        "trade_id": "OF90_SH_MO_EX"
+                                    },
+                                    {
+                                        "avg_prc": 0,
+                                        "exchange_token": 48301,
+                                        "order_id": "123456",
+                                        "qty": 200,
+                                        "timestamp": "2023-11-20 9:18:22",
+                                        "trade_id": "OF90_SH_HO_EX"
+                                    }
+                                ]
+                            }
+                        
+                    }},
+                    {
+                        "PyStocks": {
+                            "UserRiskPerTradePerc": 1,
+                            "StrategyName":"PyStocks",
+                            "TradeState": 
+                                {
+                                    "LastModified": "2020-03-22 11:23:22",
+                                    "Status": "Active",
+                                    "orders": [
+                                        {
+                                            "avg_prc": 0,
+                                            "exchange_token": 48301,
+                                            "order_id": "123456",
+                                            "qty": 200,
+                                            "timestamp": "2023-11-20 22:55:19.798995",
+                                            "trade_id": "PS21_LG_MO_ET"
+                                        },
+                                        {
+                                            "avg_prc": 0,
+                                            "exchange_token": 48301,
+                                            "order_id": "123456",
+                                            "qty": 200,
+                                            "timestamp": "2023-11-20 22:55:19.798995",
+                                            "trade_id": "PS22_LG_MO_ET"
+                                        },
+                                        {
+                                            "avg_prc": "1232",
+                                            "order_id": "123456",
+                                            "time": "12:23",
+                                            "trade_id": "PS23_LG_MO_ET"
+                                        },
+                                        {
+                                            "avg_prc": "1232",
+                                            "order_id": "123456",
+                                            "time": "12:23",
+                                            "trade_id": "PS24_LG_MO_ET"
+                                        }
+                                    ]
+                                }
+                            
+                        }},
+                        {
+                            "TradeManExtra": {
+                                "UserRiskPerTradePerc": 1,
+                                "StrategyName":"TradeManExtra",
+                                "TradeState": 
+                                    {
+                                        "LastModified": "2020-03-22 11:23:22",
+                                        "Status": "Active",
+                                        "orders": [
+                                            {
+                                                "avg_prc": 0,
+                                                "exchange_token": 48301,
+                                                "order_id": "123456",
+                                                "qty": 200,
+                                                "timestamp": "2023-11-20 22:55:19.798995",
+                                                "trade_id": "TM21_LG_MO_ET"
+                                            },
+                                            {
+                                                "avg_prc": 0,
+                                                "exchange_token": 48301,
+                                                "order_id": "123456",
+                                                "qty": 200,
+                                                "timestamp": "2023-11-20 22:55:19.798995",
+                                                "trade_id": "TM21_LG_MO_EX"
+                                            },
+                                            {
+                                                "avg_prc": "1232",
+                                                "order_id": "123456",
+                                                "time": "12:23",
+                                                "trade_id": "TM22_LG_MO_ET"
+                                            }
+                                        ]
+                                    }
+                                
+                            }}
+    ]
+    ,
     "Tr_No": "Tr00"
 }

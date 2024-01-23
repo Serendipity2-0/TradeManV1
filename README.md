@@ -129,12 +129,18 @@ Work to be done:
 6. Refactor Strategies to new framework
 7. Refactor and implement TelegramOrderBot
 
-8. Implementation of Amiplifier Update in Scripts(Strategy/GeneralParams Update)
-9. Strategy info implementation
+Omkar Tasks Status:
+Passed:
 
-10. SweepOrder implementation in GoodEvening and OrderCenterUtils
+Staging:
+O1. Strategy info implementation (StrategyCenterUtils)
 
-11. Implement DailyTradeBookValidator
-12. User and Signal trade logging to DB
-13. UI refactor for user app
-14. Create execution management dashboard for frontend
+Planned:
+O2. Implementation of MarketInfo Update in Scripts(Scripts/MarketInfo Update)
+O3. SweepOrder implementation in GoodEvening and OrderCenterUtils
+O4. Implement DailyTradeBookValidator
+
+TBD:
+O5. User and Signal trade logging to DB
+O6. UI refactor for user app
+O7. Create execution management dashboard for frontend
