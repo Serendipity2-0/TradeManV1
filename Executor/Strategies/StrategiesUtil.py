@@ -266,13 +266,18 @@ def assign_trade_id(orders_to_place):
 
     return orders_to_place
 
-def update_signal_firebase(strategy_name,signal):
+def update_strategy_info(strategy_name,signal):
+    #TODO: get the strategy info from strategy card firebase and update TradeView and MaxMarginPerLot
     strategy_info = {
-            "Direction": "Bearish",
-            "MarginUsed": 122,
-            "PeakLoss": 1,
-            "PeakProfit": 312321
+            "TradeView": "Bearish",
+            "MaxMarginPerLot": 122,
+            "PeakLoss": 0,
+            "PeakProfit": 0
           }
+    return strategy_info
+
+def update_signal_firebase(strategy_name,signal):
+    strategy_info = update_strategy_info(strategy_name,signal)
     #Log the signals in  strategies/{strategy_name}/TodayOrders/orders
     update_fields_firebase('strategies', strategy_name, {signal['TradeId']: signal}, 'TodayOrders')
     update_fields_firebase('strategies', strategy_name, {'StrategyInfo': strategy_info}, f'TodayOrders/{signal["TradeId"]}')

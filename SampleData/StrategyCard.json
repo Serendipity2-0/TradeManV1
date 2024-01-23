@@ -17,6 +17,10 @@
         "HedgeDistance": 500,
         "Interval": "minute"
       },
+      "MarketInfoParams": {
+        "TradeView": "Bearish",
+        "OSQtyAmplifier": 1
+      },
       "GeneralParams": {
         "ExpiryType": "Weekly",
         "NiftyToken": "256265",
@@ -24,7 +28,8 @@
         "ProductType": "MIS",
         "Segment": "NFO",
         "TimeFrame": "1Min",
-        "TradeView": "InBuilt"
+        "MaxMarginPerLot": 70000,
+        "SweepEnabled":true
       },
       "Instruments": [
         "NIFTY"

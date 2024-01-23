@@ -123,21 +123,18 @@ NOTES
 Work to be done:
 
 2. Write a documemntation for installing Crypto and webdriver packages for daily login
-4. Use DailyAggregator Script in GoodMorning which updates the Instruments.db
-7. Refactor TickerDB
-8. Refactor Instrument Monitor
-9. Refactor Strategies to new framework 
-10. Refactor and implement TelegramOrderBot
+3. Use DailyAggregator Script in GoodMorning which updates the Instruments.db
+4. Refactor TickerDB
+5. Refactor Instrument Monitor
+6. Refactor Strategies to new framework
+7. Refactor and implement TelegramOrderBot
 
+8. Implementation of Amiplifier Update in Scripts(Strategy/GeneralParams Update)
+9. Strategy info implementation
 
+10. SweepOrder implementation in GoodEvening and OrderCenterUtils
 
-
-6. User and Signal trade logging to DB
-5. Implement DailyTradeBookValidator
-1. SweepOrder implementation in GoodEvening and OrderCenterUtils
-11. UI refactor for user app
-3. Implementation of Amiplifier Update in Scripts(Strategy/GeneralParams Update)
-12. Create execution management dashboard for frontend
-13. Strategy info implementationp
-
-
+11. Implement DailyTradeBookValidator
+12. User and Signal trade logging to DB
+13. UI refactor for user app
+14. Create execution management dashboard for frontend

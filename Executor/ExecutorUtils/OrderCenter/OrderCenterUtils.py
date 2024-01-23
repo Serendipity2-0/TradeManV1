@@ -75,7 +75,10 @@ def place_order_for_strategy(strategy_users, order_details):
 
 #TODO: sweep_orders from user/strategies/todayorders for sweep order enabled strategies
 def place_sweep_orders_for_strategy(strategy_users, order_details):
-    # get sweep enabled order_ids and prepare a counter order_details
+    # get sweep enabled order_ids from firebase using 'SweepEnabled' field from StrategyCard
+    # prepare a counter order_details: get all order_details from firebase for that user inside strategies and match with order_ids from broker for that user
+    # 
+    
     # call place_order_for_strategy with appropriate details
     pass
 
