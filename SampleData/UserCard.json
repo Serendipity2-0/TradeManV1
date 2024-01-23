@@ -56,14 +56,23 @@
                             "order_id": "123456",
                             "qty": 200,
                             "timestamp": "2023-11-20 22:55:19.798995",
-                            "trade_id": "ET12_SH_MO_EX"
+                            "trade_id": "ET12_SH_MO_ET"
                         },
                         {
                             "avg_prc": "1232",
+                            "exchange_token": 48301,
                             "order_id": "123456",
+                            "qty": 200,
                             "time": "12:23",
-                            "trade_id": "ET12_entry",
-                            "trading_symbol": "NIFTY"
+                            "trade_id": "ET12_SH_HO_ET"
+                        },
+                        {
+                            "avg_prc": "1232",
+                            "exchange_token": 48301,
+                            "order_id": "123456",
+                            "qty": 200,
+                            "time": "12:23",
+                            "trade_id": "ET12_SH_MO_EX"
                         }
                     ]
                 }
@@ -84,7 +93,7 @@
                                 "order_id": "123456",
                                 "qty": 200,
                                 "timestamp": "2023-11-20 22:55:19.798995",
-                                "trade_id": "AP12_SH_MO_ET"
+                                "trade_id": "AP12_SH_MO_EN"
                             },
                             {
                                 "avg_prc": 0,
@@ -92,7 +101,7 @@
                                 "order_id": "123456",
                                 "qty": 200,
                                 "timestamp": "2023-11-20 22:55:19.798995",
-                                "trade_id": "AP12_SH_MO_ET"
+                                "trade_id": "AP12_SH_MO_EN"
                             },
                             {
                                 "avg_prc": 0,
@@ -100,14 +109,14 @@
                                 "order_id": "123456",
                                 "qty": 200,
                                 "timestamp": "2023-11-20 22:55:19.798995",
-                                "trade_id": "AP12_SH_HO_ET"
+                                "trade_id": "AP12_SH_HO_EN"
                             },{
                                 "avg_prc": 0,
                                 "exchange_token": 48301,
                                 "order_id": "123456",
                                 "qty": 200,
                                 "timestamp": "2023-11-20 22:55:19.798995",
-                                "trade_id": "AP12_SH_HO_ET"
+                                "trade_id": "AP12_SH_HO_EN"
                             },
                             {
                                 "avg_prc": 0,
@@ -160,7 +169,15 @@
                                     "order_id": "123456",
                                     "qty": 200,
                                     "timestamp": "2023-11-20 22:55:19.798995",
-                                    "trade_id": "MP180_LG_MO_ET"
+                                    "trade_id": "MP180_LG_MO_EN"
+                                },
+                                {
+                                    "avg_prc": 0,
+                                    "exchange_token": 48301,
+                                    "order_id": "123456",
+                                    "qty": 200,
+                                    "timestamp": "2023-11-20 22:55:19.798995",
+                                    "trade_id": "MP181_LG_MO_EN"
                                 },
                                 {
                                     "avg_prc": 0,
@@ -171,10 +188,12 @@
                                     "trade_id": "MP180_LG_MO_EX"
                                 },
                                 {
-                                    "avg_prc": "1232",
+                                    "avg_prc": 0,
+                                    "exchange_token": 48301,
                                     "order_id": "123456",
-                                    "time": "12:23",
-                                    "trade_id": "MP181_LG_MO_ET"
+                                    "qty": 200,
+                                    "timestamp": "2023-11-20 22:55:19.798995",
+                                    "trade_id": "MP181_LG_MO_EX"
                                 }
                             ]
                         }
@@ -224,7 +243,7 @@
                                             "order_id": "123456",
                                             "qty": 200,
                                             "timestamp": "2023-11-20 22:55:19.798995",
-                                            "trade_id": "PS21_LG_MO_ET"
+                                            "trade_id": "PS21_LG_MO_EN"
                                         },
                                         {
                                             "avg_prc": 0,
@@ -232,19 +251,23 @@
                                             "order_id": "123456",
                                             "qty": 200,
                                             "timestamp": "2023-11-20 22:55:19.798995",
-                                            "trade_id": "PS22_LG_MO_ET"
+                                            "trade_id": "PS22_LG_MO_EN"
                                         },
                                         {
-                                            "avg_prc": "1232",
+                                            "avg_prc": 0,
+                                            "exchange_token": 48301,
                                             "order_id": "123456",
-                                            "time": "12:23",
-                                            "trade_id": "PS23_LG_MO_ET"
+                                            "qty": 200,
+                                            "timestamp": "2023-11-20 22:55:19.798995",
+                                            "trade_id": "PS23_LG_MO_EN"
                                         },
                                         {
-                                            "avg_prc": "1232",
+                                            "avg_prc": 0,
+                                            "exchange_token": 48301,
                                             "order_id": "123456",
-                                            "time": "12:23",
-                                            "trade_id": "PS24_LG_MO_ET"
+                                            "qty": 200,
+                                            "timestamp": "2023-11-20 22:55:19.798995",
+                                            "trade_id": "PS18_LG_MO_EX"
                                         }
                                     ]
                                 }

@@ -29,7 +29,6 @@
         "Segment": "NFO",
         "TimeFrame": "1Min",
         "MaxMarginPerLot": 70000,
-        "SweepEnabled":true
       },
       "Instruments": [
         "NIFTY"

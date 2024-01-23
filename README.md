@@ -134,13 +134,13 @@ Passed:
 
 Staging:
 O1. Strategy info implementation (StrategyCenterUtils)
-
-Planned:
 O2. Implementation of MarketInfo Update in Scripts(Scripts/MarketInfo Update)
 O3. SweepOrder implementation in GoodEvening and OrderCenterUtils
 O4. Implement DailyTradeBookValidator
+O5. User and Signal trade logging to DB
+
+Planned:
 
 TBD:
-O5. User and Signal trade logging to DB
 O6. UI refactor for user app
 O7. Create execution management dashboard for frontend

@@ -82,5 +82,11 @@ def fetch_user_credentials_firebase(broker_user_name):
     for user in user_credentials:
         if user_credentials[user]['Broker']['BrokerUsername'] == broker_user_name:
             return user_credentials[user]['Broker']
+        
+def get_today_orders_for_brokers(user):
+    if  user['Broker']['BrokerName'] == ZERODHA:
+        return zerodha_adapter.zerodha_todays_tradebook(user)
+    elif user['Broker']['BrokerName'] == ALICEBLUE:
+        return alice_adapter.aliceblue_todays_tradebook(user)
 
 

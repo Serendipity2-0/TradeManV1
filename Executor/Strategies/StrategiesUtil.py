@@ -298,9 +298,7 @@ def place_order_strategy_users(strategy_name,orders_to_place):
     place_order_for_strategy(strategy_users,orders_to_place)
     pass
 
-#TODO: get sweep order enabled strategy list from firebase strategies/'sweep_order'
-def get_sweep_order_enabled_strategy_list():
-    pass
+
     
     
         
