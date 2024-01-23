@@ -197,6 +197,14 @@ class StrategyBase(BaseModel):
             return f"{base_symbol} not found"
         return stoploss_multiplier[0]
     
+    def update_strategy_info(self,strategy_name):
+        strategy_info = {}
+        strategy_info['Instruments'] = self.Instruments
+        strategy_info['StrategyName'] = strategy_name
+        print("strategy_info",strategy_info)
+        return strategy_info
+       
+    
 def get_previous_dates(num_dates):
     dates = []
     current_date = dt.date.today()
@@ -266,18 +274,9 @@ def assign_trade_id(orders_to_place):
 
     return orders_to_place
 
-def update_strategy_info(strategy_name,signal):
-    #TODO: get the strategy info from strategy card firebase and update TradeView and MaxMarginPerLot
-    strategy_info = {
-            "TradeView": "Bearish",
-            "MaxMarginPerLot": 122,
-            "PeakLoss": 0,
-            "PeakProfit": 0
-          }
-    return strategy_info
 
-def update_signal_firebase(strategy_name,signal):
-    strategy_info = update_strategy_info(strategy_name,signal)
+def update_signal_firebase(self,strategy_name,signal):
+    strategy_info = StrategyBase.update_strategy_info(self,strategy_name)
     #Log the signals in  strategies/{strategy_name}/TodayOrders/orders
     update_fields_firebase('strategies', strategy_name, {signal['TradeId']: signal}, 'TodayOrders')
     update_fields_firebase('strategies', strategy_name, {'StrategyInfo': strategy_info}, f'TodayOrders/{signal["TradeId"]}')
