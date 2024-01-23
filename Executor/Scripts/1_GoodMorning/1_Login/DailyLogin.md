@@ -9,3 +9,14 @@ Description:1. Print Shree Ganeshaya Namha
 SampleData: user_sample.json
 Dependencies: [BrokerUtils, OrderCenterUtils, ExeFirebaseUtils]
 Notification : On failure
+
+
+NOTES:
+1. For AliceBlue:
+    pip install pycryptodome==3.18.0
+    pip install pyotp==2.8.0
+
+2. For Zerodha:
+    pip install undetected-chromedriver==3.5.0
+    pip install webdriver-manager==4.0.0
+    pip install selenium==4.9.1
