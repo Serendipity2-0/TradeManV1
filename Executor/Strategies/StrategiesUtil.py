@@ -23,6 +23,7 @@ from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import \
     get_single_ltp
 from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
     calculate_qty_for_strategies, place_order_for_strategy)
+from Executor.ExecutorUtils.ExeUtils import holidays
 
 
 # Sub-models for various parameter types
@@ -31,7 +32,7 @@ class EntryParams(BaseModel):
     
     EntryTime: str
     HedgeMultiplier: Optional[int] = None
-    InstrumentToday: str
+    InstrumentToday: Union[str,dict]
     SLMultipler: Optional[int] = None
     StrikeMultiplier: Optional[int] = None
 
@@ -41,6 +42,7 @@ class ExitParams(BaseModel):
 
 class ExtraInformation(BaseModel):
     QtyCalc: str
+    PriceRef: Optional[Dict[str, List[int]]] = None
 
 class GeneralParams(BaseModel):
     ExpiryType: str
@@ -53,6 +55,7 @@ class GeneralParams(BaseModel):
     TimeFrame: str
     TradeView: str
     ATRPeriod: Optional[int] = None
+    IndicesTokens: Optional[Dict[str, int]] = None
 
 class StrategyInfo(BaseModel):
     Direction: Optional[str]
@@ -65,9 +68,9 @@ class TodayOrder(BaseModel):
     EntryTime: Optional[time] = None
     ExitPrc: Optional[float] = None
     ExitTime: Optional[time] = None
-    Signal: str
-    StrategyInfo: Optional[StrategyInfo]
-    TradeId: str
+    Signal: Optional[str] = None
+    StrategyInfo: Optional[StrategyInfo]=None
+    TradeId: Optional[str]=None
 
 
 
@@ -81,7 +84,7 @@ class StrategyBase(BaseModel):
     NextTradeId: str
     StrategyName: str
     StrategyPrefix: str
-    TodayOrders: Dict[str, TodayOrder]
+    TodayOrders: Optional[Dict[str, TodayOrder]]=None
 
     @classmethod
     def load_from_db(cls, strategy_name: str):

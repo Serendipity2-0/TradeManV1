@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 DIR = os.getcwd()
 sys.path.append(DIR)
 
-import Brokers.place_order as place_order
-import MarketUtils.general_calc as general_calc
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
+from Executor.Strategies.StrategiesUtil import fetch_users_for_strategy
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -21,30 +21,19 @@ logger = logging.getLogger(__name__)
  ENTRY_EXIT_SELECTION, CONFIRMATION) = range(17)
 
 # Token for your bot from BotFather
-TOKEN = '807232387:AAF5OgaGJuUPV8xwDUxYFRHaOWJSU5pIAic'
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 def get_strategies_from_users():
-    active_users = general_calc.read_json_file(os.path.join(DIR, "MarketUtils", "active_users.json"))
+    active_users = fetch_active_users_from_firebase()
     strategies = set()
     for user in active_users:
-        strategies.update(user['qty'].keys())
+        strategies.update(user['Strategies'].keys())
     strategies.add("Extra")
     strategies.add("Stocks")
 
     # Convert the set to a list and sort it
     sorted_strategies = sorted(list(strategies))
     return {str(idx + 1): strategy for idx, strategy in enumerate(sorted_strategies)}
-
-
-def get_strategy_qty(username,base_instrument, strategy):
-    active_users = general_calc.read_json_file(os.path.join(DIR, "MarketUtils", "active_users.json"))
-    for user in active_users:
-        if user['account_name'] == username and strategy in user['qty']:
-            if isinstance(user['qty'][strategy], dict):
-                return user['qty'][strategy].get(base_instrument)
-            else:
-                return user['qty'][strategy]
-    return None
 
 order_type_map = {"1": "PlaceOrder", "2": "PlaceStoploss", "3": "ModifyOrder"}
 transaction_type_map = {"1": "BUY", "2": "SELL"}
@@ -53,8 +42,8 @@ product_type_map = {"1": "NRML", "2": "MIS", "3": "CNC"}
 option_type_map = {"1": "CE", "2": "PE", "3": "FUT", "4": "Stock"}
 expiry_map = {"1": "current_week", "2": "current_month", "3": "next_week", "4": "next_month", "5": "Stock"}
 entry_exit_map = {"1": "Entry", "2": "Exit"}
-active_users = general_calc.read_json_file(os.path.join(DIR, "MarketUtils", "active_users.json"))
-active_users_map = {str(idx): user['account_name'] for idx, user in enumerate(active_users, 1)}
+active_users = fetch_active_users_from_firebase()
+active_users_map = {str(idx): user['Profile']['Name'] for idx, user in enumerate(active_users, 1)}
 strategy_map = get_strategies_from_users()
 
 # Handler functions
@@ -90,24 +79,23 @@ def strategy_selection(update: Update, context: CallbackContext) -> int:
     # Check if the selected strategy is "Extra" or "Stocks"
     if selected_strategy in ["Extra", "Stocks"]:
         # Show all users from active_users.json
-        active_users = general_calc.read_json_file(os.path.join(DIR, "MarketUtils", "active_users.json"))
+        active_users = fetch_active_users_from_firebase()
         user_selection_message = "Please select one or more users by number (e.g., 1,3,5):\n"
         for idx, user in enumerate(active_users, 1):
-            user_selection_message += f"{idx}. {user['account_name']}\n"
+            user_selection_message += f"{idx}. {user['Profile']['Name']}\n"
         user_selection_message += f"{len(active_users) + 1}. ALL USERS\n"
         context.user_data['filtered_users'] = active_users
         update.message.reply_text(user_selection_message)
         return USER_SELECTION
     else:
         # Filter active_users based on selected strategy
-        active_users = general_calc.read_json_file(os.path.join(DIR, "MarketUtils", "active_users.json"))
-        filtered_users = [user for user in active_users if selected_strategy in user['qty']]
+        filtered_users = fetch_users_for_strategy(selected_strategy)
         context.user_data['filtered_users'] = filtered_users
 
         # Construct user selection message
         user_selection_message = "Please select one or more users by number (e.g., 1,3,5):\n"
         for idx, user in enumerate(filtered_users, 1):
-            user_selection_message += f"{idx}. {user['account_name']}\n"
+            user_selection_message += f"{idx}. {user['Profile']['Name']}\n"
 
         user_selection_message += f"{len(filtered_users) + 1}. ALL USERS\n"
         update.message.reply_text(user_selection_message)
@@ -126,13 +114,13 @@ def user_selection(update: Update, context: CallbackContext) -> int:
             # If 'filtered_users' doesn't exist, use all users from active_users.json
             filtered_users = context.user_data.get('filtered_users')
             if not filtered_users:
-                active_users = general_calc.read_json_file(os.path.join(DIR, "MarketUtils", "active_users.json"))
+                active_users = fetch_active_users_from_firebase()
                 filtered_users = active_users
-            selected_accounts = [user['account_name'] for user in filtered_users]
+            selected_accounts = [user['Profile']['Name'] for user in filtered_users]
             break  # No need to loop further as all users are selected
         else:
             try:
-                selected_account = context.user_data.get('filtered_users', [])[int(user_input) - 1]['account_name']
+                selected_account = context.user_data.get('filtered_users', [])[int(user_input) - 1]['Profile']['Name']
                 selected_accounts.append(selected_account)
             except (IndexError, ValueError):
                 update.message.reply_text("Invalid selection: " + user_input)
@@ -336,9 +324,6 @@ def process_confirmation(update: Update, context: CallbackContext) -> int:
                 quantity = context.user_data.get('risk_percentage')
                 # Implement your logic for calculating quantity based on risk
                 qty_or_risk_label = "risk_percentage"
-            elif qty_or_risk == "3":  # Strategy quantity
-                quantity = get_strategy_qty(account_name,context.user_data.get('base_instrument', ''), context.user_data.get('strategy', ''))
-                qty_or_risk_label = "qty"
             else:
                 update.message.reply_text("Invalid quantity/risk selection.")
                 return ConversationHandler.END
@@ -363,7 +348,8 @@ def process_confirmation(update: Update, context: CallbackContext) -> int:
 
         # Pass the list of details to orders_via_telegram function
         for order_details in order_details_list:
-            place_order.orders_via_telegram(order_details)
+            print(order_details)
+            # place_order.orders_via_telegram(order_details)
 
         clear_user_data(context)
         update.message.reply_text("Orders placed for all selected users.")

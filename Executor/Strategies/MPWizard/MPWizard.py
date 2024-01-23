@@ -55,7 +55,7 @@ def main():
         return
     
     # Update the JSON file with average range data
-    MPWizard_calc.get_average_range_and_update_json(mpwizard_strategy_obj.get_general_params().ATRPeriod)
+    # MPWizard_calc.get_average_range_and_update_json(mpwizard_strategy_obj.get_general_params().ATRPeriod)
     
     # Calculate the wait time before starting the bot
     desired_start_time = dt.datetime(now.year, now.month, now.day, start_hour, start_minute)
@@ -67,13 +67,13 @@ def main():
         sleep(wait_time.total_seconds())
     
     # Update the JSON file with high-low range data
-    MPWizard_calc.get_high_low_range_and_update_json()
+    # MPWizard_calc.get_high_low_range_and_update_json()
     
     mood_data = mpwizard_strategy_obj.get_entry_params()
     
     # Initialize the OrderMonitor with the users and instruments, then start monitoring
-    order_monitor = OrderMonitor(mood_data, max_orders=2) 
-    order_monitor.monitor_index()
+    # order_monitor = OrderMonitor(mood_data, max_orders=2) 
+    # order_monitor.monitor_index()
 
 if __name__ == "__main__":
     main()
