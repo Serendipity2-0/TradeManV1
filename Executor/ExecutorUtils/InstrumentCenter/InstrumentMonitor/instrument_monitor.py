@@ -1,3 +1,22 @@
+import threading
+from time import sleep
+from typing import Any, Callable, Dict
+import os, sys
+
+DIR = os.getcwd()
+sys.path.append(DIR)
+zerodha_primary = os.getenv('ZERODHA_PRIMARY_ACCOUNT')
+
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_primary_accounts_from_firebase
+from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import create_kite_obj
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
+
+kite = create_kite_obj(api_key=primary_account_session_id['Broker']['ApiKey'], access_token=primary_account_session_id['Broker']['SessionId'])
+
+def monitor():
+    return InstrumentMonitor()
+
 
 class InstrumentMonitor:
     _instance = None
@@ -32,7 +51,7 @@ class InstrumentMonitor:
         """
         if order_details:
             instrument_obj = Instrument()
-            token = str(instrument_obj.get_token_by_exchange_token(order_details.get('exchange_token')))
+            token = str(instrument_obj.get_kite_token_by_exchange_token(order_details.get('exchange_token')))
             target = order_details.get('target')
             limit = order_details.get('limit_prc')
         else:
@@ -89,7 +108,7 @@ class InstrumentMonitor:
     def _process_token(self, token, ltp, data):
         order_details = data.get('order_details')
         trigger_points = data.get('trigger_points')
-
+        
         if trigger_points:
             # Initialize trigger states if not already done
             if 'IBHigh_triggered' not in data:

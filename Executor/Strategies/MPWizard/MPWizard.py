@@ -12,14 +12,13 @@ ENV_PATH = os.path.join(DIR_PATH, '.env')
 load_dotenv(ENV_PATH)
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
-from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users
 
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
-# import MPWizard_calc as MPWizard_calc
-# from MPWizard_monitor import OrderMonitor
+import MPWizard_calc as MPWizard_calc
+from MPWizard_monitor import OrderMonitor
 
 class MPWizard(StrategyBase):
     def get_general_params(self):
@@ -34,7 +33,6 @@ class MPWizard(StrategyBase):
 mpwizard_strategy_obj = MPWizard.load_from_db('MPWizard')
 instrument_obj = InstrumentCenterUtils.Instrument()
 next_trade_prefix = mpwizard_strategy_obj.NextTradeId
-
 
 
 # Fetch the desired start time from the environment variables
@@ -55,7 +53,7 @@ def main():
         return
     
     # Update the JSON file with average range data
-    # MPWizard_calc.get_average_range_and_update_json(mpwizard_strategy_obj.get_general_params().ATRPeriod)
+    MPWizard_calc.get_average_range_and_update_json(mpwizard_strategy_obj.GeneralParams.ATRPeriod)
     
     # Calculate the wait time before starting the bot
     desired_start_time = dt.datetime(now.year, now.month, now.day, start_hour, start_minute)
@@ -69,11 +67,11 @@ def main():
     # Update the JSON file with high-low range data
     # MPWizard_calc.get_high_low_range_and_update_json()
     
-    mood_data = mpwizard_strategy_obj.get_entry_params()
+    mood_data = mpwizard_strategy_obj.get_entry_params().InstrumentToday
     
     # Initialize the OrderMonitor with the users and instruments, then start monitoring
-    # order_monitor = OrderMonitor(mood_data, max_orders=2) 
-    # order_monitor.monitor_index()
+    order_monitor = OrderMonitor(mood_data, max_orders=2) 
+    order_monitor.monitor_index()
 
 if __name__ == "__main__":
     main()

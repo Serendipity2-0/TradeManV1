@@ -234,13 +234,18 @@ class  Instrument:
         # Return the token for the given base symbol, or a default message if not found
         return symbol_to_token.get(base_symbol, "No token found for given symbol")
     
-def get_single_ltp(token):
+def get_single_ltp(token=None,exchange_token=None):
     zerodha_primary = os.getenv('ZERODHA_PRIMARY_ACCOUNT')
     primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(zerodha_primary)
     kite = KiteConnect(api_key=primary_account_session_id['Broker']['ApiKey']) 
     kite.set_access_token(access_token=primary_account_session_id['Broker']['SessionId'])
-    ltp = kite.ltp(token)  
-    return ltp[str(token)]['last_price']
+    if exchange_token:
+        kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
+        ltp = kite.ltp(kite_token)
+        return ltp[str(kite_token)]['last_price']
+    else:
+        ltp = kite.ltp(token)  
+        return ltp[str(token)]['last_price']
 
 def get_ins_df():
     conn = exesql_adapter.get_db_connection(ins_db_path)

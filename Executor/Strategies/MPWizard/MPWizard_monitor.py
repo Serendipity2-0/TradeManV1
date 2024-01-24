@@ -6,16 +6,13 @@ import MPWizard_calc as MPWizard_calc
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-import Brokers.place_order_calc as place_order_calc
-import MarketUtils.InstrumentBase as InstrumentBase
-import Strategies.StrategyBase as StrategyBase
-import MarketUtils.general_calc as general_calc
-import Brokers.place_order as place_order
-import MarketUtils.Discord.discordchannels as discordbot
 
-_,mpwizard_json = general_calc.get_strategy_json('MPWizard')
-instrument_obj = InstrumentBase.Instrument()
-strategy_obj = StrategyBase.Strategy.read_strategy_json(mpwizard_json)
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentMonitor.instrument_monitor import monitor
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
+from Executor.Strategies.StrategiesUtil import StrategyBase, assign_trade_id,calculate_trigger_price,calculate_stoploss,calculate_transaction_type_sl,calculate_target
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
+
+strategy_obj = StrategyBase.load_from_db('MPWizard')
 
 class MPWInstrument:
     def __init__(self, name, token, trigger_points, price_ref,ib_level=None):
@@ -42,7 +39,6 @@ class MPWInstrument:
 
 class OrderMonitor:
     def __init__(self, json_data, max_orders):
-        # self.mood_data = json.loads(json_data)
         self.instruments = self._create_instruments(json_data)
         self.orders_placed_today = 0
         self.max_orders_per_day = max_orders
@@ -53,7 +49,7 @@ class OrderMonitor:
             instrument.get_name(): {level: False for level in instrument.get_trigger_points().keys()}
             for instrument in self.instruments
         }
-        self.instrument_monitor = place_order_calc.monitor()
+        self.instrument_monitor = monitor()
         self.instrument_monitor.set_callback(self.handle_trigger)
         self._add_tokens_to_instrument_monitor()
 
@@ -91,7 +87,8 @@ class OrderMonitor:
             if 'TriggerPoints' not in data or 'PriceRef' not in data:
                 continue
             
-            token = self.mood_data['GeneralParams']['IndicesTokens'].get(name)
+            token = data['Token']
+
             if token is None:
                 print(f"Warning: Token not found for instrument {name}")
                 continue
@@ -117,37 +114,60 @@ class OrderMonitor:
     def create_order_details(self,name,cross_type,ltp,price_ref):
         mood_data_entry = self._get_mood_data_for_instrument(name)
         ib_level = mood_data_entry['IBLevel']
-        instru_mood = self.mood_data['GeneralParams']['TradeView']
+        instru_mood = strategy_obj.GeneralParams.TradeView
         if not mood_data_entry:
             return
-
         option_type = MPWizard_calc.calculate_option_type(ib_level,cross_type,instru_mood)
         if not option_type:
             return
         
         strikeprc = strategy_obj.round_strike_prc(ltp,name)
-        expiry_date = instrument_obj.get_expiry_by_criteria(name,strikeprc,option_type,'current_week')
-        exchange_token = instrument_obj.get_exchange_token_by_criteria(name,strikeprc,option_type,expiry_date)
-        order_details = [
+        expiry_date = Instrument().get_expiry_by_criteria(name,int(strikeprc),option_type,'current_week')
+        exchange_token = Instrument().get_exchange_token_by_criteria(name,strikeprc,option_type,expiry_date)
+        next_trade_prefix = strategy_obj.NextTradeId
+
+        option_ltp = get_single_ltp(exchange_token=exchange_token)
+
+        stoploss_transaction_type = calculate_transaction_type_sl(strategy_obj.GeneralParams.TransactionType)
+        limit_prc = calculate_stoploss(option_ltp,strategy_obj.GeneralParams.TransactionType,price_ref=price_ref)
+        trigger_prc = calculate_trigger_price(stoploss_transaction_type,limit_prc)
+        target = calculate_target(option_ltp,price_ref=price_ref)
+
+
+        orders_to_place = [
         {  
-        "strategy": strategy_obj.get_strategy_name(),
-        "strategy_mode" : "MultipleInstruments",
+        "strategy": strategy_obj.StrategyName,
+        "signal":"Long",
         "base_symbol": name,
         "exchange_token" : exchange_token,     
-        "segment" : strategy_obj.get_general_params().get('Segment'),
-        "transaction_type": strategy_obj.get_general_params().get('TransactionType'),  
-        "order_type" : strategy_obj.get_general_params().get('OrderType'), 
-        "product_type" : strategy_obj.get_general_params().get('ProductType'),
+        "transaction_type": strategy_obj.GeneralParams.TransactionType,  
+        "order_type" : strategy_obj.GeneralParams.OrderType, 
+        "product_type" : strategy_obj.GeneralParams.ProductType,
         "price_ref" : price_ref,
-        "order_mode" : ["Main","Trailing"],
-        "trade_id" : place_order_calc.get_trade_id(strategy_obj.get_strategy_name(), "entry")
+        "order_mode" : "Main",
+        "trade_id" : next_trade_prefix 
+        },
+        {  
+        "strategy": strategy_obj.StrategyName,
+        "signal":"Long",
+        "base_symbol": name,
+        "exchange_token" : exchange_token,     
+        "transaction_type": stoploss_transaction_type,  
+        "order_type" : "Stoploss", 
+        "product_type" : strategy_obj.GeneralParams.ProductType,
+        "order_mode" : "Trailling",
+        "trade_id" : next_trade_prefix ,
+        "limit_prc" : limit_prc,
+        "trigger_prc" : trigger_prc,
+        "target" : target
         }]
-        return order_details
+        orders_to_place = assign_trade_id(orders_to_place)
+        return orders_to_place
     
     def create_modify_order_details(self,order_details):
         modify_order_details = [
         {
-            "strategy": strategy_obj.get_strategy_name(),
+            "strategy": strategy_obj.StrategyName,
             "base_symbol": order_details['base_symbol'],
             "exchange_token" : order_details['exchange_token'],
             "transaction_type": order_details['transaction_type'],  
@@ -163,38 +183,45 @@ class OrderMonitor:
         return modify_order_details
 
     def _get_mood_data_for_instrument(self, name):
-        return self.mood_data['EntryParams'].get(name)
+        for name, data in strategy_obj.EntryParams.InstrumentToday.items():
+            if name.startswith(name):
+                return data
     
     def get_index_name(self,token):
-        index_tokens = strategy_obj.get_general_params().get("IndicesTokens")
+        index_tokens = strategy_obj.GeneralParams.IndicesTokens
         token_to_index = {str(v): k for k, v in index_tokens.items()}
         return token_to_index.get(token)
 
     def get_instrument_by_token(self,token):
-        return instrument_obj.get_trading_symbol_by_exchange_token(token)
+        return Instrument().get_trading_symbol_by_exchange_token(token)
         
     def process_orders(self,instrument, cross_type, ltp,message=None):
         index_name = self.get_index_name(instrument)
         if index_name:
-            obj = self.create_single_instrument(self.mood_data['EntryParams'][index_name])
-            name = obj.get_name()
-            price_ref = obj.get_price_ref()
+            name = index_name
+            price_ref = MPWizard_calc.get_price_ref_for_today(name)
 
             if self.orders_placed_today >= self.max_orders_per_day:
                 print("Daily signal limit reached. No more signals will be generated today.")
                 return
             
             order_to_place = self.create_order_details(name,cross_type,ltp,price_ref)
-            place_order.place_order_for_strategy(strategy_obj.get_strategy_name(),order_to_place)
+            print(order_to_place)
+            # place_order.place_order_for_strategy(strategy_obj.StrategyName,order_to_place)
             if message:
                 print(message)  
-                discordbot.discord_bot(message,strategy_obj.get_strategy_name())
+                discord_bot(message,strategy_obj.StrategyName)
 
             self.indices_triggered_today.add(name) 
             self.orders_placed_today += 1
             if name in self.message_sent:
                 for level in self.message_sent[name]:
                     self.message_sent[name][level] = True 
+            #i want to send the order details having order_mode as Trailling to the monitor.add_token
+            if order_to_place:
+                for order in order_to_place:
+                    if order['order_mode'] == 'Trailling':
+                        self.instrument_monitor.add_token(order_details=order)
         else:
             print("Index name not found for token:", instrument)
 
@@ -204,14 +231,14 @@ class OrderMonitor:
         order_details['trigger_prc'] = order_details['limit_prc'] + 1.0  
 
         order_to_modify = self.create_modify_order_details(order_details)
-        place_order.modify_orders(order_details=order_to_modify)
+        # place_order.modify_orders(order_details=order_to_modify)
 
         order_details['target'] += (price_ref / 2)  # Adjust target by half of price_ref
         return order_details['target'], order_details['limit_prc'], order_details['trigger_prc']
 
     def handle_trigger(self, instrument,data,order_details=None):
         ltp = self.instrument_monitor.fetch_ltp(instrument)
-        instru_mood = self.mood_data['GeneralParams']['TradeView']
+        instru_mood = strategy_obj.GeneralParams.TradeView
         index_name = self.get_index_name(instrument)
         if data['type'] == 'trigger':
             cross_type = 'UpCross' if data['name'] == 'IBHigh' else 'DownCross'
@@ -224,7 +251,7 @@ class OrderMonitor:
                 trading_symbol = self.get_instrument_by_token(order_details['exchange_token'])
                 message = f"New target for {trading_symbol} set to {new_target} and new limit price set to {new_limit_prc} and new trigger price is {new_trigger_prc}."
                 print(message)
-                discordbot.discord_bot(message,strategy_obj.get_strategy_name())
+                discord_bot(message,strategy_obj.StrategyName)
             else:
                 print("No order details available to update target and limit prices.")
                 
@@ -232,7 +259,7 @@ class OrderMonitor:
             trading_symbol = self.get_instrument_by_token(order_details['exchange_token'])
             message = f"Stoploss reached for {trading_symbol}."
             print(message)
-            discordbot.discord_bot(message,strategy_obj.get_strategy_name())        
+            discord_bot(message,strategy_obj.StrategyName)        
 
     def monitor_index(self):
         print("Monitoring started...")

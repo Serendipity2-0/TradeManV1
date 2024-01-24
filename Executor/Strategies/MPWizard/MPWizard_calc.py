@@ -15,13 +15,6 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_primary_accounts_from_firebase
 from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import create_kite_obj
 
-# import MarketUtils.general_calc as general_calc
-# import Brokers.BrokerUtils.Broker as Broker
-# import Brokers.Zerodha.kite_utils as kite_utils
-# # import Strategies.StrategyBase as StrategyBase
-# import MarketUtils.Calculations.qty_calc as qty_calc
-
-# _,STRATEGY_PATH = general_calc.get_strategy_json('MPWizard')
 strategy_obj = StrategyBase.load_from_db('MPWizard')
 zerodha_primary = os.getenv('ZERODHA_PRIMARY_ACCOUNT')
 
@@ -73,7 +66,6 @@ def get_average_range_and_update_json(days):
         field_path = f'EntryParams/InstrumentToday/{instrument}'
         update_fields_firebase('strategies', strategy_obj.StrategyName, {'ATR5D':round(average_range, 2)}, field_path)
 
-get_average_range_and_update_json(5)
 
 def determine_ib_level(ratio):
     """
@@ -86,8 +78,11 @@ def determine_ib_level(ratio):
     else:
         return "Big"
 
-def get_price_ref_for_today(instrument: str, extra_info) -> Optional[int]:
+def get_price_ref_for_today(instrument: str, extra_info = None) -> Optional[int]:
     # Get the current day of the week (0=Monday, 6=Sunday)
+    if extra_info is None:
+        extra_info = strategy_obj.ExtraInformation
+
     day_of_week = dt.datetime.now().weekday()
 
     # Check if PriceRef for the instrument is available
@@ -134,9 +129,6 @@ def get_high_low_range_and_update_json():
             entry_params = {instrument: {'TriggerPoints': {'IBHigh': high, 'IBLow': low}, 'IBValue': range_, 'IBLevel': determine_ib_level(range_ / average_atr), 'Token': instrument_token, 'PriceRef': price_ref, 'ATR5D': average_atr}}
             field_location = f'EntryParams/InstrumentToday'
             update_fields_firebase('strategies', strategy_obj.StrategyName, entry_params, field_location)
-
-
-get_high_low_range_and_update_json()
 
 def calculate_option_type(ib_level,cross_type,trade_view):
     if ib_level == 'Big':

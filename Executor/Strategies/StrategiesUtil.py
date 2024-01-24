@@ -69,7 +69,7 @@ class TodayOrder(BaseModel):
     ExitPrc: Optional[float] = None
     ExitTime: Optional[time] = None
     Signal: Optional[str] = None
-    StrategyInfo: Optional[StrategyInfo]=None
+    StrategyInfo: Optional[Dict[str, str]]=None
     TradeId: Optional[str]=None
 
 
@@ -264,7 +264,7 @@ def assign_trade_id(orders_to_place):
         # Determine the last part of the trade_id based on order_mode
         if order['order_mode'] in ['Main', 'HedgeEntry']:
             trade_id_suffix = 'entry'
-        elif order['order_mode'] == 'SL':
+        elif order['order_mode'] in ['SL','Trailling']:
             trade_id_suffix = 'exit'
         else:
             trade_id_suffix = 'unknown'
@@ -278,8 +278,8 @@ def assign_trade_id(orders_to_place):
     return orders_to_place
 
 
-def update_signal_firebase(self,strategy_name,signal):
-    strategy_info = StrategyBase.update_strategy_info(self,strategy_name)
+def update_signal_firebase(strategy_name,signal):
+    strategy_info = StrategyBase().update_strategy_info(strategy_name)
     #Log the signals in  strategies/{strategy_name}/TodayOrders/orders
     update_fields_firebase('strategies', strategy_name, {signal['TradeId']: signal}, 'TodayOrders')
     update_fields_firebase('strategies', strategy_name, {'StrategyInfo': strategy_info}, f'TodayOrders/{signal["TradeId"]}')
@@ -302,6 +302,53 @@ def place_order_strategy_users(strategy_name,orders_to_place):
     pass
 
 
+def calculate_stoploss(ltp,main_transaction_type,stoploss_multiplier=None,price_ref=None):
+    if stoploss_multiplier:
+        stoploss = calculate_multipler_stoploss(main_transaction_type,ltp,stoploss_multiplier)
+    elif price_ref:
+        stoploss = calculate_priceref_stoploss(main_transaction_type,ltp,price_ref)
+    else:
+        raise ValueError("Invalid stoploss calculation in order_details")
+    return stoploss
+
+def calculate_multipler_stoploss(main_transaction_type,ltp,stoploss_multiplier):
+    if main_transaction_type == 'BUY':
+        stoploss = round(float(ltp - (ltp * stoploss_multiplier)),1)
+    elif main_transaction_type == 'SELL':
+        stoploss = round(float(ltp + (ltp * stoploss_multiplier)),1)
+
+    if stoploss < 0:
+        return 1
+    
+    return stoploss
+
+def calculate_priceref_stoploss(main_transaction_type,ltp,price_ref):
+    if main_transaction_type == 'BUY':
+        stoploss = round(float(ltp - price_ref),1)
+    elif main_transaction_type == 'SELL':
+        stoploss = round(float(ltp + price_ref),1)
+
+    if stoploss < 0:
+        return 1
+    
+    return stoploss
+
+def calculate_trigger_price(transaction_type,stoploss):
+    if transaction_type == 'BUY':
+        trigger_price = round(float(stoploss + 1),1)
+    elif transaction_type == 'SELL':
+        trigger_price = round(float(stoploss - 1),1)
+    return trigger_price
+
+def calculate_transaction_type_sl(transaction_type):
+    if transaction_type == 'BUY' or transaction_type == 'B':
+        transaction_type_sl = 'SELL'
+    elif transaction_type == 'SELL' or transaction_type == 'S':
+        transaction_type_sl = 'BUY'
+    return transaction_type_sl
+
+def calculate_target(option_ltp,price_ref):
+    return option_ltp+(price_ref/2)
     
     
         

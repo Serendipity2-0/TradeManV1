@@ -8,8 +8,9 @@ DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
-from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users
-
+from Executor.Strategies.StrategiesUtil import \
+    update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users,calculate_stoploss,calculate_transaction_type_sl,calculate_trigger_price
+                                                
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
@@ -58,16 +59,19 @@ hedge_option_type = expiry_trader_obj.get_hedge_option_type(prediction)
 today_expiry = instrument_obj.get_expiry_by_criteria(base_symbol,main_strikeprc,main_option_type, "current_week")
 hedge_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol,hedge_strikeprc,hedge_option_type, today_expiry)
 main_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol,main_strikeprc, main_option_type,today_expiry)
-main_instrument_token = instrument_obj.get_kite_token_by_exchange_token(main_exchange_token)
 
-ltp = InstrumentCenterUtils.get_single_ltp(main_instrument_token)
+ltp = InstrumentCenterUtils.get_single_ltp(exchange_token = main_exchange_token)
 lot_size = instrument_obj.get_lot_size_by_exchange_token(main_exchange_token)
-
 
 update_qty_user_firebase(strategy_name,ltp,lot_size)
 
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(main_exchange_token)
 hedge_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(hedge_exchange_token)
+
+stoploss_transaction_type = calculate_transaction_type_sl(main_transaction_type)
+limit_prc = calculate_stoploss(ltp,main_transaction_type,stoploss_mutiplier=stoploss_mutiplier)
+trigger_prc = calculate_trigger_price(stoploss_transaction_type,limit_prc)
+
 
 orders_to_place = [
     {  
@@ -97,10 +101,11 @@ orders_to_place = [
         "signal":"Short",
         "base_symbol": base_symbol,
         "exchange_token" : main_exchange_token,     
-        "transaction_type": hedge_transaction_type, 
+        "transaction_type": stoploss_transaction_type, 
         "order_type" : "Stoploss",
         "product_type" : product_type,
-        "stoploss_mutiplier": stoploss_mutiplier,
+        "limit_prc": limit_prc,
+        "trigger_prc": trigger_prc,
         "order_mode" : "SL",
         "trade_id" : next_trade_prefix
     }
