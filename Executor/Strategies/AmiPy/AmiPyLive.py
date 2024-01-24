@@ -27,29 +27,50 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, '.env')
 load_dotenv(ENV_PATH)
 
-import MarketUtils.Discord.discordchannels as discord_bot
-from Strategies.StrategyBase import Strategy
-import Brokers.BrokerUtils.Broker as Broker
-from MarketUtils.Firebase.firebase_utils import fetch_collection_data_firebase
+zerodha_primary = os.getenv('ZERODHA_PRIMARY_ACCOUNT')
 
-strategy_obj = fetch_collection_data_firebase('Strategies')['AmiPy']
+from Executor.Strategies.StrategiesUtil import StrategyBase
+from Executor.Strategies.StrategiesUtil import StrategyBase,base_symbol_token
+from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import create_kite_obj
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase,update_fields_firebase
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_primary_accounts_from_firebase
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
-nifty_token = strategy_obj['GeneralParams']['NiftyToken']
-base_symbol = strategy_obj['Instruments'][0]
+# import MarketUtils.Discord.discordchannels as discord_bot
+# from Strategies.StrategyBase import Strategy
+# import Brokers.BrokerUtils.Broker as Broker
+# from MarketUtils.Firebase.firebase_utils import fetch_collection_data_firebase
+
+strategy_obj = StrategyBase.load_from_db('AmiPy')
+
+base_symbols = strategy_obj.Instruments
+base_symbol = base_symbols[0]
+nifty_token = [base_symbol_token(base_symbol)]
+print("Nifty Token:",nifty_token)
+
+#convert the items in nifty token to int
+nifty_token = [int(i) for i in nifty_token]
+
+
 strike_prc = None
-interval = strategy_obj['ExtraInformation']['Interval']
+interval = strategy_obj.ExtraInformation.Interval
 
-entry = strategy_obj['EntryParams']['EntryTime']
-last = strategy_obj['ExitParams']['LastBuyTime']
-sqroff = strategy_obj['ExitParams']['SquareOffTime']
+entry = strategy_obj.EntryParams.EntryTime
+last = strategy_obj.ExitParams.LastBuyTime
+sqroff = strategy_obj.ExitParams.SquareOffTime
+
+print("Entry Time:",type(entry))
+print("Last Trade Time:",type(last))
+print("Square Off Time:",sqroff)
 
 entry_time = pd.Timestamp(entry).time()
 last_buy_time = pd.Timestamp(last).time()
 sqroff_time = pd.Timestamp(sqroff).time()
 
-kite_api_key,kite_access_token = Broker.get_primary_account()
 
-kite = KiteConnect(api_key=kite_api_key,access_token=kite_access_token)
+
+primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
+kite = create_kite_obj(api_key=primary_account_session_id['Broker']['ApiKey'], access_token=primary_account_session_id['Broker']['SessionId'])
 
 
 # Define your global DataFrame
@@ -80,7 +101,7 @@ def job():
     global strike_prc , nifty_token
     from_date = datetime.datetime.strptime(f'{date.today()} 09:18:59', '%Y-%m-%d %H:%M:%S')
     to_date = datetime.datetime.strptime(f'{date.today()} 09:19:59', '%Y-%m-%d %H:%M:%S')
-    nifty_data = kite.historical_data(instrument_token=nifty_token,from_date=from_date,to_date=to_date,interval='minute', oi=True)[0]['close']
+    nifty_data = kite.historical_data(instrument_token=nifty_token[0],from_date=from_date,to_date=to_date,interval='minute', oi=True)[0]['close']
     # nifty_data = kite.historical_data(instrument_token=nifty_token,from_date="2023-11-03 09:18:59",to_date="2023-11-03 09:19:59",interval='minute', oi=True)[0]['close']
     strike_prc = round(nifty_data/100)*100
     return strike_prc
@@ -119,8 +140,10 @@ else:
 
 print("Today's Strike Price:",strike_prc)
 
-trading_tokens = get_option_tokens(strike_prc)
+trading_tokens = get_option_tokens(strike_prc,base_symbol)
+
 hist_data = {token: pd.DataFrame(columns=['date', 'instrument_token', 'open', 'high', 'low', 'close']) for token in nifty_token}
+
 from_date =  date.today()- pd.Timedelta(days=4)
 to_date = date.today()
 
@@ -304,7 +327,7 @@ def updateSignalDf(last_signal,trade_state):
         signal_entry = strategy_obj.get_signal_entry()
         signal_entry[trade_type] = signal
         strategy_obj.set_signal_entry(signal_entry)
-        strategy_obj.write_strategy_json(STRATEGY_PATH)
+        # strategy_obj.write_strategy_json(STRATEGY_PATH)
         amipy_orders.place_orders(strike_prc,trade_type) 
 
     elif trade_type == 'LongCoverSignal' or trade_type == 'ShortCoverSignal':
@@ -331,7 +354,7 @@ def updateSignalDf(last_signal,trade_state):
         signal_entry = strategy_obj.get_signal_entry()
         signal_entry[trade_type] = signal
         strategy_obj.set_signal_entry(signal_entry)
-        strategy_obj.write_strategy_json(STRATEGY_PATH)
+        # strategy_obj.write_strategy_json(STRATEGY_PATH)
         amipy_orders.place_orders(strike_prc,trade_type)
 
     try:
@@ -339,7 +362,7 @@ def updateSignalDf(last_signal,trade_state):
             signal_prc = str(last_signal['close'])
             message = f"Signal: {trade_type}\nStrikePrc: {strike_prc} \nDate: {trade_date}\nTime: {trade_time}\nClose: {signal_prc}"
             print(message)
-            discord_bot.discord_bot(message, "AmiPy")
+            discord_bot(message, "AmiPy")
     except Exception as e:
         print(f"Error in sending telegram message: {e}")
 
@@ -403,7 +426,7 @@ def on_connect(ws, response):  # noqa
     ws.set_mode(ws.MODE_LTP, trading_tokens)
 
 # Initialise
-kws = KiteTicker(kite_api_key, kite_access_token)
+kws = KiteTicker(api_key=primary_account_session_id['Broker']['ApiKey'], access_token=primary_account_session_id['Broker']['SessionId'])
 # Assign the callbacks.
 kws.on_ticks = on_ticks
 kws.on_connect = on_connect

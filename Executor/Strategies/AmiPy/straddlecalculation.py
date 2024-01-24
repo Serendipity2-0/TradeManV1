@@ -8,45 +8,30 @@ import json
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
-import MarketUtils.InstrumentBase as InstrumentBase
 
-import Strategies.StrategyBase as StrategyBase
-import MarketUtils.general_calc as general_calc
+from Executor.Strategies.StrategiesUtil import StrategyBase
 
-_,STRATEGY_PATH = general_calc.get_strategy_json('AmiPy')
-
-strategy_obj = StrategyBase.Strategy.read_strategy_json(STRATEGY_PATH)
-instrument_obj = InstrumentBase.Instrument()
+strategy_obj = StrategyBase.load_from_db('AmiPy')
 
 
-Heikin_Ashi_MA_period = strategy_obj.get_entry_params().get('HeikinAshiMAPeriod')
-Supertrend_period = strategy_obj.get_entry_params().get('SupertrendPeriod')
-Supertrend_multiplier = strategy_obj.get_entry_params().get('SupertrendMultiplier')
-EMA_period = strategy_obj.get_entry_params().get('EMAPeriod')
 
-def get_option_tokens(strike_prc):
-    instruments_df = pd.read_csv(os.path.join(DIR_PATH, 'instruments.csv'))
+Heikin_Ashi_MA_period = strategy_obj.EntryParams.HeikinAshiMAPeriod
+Supertrend_period = strategy_obj.EntryParams.SupertrendPeriod
+Supertrend_multiplier = strategy_obj.EntryParams.SupertrendMultiplier
+EMA_period = strategy_obj.EntryParams.EMAPeriod
 
-    instruments_df = instruments_df[
-        ["instrument_token", "exchange_token", "tradingsymbol", "name", "exchange", "lot_size", "instrument_type", "expiry", "strike"]
-    ]
-
-    base_symbol = strategy_obj.get_instruments()[0]
-    expiry_date = instrument_obj.get_expiry_by_criteria(base_symbol,strike_prc,"CE","current_week")
-
-    nfo_ins_df = instruments_df[
-        (instruments_df["exchange"] == "NFO")
-        & (instruments_df["name"] == base_symbol)
-        & (instruments_df["expiry"] == expiry_date)
-        & (instruments_df["strike"] == strike_prc)
-    ]
+def get_option_tokens(strike_prc,base_symbol):
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as InstrumentBase
+    instrument_obj = InstrumentBase()
+    today_expiry = instrument_obj.get_expiry_by_criteria(base_symbol,strike_prc,"CE", "current_week")
 
     tokens = [256265]
 
-
-    tokens.append(int(nfo_ins_df['instrument_token'].values[0]))  # CE token
-    tokens.append(int(nfo_ins_df['instrument_token'].values[1]))  # PE token
-
+    options = ['CE', 'PE']
+    for option in options:
+        exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol,strike_prc,option,today_expiry)
+        kite_token = instrument_obj.get_kite_token_by_exchange_token(exchange_token)
+        tokens.append(int(kite_token))
 
     return tokens
 

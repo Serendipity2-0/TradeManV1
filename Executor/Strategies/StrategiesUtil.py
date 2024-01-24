@@ -32,26 +32,36 @@ class EntryParams(BaseModel):
     
     EntryTime: str
     HedgeMultiplier: Optional[int] = None
-    InstrumentToday: Union[str,dict]
+    InstrumentToday: Optional[Union[str,dict]] = None
     SLMultipler: Optional[int] = None
     StrikeMultiplier: Optional[int] = None
+    HeikinAshiMAPeriod : Optional[int] = None
+    SupertrendPeriod : Optional[int] = None
+    SupertrendMultiplier : Optional[int] = None
+    EMAPeriod : Optional[int] = None
 
 class ExitParams(BaseModel):
     SLType: str
-    SqroffTime: Optional[time] = None
+    SquareOffTime: Optional[str] = None
+    LastBuyTime: Optional[str] = None
 
 class ExtraInformation(BaseModel):
     QtyCalc: str
     PriceRef: Optional[Dict[str, List[int]]] = None
+    Interval: Optional[str] = None
+    HedgeDistance : Optional[int] = None
+    Prediction : Optional[str] = None
+    HedgeExchangeToken : Optional[int] = None
+    FuturesExchangeToken : Optional[int] = None
 
 class GeneralParams(BaseModel):
-    ExpiryType: str
+    ExpiryType: Union[str, List[str]]
     HedgeTransactionType: Optional[str] = None
     MainTransactionType: Optional[str] = None
     TransactionType: Optional[str] = None
     OrderType: str
     ProductType: str
-    StrategyType: str
+    StrategyType: Optional[str] = None
     TimeFrame: str
     TradeView: str
     ATRPeriod: Optional[int] = None
@@ -141,8 +151,8 @@ class StrategyBase(BaseModel):
         else:
             return "No expiry today"
 
-    def round_strike_prc(self,ltp,base_symbo): #TODO: Add support for other base symbols using a csv list
-        strike_step = self.get_strike_step(base_symbo)
+    def round_strike_prc(self,ltp,base_symbol): #TODO: Add support for other base symbols using a csv list
+        strike_step = self.get_strike_step(base_symbol)
         return round(ltp / strike_step) * strike_step
     
     def get_strike_step(self, base_symbol):
@@ -350,5 +360,10 @@ def calculate_transaction_type_sl(transaction_type):
 def calculate_target(option_ltp,price_ref):
     return option_ltp+(price_ref/2)
     
-    
+def base_symbol_token(base_symbol):
+    fno_info_df = pd.read_csv(fno_info_path)
+    token = fno_info_df.loc[fno_info_df['base_symbol'] == base_symbol, 'token'].values
+    if len(token) == 0:
+        return f"{base_symbol} not found"
+    return token[0]
         

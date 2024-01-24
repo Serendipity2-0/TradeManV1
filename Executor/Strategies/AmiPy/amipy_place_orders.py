@@ -4,26 +4,20 @@ import datetime as dt
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-import MarketUtils.InstrumentBase as InstrumentBase
-import Strategies.StrategyBase as StrategyBase
-import Brokers.place_order_calc as place_order_calc
-import MarketUtils.general_calc as general_calc
-import Brokers.place_order as place_order
-import MarketUtils.Discord.discordchannels as discord
+from Executor.Strategies.StrategiesUtil import StrategyBase
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
-_,STRATEGY_PATH = general_calc.get_strategy_json('AmiPy')
-
-instrument_obj = InstrumentBase.Instrument()
-strategy_obj = StrategyBase.Strategy.read_strategy_json(STRATEGY_PATH)
+strategy_obj = StrategyBase.load_from_db('AmiPy')
+instrument_obj = Instrument()
 
 
 def place_orders(strike_prc, signal):
-    strategy_name = strategy_obj.get_strategy_name()
-    segment_type = strategy_obj.get_general_params().get("Segment")
-    order_type = strategy_obj.get_general_params().get("OrderType")
-    product_type = strategy_obj.get_general_params().get("ProductType")
+    strategy_name = strategy_obj.StrategyName
+    order_type = strategy_obj.GeneralParams.OrderType
+    product_type = strategy_obj.GeneralParams.ProductType
 
-    base_symbol = strategy_obj.get_instruments()[0]
+    base_symbol = strategy_obj.Instruments[0]
     expiry_date = instrument_obj.get_expiry_by_criteria(base_symbol, strike_prc, "CE", "current_week")
 
     orders_to_place = []
@@ -32,20 +26,20 @@ def place_orders(strike_prc, signal):
     main_PE_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol, strike_prc, "PE", expiry_date)
 
     main_orders = [
-        {"exchange_token": main_CE_exchange_token, "order_mode": ["Main"]},
-        {"exchange_token": main_PE_exchange_token, "order_mode": ["Main"]}
+        {"exchange_token": main_CE_exchange_token, "order_mode": "Main"},
+        {"exchange_token": main_PE_exchange_token, "order_mode": "Main"}
     ]
     
     if "Short" in signal:
-        hedge_ce_strike_prc = strike_prc + strategy_obj.get_extra_information().get("HedgeDistance")
-        hedge_pe_strike_prc = strike_prc - strategy_obj.get_extra_information().get("HedgeDistance")
+        hedge_ce_strike_prc = strike_prc + strategy_obj.ExtraInformation.HedgeDistance
+        hedge_pe_strike_prc = strike_prc - strategy_obj.ExtraInformation.HedgeDistance
 
         hedge_CE_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol, hedge_ce_strike_prc, "CE", expiry_date)
         hedge_PE_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol, hedge_pe_strike_prc, "PE", expiry_date)
 
         hedge_orders = [
-            {"exchange_token": hedge_CE_exchange_token, "order_mode": ["Hedge"]},
-            {"exchange_token": hedge_PE_exchange_token, "order_mode": ["Hedge"]}
+            {"exchange_token": hedge_CE_exchange_token, "order_mode": "Hedge"},
+            {"exchange_token": hedge_PE_exchange_token, "order_mode": "Hedge"}
         ]
         hedge_transaction_type = "BUY" if "ShortSignal" in signal else "SELL"
         main_transaction_type = "SELL" if "ShortSignal" in signal else "BUY"
@@ -64,33 +58,23 @@ def place_orders(strike_prc, signal):
    
     trade_type  = "entry" if signal == "ShortSignal" or signal == "LongSignal" else "exit"
 
-    if dt.datetime.now().time() > dt.time(9, 0):
-        trade_id = place_order_calc.get_trade_id(strategy_name, trade_type)
-    else:
-        trade_id = "test_order"
+    trade_id = strategy_obj.NextTradeId
 
     for order in orders_to_place:
         transaction_type = hedge_transaction_type if "Hedge" in order['order_mode'] else main_transaction_type
         order.update({
             "strategy": strategy_name,
             "base_symbol": base_symbol,
-            "segment": segment_type,
             "transaction_type": transaction_type,
             "order_type": order_type,
             "product_type": product_type,
             "trade_id": trade_id
         })
-    if dt.datetime.now().time() < dt.time(9, 0):
-        if signal == "Short":
-            message_for_orders("Test",signal,main_CE_exchange_token,main_PE_exchange_token, hedge_CE_exchange_token, hedge_PE_exchange_token)
-        else:
-            message_for_orders("Test",signal,main_CE_exchange_token,main_PE_exchange_token, None, None)
-    else:
-        place_order.place_order_for_strategy(strategy_name, orders_to_place)
+    message_for_orders(trade_type,signal,main_CE_exchange_token,main_PE_exchange_token, hedge_CE_exchange_token, hedge_PE_exchange_token)
+    print(orders_to_place)
+        # place_order.place_order_for_strategy(strategy_name, orders_to_place)
 
 def message_for_orders(trade_type,signal,main_CE_exchange_token,main_PE_exchange_token, hedge_CE_exchange_token, hedge_PE_exchange_token):
-    if trade_type == "Test":
-        strategy_name = "TestOrders"
     
     main_trade_CE_symbol = instrument_obj.get_trading_symbol_by_exchange_token(main_CE_exchange_token)
     main_trade_PE_symbol = instrument_obj.get_trading_symbol_by_exchange_token(main_PE_exchange_token)
@@ -111,4 +95,4 @@ def message_for_orders(trade_type,signal,main_CE_exchange_token,main_PE_exchange
             f"Hedge PE Trade {hedge_trade_PE_symbol} \n")
     print(message)    
     
-    discord.discord_bot(message, strategy_name)
+    discord_bot(message, strategy_obj.StrategyName)

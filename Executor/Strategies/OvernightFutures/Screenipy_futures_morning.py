@@ -11,52 +11,53 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, '.env')
 load_dotenv(ENV_PATH)
 
-import Brokers.place_order as place_order
-import Strategies.StrategyBase as StrategyBase
-import MarketUtils.InstrumentBase as InstrumentBase
-import Brokers.place_order_calc as place_order_calc
-import MarketUtils.general_calc as general_calc
+from Executor.Strategies.StrategiesUtil import StrategyBase
+import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
+from Executor.ExecutorUtils.ExeUtils import holidays
+from Executor.Strategies.StrategiesUtil import assign_trade_id
 
-_,STRATEGY_PATH = general_calc.get_strategy_json('OvernightFutures')
+strategy_obj = StrategyBase.load_from_db('OvernightFutures')
+instrument_obj = InstrumentCenterUtils.Instrument()
 
-strategy_obj = StrategyBase.Strategy.read_strategy_json(STRATEGY_PATH)
-instrument_obj = InstrumentBase.Instrument()
+strategy_name = strategy_obj.StrategyName
 
-strategy_name = strategy_obj.get_strategy_name()
+prediction = strategy_obj.ExtraInformation.Prediction
+hedge_exchange_token = strategy_obj.ExtraInformation.HedgeExchangeToken
+futures_exchange_token = strategy_obj.ExtraInformation.FuturesExchangeToken
 
-prediction = strategy_obj.get_extra_information().get('prediction')
-hedge_exchange_token = strategy_obj.get_extra_information().get('hedge_exchange_token')
-futures_exchange_token = strategy_obj.get_extra_information().get('futures_exchange_token')
+hedge_transcation_type = strategy_obj.GeneralParams.HedgeTransactionType
 
-hedge_transcation_type = strategy_obj.get_general_params().get('HedgeTransactionType')
+order_type = strategy_obj.GeneralParams.OrderType
+product_type = strategy_obj.GeneralParams.ProductType
+base_symbol = strategy_obj.Instruments[0]
+next_trade_prefix = strategy_obj.NextTradeId
 
-order_type = strategy_obj.get_general_params().get('OrderType')
-segment_type = strategy_obj.get_general_params().get('Segment')
-product_type = strategy_obj.get_general_params().get('ProductType')
-
+signal = "Long" if prediction == "Bullish" else "Short"
 
 orders_to_place = [
     {
         "strategy": strategy_name,
-        "base_symbol" : strategy_obj.get_instruments()[0],
+        "signal": signal, 
+        "base_symbol" : base_symbol,
         "exchange_token" : futures_exchange_token,     
-        "segment" : segment_type,
         "transaction_type": strategy_obj.get_square_off_transaction(prediction), 
         "order_type" : order_type, 
         "product_type" : product_type,
-        "order_mode" : ["Main"],
-        "strategy_mode" : "CarryForward"
+        "order_mode" : "Main",
+        "strategy_mode" : "CarryForward",
+        "trade_id" : next_trade_prefix 
     },
     {  
         "strategy": strategy_name,
-        "base_symbol" : strategy_obj.get_instruments()[0],
+        "signal": signal,
+        "base_symbol" : base_symbol,
         "exchange_token" : hedge_exchange_token,     
-        "segment" : segment_type,
         "transaction_type": hedge_transcation_type,  
         "order_type" : order_type, 
         "product_type" : product_type,
-        "order_mode" : ["Hedge"],
-        "strategy_mode" : "CarryForward"
+        "order_mode" : "Hedge",
+        "strategy_mode" : "CarryForward",
+        "trade_id" : next_trade_prefix
     }
 ]
 
@@ -64,9 +65,10 @@ orders_to_place = [
 def is_yesterday_holiday(today):
     """Check if yesterday was a holiday."""
     yesterday = today - dt.timedelta(days=1)
-    return yesterday in general_calc.holidays
+    return yesterday in holidays
 
 def main():
+    global orders_to_place
     now = dt.datetime.now()
 
     # Check if today is the day after a holiday
@@ -74,19 +76,17 @@ def main():
         print("Skipping execution as yesterday was a holiday.")
         return
 
-    desired_end_time_str = strategy_obj.get_exit_params().get('SqroffTime')
+    desired_end_time_str = strategy_obj.ExitParams.SquareOffTime
     start_hour, start_minute, start_second = map(int, desired_end_time_str.split(':'))
     wait_time = dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
     if wait_time.total_seconds() > 0:
         print(f"Waiting for {wait_time} before starting the bot")
         sleep(wait_time.total_seconds())
         
-    trade_id = place_order_calc.get_trade_id(strategy_name, "exit")
-    for order in orders_to_place:
-        order["trade_id"] = trade_id
+    orders_to_place = assign_trade_id(orders_to_place)
 
     print(orders_to_place)
-    place_order.place_order_for_strategy(strategy_name,orders_to_place)
+    # place_order.place_order_for_strategy(strategy_name,orders_to_place)
 
 if __name__ == "__main__":
     main()

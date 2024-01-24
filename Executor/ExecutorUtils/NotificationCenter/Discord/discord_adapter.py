@@ -9,6 +9,7 @@ ENV_PATH = os.path.join(DIR_PATH, '.env')
 load_dotenv(ENV_PATH)
 
 def discord_bot(message, strategy):
+    print(strategy)
     token = os.getenv('discord_bot_token')
     channel_id = os.getenv(f"{strategy.lower()}_channel_id")
 
