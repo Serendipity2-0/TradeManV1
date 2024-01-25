@@ -4,6 +4,7 @@ import pandas as pd
 from kiteconnect import KiteConnect
 
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_strategy_name_from_trade_id
 
 
 def create_kite_obj(user_details=None,api_key=None,access_token=None):
@@ -75,7 +76,7 @@ def simplify_zerodha_order(detail):
     }
 
 def zerodha_todays_tradebook(user):
-    kite = create_kite_obj(api_key=user['api_key'],access_token=user['access_token'])
+    kite = create_kite_obj(api_key=user['ApiKey'],access_token=user['SessionId'])
     orders = kite.orders()
     return orders
 
@@ -223,3 +224,25 @@ def get_order_details(user):
     kite = create_kite_obj(api_key=user['api_key'],access_token=user['access_token'])
     orders = kite.orders()
     return orders
+
+def create_counter_order(trade, user):
+    strategy_name = get_strategy_name_from_trade_id(trade['tag'])
+    exchange_token = Instrument().get_exchange_token_by_token(trade['instrument_token'])
+    counter_order = {
+        "strategy": strategy_name,
+        "signal": get_strategy_name_from_trade_id(trade['tag']),
+        "base_symbol": "NIFTY",   #WARNING: dummy base symbol 
+        "exchange_token": exchange_token,     
+        "transaction_type": trade['transaction_type'], 
+        "order_type": 'MARKET',
+        "product_type": trade['product'],
+        "trade_id": trade['tag'],
+        "order_mode": "Counter",
+        "qty": trade['quantity']
+    }
+    return counter_order
+
+def create_cancel_order(trade, user):
+    kite = create_kite_obj(user_details=user['Broker'])
+    kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade['order_id'])
+    

@@ -28,6 +28,9 @@ class ExpiryTrader(StrategyBase):
     def get_exit_params(self):
         return self.ExitParams
     
+    def get_raw_field(self, field_name: str):
+        return super().get_raw_field(field_name)
+    
 # Testing the class with ExpiryTrader data
 expiry_trader_obj = ExpiryTrader.load_from_db('ExpiryTrader')
 instrument_obj = InstrumentCenterUtils.Instrument()
@@ -35,18 +38,17 @@ instrument_obj = InstrumentCenterUtils.Instrument()
 hedge_transaction_type = expiry_trader_obj.get_general_params().HedgeTransactionType
 main_transaction_type = expiry_trader_obj.get_general_params().MainTransactionType
 
-
 # Extract strategy parameters
 base_symbol, today_expiry_token = expiry_trader_obj.determine_expiry_index()
 strategy_name = expiry_trader_obj.StrategyName
 next_trade_prefix = expiry_trader_obj.NextTradeId
-prediction = expiry_trader_obj.get_general_params().TradeView
+prediction = expiry_trader_obj.get_raw_field('MarketInfo')['TradeView']
 order_type = expiry_trader_obj.get_general_params().OrderType
 product_type = expiry_trader_obj.get_general_params().ProductType
 
 strike_prc_multiplier = expiry_trader_obj.get_strike_multiplier(base_symbol)
 hedge_multiplier = expiry_trader_obj.get_hedge_multiplier(base_symbol)
-stoploss_mutiplier = expiry_trader_obj.get_stoploss_multiplier(base_symbol)
+stoploss_multiplier = expiry_trader_obj.get_stoploss_multiplier(base_symbol)
 desired_start_time_str = expiry_trader_obj.get_entry_params().EntryTime
 
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(':'))
@@ -63,13 +65,13 @@ main_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol,
 ltp = InstrumentCenterUtils.get_single_ltp(exchange_token = main_exchange_token)
 lot_size = instrument_obj.get_lot_size_by_exchange_token(main_exchange_token)
 
-update_qty_user_firebase(strategy_name,ltp,lot_size)
+# update_qty_user_firebase(strategy_name,ltp,lot_size)
 
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(main_exchange_token)
 hedge_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(hedge_exchange_token)
 
 stoploss_transaction_type = calculate_transaction_type_sl(main_transaction_type)
-limit_prc = calculate_stoploss(ltp,main_transaction_type,stoploss_mutiplier=stoploss_mutiplier)
+limit_prc = calculate_stoploss(ltp,main_transaction_type,stoploss_multiplier=stoploss_multiplier)
 trigger_prc = calculate_trigger_price(stoploss_transaction_type,limit_prc)
 
 
@@ -82,7 +84,7 @@ orders_to_place = [
         "transaction_type": hedge_transaction_type,  
         "order_type" : order_type, 
         "product_type" : product_type,
-        "order_mode" : "Hedge",
+        "order_mode" : "HedgeEntry",
         "trade_id" : next_trade_prefix 
     },
     {
@@ -114,7 +116,6 @@ orders_to_place = [
 orders_to_place = assign_trade_id(orders_to_place)
 
 def message_for_orders(trade_type,prediction,main_trade_symbol,hedge_trade_symbol):
-    #TODO: add noftication for the orders 
     message = ( f"{trade_type} Trade for {strategy_name}\n"
             f"Direction : {prediction}\n"
             f"Main Trade : {main_trade_symbol}\n"
@@ -124,6 +125,7 @@ def message_for_orders(trade_type,prediction,main_trade_symbol,hedge_trade_symbo
     
 
 def main():
+    global strategy_name,prediction
     now = dt.datetime.now()
 
     if now.date() in ExeUtils.holidays:
@@ -143,6 +145,7 @@ def main():
                         "TradeId" : next_trade_prefix,
                         "Signal" : "Short",
                         "EntryTime" : dt.datetime.now().strftime("%H:%M"),
+                        "StrategyInfo" : {"Direction" : prediction,},
                         "Status" : "Open"}
 
         update_signal_firebase(strategy_name,signals_to_log)

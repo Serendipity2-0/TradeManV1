@@ -226,10 +226,8 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
 
     return results
 
-def update_alice_stoploss(order_details,alice= None):
-    user_details = general_calc.assign_user_details(order_details.get('account_name'))
-    if alice is None:
-        alice = alice_utils.create_alice_obj(user_details)
+def ant_modify_orders_for_users(order_details,user_credentials):
+    alice = create_alice_obj(user_credentials)
     order_id = place_order_calc.retrieve_order_id(
             order_details.get('account_name'),
             order_details.get('strategy'),

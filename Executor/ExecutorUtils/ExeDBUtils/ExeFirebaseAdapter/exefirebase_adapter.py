@@ -91,19 +91,12 @@ def update_strategy_by_name_from_file(strategy_name, file_path):
             return f"Strategy data for {strategy_name} updated successfully from file {file_path}."
     return "Strategy not found to update."
 
-# result = download_client_as_json('Tr00', 'Tr00.json')
-# print(result)
-
-# result = download_strategy_as_json('AmiPy', 'AmiPy.json')
-# print(result)
-
-
-# Update client data from a JSON file
-# update_result = update_client_by_tr_no_from_file('Tr00', 'Tr00.json')
-# print(update_result)
-
-# # Update strategy data from a JSON file
-# update_result = update_strategy_by_name_from_file('AmiPy', 'AmiPy.json')
-# print(update_result)
+def update_maket_info_for_strategies():
+    market_info = fetch_collection_data_firebase('market_info')
+    strategies = fetch_collection_data_firebase('strategies')
+    for strategy_key, strategy_data in strategies.items():
+        strategy_data['market_info'] = market_info
+        update_fields_firebase('strategies', strategy_key, strategy_data)
+    return "Market info updated for all strategies."
 
 

@@ -121,13 +121,16 @@ NOTES
 1. TradeStateImplementation: If the program stops abruptly It should run all the scripts under strategy folder and generate Signals for each strategy. It should check the strategyDB and match with the signals. If there is any mismatch notify us through telegram
 
 Work to be done:
+1. Telegram Bot (check GoodMorning>TelegramOrderBot for more details)
+2. After the order is placed the order details are not uploaded in the TradeState/orders separate dict for each order
 
-2. Write a documemntation for installing Crypto and webdriver packages for daily login
-3. Use DailyAggregator Script in GoodMorning which updates the Instruments.db
-4. Refactor TickerDB
-5. Refactor Instrument Monitor
-6. Refactor Strategies to new framework
-7. Refactor and implement TelegramOrderBot
+
+
+1. MPWizard qty calculation
+2. Modify orders function
+3. 
+
+
 
 Omkar Tasks Status:
 Passed:
@@ -144,3 +147,6 @@ Planned:
 TBD:
 O6. UI refactor for user app
 O7. Create execution management dashboard for frontend
+
+
+

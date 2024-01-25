@@ -25,6 +25,12 @@ def place_order_for_brokers(order_details,user_credentials):
     elif order_details['broker'] == ALICEBLUE:
         return alice_adapter.ant_place_orders_for_users(order_details,user_credentials)
 
+def modify_order_for_brokers(order_details,user_credentials):
+    if order_details['broker'] == ZERODHA:
+        return zerodha_adapter.kite_modify_orders_for_users(order_details,user_credentials)
+    elif order_details['broker'] == ALICEBLUE:
+        return alice_adapter.ant_modify_orders_for_users(order_details,user_credentials)
+
 def all_broker_login(active_users):
     for user in active_users:
         if user['Broker']['BrokerName'] == ZERODHA:
@@ -84,9 +90,34 @@ def fetch_user_credentials_firebase(broker_user_name):
             return user_credentials[user]['Broker']
         
 def get_today_orders_for_brokers(user):
+    import json
+    with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/kite_orders.json') as f:
+        kite_data = json.load(f)
+    with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/aliceblue_orders.json') as f:
+        alice_data = json.load(f)
+
     if  user['Broker']['BrokerName'] == ZERODHA:
-        return zerodha_adapter.zerodha_todays_tradebook(user)
+        # return zerodha_adapter.zerodha_todays_tradebook(user['Broker'])
+        return kite_data
+    
     elif user['Broker']['BrokerName'] == ALICEBLUE:
-        return alice_adapter.aliceblue_todays_tradebook(user)
+        # return alice_adapter.aliceblue_todays_tradebook(user['Broker'])
+        return alice_data
+    
+def create_counter_order_details(tradebook,user):
+    counter_order_details = []
+    for trade in tradebook:
+        if user['Broker']['BrokerName'] == ZERODHA:
+            if trade['status'] == 'TRIGGER PENDING' and trade['product'] == 'MIS':
+                # cancel_order = zerodha_adapter.create_cancel_order(trade, user)
+                counter_order = zerodha_adapter.create_counter_order(trade, user)
+                counter_order_details.append(counter_order)
+        elif user['Broker']['BrokerName'] == ALICEBLUE:
+            if trade['Status'] == 'trigger pending' and trade['Pcode'] == 'MIS':
+                cancel_order = alice_adapter.create_cancel_order(trade, user)
+                counter_order = alice_adapter.create_counter_order(trade, user)
+                counter_order_details.append(counter_order)
+    return counter_order_details
+
 
 

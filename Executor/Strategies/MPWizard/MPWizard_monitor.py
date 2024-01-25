@@ -9,7 +9,8 @@ sys.path.append(DIR_PATH)
 
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentMonitor.instrument_monitor import monitor
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
-from Executor.Strategies.StrategiesUtil import StrategyBase, assign_trade_id,calculate_trigger_price,calculate_stoploss,calculate_transaction_type_sl,calculate_target
+from Executor.Strategies.StrategiesUtil import \
+    StrategyBase, assign_trade_id,calculate_trigger_price,calculate_stoploss,calculate_transaction_type_sl,calculate_target,place_order_strategy_users,modify_order_strategy_users
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
 strategy_obj = StrategyBase.load_from_db('MPWizard')
@@ -207,7 +208,7 @@ class OrderMonitor:
             
             order_to_place = self.create_order_details(name,cross_type,ltp,price_ref)
             print(order_to_place)
-            # place_order.place_order_for_strategy(strategy_obj.StrategyName,order_to_place)
+            place_order_strategy_users(strategy_obj.StrategyName,order_to_place)
             if message:
                 print(message)  
                 discord_bot(message,strategy_obj.StrategyName)
@@ -231,6 +232,7 @@ class OrderMonitor:
         order_details['trigger_prc'] = order_details['limit_prc'] + 1.0  
 
         order_to_modify = self.create_modify_order_details(order_details)
+        modify_order_strategy_users(strategy_obj.StrategyName,order_to_modify)
         # place_order.modify_orders(order_details=order_to_modify)
 
         order_details['target'] += (price_ref / 2)  # Adjust target by half of price_ref

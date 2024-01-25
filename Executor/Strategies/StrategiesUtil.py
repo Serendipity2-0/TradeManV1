@@ -15,21 +15,15 @@ ENV_PATH = os.path.join(DIR, '.env')
 load_dotenv(ENV_PATH)
 fno_info_path = os.getenv('FNO_INFO_PATH')
 
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import \
-    fetch_active_users_from_firebase
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase, update_fields_firebase)
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import \
     get_single_ltp
-from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
-    calculate_qty_for_strategies, place_order_for_strategy)
 from Executor.ExecutorUtils.ExeUtils import holidays
 
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):
-    #in some cases SLMultipler and HedgeMultiplier are not present
-    
     EntryTime: str
     HedgeMultiplier: Optional[int] = None
     InstrumentToday: Optional[Union[str,dict]] = None
@@ -40,10 +34,16 @@ class EntryParams(BaseModel):
     SupertrendMultiplier : Optional[int] = None
     EMAPeriod : Optional[int] = None
 
+    class Config:
+        extra = 'allow'
+
 class ExitParams(BaseModel):
     SLType: str
     SquareOffTime: Optional[str] = None
     LastBuyTime: Optional[str] = None
+
+    class Config:
+        extra = 'allow'
 
 class ExtraInformation(BaseModel):
     QtyCalc: str
@@ -53,6 +53,9 @@ class ExtraInformation(BaseModel):
     Prediction : Optional[str] = None
     HedgeExchangeToken : Optional[int] = None
     FuturesExchangeToken : Optional[int] = None
+
+    class Config:
+        extra = 'allow'
 
 class GeneralParams(BaseModel):
     ExpiryType: Union[str, List[str]]
@@ -67,11 +70,17 @@ class GeneralParams(BaseModel):
     ATRPeriod: Optional[int] = None
     IndicesTokens: Optional[Dict[str, int]] = None
 
+    class Config:
+        extra = 'allow'
+
 class StrategyInfo(BaseModel):
     Direction: Optional[str]
     MarginUsed: Optional[float]
     PeakLoss: Optional[float]
     PeakProfit: Optional[float]
+
+    class Config:
+        extra = 'allow'
 
 class TodayOrder(BaseModel):
     EntryPrc: Optional[float] = None
@@ -82,6 +91,8 @@ class TodayOrder(BaseModel):
     StrategyInfo: Optional[Dict[str, str]]=None
     TradeId: Optional[str]=None
 
+    class Config:
+        extra = 'allow'
 
 
 class StrategyBase(BaseModel):
@@ -91,11 +102,21 @@ class StrategyBase(BaseModel):
     ExtraInformation: ExtraInformation
     GeneralParams: GeneralParams
     Instruments: List[str]
-    NextTradeId: str
+    NextTradeId: Optional[str] = None
     StrategyName: str
-    StrategyPrefix: str
+    StrategyPrefix: Optional[str] = None
     TodayOrders: Optional[Dict[str, TodayOrder]]=None
 
+    class Config:
+        extra = 'allow'
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self._raw_data = data
+
+    def get_raw_field(self, field_name: str):
+        return self._raw_data.get(field_name, None)
+    
     @classmethod
     def load_from_db(cls, strategy_name: str):
         data = fetch_collection_data_firebase('strategies', document=strategy_name)
@@ -233,6 +254,7 @@ def get_previous_dates(num_dates):
     return dates
 
 def fetch_users_for_strategy(strategy_name):
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
     active_users = fetch_active_users_from_firebase()
     strategy_users = []
     for user in active_users:
@@ -255,6 +277,7 @@ def fetch_risk_per_trade_firebase(strategy_name):
     return risk_per_trade
 
 def update_qty_user_firebase(strategy_name,avg_sl_points,lot_size):
+    from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import calculate_qty_for_strategies
     strategy_users = fetch_users_for_strategy(strategy_name)
     free_cash_dict = fetch_freecash_firebase(strategy_name)
     risk_per_trade = fetch_risk_per_trade_firebase(strategy_name)
@@ -273,26 +296,48 @@ def assign_trade_id(orders_to_place):
     for order in orders_to_place:
         # Determine the last part of the trade_id based on order_mode
         if order['order_mode'] in ['Main', 'HedgeEntry']:
-            trade_id_suffix = 'entry'
-        elif order['order_mode'] in ['SL','Trailling']:
-            trade_id_suffix = 'exit'
+            trade_id_suffix = 'EN'
+        elif order['order_mode'] in ['SL','Trailling', 'HedgeExit']:
+            trade_id_suffix = 'EX'
         else:
             trade_id_suffix = 'unknown'
+        
+        if order['order_mode'] == 'HedgeEntry' or order['order_mode'] == 'HedgeExit':
+            order['order_mode'] = 'HO'
+        if order['order_mode'] == 'Main':
+            order['order_mode'] = 'MO'
+        if order['order_mode'] == 'SL' or order['order_mode'] == 'Trailling':
+            order['order_mode'] = 'SL'
+        
+        if order['signal'] == 'Long':
+            order['signal'] = 'LG'
+        if order['signal'] == 'Short':
+            order['signal'] = 'SH' 
 
         # Reconstruct the trade_id
-        trade_id = f"{order['trade_id']}_{order['signal'].lower()}_{order['order_mode'].lower()}_{trade_id_suffix}"
+        trade_id = f"{order['trade_id']}_{order['signal']()}_{order['order_mode']()}_{trade_id_suffix}"
 
         # Update the trade_id in the order
         order['trade_id'] = trade_id
 
     return orders_to_place
 
+def fetch_previous_trade_id(trade_id):
+    #trade_id = MP123
+    numeric_digits = re.findall(r'\d+', trade_id)
+    if numeric_digits:
+        # Decrement the numeric digits by 1
+        previous_trade_id = str(int(numeric_digits[0]) - 1)
+        # Replace the numeric digits in trade_id with the decremented value
+        trade_id = trade_id.replace(numeric_digits[0], previous_trade_id)
+    
+    return trade_id
 
 def update_signal_firebase(strategy_name,signal):
-    strategy_info = StrategyBase().update_strategy_info(strategy_name)
+    # strategy_info = StrategyBase().update_strategy_info(strategy_name)
     #Log the signals in  strategies/{strategy_name}/TodayOrders/orders
     update_fields_firebase('strategies', strategy_name, {signal['TradeId']: signal}, 'TodayOrders')
-    update_fields_firebase('strategies', strategy_name, {'StrategyInfo': strategy_info}, f'TodayOrders/{signal["TradeId"]}')
+    # update_fields_firebase('strategies', strategy_name, {'StrategyInfo': strategy_info}, f'TodayOrders/{signal["TradeId"]}')
     update_next_trade_id_firebase(strategy_name,signal['TradeId'])
 
 def update_next_trade_id_firebase(strategy_name,trade_id):
@@ -307,8 +352,14 @@ def update_next_trade_id_firebase(strategy_name,trade_id):
     update_fields_firebase('strategies', strategy_name, {'NextTradeId': trade_id})
     
 def place_order_strategy_users(strategy_name,orders_to_place):
+    from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import place_order_for_strategy
     strategy_users = fetch_users_for_strategy(strategy_name)
     place_order_for_strategy(strategy_users,orders_to_place)
+    pass
+
+def modify_order_strategy_users(strategy_name,orders_to_modify):
+    strategy_users = fetch_users_for_strategy(strategy_name)
+    
     pass
 
 
@@ -367,3 +418,22 @@ def base_symbol_token(base_symbol):
         return f"{base_symbol} not found"
     return token[0]
         
+def get_strategy_name_from_trade_id(trade_id):
+    #trade_id = MP123
+    strategy_prefix = trade_id[:2]
+    strategies = fetch_collection_data_firebase('strategies')
+    for strategy in strategies:
+        if strategies[strategy]['StrategyPrefix'] == strategy_prefix:
+            return strategies[strategy]['StrategyName']
+    return None
+
+def get_signal_from_trade_id(trade_id):
+    #trade_id = ET12_SH_MO_EX if SH its short and if LG its long after the first _
+    signal = trade_id.split('_')[1]
+    if signal == 'SH':
+        return 'Short'
+    elif signal == 'LG':
+        return 'Long'
+    else:
+        return None
+

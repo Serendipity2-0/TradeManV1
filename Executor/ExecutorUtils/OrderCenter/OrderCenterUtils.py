@@ -7,13 +7,13 @@ import time
 DIR = os.getcwd()
 sys.path.append(DIR)
 
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    fetch_user_credentials_firebase, place_order_for_brokers)
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import \
     update_fields_firebase
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import \
     discord_bot
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+    fetch_user_credentials_firebase, place_order_for_brokers)
 
 
 def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
@@ -59,8 +59,7 @@ def place_order_for_strategy(strategy_users, order_details):
                 order_qty -= current_qty
 
         # Update Firebase with order status
-        update_path = f"Strategies/{order.get('strategy')}/TradeState"
-        print(all_order_statuses)
+        update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
         for data in all_order_statuses:
             update_fields_firebase('new_clients', user['Tr_No'], data, update_path)
         # update_fields_firebase('new_clients', user['Tr_No'], all_order_statuses, update_path)
@@ -69,9 +68,22 @@ def place_order_for_strategy(strategy_users, order_details):
         for status in all_order_statuses:
             if status.get('message', '') == 'Order placement failed':
                 discord_bot(f"Order failed for user {user['Broker']['BrokerUsername']} in strategy {order.get('strategy')}", order.get('strategy'))
-
-
     return all_order_statuses
+
+def modify_orders_for_strategy(strategy_users, order_details):
+    for users in strategy_users:
+        for order in order_details:
+            user_credentials = fetch_user_credentials_firebase(users['Broker']['BrokerUsername'])
+            order_with_user_and_broker = order.copy()
+            order_with_user_and_broker.update({
+                "broker": users['Broker']['BrokerName'],
+                "username": users['Broker']['BrokerUsername'],
+                "qty": users['Strategies'][order.get('strategy')]['Qty']
+            })
+            # modify_orders(order_with_user_and_broker,user_credentials)
+
+
+    pass
 
 #TODO: sweep_orders from user/strategies/todayorders for sweep order enabled strategies
 def place_sweep_orders_for_strategy(strategy_users, order_details):

@@ -5,59 +5,38 @@
                     # 2. call place_order_for_strategy with appropriate counter order details
                     
 import datetime as dt
+import os,sys
 
-import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
+DIR = os.getcwd()
+sys.path.append(DIR)
+
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import get_today_orders_for_brokers,create_counter_order_details
 import Executor.ExecutorUtils.OrderCenter.OrderCenterUtils as OrderCenterUtils
 
 
-def create_counter_order(trade, user):
-    # Placeholder for counter order creation logic
-    # Modify as per your requirements
-    counter_order = {
-        "strategy": trade['strategy'],
-        "signal": "Short",
-        "base_symbol": trade['base_symbol'],
-        "exchange_token": trade['exchange_token'],     
-        "transaction_type": trade['transaction_type'], 
-        "order_type": trade['order_type'], 
-        "product_type": trade['product'],
-        "order_mode": "Counter",
-        "trade_id": trade['trade_id']
-    }
-    return counter_order
-
 def sweep_sl_order():
-    active_users = BrokerCenterUtils.fetch_active_users_from_firebase()
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
+    active_users = fetch_active_users_from_firebase()
+
     all_sl_counter_orders = []
 
     for user in active_users:
-        tradebook = BrokerCenterUtils.get_today_orders_for_brokers(user)
-        sl_counter_orders = []
+        tradebook = get_today_orders_for_brokers(user)
+        counter_order_details = create_counter_order_details(tradebook, user)
+        print('counter_order_details',counter_order_details)
+        # for order in counter_order_details:
+        #     BrokerCenterUtils.place_order_for_strategy(order, user['Broker'])
 
-        if user['Broker']['BrokerName'] == 'ZERODHA':
-            for trade in tradebook:
-                if trade['status'] == 'TRIGGER PENDING' and trade['product'] == 'MIS':
-                    counter_order = create_counter_order(trade, user)
-                    sl_counter_orders.append(counter_order)
-
-        elif user['Broker']['BrokerName'] == 'ALICEBLUE':
-            for trade in tradebook:
-                if trade['Status'] == 'trigger pending' and trade['Pcode'] == 'MIS':
-                    counter_order = create_counter_order(trade, user)
-                    sl_counter_orders.append(counter_order)
-
-        all_sl_counter_orders.append(sl_counter_orders)
 
     # Place SL counter orders for each user
     for sl_counter_orders in all_sl_counter_orders:
-        OrderCenterUtils.place_order_for_strategy(sl_counter_orders)
-
+        OrderCenterUtils.place_order_for_strategy(active_users,sl_counter_orders)
 def sweep_hedge_orders():
-    active_users = BrokerCenterUtils.fetch_active_users_from_firebase()
+    active_users = fetch_active_users_from_firebase()
     all_hedge_counter_orders = []
 
     for user in active_users:
-        tradebook = BrokerCenterUtils.get_today_orders_for_brokers(user)
+        tradebook = get_today_orders_for_brokers(user)
         hedge_counter_orders = []
 
         for trade in tradebook:
@@ -81,4 +60,4 @@ def sweep_hedge_orders():
 
 # Execute the functions
 sweep_sl_order()
-sweep_hedge_orders()
+# sweep_hedge_orders()

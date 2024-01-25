@@ -14,7 +14,7 @@ load_dotenv(ENV_PATH)
 from Executor.Strategies.StrategiesUtil import StrategyBase
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.ExeUtils import holidays
-from Executor.Strategies.StrategiesUtil import assign_trade_id
+from Executor.Strategies.StrategiesUtil import assign_trade_id,fetch_previous_trade_id
 
 strategy_obj = StrategyBase.load_from_db('OvernightFutures')
 instrument_obj = InstrumentCenterUtils.Instrument()
@@ -30,7 +30,8 @@ hedge_transcation_type = strategy_obj.GeneralParams.HedgeTransactionType
 order_type = strategy_obj.GeneralParams.OrderType
 product_type = strategy_obj.GeneralParams.ProductType
 base_symbol = strategy_obj.Instruments[0]
-next_trade_prefix = strategy_obj.NextTradeId
+previous_trade_prefix = fetch_previous_trade_id(strategy_obj.NextTradeId)
+
 
 signal = "Long" if prediction == "Bullish" else "Short"
 
@@ -45,7 +46,7 @@ orders_to_place = [
         "product_type" : product_type,
         "order_mode" : "Main",
         "strategy_mode" : "CarryForward",
-        "trade_id" : next_trade_prefix 
+        "trade_id" : previous_trade_prefix 
     },
     {  
         "strategy": strategy_name,
@@ -57,7 +58,7 @@ orders_to_place = [
         "product_type" : product_type,
         "order_mode" : "Hedge",
         "strategy_mode" : "CarryForward",
-        "trade_id" : next_trade_prefix
+        "trade_id" : previous_trade_prefix
     }
 ]
 
