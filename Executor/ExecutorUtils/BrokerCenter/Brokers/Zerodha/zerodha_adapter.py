@@ -3,7 +3,7 @@ import datetime
 import pandas as pd
 from kiteconnect import KiteConnect
 
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+
 from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_signal_from_trade_id, calculate_transaction_type_sl
 
 
@@ -81,6 +81,7 @@ def zerodha_todays_tradebook(user):
     return orders
 
 def kite_place_orders_for_users(orders_to_place, users_credentials):
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
     results = {
         "avg_prc": None,
         "exchange_token": None,
@@ -226,6 +227,7 @@ def get_order_details(user):
     return orders
 
 def kite_create_sl_counter_order(trade, user):
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
     strategy_name = get_strategy_name_from_trade_id(trade['tag'])
     exchange_token = Instrument().get_exchange_token_by_token(trade['instrument_token'])
     counter_order = {
@@ -247,6 +249,7 @@ def kite_create_cancel_order(trade, user):
     kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade['order_id'])
 
 def kite_create_hedge_counter_order(trade, user):
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
     strategy_name = get_strategy_name_from_trade_id(trade['tag'])
     exchange_token = Instrument().get_exchange_token_by_token(trade['instrument_token'])
     counter_order = {

@@ -17,8 +17,6 @@ fno_info_path = os.getenv('FNO_INFO_PATH')
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase, update_fields_firebase)
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import \
-    get_single_ltp
 from Executor.ExecutorUtils.ExeUtils import holidays
 
 
@@ -182,6 +180,7 @@ class StrategyBase(BaseModel):
         return strike_step
 
     def calculate_current_atm_strike_prc(self,base_symbol, token = None, prediction=None, strike_prc_multiplier=None):
+        from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
         if token is None:
             token = int(self.get_token_from_info(base_symbol))
         ltp = get_single_ltp(token)
@@ -194,6 +193,7 @@ class StrategyBase(BaseModel):
             return base_strike
         
     def get_hedge_strikeprc(self,base_symbol,token, prediction, hedge_multiplier): 
+        from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
         ltp = get_single_ltp(token)
         strike_prc = self.round_strike_prc(ltp, base_symbol)
         strike_prc_multiplier = self.get_strike_step(base_symbol)

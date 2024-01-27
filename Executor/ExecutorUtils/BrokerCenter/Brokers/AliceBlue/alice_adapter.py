@@ -7,7 +7,7 @@ from pya3 import *
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as Instru
+
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import \
     discord_bot
 from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_signal_from_trade_id,calculate_transaction_type_sl
@@ -144,6 +144,7 @@ def get_order_status(alice, order_id):
         return "FAIL"
 
 def ant_place_orders_for_users(orders_to_place, users_credentials):
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as Instru
     results = {
         "exchange_token": None,
         "order_id": None,

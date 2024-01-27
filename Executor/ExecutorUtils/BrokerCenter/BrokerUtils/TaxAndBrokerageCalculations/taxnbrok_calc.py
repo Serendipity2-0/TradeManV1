@@ -4,9 +4,9 @@
 def calculate_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
 
     # Brokerage
-    if broker == 'zerodha':
+    if broker == 'Zerodha':
         brokerage_rate = 20 if trade_type == 'regular' else 0.03 / 100
-    elif broker == 'aliceblue':
+    elif broker == 'AliceBlue':
         brokerage_rate = 15 if trade_type == 'regular' else 0.03 / 100
     brokerage = brokerage_rate * no_of_orders
 
