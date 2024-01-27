@@ -132,4 +132,14 @@ def create_hedge_counter_order_details(tradebook,user):
                 hedge_counter_order.append(counter_order)
     return hedge_counter_order
 
-
+def get_avg_prc_broker_key(broker_name):
+    if broker_name == ZERODHA:
+        return 'average_price'
+    elif broker_name == ALICEBLUE:
+        return 'Avgprc'
+    
+def get_order_id_broker_key(broker_name):
+    if broker_name == ZERODHA:
+        return 'order_id'
+    elif broker_name == ALICEBLUE:
+        return 'Nstordno'
