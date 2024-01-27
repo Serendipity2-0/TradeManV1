@@ -110,14 +110,26 @@ def create_counter_order_details(tradebook,user):
         if user['Broker']['BrokerName'] == ZERODHA:
             if trade['status'] == 'TRIGGER PENDING' and trade['product'] == 'MIS':
                 # cancel_order = zerodha_adapter.create_cancel_order(trade, user)
-                counter_order = zerodha_adapter.create_counter_order(trade, user)
+                counter_order = zerodha_adapter.kite_create_sl_counter_order(trade, user)
                 counter_order_details.append(counter_order)
         elif user['Broker']['BrokerName'] == ALICEBLUE:
             if trade['Status'] == 'trigger pending' and trade['Pcode'] == 'MIS':
-                cancel_order = alice_adapter.create_cancel_order(trade, user)
-                counter_order = alice_adapter.create_counter_order(trade, user)
+                # cancel_order = alice_adapter.create_cancel_order(trade, user)
+                counter_order = alice_adapter.ant_create_counter_order(trade, user)
                 counter_order_details.append(counter_order)
     return counter_order_details
 
+def create_hedge_counter_order_details(tradebook,user):
+    hedge_counter_order = []
+    for trade in tradebook:
+        if user['Broker']['BrokerName'] == ZERODHA:
+            if trade['status'] == 'COMPLETE' and trade['product'] == 'MIS' and 'HO_EN' in trade['tag'] and 'HO_EX' not in trade['tag']:
+                counter_order = zerodha_adapter.kite_create_hedge_counter_order(trade, user)
+                hedge_counter_order.append(counter_order)
+        elif user['Broker']['BrokerName'] == ALICEBLUE:
+            if trade['Status'] == 'complete' and trade['Pcode'] == 'MIS' and 'HO_EN' in trade['ordersource'] and 'HO_EX' not in trade['ordersource']:
+                counter_order = alice_adapter.ant_create_hedge_counter_order(trade, user)
+                hedge_counter_order.append(counter_order)
+    return hedge_counter_order
 
 

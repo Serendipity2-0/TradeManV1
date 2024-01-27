@@ -7,11 +7,10 @@ from pya3 import *
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import \
-    Instrument
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as Instru
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import \
     discord_bot
-
+from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_signal_from_trade_id,calculate_transaction_type_sl
 
 #This function fetches the available free cash balance for a user from the Aliceblue trading platform.
 def alice_fetch_free_cash(user_details):
@@ -118,11 +117,11 @@ def calculate_transaction_type(transaction_type):
     return transaction_type
 
 def calculate_order_type(order_type):
-    if order_type == 'Stoploss':
+    if order_type.lower() == 'stoploss':
         order_type = OrderType.StopLossLimit
-    elif order_type == 'Market':
+    elif order_type.lower() == 'market' or order_type.lower() == 'mis':
         order_type = OrderType.Market
-    elif order_type == 'Limit':
+    elif order_type.lower() == 'limit':
         order_type = OrderType.Limit
     else:
         raise ValueError("Invalid order_type in order_details")
@@ -155,7 +154,6 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
     }
 
     alice = create_alice_obj(users_credentials)  # Create an Aliceblue instance with user's broker credentials
-
     strategy = orders_to_place['strategy']
     exchange_token = orders_to_place['exchange_token']
     qty = orders_to_place.get('qty', 1)  # Default quantity to 1 if not specified
@@ -167,7 +165,7 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
     if product == 'CNC':
         segment = 'NSE'
     else:
-        segment = Instrument().get_segment_by_exchange_token(exchange_token)
+        segment = Instru().get_segment_by_exchange_token(exchange_token)
 
     limit_prc = orders_to_place.get('limit_prc', None) 
     trigger_price = orders_to_place.get('trigger_prc', None)
@@ -201,12 +199,13 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         
         print(f"Order placed. ID is: {order_id}")
         order_status = get_order_status(alice, order_id['NOrdNo'])
-        print("order_status",order_status)
         if order_status == "FAIL":
             order_history = alice.get_order_history(order_id['NOrdNo'])
             message = f"Order placement failed, Reason: {order_history['RejReason']} for {orders_to_place['username']}"
         else:
             message = "Order placed successfully"
+        
+        discord_bot(message, strategy)
 
         # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
         avg_prc = 0
@@ -259,4 +258,34 @@ def ant_modify_orders_for_users(order_details,user_credentials):
         print(message)
         discord.discord_bot(message, order_details.get('strategy'))
         return None
-    
+
+def ant_create_counter_order(trade,user):
+    strategy_name = get_strategy_name_from_trade_id(trade['remarks'])
+    counter_order = {
+        "strategy": strategy_name,
+        "signal": get_signal_from_trade_id(trade['remarks']),
+        "base_symbol": "NIFTY",   #WARNING: dummy base symbol 
+        "exchange_token": trade['token'],     
+        "transaction_type": "BUY" if trade['Trantype'] == 'B' else "SELL", 
+        "order_type": 'MARKET',
+        "product_type": trade['Pcode'],
+        "trade_id": trade['remarks'],
+        "order_mode": "Counter",
+        "qty": trade['Qty']
+    }
+    return counter_order
+
+def ant_create_hedge_counter_order(trade,user):
+    counter_order = {
+        "strategy": get_strategy_name_from_trade_id(trade['remarks']),
+        "signal": get_signal_from_trade_id(trade['remarks']),
+        "base_symbol": "NIFTY",   #WARNING: dummy base symbol 
+        "exchange_token": int(trade['token']),     
+        "transaction_type": calculate_transaction_type_sl(trade['Trantype']), 
+        "order_type": 'MARKET',
+        "product_type": trade['Pcode'],
+        "trade_id": trade['remarks'],
+        "order_mode": "Hedge",
+        "qty": trade['Qty']
+    }
+    return counter_order

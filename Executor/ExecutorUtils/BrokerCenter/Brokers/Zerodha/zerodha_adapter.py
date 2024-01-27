@@ -4,7 +4,7 @@ import pandas as pd
 from kiteconnect import KiteConnect
 
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_strategy_name_from_trade_id
+from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_signal_from_trade_id, calculate_transaction_type_sl
 
 
 def create_kite_obj(user_details=None,api_key=None,access_token=None):
@@ -175,11 +175,11 @@ def calculate_transaction_type(kite,transaction_type):
     return transaction_type
 
 def calculate_order_type(kite,order_type):
-    if order_type == 'Stoploss':
+    if order_type.lower() == 'stoploss':
         order_type = kite.ORDER_TYPE_SL
-    elif order_type == 'Market':
+    elif order_type.lower() == 'market':
         order_type = kite.ORDER_TYPE_MARKET
-    elif order_type == 'Limit':
+    elif order_type.lower() == 'limit':
         order_type = kite.ORDER_TYPE_LIMIT
     else:
         raise ValueError("Invalid order_type in order_details")
@@ -225,12 +225,12 @@ def get_order_details(user):
     orders = kite.orders()
     return orders
 
-def create_counter_order(trade, user):
+def kite_create_sl_counter_order(trade, user):
     strategy_name = get_strategy_name_from_trade_id(trade['tag'])
     exchange_token = Instrument().get_exchange_token_by_token(trade['instrument_token'])
     counter_order = {
         "strategy": strategy_name,
-        "signal": get_strategy_name_from_trade_id(trade['tag']),
+        "signal": get_signal_from_trade_id(trade['tag']),
         "base_symbol": "NIFTY",   #WARNING: dummy base symbol 
         "exchange_token": exchange_token,     
         "transaction_type": trade['transaction_type'], 
@@ -242,7 +242,23 @@ def create_counter_order(trade, user):
     }
     return counter_order
 
-def create_cancel_order(trade, user):
+def kite_create_cancel_order(trade, user):
     kite = create_kite_obj(user_details=user['Broker'])
     kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade['order_id'])
-    
+
+def kite_create_hedge_counter_order(trade, user):
+    strategy_name = get_strategy_name_from_trade_id(trade['tag'])
+    exchange_token = Instrument().get_exchange_token_by_token(trade['instrument_token'])
+    counter_order = {
+        "strategy": strategy_name,
+        "signal": get_signal_from_trade_id(trade['tag']),
+        "base_symbol": "NIFTY",   #WARNING: dummy base symbol 
+        "exchange_token": exchange_token,     
+        "transaction_type": calculate_transaction_type_sl(trade['transaction_type']), 
+        "order_type": 'MARKET',
+        "product_type": trade['product'],
+        "trade_id": trade['tag'],
+        "order_mode": "Hedge",
+        "qty": trade['quantity']
+    }
+    return counter_order
