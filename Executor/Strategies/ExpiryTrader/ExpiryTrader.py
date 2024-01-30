@@ -42,7 +42,7 @@ main_transaction_type = expiry_trader_obj.get_general_params().MainTransactionTy
 base_symbol, today_expiry_token = expiry_trader_obj.determine_expiry_index()
 strategy_name = expiry_trader_obj.StrategyName
 next_trade_prefix = expiry_trader_obj.NextTradeId
-prediction = expiry_trader_obj.get_raw_field('MarketInfo')['TradeView']
+prediction = expiry_trader_obj.MarketInfoParams.TradeView
 order_type = expiry_trader_obj.get_general_params().OrderType
 product_type = expiry_trader_obj.get_general_params().ProductType
 

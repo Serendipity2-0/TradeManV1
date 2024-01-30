@@ -92,6 +92,11 @@ class TodayOrder(BaseModel):
     class Config:
         extra = 'allow'
 
+class MarketInfoParams(BaseModel):
+    OBQtyAmplifier: Optional[int] = None
+    OSQtyAmplifier: Optional[int] = None
+    TradeView : str
+
 
 class StrategyBase(BaseModel):
     Description: str
@@ -103,6 +108,7 @@ class StrategyBase(BaseModel):
     NextTradeId: Optional[str] = None
     StrategyName: str
     StrategyPrefix: Optional[str] = None
+    MarketInfoParams: MarketInfoParams
     TodayOrders: Optional[Dict[str, TodayOrder]]=None
 
     class Config:
@@ -235,7 +241,6 @@ class StrategyBase(BaseModel):
         strategy_info = {}
         strategy_info['Instruments'] = self.Instruments
         strategy_info['StrategyName'] = strategy_name
-        print("strategy_info",strategy_info)
         return strategy_info
        
     
@@ -315,7 +320,7 @@ def assign_trade_id(orders_to_place):
             order['signal'] = 'SH' 
 
         # Reconstruct the trade_id
-        trade_id = f"{order['trade_id']}_{order['signal']()}_{order['order_mode']()}_{trade_id_suffix}"
+        trade_id = f"{order['trade_id']}_{order['signal']}_{order['order_mode']}_{trade_id_suffix}"
 
         # Update the trade_id in the order
         order['trade_id'] = trade_id
