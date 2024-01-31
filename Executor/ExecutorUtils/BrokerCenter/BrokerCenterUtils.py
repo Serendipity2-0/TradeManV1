@@ -143,3 +143,49 @@ def get_order_id_broker_key(broker_name):
         return 'order_id'
     elif broker_name == ALICEBLUE:
         return 'Nstordno'
+    
+def get_trading_symbol_broker_key(broker_name):
+    if broker_name == ZERODHA:
+        return 'tradingsymbol'
+    elif broker_name == ALICEBLUE:
+        return 'Trsym'
+    
+def get_qty_broker_key(broker_name):
+    if broker_name == ZERODHA:
+        return 'quantity'
+    elif broker_name == ALICEBLUE:
+        return 'Qty'
+    
+def get_time_stamp_broker_key(broker_name):
+    if broker_name == ZERODHA:
+        return 'exchange_update_timestamp'
+    elif broker_name == ALICEBLUE:
+        return 'ExchConfrmtime'
+    
+def get_trade_id_broker_key(broker_name):
+    if broker_name == ZERODHA:
+        return 'tag'
+    elif broker_name == ALICEBLUE:
+        return 'remarks'
+    
+def convert_to_standard_format(date_str):
+    from datetime import datetime
+    # Define possible date formats
+    date_formats = [
+        "%Y-%m-%d %H:%M:%S",  # 2024-01-31 09:20:03
+        "%d-%b-%Y %H:%M:%S",  # 23-Jan-2024 09:20:04
+        # Add any other formats you expect here
+    ]
+
+    for fmt in date_formats:
+        try:
+            # Try to parse the date string using the current format
+            dt = datetime.strptime(date_str, fmt)
+            # If parsing is successful, return the formatted string
+            return dt.strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            # If parsing fails, try the next format
+            continue
+
+    # If none of the formats work, return a standard error message
+    return "Invalid date format"
