@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, validator
 
 DIR = os.getcwd()
 sys.path.append(DIR)
-ENV_PATH = os.path.join(DIR, '.env')
+ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 fno_info_path = os.getenv('FNO_INFO_PATH')
 
@@ -193,7 +193,7 @@ class StrategyBase(BaseModel):
         base_strike = self.round_strike_prc(ltp, base_symbol)
         multiplier = self.get_strike_step(base_symbol)
         if strike_prc_multiplier:
-            adjustment = multiplier * (strike_prc_multiplier if prediction == 'Bearish' else -strike_prc_multiplier)
+            adjustment = multiplier * (-strike_prc_multiplier if prediction == 'Bearish' else strike_prc_multiplier)
             return base_strike + adjustment
         else:
             return base_strike
@@ -425,6 +425,7 @@ def base_symbol_token(base_symbol):
         
 def get_strategy_name_from_trade_id(trade_id):
     #trade_id = MP123
+    print(trade_id)
     strategy_prefix = trade_id[:2]
     strategies = fetch_collection_data_firebase('strategies')
     for strategy in strategies:

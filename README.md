@@ -148,5 +148,7 @@ TBD:
 O6. UI refactor for user app
 O7. Create execution management dashboard for frontend
 
+#31 Jan 2024
 
+1. Logging of executed order
 

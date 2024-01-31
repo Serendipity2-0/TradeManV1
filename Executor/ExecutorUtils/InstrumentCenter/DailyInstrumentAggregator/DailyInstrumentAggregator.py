@@ -5,7 +5,7 @@ import pandas as pd
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-ENV_PATH = os.path.join(DIR_PATH, '.env')
+ENV_PATH = os.path.join(DIR_PATH, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
@@ -39,4 +39,5 @@ def main():
     merged_ins_df = merge_ins_df(zerodha_ins_df, aliceblue_ins_df)
     conn = sql_utils.get_db_connection(os.getenv('SQLITE_INS_PATH'))
     #print number of rows in the table
-    sql_utils.dump_df_to_sqlite(merged_ins_df, 'instrument_master', conn)
+    decimal_cols = []
+    sql_utils.dump_df_to_sqlite(conn,merged_ins_df, 'instrument_master',decimal_cols)

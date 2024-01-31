@@ -8,7 +8,7 @@ from time import sleep
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-ENV_PATH = os.path.join(DIR_PATH, '.env')
+ENV_PATH = os.path.join(DIR_PATH, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 import Executor.Strategies.OvernightFutures.OvernightFutures_calc as OF_calc

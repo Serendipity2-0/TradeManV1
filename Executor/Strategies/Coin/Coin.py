@@ -23,6 +23,9 @@ class Coin(StrategyBase):
     def get_exit_params(self):
         return self.ExitParams
     
+    def get_raw_field(self, field_name: str):
+        return super().get_raw_field(field_name)
+    
 
 coin_strategy_obj = Coin.load_from_db('Coin')
 instrument_obj = InstrumentCenterUtils.Instrument()
@@ -36,9 +39,12 @@ def flip_coin():
 # Flipping the coin and printing the result
 
 def determine_strike_and_option():
+    strike_price_multiplier = coin_strategy_obj.get_raw_field("GeneralParams").get('StrikePriceMultiplier')
     base_symbol,_ = coin_strategy_obj.determine_expiry_index()
-    strike_prc = coin_strategy_obj.calculate_current_atm_strike_prc(base_symbol)
     option_type = 'CE' if flip_coin() == 'Heads' else 'PE'
+    prediction = 'Bullish' if option_type == 'CE' else 'Bearish'
+    strike_prc = coin_strategy_obj.calculate_current_atm_strike_prc(base_symbol=base_symbol,prediction=prediction,strike_prc_multiplier=strike_price_multiplier)
+    print("Strike Price: ", strike_prc)
     return base_symbol,strike_prc, option_type
 
 def fetch_exchange_token(base_symbol,strike_prc, option_type):
@@ -72,14 +78,16 @@ def send_signal_msg(base_symbol,strike_prc,option_type):
     message = "Order placed for " + base_symbol + " " + str(strike_prc) + " " + option_type
     discord_bot(message, coin_strategy_obj.StrategyName)
 
+#TODO: Add stoploss to the strategy along with the main order
 
 def main():
     base_symbol,strike_prc, option_type = determine_strike_and_option()
     exchange_token = fetch_exchange_token(base_symbol,strike_prc, option_type)
-    update_qty(base_symbol,strike_prc, option_type)
+    # update_qty(base_symbol,strike_prc, option_type)
     send_signal_msg(base_symbol,strike_prc,option_type)
     orders_to_place = create_order_details(exchange_token,base_symbol)
     orders_to_place = assign_trade_id(orders_to_place)
+    print(orders_to_place)
     signals_to_log = {
                         "TradeId" : next_trade_prefix,
                         "Signal" : "Long",
@@ -105,15 +113,4 @@ def main():
 
 main()
 
-
-# order_details = [
-#         {  
-#         "strategy": coin_strategy_obj.StrategyName,
-#         "base_symbol": base_symbol,
-#         "exchange_token" : exchange_token,     
-#         "transaction_type": coin_strategy_obj.get_general_params().MainTransactionType,  
-#         "order_type" : coin_strategy_obj.get_general_params().OrderType, 
-#         "product_type" : coin_strategy_obj.get_general_params().ProductType,
-#         "order_mode" : "Main",
-#         "trade_id" : place_order_calc.get_trade_id(coin_strategy_obj.get_strategy_name(), "entry")
-#         }]
+#42959

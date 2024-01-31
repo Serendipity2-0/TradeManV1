@@ -9,7 +9,7 @@ from firebase_admin import credentials, db
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-ENV_PATH = os.path.join(DIR_PATH, '.env')
+ENV_PATH = os.path.join(DIR_PATH, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 cred_filepath = os.getenv('FIREBASE_CRED_PATH')
@@ -34,6 +34,32 @@ def update_fields_firebase(collection, document, data, field_key=None):
     else:
         ref = db.reference(f'{collection}/{document}/{field_key}')
     ref.update(data)
+
+def push_orders_firebase(collection, document, new_order, field_key=None):
+    # Reference to the specific document
+    if field_key is None:
+        ref = db.reference(f'{collection}/{document}')
+    else:
+        ref = db.reference(f'{collection}/{document}/{field_key}')
+
+    # Retrieve the current data
+    current_data = ref.get()
+    if current_data is None:
+        # If there's no existing data, create a new list
+        orders = [new_order]
+    else:
+        # If existing data is a dictionary, convert to a list
+        if isinstance(current_data, dict):
+            orders = list(current_data.values())
+        else:
+            # If it's already a list, just use it directly
+            orders = current_data
+
+        # Append the new order to the list
+        orders.append(new_order)
+
+    # Update Firebase with the modified list
+    ref.set(orders)
 
 # New function to get client by 'Tr_No'
 def get_client_by_tr_no(tr_no):

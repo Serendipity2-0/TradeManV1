@@ -15,7 +15,7 @@ import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
-ENV_PATH = os.path.join(DIR_PATH, '.env')
+ENV_PATH = os.path.join(DIR_PATH, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 class ExpiryTrader(StrategyBase):
@@ -65,7 +65,7 @@ main_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol,
 ltp = InstrumentCenterUtils.get_single_ltp(exchange_token = main_exchange_token)
 lot_size = instrument_obj.get_lot_size_by_exchange_token(main_exchange_token)
 
-# update_qty_user_firebase(strategy_name,ltp,lot_size)
+update_qty_user_firebase(strategy_name,ltp,lot_size)
 
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(main_exchange_token)
 hedge_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(hedge_exchange_token)
@@ -152,7 +152,6 @@ def main():
 
         message_for_orders("Live",prediction,main_trade_symbol,hedge_trade_symbol)
     
-        # OrderCenterUtils.place_order_for_strategy(strategy_name,orders_to_place)
         place_order_strategy_users(strategy_name,orders_to_place)
 
 if __name__ == "__main__":

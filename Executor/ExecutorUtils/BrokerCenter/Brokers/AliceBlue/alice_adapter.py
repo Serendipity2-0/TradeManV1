@@ -31,7 +31,7 @@ def merge_ins_csv_files():
     "Expiry Date", "Lot Size", "Tick Size"
     ]
 
-    folder_path = os.path.join(DIR_PATH, 'SampleData')#TODO: Change this file location to the actual location of the instrument csv files
+    folder_path = os.path.join(DIR_PATH)#TODO: Change this file location to the actual location of the instrument csv files
     ins_files = ['NFO.csv', 'BFO.csv', 'NSE.csv']
     file_paths = [os.path.join(folder_path, file) for file in ins_files]
     

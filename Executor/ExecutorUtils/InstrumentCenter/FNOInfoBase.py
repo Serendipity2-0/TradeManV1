@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
-ENV_PATH = os.path.join(DIR_PATH, '.env')
+ENV_PATH = os.path.join(DIR_PATH, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 fno_info_csv_path = os.getenv('FNO_INFO_PATH')

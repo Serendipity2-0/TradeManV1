@@ -24,10 +24,10 @@ while true; do
     echo "Attempt: $attempt"
     
     # Source conda, activate the environment and run the script
-    source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
+    source /Users/amolkittur/miniconda3/etc/profile.d/conda.sh && \
     conda activate tradingenv && \
-    cd /Users/traderscafe/Desktop/Main/  && \
-    /Users/traderscafe/miniconda3/envs/tradingenv/bin/python Brokers/sweep_orders.py && \
+    cd /Users/amolkittur/Desktop/TradeManV1/  && \
+    /Users/amolkittur/miniconda3/envs/tradingenv/bin/python Executor/Scripts/2_GoodEvening/1_SweepOrders/SweepOrders.py && \
     echo "Program started successfully" && break
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit

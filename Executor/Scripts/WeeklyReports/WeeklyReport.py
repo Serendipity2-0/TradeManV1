@@ -14,7 +14,7 @@ import pandas as pd
 DIR = os.getcwd()
 active_users_json_path = os.path.join(DIR,"MarketUtils", "active_users.json")
 broker_filepath = os.path.join(DIR,"MarketUtils", "broker.json")
-env_path = os.path.join(DIR, '.env')
+env_path = os.path.join(DIR, 'trademan.env')
 session_filepath = os.path.join(DIR,'MarketUtils', 'Telegram','+918618221715.session')
 
 load_dotenv(env_path)

@@ -10,7 +10,6 @@ ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 db_dir = os.getenv('DB_DIR')
-print(db_dir)
 
 # from Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter import aliceblue_todays_tradebook
 # from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import zerodha_todays_tradebook
@@ -35,6 +34,7 @@ def create_user_transaction_db_entry(trade,broker):
         trade_id = 0
     
     time_stamp = BrokerCenterUtils.convert_to_standard_format(trade[time_stamp_key])
+    print("time_stamp",time_stamp)
 
     return {'order_id':trade[order_id_key],'trading_symbol':trade[trading_symbol_key], 'time_stamp':time_stamp, 'avg_prc':trade[avg_price_key],'qty':trade[qty_key],'trade_id':trade_id}
 

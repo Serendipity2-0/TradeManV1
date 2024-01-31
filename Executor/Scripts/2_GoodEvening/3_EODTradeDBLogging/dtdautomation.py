@@ -120,7 +120,7 @@ def save_file_to_firebase(file_path, firebase_bucket_name):
 
 # Main execution
 def main():
-    ENV_PATH = os.path.join(DIR, '.env')
+    ENV_PATH = os.path.join(DIR, 'trademan.env')
     load_dotenv(ENV_PATH)
 
      # Retrieve values from .env

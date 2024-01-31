@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 DIR = os.getcwd()
 sys.path.append(DIR)
 
-ENV_PATH = os.path.join(DIR, '.env')
+ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 db_dir = os.getenv('DB_DIR')

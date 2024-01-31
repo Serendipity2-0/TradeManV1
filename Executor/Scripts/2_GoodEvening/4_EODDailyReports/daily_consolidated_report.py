@@ -17,8 +17,8 @@ import MarketUtils.general_calc as general_calc
 from MarketUtils.Main.weeklyreport import calculate_commission_and_drawdown, read_base_capital
 from MarketUtils.Excel.strategy_calc import custom_format
 
-# Load environment variables from the .env file
-ENV_PATH = os.path.join(DIR, '.env')
+# Load environment variables from the trademan.env file
+ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 # Retrieve API details and contact number from the environment variables

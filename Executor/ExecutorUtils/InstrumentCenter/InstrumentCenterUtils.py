@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
-ENV_PATH = os.path.join(DIR_PATH, '.env')
+ENV_PATH = os.path.join(DIR_PATH, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 ins_db_path = os.getenv('SQLITE_INS_PATH')

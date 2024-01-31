@@ -17,10 +17,14 @@ while true; do
     echo "Attempt: $attempt"
     
     # Source conda, activate the environment and run the script
-    source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
-	conda activate tradingenv && \
-    cd /Users/traderscafe/Desktop/Main/ && \
-	/Users/traderscafe/miniconda3/envs/tradingenv/bin/python MarketUtils/Main/dailylogin.py && \
+    source /Users/amolkittur/miniconda3/etc/profile.d/conda.sh && \
+	conda activate traderscafe && \
+    cd /Users/amolkittur/Desktop/TradeManV1/ && \
+	/Users/amolkittur/miniconda3/envs/traderscafe/bin/python Executor/Scripts/1_GoodMorning/1_Login/DailyLogin.py && \
+    /Users/amolkittur/miniconda3/envs/traderscafe/bin/python Executor/Scripts/1_GoodMorning/2_FundsValidator/FundValidator.py && \
+    /Users/amolkittur/miniconda3/envs/traderscafe/bin/python Executor/Scripts/1_GoodMorning/3_MarketInfoUpdate/MarketInfoUpdate.py && \
+    /Users/amolkittur/miniconda3/envs/traderscafe/bin/python Executor/Scripts/1_GoodMorning/4_DailyInstrumentAggregator/DailyInstrumentAggregator.py && \
+    /Users/amolkittur/miniconda3/envs/traderscafe/bin/python Executor/Scripts/1_GoodMorning/5_TelegramOrderBot/TelegramOrderBot.py && \
 	echo "Program started successfully" && break
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit

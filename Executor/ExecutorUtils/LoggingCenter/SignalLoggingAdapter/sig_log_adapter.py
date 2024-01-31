@@ -16,7 +16,7 @@ import Brokers.place_order_calc as place_order_calc
 from Strategies.StrategyBase import Strategy
 import DBpy.DB_utils as db_utils
 
-ENV_PATH = os.path.join(DIR, '.env')
+ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 excel_dir = os.getenv('onedrive_excel_folder')

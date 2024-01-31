@@ -6,3 +6,4 @@ trademan.env
 *.cursorignore
 *.wav
 code_embedding.json
+trail.py

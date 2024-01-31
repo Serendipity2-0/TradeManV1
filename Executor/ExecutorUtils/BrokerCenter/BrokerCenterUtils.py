@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-ENV_PATH = os.path.join(DIR_PATH, '.env')
+ENV_PATH = os.path.join(DIR_PATH, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 ZERODHA = os.getenv('ZERODHA_BROKER')
@@ -91,17 +91,19 @@ def fetch_user_credentials_firebase(broker_user_name):
         
 def get_today_orders_for_brokers(user):
     import json
-    with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/kite_orders.json') as f:
-        kite_data = json.load(f)
+    # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/kite_orders.json') as f:
+    #     kite_data = json.load(f)
     with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/aliceblue_orders.json') as f:
         alice_data = json.load(f)
 
     if  user['Broker']['BrokerName'] == ZERODHA:
-        # return zerodha_adapter.zerodha_todays_tradebook(user['Broker'])
+        kite_data = zerodha_adapter.zerodha_todays_tradebook(user['Broker'])
+        kite_data = [order for order in kite_data if order['status'] == 'COMPLETE']
         return kite_data
     
     elif user['Broker']['BrokerName'] == ALICEBLUE:
-        # return alice_adapter.aliceblue_todays_tradebook(user['Broker'])
+        # alice_data = alice_adapter.aliceblue_todays_tradebook(user['Broker'])
+        alice_data = [order for order in alice_data if order['Status'] == 'complete']
         return alice_data
     
 def create_counter_order_details(tradebook,user):
@@ -109,12 +111,12 @@ def create_counter_order_details(tradebook,user):
     for trade in tradebook:
         if user['Broker']['BrokerName'] == ZERODHA:
             if trade['status'] == 'TRIGGER PENDING' and trade['product'] == 'MIS':
-                # cancel_order = zerodha_adapter.create_cancel_order(trade, user)
+                cancel_order = zerodha_adapter.create_cancel_order(trade, user)
                 counter_order = zerodha_adapter.kite_create_sl_counter_order(trade, user)
                 counter_order_details.append(counter_order)
         elif user['Broker']['BrokerName'] == ALICEBLUE:
             if trade['Status'] == 'trigger pending' and trade['Pcode'] == 'MIS':
-                # cancel_order = alice_adapter.create_cancel_order(trade, user)
+                cancel_order = alice_adapter.create_cancel_order(trade, user)
                 counter_order = alice_adapter.ant_create_counter_order(trade, user)
                 counter_order_details.append(counter_order)
     return counter_order_details
@@ -169,11 +171,13 @@ def get_trade_id_broker_key(broker_name):
         return 'remarks'
     
 def convert_to_standard_format(date_str):
+    print("date_str",date_str)
     from datetime import datetime
     # Define possible date formats
     date_formats = [
         "%Y-%m-%d %H:%M:%S",  # 2024-01-31 09:20:03
         "%d-%b-%Y %H:%M:%S",  # 23-Jan-2024 09:20:04
+        "%d/%m/%Y %H:%M:%S",  # 23/01/2024 09:20:05
         # Add any other formats you expect here
     ]
 

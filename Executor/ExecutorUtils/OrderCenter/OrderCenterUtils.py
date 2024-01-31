@@ -8,7 +8,7 @@ DIR = os.getcwd()
 sys.path.append(DIR)
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import \
-    update_fields_firebase
+    push_orders_firebase
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import \
     discord_bot
@@ -20,8 +20,8 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
     if avg_sl_points is not None:
         raw_quantity = (risk * capital) / avg_sl_points   #avg_sl_points can be ltp/price_ref/avg trade points
         quantity = int((raw_quantity // lot_size) * lot_size)
-        if quantity == 0:
-            quantity = lot_size
+        # if quantity == 0:
+        #     quantity = lot_size
     else:
         # For other strategies, risk values represent the capital allocated
         lots = capital / risk
@@ -61,7 +61,7 @@ def place_order_for_strategy(strategy_users, order_details):
         # Update Firebase with order status
         update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
         for data in all_order_statuses:
-            update_fields_firebase('new_clients', user['Tr_No'], data, update_path)
+            push_orders_firebase('new_clients', user['Tr_No'], data, update_path)
         # update_fields_firebase('new_clients', user['Tr_No'], all_order_statuses, update_path)
 
         # Send notification if any orders failed # TODO: check for exact fail msgs and send notifications accordingly

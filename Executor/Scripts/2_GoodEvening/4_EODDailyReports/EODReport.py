@@ -17,7 +17,7 @@ import MarketUtils.Main.dtdautomation as dtd
 
 # Get the script directory and file paths
 broker_filepath = os.path.join(DIR, "MarketUtils", "broker.json")
-ENV_PATH = os.path.join(DIR, '.env')
+ENV_PATH = os.path.join(DIR, 'trademan.env')
 
 # Loading environment variables from .env file
 load_dotenv(ENV_PATH)

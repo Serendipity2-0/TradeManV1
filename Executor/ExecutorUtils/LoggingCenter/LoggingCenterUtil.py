@@ -11,7 +11,7 @@ sys.path.append(DIR)
 import MarketUtils.general_calc as general_calc
 import DBpy.DB_utils as db_utils
 
-ENV_PATH = os.path.join(DIR, '.env')
+ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 
 api_id = os.getenv('telethon_api_id')
