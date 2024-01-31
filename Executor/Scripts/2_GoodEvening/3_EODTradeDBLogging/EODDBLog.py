@@ -13,17 +13,16 @@ load_dotenv(ENV_PATH)
 
 db_dir = os.getenv('DB_DIR')
 
-
-from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import dump_df_to_sqlite, get_db_connection
 from Executor.ExecutorUtils.BrokerCenter.BrokerUtils.TaxAndBrokerageCalculations.taxnbrok_calc import calculate_taxes
 
 
 def process_n_log_trade():
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as instru
-    active_users = fetch_collection_data_firebase('new_clients')
+    active_users = fetch_active_users_from_firebase()
     
-    for user in active_users.values():
+    for user in active_users:
         db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
         conn = get_db_connection(db_path)
         if not user.get('Active'):
@@ -53,7 +52,7 @@ def process_n_log_trade():
 
                     holdings[strategy_name] = {
                         'trade_id': order['trade_id'],
-                        'trading_symbol': instru().get_trading_symbol_by_exchange_token(order['exchange_token']),
+                        'trading_symbol': instru().get_trading_symbol_by_exchange_token(str(order['exchange_token'])),
                         'entry_time': datetime.strptime(order['time_stamp'], '%Y-%m-%d %H:%M'),
                         'qty': order['qty'],
                         'entry_price': entry_price,
@@ -67,8 +66,12 @@ def process_n_log_trade():
                 exit_time = max([o['time_stamp'] for o in exit_orders])
                 entry_price = sum([o['avg_prc'] for o in entry_orders]) / len(entry_orders)
                 exit_price = sum([o['avg_prc'] for o in exit_orders]) / len(exit_orders)
-                hedge_entry_price = sum([o['avg_prc'] for o in hedge_orders if 'EN' in o['trade_id']]) / len([o for o in hedge_orders if 'EN' in o['trade_id']])
-                hedge_exit_price = sum([o['avg_prc'] for o in hedge_orders if 'EX' in o['trade_id']]) / len([o for o in hedge_orders if 'EX' in o['trade_id']])
+                if hedge_orders:
+                    hedge_entry_price = sum([o['avg_prc'] for o in hedge_orders if 'EN' in o['trade_id']]) / len([o for o in hedge_orders if 'EN' in o['trade_id']])
+                    hedge_exit_price = sum([o['avg_prc'] for o in hedge_orders if 'EX' in o['trade_id']]) / len([o for o in hedge_orders if 'EX' in o['trade_id']])
+                else:
+                    hedge_entry_price = 0.0
+                    hedge_exit_price = 0.0
                 short_trade = (exit_price - entry_price) + (hedge_exit_price - hedge_entry_price)
                 long_trade = (entry_price - exit_price) + (hedge_entry_price - hedge_exit_price)
                 trade_points = short_trade if signal == 'Short' else long_trade
@@ -76,7 +79,7 @@ def process_n_log_trade():
                 pnl = trade_points * qty
                 tax = calculate_taxes(user['Broker']['BrokerName'], signal, qty, entry_price, exit_price, len(orders))
                 net_pnl = pnl - tax
-                trading_symbol = instru().get_trading_symbol_by_exchange_token(order['exchange_token'])
+                trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order['exchange_token']))
 
                 processed_trade = {
                     'trade_id': trade_id_prefix,
@@ -97,7 +100,7 @@ def process_n_log_trade():
                 processed_trades[strategy_name] = processed_trade
 
             for data in processed_trades.values():
-                print(data)
+                print("data",data)
                 df = pd.DataFrame([data])
                 decimal_columns = ['pnl', 'tax', 'entry_price', 'exit_price', 'hedge_entry_price', 'hedge_exit_price', 'trade_points', 'net_pnl']
                 dump_df_to_sqlite(conn, df, strategy_name, decimal_columns)
@@ -105,7 +108,7 @@ def process_n_log_trade():
             # Check if holdings dict is not empty
             if holdings:
                 for data in holdings.values():
-                    print(data)
+                    print("holdings",data)
                     df = pd.DataFrame([data])
                     decimal_columns = ['entry_price', 'hedge_entry_price']
                     dump_df_to_sqlite(conn, df, 'holdings', decimal_columns)
