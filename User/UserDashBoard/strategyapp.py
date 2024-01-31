@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import stats as stats
+import User.UserDashBoard.stats as stats
 import os
 import glob
 import calendarview

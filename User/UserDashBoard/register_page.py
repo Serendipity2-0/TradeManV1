@@ -15,8 +15,8 @@ import json
 load_dotenv()
 
 # Retrieve values from .env
-firebase_credentials_path = os.getenv('FIREBASE_CREDENTIALS_PATH')
-database_url = os.getenv('DATABASE_URL')
+firebase_credentials_path = os.getenv('FIREBASE_CRED_PATH')
+database_url = os.getenv('FIREBASE_DATABASE_URL')
 storage_bucket = os.getenv('STORAGE_BUCKET')
 
 # Initialize Firebase app

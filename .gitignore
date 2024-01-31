@@ -2,3 +2,6 @@
 *.log
 *.xlsx
 *.DS_Store
+*.cursorignore
+*.wav
+code_embedding.json

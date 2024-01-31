@@ -18,7 +18,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from formats import custom_format
 from dotenv import load_dotenv
-from script import display_performance_dashboard, table_style
+from User.UserDashBoard.profile_page import display_performance_dashboard, table_style
 
 
 # Initialize session_state if it doesn't exist

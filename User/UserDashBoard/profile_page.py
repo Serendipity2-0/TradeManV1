@@ -7,12 +7,9 @@ import streamlit as st
 import pandas as pd
 from firebase_admin import db
 from firebase_admin import credentials, storage
-import openpyxl
 import json
 from io import BytesIO
-import pygwalker as pyg
 import streamlit.components.v1 as components
-from formats import format_value, format_stat_value, indian_format, custom_format
 from streamlit_option_menu import option_menu
 
 
@@ -32,70 +29,30 @@ def display_profile_picture(client_data, style=None):
 
     # Display the profile picture if available
     if profile_picture is not None:
-        # Decode base64 string to bytes
-        profile_picture_bytes = base64.b64decode(profile_picture)
+        try:
+            # Ensure the base64 string is correctly padded
+            profile_picture += "=" * ((4 - len(profile_picture) % 4) % 4)
+            
+            # Decode base64 string to bytes
+            profile_picture_bytes = base64.b64decode(profile_picture)
 
-        # Convert profile picture from bytes to PIL Image
-        image = Image.open(io.BytesIO(profile_picture_bytes))
+            # Convert profile picture from bytes to PIL Image
+            image = Image.open(io.BytesIO(profile_picture_bytes))
 
-        # Convert the image to RGB
-        image_rgb = image.convert("RGB")
+            # Convert the image to RGB
+            image_rgb = image.convert("RGB")
 
-        # Save the image in JPG format with reduced quality (adjust the quality value as needed)
-        image_path = "profile_picture.jpg"
-        image_rgb.save(image_path, "JPEG", quality=50)
+            # Save the image in JPG format with reduced quality (adjust the quality value as needed)
+            image_path = "profile_picture.jpg"
+            image_rgb.save(image_path, "JPEG", quality=50)
 
-        # Define default CSS style
-        css_style_default = {
-            "container": {
-                "position": "absolute",
-                "top": "-80px",
-                "right": "-80px",
-                "border": "2px solid #ccc",
-                "border-radius": "50%",
-                "overflow": "hidden"
-            },
-            "img": {
-                "width": "100px",
-                "height": "100px"
-            }
-        }
+            # The rest of your existing code to display the image...
+            
+        except Exception as e:
+            st.error(f"Failed to load profile picture: {e}")
+            return
+        
 
-        # If additional styles are provided, update the default style
-        if style:
-            for key, value in style.items():
-                if key in css_style_default:
-                    css_style_default[key].update(value)
-
-        # Convert the style dictionary to a CSS string
-        css_style_string = """
-            <style>
-                .profile-picture-container {{
-                    {container_styles}
-                }}
-                .profile-picture-container img {{
-                    {img_styles}
-                }}
-            </style>
-        """.format(
-            container_styles='; '.join(
-                f'{k}: {v}' for k, v in css_style_default['container'].items()),
-            img_styles='; '.join(
-                f'{k}: {v}' for k, v in css_style_default['img'].items())
-        )
-
-        # Display the CSS style
-        st.markdown(css_style_string, unsafe_allow_html=True)
-
-        # Display the profile picture in a container with the defined CSS style
-        st.markdown(f"""
-            <div class="profile-picture-container">
-                <img src="data:image/jpeg;base64,{base64.b64encode(profile_picture_bytes).decode('utf-8')}" alt="Profile Picture">
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Remove the saved image file
-        os.remove(image_path)
 
 def show_profile(client_data):
     # Display profile picture
@@ -255,9 +212,9 @@ def show_profile(client_data):
         weekly_saturday_capital_value = float(weekly_saturday_capital) if isinstance(weekly_saturday_capital, (float, int)) else 0.0
 
     # Use the custom format function to format the capital value
-    formatted_capital_value = custom_format(weekly_saturday_capital_value)
+    # formatted_capital_value = custom_format(weekly_saturday_capital_value)
 
-    st.write(f"Weekly Saturday Capital for {formatted_saturday}: {formatted_capital_value}")
+    # st.write(f"Weekly Saturday Capital for {formatted_saturday}: {formatted_capital_value}")
 
 table_style = """
 <style>
