@@ -1,7 +1,11 @@
 {"TR00": {
     "Accounts": {
-        "FreeCash": 2900000,
-        "Holdings": 0,
+        "01Feb24_Account_Value": 2900000,
+        "01Feb24_Holdings": 16000,
+        "01Feb24_FreeCash": 2900000,
+        "02Feb24_Account_Value": 2900000,
+        "02Feb24_Holdings": 16000,
+        "02Feb24_FreeCash": 2900500,
         "NetAdditions": 0,
         "NetCharges": 0,
         "NetCommission": 0,
@@ -10,25 +14,25 @@
     },
     "Active": true,
     "Broker": {
-        "ApiKey": "6b0dp5ussukmo67h",
-        "ApiSecret": "eln2qrqob5neowjuedmbv0f0hzq6lhby",
+        "ApiKey": "6b0kmo67h",
+        "ApiSecret": "eln2qrowjuedmbv0f0hzq6lhby",
         "BrokerName": "Zerodha",
-        "BrokerPassword": "K@nnada444",
+        "BrokerPassword": "K@nn44",
         "BrokerUsername": "YY0222",
         "SessionId": "ZWCP9gUWUJmrBJiZh7n1CvyVr1iTa5AR",
-        "TotpAccess": "3GN2DNUD35FZQDIIWJUK6CSUIWBPXSYJ"
+        "TotpAccess": "3GN2DNUDIIWJUK6CSUIWBPXSYJ"
     },
     "Profile": {
         "AadharCardNo": "825686845371",
         "AccountStartDate": "03Jul23",
-        "BankAccountNo": "00000064047663479",
-        "BankName": "State Bank of India",
+        "BankAccountNo": "00007663479",
+        "BankName": "St of India",
         "DOB": "25Apr90",
         "Email": "nightyskykk@gmail.com",
         "GmailPassword": "",
         "Name": "Omkar Hedge",
-        "PANCardNo": "ABBPO2350F",
-        "PhoneNumber": "9902106162",
+        "PANCardNo": "AO2350F",
+        "PhoneNumber": "9902162",
         "RiskProfile": {
             "AreaOfInvestment": [
                 "Debt",
