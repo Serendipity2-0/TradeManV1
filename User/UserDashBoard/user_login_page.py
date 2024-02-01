@@ -1,46 +1,67 @@
-import streamlit as st
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import db
-import pandas as pd
-from PIL import Image
-import io
-import os
 import base64
 import datetime
-from script import show_profile
-from dotenv import load_dotenv
-from streamlit_calendar import calendar
-from firebase_admin import storage
-from streamlit_option_menu import option_menu
-from script import display_performance_dashboard, table_style, display_profile_picture
-from formats import format_value, format_stat_value, indian_format
+import io
+import os
 
+import firebase_admin
+import pandas as pd
+import streamlit as st
+from dotenv import load_dotenv
+from firebase_admin import credentials, db, storage
+from PIL import Image
+from profile_page import show_profile
+from register_page import register_page
+from streamlit_calendar import calendar
+from streamlit_option_menu import option_menu
 
 # Load environment variables from .env file
 load_dotenv()
 
+# Retrieve values from .env
+firebase_credentials_path = os.getenv(
+database_url = os.getenv("FIREBASE_DATABASE_URL")
+storage_bucket = os.getenv("STORAGE_BUCKET")
 
-
+# Initialize Firebase app
+if not firebase_admin._apps:
+    cred = credentials.Certificate(firebase_credentials_path)
+    firebase_admin.initialize_app(
+        cred, {"databaseURL": database_url, "storageBucket": storage_bucket}
+    )
 
 # Create a SessionState class to manage session state variables
 
 
-
+class SessionState:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
 
 
 # Create a session state variable
-session_state = SessionState(logged_in=False, client_data=None) #Session state update from get_firebase_conn_for_page
+session_state = SessionState(logged_in=False, client_data=None)
 
 
-def login_page():
+def user_login_page():
+    if not session_state.logged_in:
+        # create sidebar with radio buttons for login page, Admin Page and register page
+        st.sidebar.title("Welcome to TradeMan")
+        radio = st.sidebar.radio("", ("Login", "Admin Page", "Register"))
+        if radio == "Login":
+            login()
+        elif radio == "Admin Page":
+            admin_login()
+        elif radio == "Register":
+            register_page()
+
+
+def login():
     # If the user is not logged in, show the login form
     if not session_state.logged_in:
         # Take inputs for login information
-        username = st.text_input(
-            "Email or Phone Number:", key="user_email_input")
+        username = st.text_input("Email or Phone Number:", key="user_email_input")
         password = st.text_input(
-            "Password:", type="password", key="user_Password_input")
+            "Password:", type="password", key="user_Password_input"
+        )
 
         # Add a login button
         login = st.button("Login")
@@ -50,14 +71,17 @@ def login_page():
             # Fetch data from Firebase Realtime Database to verify the credentials
             try:
                 # Get a reference to the 'clients' node in the database
-                ref = db.reference('clients')
+                ref = db.reference("clients")
 
                 # Fetch all clients data
                 clients = ref.get()
 
                 # Go through each client and check if the credentials match
                 for client_id, client_data in clients.items():
-                    if (client_data.get("Email") == username or client_data.get("Phone Number") == username) and client_data.get("Password") == password:
+                    if (
+                        client_data.get("Email") == username
+                        or client_data.get("Phone Number") == username
+                    ) and client_data.get("Password") == password:
                         # If credentials match, show a success message and break the loop
                         session_state.logged_in = True
                         session_state.client_data = client_data
@@ -71,7 +95,12 @@ def login_page():
                 st.error("Failed to fetch data: " + str(e))
     else:
         # If the user is already logged in, show the other contents
-        show_app_contents()
+        # show_app_contents()
+        pass
+
+
+def admin_login():
+    pass
 
 
 def show_app_contents():
@@ -85,11 +114,13 @@ def show_app_contents():
             ("Profile", "Performance Dashboard", "Logout"),
         )
 
-      # Show the respective content based on the selected option
+    # Show the respective content based on the selected option
     if selected == "Profile":
         client_data = session_state.client_data
         if client_data is not None:
-            show_profile(client_data,)
+            show_profile(
+                client_data,
+            )
         else:
             st.warning("No client data available.")
     elif selected == "Performance Dashboard":
@@ -102,12 +133,11 @@ def show_app_contents():
 
 def display_for_login(client_data):
     if client_data:  # Check if client_data is not None before processing
-        client_username = client_data.get("Username", '')
+        client_username = client_data.get("Username", "")
         client_username = client_username[0].lower() + client_username[1:]
         excel_file_name = f"{client_username}.xlsx"
         display_profile_picture(client_data)
-        display_performance_dashboard(
-            client_data, client_username, excel_file_name)
+        display_performance_dashboard(client_data, client_username, excel_file_name)
 
     else:
         st.warning("No client data available.")
