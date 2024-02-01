@@ -16,7 +16,7 @@ load_dotenv(ENV_PATH)
 fno_info_path = os.getenv('FNO_INFO_PATH')
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
-    fetch_collection_data_firebase, update_fields_firebase)
+    fetch_collection_data_firebase, push_orders_firebase,update_fields_firebase)
 from Executor.ExecutorUtils.ExeUtils import holidays
 
 
@@ -82,7 +82,7 @@ class StrategyInfo(BaseModel):
 
 class TodayOrder(BaseModel):
     EntryPrc: Optional[float] = None
-    EntryTime: Optional[time] = None
+    EntryTime: Optional[dt.datetime] = None
     ExitPrc: Optional[float] = None
     ExitTime: Optional[time] = None
     Signal: Optional[str] = None
@@ -192,6 +192,7 @@ class StrategyBase(BaseModel):
         ltp = get_single_ltp(token)
         base_strike = self.round_strike_prc(ltp, base_symbol)
         multiplier = self.get_strike_step(base_symbol)
+        #TODO: Check this logic
         if strike_prc_multiplier:
             adjustment = multiplier * (-strike_prc_multiplier if prediction == 'Bearish' else strike_prc_multiplier)
             return base_strike + adjustment
@@ -258,7 +259,7 @@ def get_previous_dates(num_dates):
 
     return dates
 
-def fetch_users_for_strategy(strategy_name):
+def fetch_strategy_users(strategy_name):
     from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
     active_users = fetch_active_users_from_firebase()
     strategy_users = []
@@ -268,14 +269,14 @@ def fetch_users_for_strategy(strategy_name):
     return strategy_users
 
 def fetch_freecash_firebase(strategy_name):
-    accounts = fetch_users_for_strategy(strategy_name)  # Assuming there is a function to fetch accounts from Firebase
+    accounts = fetch_strategy_users(strategy_name)  # Assuming there is a function to fetch accounts from Firebase
     freecash_dict = {}
     for account in accounts:
         freecash_dict[account['Tr_No']] = account['Accounts']['FreeCash']
     return freecash_dict
 
 def fetch_risk_per_trade_firebase(strategy_name):
-    users = fetch_users_for_strategy(strategy_name)
+    users = fetch_strategy_users(strategy_name)
     risk_per_trade = {}
     for user in users:
         risk_per_trade[user['Tr_No']] = user['Strategies'][strategy_name]['RiskPerTrade']
@@ -283,7 +284,7 @@ def fetch_risk_per_trade_firebase(strategy_name):
 
 def update_qty_user_firebase(strategy_name,avg_sl_points,lot_size):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import calculate_qty_for_strategies
-    strategy_users = fetch_users_for_strategy(strategy_name)
+    strategy_users = fetch_strategy_users(strategy_name)
     free_cash_dict = fetch_freecash_firebase(strategy_name)
     risk_per_trade = fetch_risk_per_trade_firebase(strategy_name)
     for user in strategy_users:
@@ -338,12 +339,25 @@ def fetch_previous_trade_id(trade_id):
     
     return trade_id
 
-def update_signal_firebase(strategy_name,signal):
-    # strategy_info = StrategyBase().update_strategy_info(strategy_name)
-    #Log the signals in  strategies/{strategy_name}/TodayOrders/orders
-    update_fields_firebase('strategies', strategy_name, {signal['TradeId']: signal}, 'TodayOrders')
-    # update_fields_firebase('strategies', strategy_name, {'StrategyInfo': strategy_info}, f'TodayOrders/{signal["TradeId"]}')
-    update_next_trade_id_firebase(strategy_name,signal['TradeId'])
+def update_signal_firebase(strategy_name,signal,trade_id = None):
+    #if signal['TradeId'] = CN35_LG_MO_EN then the Trade = CN35_entry if CN35_LG_MO_EX then Trade = CN35_exit
+    trade = signal['TradeId'].split('_')[3]
+    trade_no = signal['TradeId'].split('_')[0]
+    if trade == 'EN':
+        trade_prefix = 'entry'
+    elif trade == 'EX':
+        trade_prefix = 'exit'
+    else:
+        print("Invalid trade")
+    
+    trade = trade_no+"_"+trade_prefix
+
+    update_fields_firebase('strategies', strategy_name, {trade: signal}, 'TodayOrders')
+
+    if trade_id:
+        update_next_trade_id_firebase(strategy_name,trade_id)
+    else:
+        update_next_trade_id_firebase(strategy_name,signal['TradeId'])
 
 def update_next_trade_id_firebase(strategy_name,trade_id):
     #trade_id = MP123
@@ -358,12 +372,12 @@ def update_next_trade_id_firebase(strategy_name,trade_id):
     
 def place_order_strategy_users(strategy_name,orders_to_place):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import place_order_for_strategy
-    strategy_users = fetch_users_for_strategy(strategy_name)
+    strategy_users = fetch_strategy_users(strategy_name)
     place_order_for_strategy(strategy_users,orders_to_place)
     pass
 
 def modify_order_strategy_users(strategy_name,orders_to_modify):
-    strategy_users = fetch_users_for_strategy(strategy_name)
+    strategy_users = fetch_strategy_users(strategy_name)
     
     pass
 

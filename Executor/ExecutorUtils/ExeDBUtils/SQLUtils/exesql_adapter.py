@@ -31,5 +31,11 @@ def dump_df_to_sqlite(conn, df, table_name, decimal_columns):
             formatted_df.to_sql(table_name, conn, if_exists='append', index=False)
         except Exception as e:
             print(f"An error occurred while appending to the table {table_name}: {e}")
+
+def read_strategy_table(conn, strategy_name):
+    """Read the strategy table from the database and return a DataFrame."""
+    query = f"SELECT * FROM {strategy_name}"
+    df = pd.read_sql(query, conn)
+    return df
     
 

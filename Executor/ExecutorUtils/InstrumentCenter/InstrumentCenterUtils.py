@@ -132,7 +132,7 @@ class  Instrument:
         else:
             return None
 
-    def get_trading_symbol_by_exchange_token(self, exchange_token,segment=None):
+    def get_trading_symbol_by_exchange_token(self, exchange_token:str,segment=None):
         if segment:
             filtered_data = self._filter_data_by_exchange_token(exchange_token)
             filtered_data = filtered_data[filtered_data['segment'] == segment]

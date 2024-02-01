@@ -13,8 +13,8 @@ load_dotenv(ENV_PATH)
 
 db_dir = os.getenv('DB_DIR')
 
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
-from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import dump_df_to_sqlite, get_db_connection
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase, fetch_list_of_strategies_from_firebase,fetch_users_for_strategies_from_firebase
+from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import dump_df_to_sqlite, get_db_connection,read_strategy_table
 from Executor.ExecutorUtils.BrokerCenter.BrokerUtils.TaxAndBrokerageCalculations.taxnbrok_calc import calculate_taxes
 
 
@@ -116,8 +116,55 @@ def process_n_log_trade():
         conn.close()
 
 # Example usage
-process_n_log_trade()
+# process_n_log_trade()
 
+
+
+#i want a function to update the dict in the firebase db with the trades of today for the user and strategy 
+def update_signals_firebase():
+    signal_db_conn = get_db_connection(os.path.join(db_dir, 'signal.db'))
+
+
+    strategy_user_dict = {}
+
+    list_of_strategies = fetch_list_of_strategies_from_firebase()
+    for strategy in list_of_strategies:
+        users = fetch_users_for_strategies_from_firebase(strategy)
+        if users:  # Check if the users list is not empty
+            selected_user = users[0]  # Assuming selecting the first user meets the requirement
+            strategy_user_dict[strategy] = selected_user['Tr_No']
+
+    for strategy_name,user in strategy_user_dict.items():
+        db_path = os.path.join(db_dir, f"{user}.db")
+        conn = get_db_connection(db_path)
+
+        strategy_data = read_strategy_table(conn, strategy_name)
+        # i want the entire row of the field which has the exit time as today
+        for index, row in strategy_data.iterrows():
+            datetime_object = datetime.strptime(row['exit_time'], '%Y-%m-%d %H:%M:%S')
+            if datetime_object.date() == datetime.today().date():
+                signal_data = {
+                    "trade_id": row['trade_id'],
+                    "trading_symbol": row['trading_symbol'],
+                    "signal": row['signal'],
+                    "entry_time": row['entry_time'],
+                    "exit_time": row['exit_time'],
+                    "entry_price": row['entry_price'],
+                    "exit_price": row['exit_price'],
+                    "hedge_points" : float(row['hedge_exit_price']) - float(row['hedge_entry_price']),
+                    "trade_points": row['trade_points']
+                }
+                df = pd.DataFrame([signal_data])
+                decimal_columns = ['entry_price', 'exit_price', 'hedge_points', 'trade_points']
+                dump_df_to_sqlite(signal_db_conn, df,strategy_name , decimal_columns)
+            
+        conn.close()
+    signal_db_conn.close()
+    return strategy_user_dict
+            
+        
+        
+        #fetch the users for the strategy
 
 #TODO: Update holdings table in user db
 #TODO: function to update dtd table in user

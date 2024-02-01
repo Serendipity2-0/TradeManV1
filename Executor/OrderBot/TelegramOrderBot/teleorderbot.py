@@ -8,7 +8,7 @@ DIR = os.getcwd()
 sys.path.append(DIR)
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
-from Executor.Strategies.StrategiesUtil import fetch_users_for_strategy
+from Executor.Strategies.StrategiesUtil import fetch_strategy_users
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -89,7 +89,7 @@ def strategy_selection(update: Update, context: CallbackContext) -> int:
         return USER_SELECTION
     else:
         # Filter active_users based on selected strategy
-        filtered_users = fetch_users_for_strategy(selected_strategy)
+        filtered_users = fetch_strategy_users(selected_strategy)
         context.user_data['filtered_users'] = filtered_users
 
         # Construct user selection message

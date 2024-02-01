@@ -7,11 +7,12 @@ sys.path.append(DIR_PATH)
 
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
-from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users
+from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users,calculate_transaction_type_sl
 
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
+
 
 class Coin(StrategyBase):
     def get_general_params(self):
@@ -39,12 +40,11 @@ def flip_coin():
 # Flipping the coin and printing the result
 
 def determine_strike_and_option():
-    strike_price_multiplier = coin_strategy_obj.get_raw_field("GeneralParams").get('StrikePriceMultiplier')
+    strike_price_multiplier = coin_strategy_obj.get_raw_field("EntryParams").get('StrikePriceMultiplier')
     base_symbol,_ = coin_strategy_obj.determine_expiry_index()
     option_type = 'CE' if flip_coin() == 'Heads' else 'PE'
     prediction = 'Bullish' if option_type == 'CE' else 'Bearish'
     strike_prc = coin_strategy_obj.calculate_current_atm_strike_prc(base_symbol=base_symbol,prediction=prediction,strike_prc_multiplier=strike_price_multiplier)
-    print("Strike Price: ", strike_prc)
     return base_symbol,strike_prc, option_type
 
 def fetch_exchange_token(base_symbol,strike_prc, option_type):
@@ -60,6 +60,7 @@ def update_qty(base_symbol,strike_prc, option_type):
     update_qty_user_firebase(coin_strategy_obj.StrategyName,ltp,lot_size)
 
 def create_order_details(exchange_token,base_symbol):
+    stoploss_transaction_type = calculate_transaction_type_sl(coin_strategy_obj.get_general_params().TransactionType)
     order_details = [
         {  
         "strategy": coin_strategy_obj.StrategyName,
@@ -71,11 +72,25 @@ def create_order_details(exchange_token,base_symbol):
         "product_type" : coin_strategy_obj.get_general_params().ProductType,
         "order_mode" : "Main",
         "trade_id" : next_trade_prefix
+        },
+        {  
+        "strategy": coin_strategy_obj.StrategyName,
+        "signal":"Long",
+        "base_symbol": base_symbol,
+        "exchange_token" : exchange_token,     
+        "transaction_type": stoploss_transaction_type,  
+        "order_type" : "Stoploss", 
+        "product_type" : coin_strategy_obj.get_general_params().ProductType,
+        "limit_prc": 0.1,
+        "trigger_prc": 0.05,
+        "order_mode" : "SL",
+        "trade_id" : next_trade_prefix
         }]
     return order_details
 
 def send_signal_msg(base_symbol,strike_prc,option_type):
-    message = "Order placed for " + base_symbol + " " + str(strike_prc) + " " + option_type
+    message = "Coin Order placed for " + base_symbol + " " + str(strike_prc) + " " + option_type
+    print(message)
     discord_bot(message, coin_strategy_obj.StrategyName)
 
 #TODO: Add stoploss to the strategy along with the main order
@@ -88,13 +103,20 @@ def main():
     orders_to_place = create_order_details(exchange_token,base_symbol)
     orders_to_place = assign_trade_id(orders_to_place)
     print(orders_to_place)
-    signals_to_log = {
-                        "TradeId" : next_trade_prefix,
-                        "Signal" : "Long",
-                        "EntryTime" : dt.datetime.now().strftime("%H:%M"),
-                        "Status" : "Open"}
-    update_signal_firebase(coin_strategy_obj.StrategyName,signals_to_log)
-    place_order_strategy_users(coin_strategy_obj.StrategyName,orders_to_place)
+
+    main_trade_id = None
+
+    for order in orders_to_place:
+        if order.get('order_mode') == "MO":
+            main_trade_id = order.get('trade_id')  
+
+    signals_to_log = {"TradeId" : main_trade_id,
+                    "Signal" : "Long",
+                    "EntryTime" : dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Status" : "Open"}
+                        
+    update_signal_firebase(coin_strategy_obj.StrategyName,signals_to_log,next_trade_prefix)
+    # place_order_strategy_users(coin_strategy_obj.StrategyName,orders_to_place)
 
 
 # current_time = time.localtime()
@@ -112,5 +134,3 @@ def main():
     
 
 main()
-
-#42959

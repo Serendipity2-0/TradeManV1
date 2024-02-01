@@ -53,6 +53,24 @@ def fetch_active_users_from_firebase():
             active_users.append(account_details[account])
     return active_users
 
+def fetch_list_of_strategies_from_firebase():
+    strategies = []
+    acounts = fetch_active_users_from_firebase()
+    for account in acounts:
+        #i want to add the only the strategy name to the list only if it is not already present in the list
+        for strategy in account['Strategies']:
+            if strategy not in strategies:
+                strategies.append(strategy)
+    return strategies
+
+def fetch_users_for_strategies_from_firebase(strategy_name):
+    users = []
+    acounts = fetch_active_users_from_firebase()
+    for account in acounts:
+        if strategy_name in account['Strategies']:
+            users.append(account)
+    return users
+
 def fetch_primary_accounts_from_firebase(primary_account):
     #fetch the tr_no from .env file and fetch the primary account from firebase
     account_details = firebase_utils.fetch_collection_data_firebase('new_clients')
