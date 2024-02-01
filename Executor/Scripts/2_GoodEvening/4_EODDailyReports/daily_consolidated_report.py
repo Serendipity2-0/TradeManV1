@@ -7,17 +7,16 @@ import firebase_admin
 import pandas as pd
 import requests
 from io import BytesIO
+import pprint
+import sqlite3
 
 # Define constants and load environment variables
 DIR = os.getcwd()
 sys.path.append(DIR)  # Add the current directory to the system path
 
-# Import custom utility modules
-import MarketUtils.general_calc as general_calc
-from MarketUtils.Main.weeklyreport import calculate_commission_and_drawdown, read_base_capital
-from MarketUtils.Excel.strategy_calc import custom_format
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
 
-# Load environment variables from the trademan.env file
+# Load environment variables fromx the trademan.env file
 ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 
@@ -25,150 +24,100 @@ load_dotenv(ENV_PATH)
 api_id = os.getenv('telethon_api_id')
 api_hash = os.getenv('telethon_api_hash')
 # Retrieve your Discord webhook URL from the environment variables
-DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL')
-broker_filepath = os.path.join(DIR, "MarketUtils", "broker.json")
+DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL') # TODO : Use this to send consolidated report along with inconsistencies
+USR_TRADELOG_DB_FOLDER = os.getenv('USR_TRADELOG_DB_FOLDER')
+ACTIVE_STRATEGIES = os.getenv('ACTIVE_STRATEGIES').split(',')
 
-# Retrieve Firebase configuration from .env
-firebase_credentials_path = os.getenv('firebase_credentials_path')
-database_url = os.getenv('database_url')
-storage_bucket = os.getenv('storage_bucket')
+def get_today_trades(user_db):
+    # go to all tables matching name with any str in ACTIVE_STRATEGIES and check if 'exit_time' is today and return list of all such trades
+    today_trades = []
+    for strategy in ACTIVE_STRATEGIES:
+        trades = user_db.execute(f"SELECT * FROM {strategy} WHERE exit_time = date('now')").fetchall()
+        today_trades.extend(trades)
+    print("today_trades", today_trades)
+    return today_trades
+    
 
-# Initialize the Firebase app
-if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_credentials_path)
-    firebase_admin.initialize_app(cred, {
-        'databaseURL': database_url,
-        'storageBucket': storage_bucket
-    })
+def get_additions_withdrawals(user_db):
+    # go to "Transactions" table and check if 'transaction_date' is today and get sum of 'amount' column for all such transactions
+    additions_withdrawals = user_db.execute("SELECT SUM(amount) FROM Transactions WHERE transaction_date = date('now')").fetchone()[0]
+    print("additions_withdrawals", additions_withdrawals)
+    return additions_withdrawals
 
-# Function to load an existing Excel file from Firebase Storage
-def load_excel(excel_file_name):
-    # Connect to the Firebase bucket
-    bucket = storage.bucket(storage_bucket)
-    blob = bucket.blob(excel_file_name)
+def get_new_holdings(user_db):
+    # go to "Holdings" table and get net sum of "MarginUtilized" column
+    new_holdings = user_db.execute("SELECT SUM(MarginUtilized) FROM Holdings").fetchone()[0]
+    print("new_holdings", new_holdings)
+    return new_holdings
+    
 
-    # Download the file if it exists in Firebase and return its content as a Pandas DataFrame
-    if blob.exists():
-        byte_stream = BytesIO()
-        blob.download_to_file(byte_stream)
-        byte_stream.seek(0)
-        # Load the Excel file into a Pandas DataFrame
-        xls = pd.ExcelFile(byte_stream)
-        # Return the ExcelFile object and the sheet names
-        return xls, xls.sheet_names
-    else:
-        print(f"The file {excel_file_name} does not exist in Firebase Storage.")
-        return None, None
-    #     return pd.read_excel(byte_stream)
-    # else:
-    #     print(f"The file {excel_file_name} does not exist in Firebase Storage.")
-    #     return None
-
-# Function to send a message via Discord using a webhook
-def send_discord_message(message: str):
-    # Discord's character limit per message
-    char_limit = 2000
-
-    # Split the message into parts if it's too long
-    parts = [message[i:i + char_limit] for i in range(0, len(message), char_limit)]
-
-    for part in parts:
-        data = {"content": part}
-        response = requests.post(DISCORD_WEBHOOK_URL, json=data)
-        if response.status_code == 204:
-            print("Part of the message sent successfully")
-        else:
-            print(f"Failed to send message part: {response.status_code}, {response.text}")
-
-# Function to create the report message for each user
-def create_report_message(user, base_capital, strategy_results, custom_format):
-    # Format the date and start the report
-    # today = datetime.now().strftime('%d %b %Y')
-    report_parts = [f"\n**{user['account_name']}**"]
-
-    # Add the details for each trade
-    for trade_id, values in strategy_results.items():
-        pnl_formatted = custom_format(values['pnl'])
-        report_parts.append(f"{trade_id}: {pnl_formatted}")
-
-    # Calculate financial metrics
-    current_capital = user.get('current_capital', 0)
-    commission, drawdown = calculate_commission_and_drawdown(user, current_capital, base_capital)
-    adjustment = drawdown if drawdown != 0 else commission
-    base_capital_value = current_capital - adjustment
-
-    # Format the financial values
-    base_capital_formatted = custom_format(base_capital_value)
-    drawdown_formatted = custom_format(abs(drawdown))
-    gross_pnl_formatted = custom_format(user.get('gross_pnl', 0))
-    net_pnl = user.get('gross_pnl', 0) - user.get('expected_tax', 0)
-    net_pnl_formatted = custom_format(net_pnl)
-    current_capital_formatted = custom_format(current_capital)
-
-    # Append all details to the report
-    report_parts.extend([
-        f"\nGross PnL: {gross_pnl_formatted}",
-        f"**Net PnL : {net_pnl_formatted}**",
-        f"**Current Capital: {current_capital_formatted}**",
-        f"Drawdown: {drawdown_formatted}",
-        f"**Base Capital: {base_capital_formatted}\n**",
-    ])
-
-    return "\n".join(report_parts)
+def update_account_keys_fb(tr_no, today_string, new_account, new_free_cash, new_holdings):
+    pass
 
 # Main function to generate and send the report
 def main():
-    # Get yesterday's date to title the report
-    today = datetime.now().strftime('%Y-%m-%d')
-    combined_report = f"PnL for Today ({today})\n"
+    from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
+    
+    active_users = fetch_active_users_from_firebase()
+    
+    for user in active_users:
+        user_db_path = f"USR_TRADELOG_DB_FOLDER/{user}.db"
+        user_db = get_db_connection(user_db_path)
+        
 
-    # Load broker data from the JSON file
-    broker_data = general_calc.read_json_file(broker_filepath)
+        # Placeholder values, replace with actual queries and Firebase fetches
+        today_trades = get_today_trades(user_db)
+        gross_pnl = sum(trade["pnl"] for trade in today_trades)
+        expected_tax = sum(trade["tax"] for trade in today_trades)
+        
+        today_string = datetime.now().strftime('%Y-%m-%d')
+        previous_trading_day_string = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
-    # Process data for each user in the broker data
-    for user in broker_data:
-        if "Active" in user['account_type']:
-            excel_file_name = f"{user['account_name']}.xlsx"
-            xls, sheet_names = load_excel(excel_file_name)
+        previous_free_cash = user['Accounts'][f"{previous_trading_day_string}_FreeCash"]
+        previous_holdings = user['Accounts'][f"{previous_trading_day_string}_Holdings"]
+        previous_account = user['Accounts'][f"{previous_trading_day_string}_Account_Value"]
 
-            if xls is not None:
-                strategy_results = {}
-                total_tax = 0
-                total_pnl = 0
+        # Assuming no additions/withdrawals for simplicity, replace with actual logic to calculate
+        additions_withdrawals = get_additions_withdrawals(user_db)
 
-                for sheet_name in sheet_names:
-                    df = pd.read_excel(xls, sheet_name=sheet_name)
-                    if 'exit_time' in df.columns and 'trade_id' in df.columns:
-                        df['exit_time'] = pd.to_datetime(df['exit_time']).dt.strftime('%Y-%m-%d')
-                        df_yesterday = df[df['exit_time'] == today]
+        new_free_cash = previous_free_cash + gross_pnl - expected_tax
+        # Placeholder for calculating new holdings, assuming it's equal to previous for this example
+        new_holdings = get_new_holdings(user_db)
+        new_account = previous_account + gross_pnl - expected_tax + additions_withdrawals
 
-                        if not df_yesterday.empty:
-                            tax_sum = round(df_yesterday['tax'].sum(), 2)
-                            total_tax += tax_sum
+        net_change = new_account - previous_account
+        net_change_percentage = (net_change / previous_account) * 100 if previous_account else 0
+        # Placeholder for drawdown calculation
+        drawdown = user['Accounts']["NetPnL"] - user['Accounts']["PnLWithdrawals"]
+        drawdown_percentage = drawdown / new_account * 100
+        
+        update_account_keys_fb(user['Tr_No'], today_string, new_account, new_free_cash, new_holdings)
 
-                            for index, trade in df_yesterday.iterrows():
-                                trade_id = trade['trade_id']
-                                pnl = trade['pnl']
-                                if trade_id not in strategy_results:
-                                    strategy_results[trade_id] = {'pnl': 0, 'tax': tax_sum}
-                                strategy_results[trade_id]['pnl'] += pnl
-                                total_pnl += pnl
-
-                user['strategy_results'] = strategy_results
-                user['gross_pnl'] = total_pnl
-                user['expected_tax'] = total_tax
-                net_pnl = total_pnl - total_tax
-                user['net_pnl'] = net_pnl
-
-                base_capital = read_base_capital(os.path.join(DIR, 'MarketUtils', 'Main', 'basecapital.txt'))
-                report_message = create_report_message(user, base_capital, strategy_results, custom_format)
-                combined_report += report_message + "\n"
-
-    # Print the combined report to the console
-    print(combined_report)
+        # Format the message
+        message = f"Hello {user}, We hope you're enjoying a wonderful day.\n\n"
+        message += "Here are your PNLs for today:\n\n"
+        message += "Today's Trades:\n"
+        for trade in today_trades:
+            message += f"{trade['trade_id']}: ₹{trade['pnl']}\n"
+        message += f"\nGross PnL: ₹{gross_pnl}\n"
+        message += f"Expected Tax: ₹{expected_tax}\n"
+        message += f"02FEB24 Free Cash: ₹{previous_free_cash}\n"
+        message += f"03FEB24 Free Cash: ₹{new_free_cash}\n\n"
+        message += "Holdings:\n"
+        message += f"02FEB24 Holdings: ₹{previous_holdings}\n"
+        message += f"03FEB24 Holdings: ₹{new_holdings}\n\n"
+        message += "Account:\n"
+        message += f"02FEB24 Account: ₹{previous_account}\n"
+        message += f"Additions/Withdrawals: ₹{additions_withdrawals}\n"
+        message += f"03FEB24 Account: ₹{new_account}\n"
+        message += f"NetChange: ₹{net_change} ({net_change_percentage:.2f}%)\n"
+        message += f"Drawdown: ₹{drawdown}({drawdown_percentage:.2f}%)\n\n"
+        message += "Best Regards,\nTradeMan"
 
       # Send the report to Discord
-    send_discord_message(combined_report)
+    # send_discord_message(combined_report)
 
 if __name__ == "__main__":
     main()
+    
+ 

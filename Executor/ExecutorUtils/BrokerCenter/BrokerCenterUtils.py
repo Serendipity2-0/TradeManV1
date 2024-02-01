@@ -13,8 +13,6 @@ ZERODHA = os.getenv('ZERODHA_BROKER')
 ALICEBLUE = os.getenv('ALICEBLUE_BROKER')
 
 import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
-import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
-import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
 import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
 
@@ -32,6 +30,9 @@ def modify_order_for_brokers(order_details,user_credentials):
         return alice_adapter.ant_modify_orders_for_users(order_details,user_credentials)
 
 def all_broker_login(active_users):
+    import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
+    import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
+
     for user in active_users:
         if user['Broker']['BrokerName'] == ZERODHA:
             print("Logging in for Zerodha")
