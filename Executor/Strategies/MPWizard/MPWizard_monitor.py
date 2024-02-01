@@ -10,7 +10,7 @@ sys.path.append(DIR_PATH)
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentMonitor.instrument_monitor import monitor
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
 from Executor.Strategies.StrategiesUtil import \
-    StrategyBase, assign_trade_id,calculate_trigger_price,calculate_stoploss,calculate_transaction_type_sl,calculate_target,place_order_strategy_users,modify_order_strategy_users
+    StrategyBase, assign_trade_id,calculate_trigger_price,calculate_stoploss,calculate_transaction_type_sl,calculate_target,place_order_strategy_users,update_stoploss_orders
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
 strategy_obj = StrategyBase.load_from_db('MPWizard')
@@ -227,12 +227,13 @@ class OrderMonitor:
             print("Index name not found for token:", instrument)
 
     def process_modify_orders(self,order_details, message=None):
+        # Update the limit_prc and the trigger_prc in the order_details and pass it to create_modify_order_details and then to modify_orders
         price_ref = order_details['price_ref'] 
         order_details['limit_prc'] += (price_ref / 2)  # Adjust limit_prc by half of price_ref
         order_details['trigger_prc'] = order_details['limit_prc'] + 1.0  
 
         order_to_modify = self.create_modify_order_details(order_details)
-        modify_order_strategy_users(strategy_obj.StrategyName,order_to_modify)
+        update_stoploss_orders(strategy_obj.StrategyName,order_to_modify)
         # place_order.modify_orders(order_details=order_to_modify)
 
         order_details['target'] += (price_ref / 2)  # Adjust target by half of price_ref

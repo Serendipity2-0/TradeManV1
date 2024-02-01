@@ -24,6 +24,7 @@ def place_order_for_brokers(order_details,user_credentials):
         return alice_adapter.ant_place_orders_for_users(order_details,user_credentials)
 
 def modify_order_for_brokers(order_details,user_credentials):
+    #based on the broker name call the respective function with order_details and user_credentials with broker details
     if order_details['broker'] == ZERODHA:
         return zerodha_adapter.kite_modify_orders_for_users(order_details,user_credentials)
     elif order_details['broker'] == ALICEBLUE:
@@ -107,7 +108,13 @@ def fetch_user_credentials_firebase(broker_user_name):
     for user in user_credentials:
         if user_credentials[user]['Broker']['BrokerUsername'] == broker_user_name:
             return user_credentials[user]['Broker']
-        
+
+def fetch_strategy_details_for_user(username):
+    user_details = firebase_utils.fetch_collection_data_firebase('new_clients')
+    for user in user_details:
+        if user_details[user]['Broker']['BrokerUsername'] == username:
+            return user_details[user]['Strategies']
+                
 def get_today_orders_for_brokers(user):
     import json
     # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/kite_orders.json') as f:

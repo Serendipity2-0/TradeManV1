@@ -8,8 +8,7 @@ DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
 
-from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import \
-    discord_bot
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_signal_from_trade_id,calculate_transaction_type_sl
 
 #This function fetches the available free cash balance for a user from the Aliceblue trading platform.
@@ -227,37 +226,37 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
     return results
 
 def ant_modify_orders_for_users(order_details,user_credentials):
+    from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
     alice = create_alice_obj(user_credentials)
-    order_id = place_order_calc.retrieve_order_id(
+    order_id_dict = retrieve_order_id(
             order_details.get('account_name'),
             order_details.get('strategy'),
-            order_details.get('transaction_type'),
             order_details.get('exchange_token')
         ) 
 
-    transaction_type = alice_utils.calculate_transaction_type(order_details.get('transaction_type'))
-    order_type = alice_utils.calculate_order_type(order_details.get('order_type'))
-    product_type = alice_utils.calculate_product_type(order_details.get('product_type'))
+    transaction_type = calculate_transaction_type(order_details.get('transaction_type'))
+    order_type = calculate_order_type(order_details.get('order_type'))
+    product_type = calculate_product_type(order_details.get('product_type'))
     segment = order_details.get('segment')
     exchange_token = order_details.get('exchange_token')
-    qty = int(order_details.get('qty'))
     new_stoploss = order_details.get('limit_prc', 0.0)
     trigger_price = order_details.get('trigger_prc', None)
     #TODO modify the code so that it modifies orders greater than max qty
     try:
-        modify_order =  alice.modify_order(transaction_type = transaction_type,
-                    order_id=str(order_id),
-                    instrument = alice.get_instrument_by_token(segment, exchange_token),
-                    quantity = qty,
-                    order_type = order_type,
-                    product_type = product_type,
-                    price=new_stoploss,
-                    trigger_price = trigger_price)
-        print("alice modify_order",modify_order)
+        for order_id,qty in order_id_dict.items():
+            modify_order =  alice.modify_order(transaction_type = transaction_type,
+                        order_id=str(order_id),
+                        instrument = alice.get_instrument_by_token(segment, exchange_token),
+                        quantity = qty,
+                        order_type = order_type,
+                        product_type = product_type,
+                        price=new_stoploss,
+                        trigger_price = trigger_price)
+            print("alice modify_order",modify_order)
     except Exception as e:
         message = f"Order placement failed: {e} for {order_details['account_name']}"
         print(message)
-        discord.discord_bot(message, order_details.get('strategy'))
+        discord_bot(message, order_details.get('strategy'))
         return None
 
 def ant_create_counter_order(trade,user):

@@ -13,7 +13,7 @@ from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import \
     discord_bot
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    fetch_user_credentials_firebase, place_order_for_brokers)
+    fetch_user_credentials_firebase, place_order_for_brokers,modify_order_for_brokers,fetch_strategy_details_for_user)
 
 
 def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
@@ -71,19 +71,28 @@ def place_order_for_strategy(strategy_users, order_details):
     return all_order_statuses
 
 def modify_orders_for_strategy(strategy_users, order_details):
+    #Update the order details with the username and broker details for each order and pass it to modify_order_for_brokers
     for users in strategy_users:
         for order in order_details:
             user_credentials = fetch_user_credentials_firebase(users['Broker']['BrokerUsername'])
             order_with_user_and_broker = order.copy()
             order_with_user_and_broker.update({
                 "broker": users['Broker']['BrokerName'],
-                "username": users['Broker']['BrokerUsername'],
-                "qty": users['Strategies'][order.get('strategy')]['Qty']
+                "username": users['Broker']['BrokerUsername']
             })
-            # modify_orders(order_with_user_and_broker,user_credentials)
-
-
+            modify_order_for_brokers(order_with_user_and_broker,user_credentials)
     pass
+
+def retrieve_order_id(account_name,strategy,exchange_token:int):
+    #retrieve the order id from firebase for the given account name, strategy name and trade id
+    order_ids = {}
+    user_details = fetch_strategy_details_for_user(account_name)
+    for strategy_name in user_details:
+        if strategy_name == strategy:
+            for trade in user_details[strategy_name]['TradeState']['orders']:
+                if trade['exchange_token'] == exchange_token and trade['trade_id'].endswith('EX'):
+                    order_ids[trade['order_id']] = trade['qty']
+    return order_ids
 
 #TODO: sweep_orders from user/strategies/todayorders for sweep order enabled strategies
 def place_sweep_orders_for_strategy(strategy_users, order_details):

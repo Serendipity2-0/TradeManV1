@@ -5,7 +5,7 @@ from kiteconnect import KiteConnect
 
 
 from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_signal_from_trade_id, calculate_transaction_type_sl
-
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
 def create_kite_obj(user_details=None,api_key=None,access_token=None):
     if api_key and access_token:
@@ -77,6 +77,66 @@ def simplify_zerodha_order(detail):
 
 def zerodha_todays_tradebook(user):
     kite = create_kite_obj(api_key=user['ApiKey'],access_token=user['SessionId'])
+    orders = kite.orders()
+    return orders
+    
+def calculate_transaction_type(kite,transaction_type):
+    if transaction_type == 'BUY':
+        transaction_type = kite.TRANSACTION_TYPE_BUY
+    elif transaction_type == 'SELL':
+        transaction_type = kite.TRANSACTION_TYPE_SELL
+    else:
+        raise ValueError("Invalid transaction_type in order_details")
+    return transaction_type
+
+def calculate_order_type(kite,order_type):
+    if order_type.lower() == 'stoploss':
+        order_type = kite.ORDER_TYPE_SL
+    elif order_type.lower() == 'market':
+        order_type = kite.ORDER_TYPE_MARKET
+    elif order_type.lower() == 'limit':
+        order_type = kite.ORDER_TYPE_LIMIT
+    else:
+        raise ValueError("Invalid order_type in order_details")
+    return order_type
+
+def calculate_product_type(kite,product_type):
+    if product_type == 'NRML':
+        product_type = kite.PRODUCT_NRML
+    elif product_type == 'MIS':
+        product_type = kite.PRODUCT_MIS
+    elif product_type == 'CNC':
+        product_type = kite.PRODUCT_CNC
+    else:
+        raise ValueError("Invalid product_type in order_details")
+    return product_type
+
+def calculate_segment_type(kite, segment_type):
+    # Prefix to indicate the exchange type
+    prefix = "EXCHANGE_"
+    
+    # Construct the attribute name
+    attribute_name = prefix + segment_type
+    
+    # Get the attribute from the kite object, or raise an error if it doesn't exist
+    if hasattr(kite, attribute_name):
+        return getattr(kite, attribute_name)
+    else:
+        raise ValueError(f"Invalid segment_type '{segment_type}' in order_details")
+
+def get_avg_prc(kite,order_id):
+    if not order_id:
+        raise Exception("Order_id not found")
+    
+    order_history = kite.order_history(order_id=order_id)
+    for order in order_history:
+        if order.get('status') == 'COMPLETE':
+            avg_prc = order.get('average_price', 0.0)
+            break 
+    return avg_prc
+
+def get_order_details(user):
+    kite = create_kite_obj(api_key=user['api_key'],access_token=user['access_token'])
     orders = kite.orders()
     return orders
 
@@ -165,66 +225,31 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         }
     return results
 
-    
-def calculate_transaction_type(kite,transaction_type):
-    if transaction_type == 'BUY':
-        transaction_type = kite.TRANSACTION_TYPE_BUY
-    elif transaction_type == 'SELL':
-        transaction_type = kite.TRANSACTION_TYPE_SELL
-    else:
-        raise ValueError("Invalid transaction_type in order_details")
-    return transaction_type
+def kite_modify_orders_for_users(order_details, users_credentials):
+    from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
+    kite = create_kite_obj(user_details=users_credentials)  # Create a KiteConnect instance with user's broker credentials
+    order_id_dict = retrieve_order_id(
+            order_details.get('account_name'),
+            order_details.get('strategy'),
+            order_details.get('exchange_token')
+        )
+    new_stoploss = order_details.get('limit_prc', 0.0)
+    trigger_price = order_details.get('trigger_prc', None)
 
-def calculate_order_type(kite,order_type):
-    if order_type.lower() == 'stoploss':
-        order_type = kite.ORDER_TYPE_SL
-    elif order_type.lower() == 'market':
-        order_type = kite.ORDER_TYPE_MARKET
-    elif order_type.lower() == 'limit':
-        order_type = kite.ORDER_TYPE_LIMIT
-    else:
-        raise ValueError("Invalid order_type in order_details")
-    return order_type
-
-def calculate_product_type(kite,product_type):
-    if product_type == 'NRML':
-        product_type = kite.PRODUCT_NRML
-    elif product_type == 'MIS':
-        product_type = kite.PRODUCT_MIS
-    elif product_type == 'CNC':
-        product_type = kite.PRODUCT_CNC
-    else:
-        raise ValueError("Invalid product_type in order_details")
-    return product_type
-
-def calculate_segment_type(kite, segment_type):
-    # Prefix to indicate the exchange type
-    prefix = "EXCHANGE_"
-    
-    # Construct the attribute name
-    attribute_name = prefix + segment_type
-    
-    # Get the attribute from the kite object, or raise an error if it doesn't exist
-    if hasattr(kite, attribute_name):
-        return getattr(kite, attribute_name)
-    else:
-        raise ValueError(f"Invalid segment_type '{segment_type}' in order_details")
-
-def get_avg_prc(kite,order_id):
-    if not order_id:
-        raise Exception("Order_id not found")
-    
-    order_history = kite.order_history(order_id=order_id)
-    for order in order_history:
-        if order.get('status') == 'COMPLETE':
-            avg_prc = order.get('average_price', 0.0)
-            break 
-    return avg_prc
-
-def get_order_details(user):
-    kite = create_kite_obj(api_key=user['api_key'],access_token=user['access_token'])
-    orders = kite.orders()
-    return orders
+    try:
+        for order_id,qty in order_id_dict.items():
+            modify_order = kite.modify_order(variety=kite.VARIETY_REGULAR, 
+                                        order_id=order_id, 
+                                        price = new_stoploss,
+                                        trigger_price = trigger_price)
+            print("zerodha order modified", modify_order)
+    except Exception as e:
+        message = f"Order placement failed: {e} for {order_details['account_name']}"
+        print(message)
+        discord_bot(message, order_details.get('strategy'))
+        return None
+        
+    print("zerodha order modified")
 
 def kite_create_sl_counter_order(trade, user):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument

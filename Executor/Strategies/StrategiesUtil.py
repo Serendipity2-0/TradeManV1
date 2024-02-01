@@ -376,9 +376,11 @@ def place_order_strategy_users(strategy_name,orders_to_place):
     place_order_for_strategy(strategy_users,orders_to_place)
     pass
 
-def modify_order_strategy_users(strategy_name,orders_to_modify):
+def update_stoploss_orders(strategy_name,orders_to_modify):
+    #I fetch the users for the strategy and then pass the users and orders to modify to the modify_orders_for_strategy function
+    from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import modify_orders_for_strategy
     strategy_users = fetch_strategy_users(strategy_name)
-    
+    modify_orders_for_strategy(strategy_users,orders_to_modify)
     pass
 
 
