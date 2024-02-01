@@ -17,11 +17,10 @@ while true; do
     echo "Attempt: $attempt"
     
     # Source conda, activate the environment and run the script
-    source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
-	conda activate tradingenv && \
-    cd /Users/traderscafe/Desktop/Main/ && \
-	# cd /Users/traderscafe/Documents/NiftyStrategy/Brokers/ && \
-	/Users/traderscafe/miniconda3/envs/tradingenv/bin/python Strategies/ExpiryTrader/ExpiryTrader.py && \
+    source /Users/amolkittur/miniconda3/etc/profile.d/conda.sh && \
+	conda activate traderscafe && \
+    cd /Users/amolkittur/Desktop/TradeManV1/ && \
+	/Users/amolkittur/miniconda3/envs/traderscafe/bin/python Executor/Strategies/ExpiryTrader/ExpiryTrader.py && \
 	echo "Program started successfully" && break
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit
@@ -29,7 +28,7 @@ while true; do
         echo "The script has some errors. Please Check !!!"
         
         # Send a message on Telegram
-        curl -s -X POST https://api.telegram.org/bot$telegram_bot_token/sendMessage -d chat_id=$chat_id -d text="Overnight Exit Errors. Please Check !!!"
+        curl -s -X POST https://api.telegram.org/bot$telegram_bot_token/sendMessage -d chat_id=$chat_id -d text="ExpiryTrader Errors. Please Check !!!"
 
         exit 1
     fi

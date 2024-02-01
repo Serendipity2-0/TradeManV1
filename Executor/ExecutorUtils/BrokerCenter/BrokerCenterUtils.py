@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 
 from dotenv import load_dotenv
 
@@ -116,33 +117,31 @@ def fetch_strategy_details_for_user(username):
             return user_details[user]['Strategies']
                 
 def get_today_orders_for_brokers(user):
-    import json
-    # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/kite_orders.json') as f:
-    #     kite_data = json.load(f)
-    with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/aliceblue_orders.json') as f:
-        alice_data = json.load(f)
-
     if  user['Broker']['BrokerName'] == ZERODHA:
+        # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/kite_orders.json') as f:
+        #     kite_data = json.load(f)
         kite_data = zerodha_adapter.zerodha_todays_tradebook(user['Broker'])
-        kite_data = [order for order in kite_data if order['status'] == 'COMPLETE']
         return kite_data
     
     elif user['Broker']['BrokerName'] == ALICEBLUE:
+        with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/aliceblue_orders.json') as f:
+            alice_data = json.load(f)
         # alice_data = alice_adapter.aliceblue_todays_tradebook(user['Broker'])
-        alice_data = [order for order in alice_data if order['Status'] == 'complete']
         return alice_data
     
 def create_counter_order_details(tradebook,user):
+    #TODO: Create cancel order methods
+
     counter_order_details = []
     for trade in tradebook:
         if user['Broker']['BrokerName'] == ZERODHA:
             if trade['status'] == 'TRIGGER PENDING' and trade['product'] == 'MIS':
-                cancel_order = zerodha_adapter.create_cancel_order(trade, user)
+                cancel_order = zerodha_adapter.kite_create_cancel_order(trade, user)
                 counter_order = zerodha_adapter.kite_create_sl_counter_order(trade, user)
                 counter_order_details.append(counter_order)
         elif user['Broker']['BrokerName'] == ALICEBLUE:
             if trade['Status'] == 'trigger pending' and trade['Pcode'] == 'MIS':
-                cancel_order = alice_adapter.create_cancel_order(trade, user)
+                cancel_order = alice_adapter.ant_create_cancel_orders(trade, user)
                 counter_order = alice_adapter.ant_create_counter_order(trade, user)
                 counter_order_details.append(counter_order)
     return counter_order_details

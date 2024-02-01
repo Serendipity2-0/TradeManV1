@@ -123,6 +123,7 @@ class StrategyBase(BaseModel):
     
     @classmethod
     def load_from_db(cls, strategy_name: str):
+        #TODO: Add synthetic data for testing
         data = fetch_collection_data_firebase('strategies', document=strategy_name)
         if data is None:
             raise ValueError(f"No data found for strategy {strategy_name}")
@@ -340,7 +341,7 @@ def fetch_previous_trade_id(trade_id):
     return trade_id
 
 def update_signal_firebase(strategy_name,signal,trade_id = None):
-    #if signal['TradeId'] = CN35_LG_MO_EN then the Trade = CN35_entry if CN35_LG_MO_EX then Trade = CN35_exit
+
     trade = signal['TradeId'].split('_')[3]
     trade_no = signal['TradeId'].split('_')[0]
     if trade == 'EN':
@@ -441,12 +442,12 @@ def base_symbol_token(base_symbol):
         
 def get_strategy_name_from_trade_id(trade_id):
     #trade_id = MP123
-    print(trade_id)
     strategy_prefix = trade_id[:2]
     strategies = fetch_collection_data_firebase('strategies')
-    for strategy in strategies:
-        if strategies[strategy]['StrategyPrefix'] == strategy_prefix:
-            return strategies[strategy]['StrategyName']
+    #iterate over the strategies dict and find the strategy name for the strategy prefix
+    for strategy, strategy_details in strategies.items():
+        if strategy_details['StrategyPrefix'] == strategy_prefix:
+            return strategy
     return None
 
 def get_signal_from_trade_id(trade_id):

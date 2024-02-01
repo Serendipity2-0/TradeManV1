@@ -141,14 +141,20 @@ def main():
             print(f"Waiting for {wait_time} before starting the bot")
             sleep(wait_time.total_seconds())
         
+        main_trade_id = None
+
+        for order in orders_to_place:
+            if order.get('order_mode') == "MO":
+                main_trade_id = order.get('trade_id')  
+
         signals_to_log = {
-                        "TradeId" : next_trade_prefix,
+                        "TradeId" : main_trade_id,
                         "Signal" : "Short",
-                        "EntryTime" : dt.datetime.now().strftime("%H:%M"),
+                        "EntryTime" : dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "StrategyInfo" : {"Direction" : prediction,},
                         "Status" : "Open"}
 
-        update_signal_firebase(strategy_name,signals_to_log)
+        update_signal_firebase(strategy_name,signals_to_log,next_trade_prefix)
 
         message_for_orders("Live",prediction,main_trade_symbol,hedge_trade_symbol)
     

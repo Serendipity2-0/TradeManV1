@@ -196,7 +196,6 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
                                         trailing_sl = None,
                                         is_amo = False,
                                         order_tag = orders_to_place.get('trade_id', None))
-        
         print(f"Order placed. ID is: {order_id}")
         order_status = get_order_status(alice, order_id['NOrdNo'])
         if order_status == "FAIL":
@@ -289,3 +288,7 @@ def ant_create_hedge_counter_order(trade,user):
         "qty": trade['Qty']
     }
     return counter_order
+
+def ant_create_cancel_orders(trade,user):
+    alice = create_alice_obj(user_details=user['Broker'])
+    alice.cancel_order(trade['Nstordno'])
