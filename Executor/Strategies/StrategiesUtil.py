@@ -416,11 +416,11 @@ def calculate_priceref_stoploss(main_transaction_type,ltp,price_ref):
     
     return stoploss
 
-def calculate_trigger_price(transaction_type,stoploss):
-    if transaction_type == 'BUY':
-        trigger_price = round(float(stoploss + 1),1)
-    elif transaction_type == 'SELL':
+def calculate_trigger_price(sl_transaction_type,stoploss):
+    if sl_transaction_type == 'BUY':
         trigger_price = round(float(stoploss - 1),1)
+    elif sl_transaction_type == 'SELL':
+        trigger_price = round(float(stoploss + 1),1)
     return trigger_price
 
 def calculate_transaction_type_sl(transaction_type):

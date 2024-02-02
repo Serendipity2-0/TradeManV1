@@ -59,15 +59,9 @@ entry = strategy_obj.EntryParams.EntryTime
 last = strategy_obj.ExitParams.LastBuyTime
 sqroff = strategy_obj.ExitParams.SquareOffTime
 
-print("Entry Time:",type(entry))
-print("Last Trade Time:",type(last))
-print("Square Off Time:",sqroff)
-
 entry_time = pd.Timestamp(entry).time()
 last_buy_time = pd.Timestamp(last).time()
 sqroff_time = pd.Timestamp(sqroff).time()
-
-
 
 primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
 kite = create_kite_obj(api_key=primary_account_session_id['Broker']['ApiKey'], access_token=primary_account_session_id['Broker']['SessionId'])

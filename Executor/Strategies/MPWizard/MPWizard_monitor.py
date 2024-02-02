@@ -115,7 +115,7 @@ class OrderMonitor:
     def create_order_details(self,name,cross_type,ltp,price_ref):
         mood_data_entry = self._get_mood_data_for_instrument(name)
         ib_level = mood_data_entry['IBLevel']
-        instru_mood = strategy_obj.GeneralParams.TradeView
+        instru_mood = strategy_obj.MarketInfoParams.TradeView
         if not mood_data_entry:
             return
         option_type = MPWizard_calc.calculate_option_type(ib_level,cross_type,instru_mood)
@@ -207,6 +207,7 @@ class OrderMonitor:
                 return
             
             order_to_place = self.create_order_details(name,cross_type,ltp,price_ref)
+            #TODO: Calculate the qty here
             print(order_to_place)
             place_order_strategy_users(strategy_obj.StrategyName,order_to_place)
             if message:
@@ -241,7 +242,7 @@ class OrderMonitor:
 
     def handle_trigger(self, instrument,data,order_details=None):
         ltp = self.instrument_monitor.fetch_ltp(instrument)
-        instru_mood = strategy_obj.GeneralParams.TradeView
+        instru_mood = strategy_obj.MarketInfoParams.TradeView
         index_name = self.get_index_name(instrument)
         if data['type'] == 'trigger':
             cross_type = 'UpCross' if data['name'] == 'IBHigh' else 'DownCross'

@@ -121,12 +121,14 @@ def get_today_orders_for_brokers(user):
         # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/kite_orders.json') as f:
         #     kite_data = json.load(f)
         kite_data = zerodha_adapter.zerodha_todays_tradebook(user['Broker'])
+        kite_data = [trade for trade in kite_data if trade['status'] != 'REJECTED' or trade['status'] != 'CANCELLED']
         return kite_data
     
     elif user['Broker']['BrokerName'] == ALICEBLUE:
         # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/aliceblue_orders.json') as f:
         #     alice_data = json.load(f)
         alice_data = alice_adapter.aliceblue_todays_tradebook(user['Broker'])
+        alice_data = [trade for trade in alice_data if trade['Status'] != 'rejected' or trade['Status'] != 'cancelled']
         return alice_data
     
 def create_counter_order_details(tradebook,user):
@@ -189,9 +191,9 @@ def get_qty_broker_key(broker_name):
     
 def get_time_stamp_broker_key(broker_name):
     if broker_name == ZERODHA:
-        return 'exchange_update_timestamp'
+        return 'order_timestamp'
     elif broker_name == ALICEBLUE:
-        return 'ExchConfrmtime'
+        return 'OrderedTime'
     
 def get_trade_id_broker_key(broker_name):
     if broker_name == ZERODHA:
@@ -199,8 +201,8 @@ def get_trade_id_broker_key(broker_name):
     elif broker_name == ALICEBLUE:
         return 'remarks'
     
-def convert_to_standard_format(date_str):
-    print("date_str",date_str)
+
+def convert_date_str_to_standard_format(date_str):
     from datetime import datetime
     # Define possible date formats
     date_formats = [
@@ -215,10 +217,22 @@ def convert_to_standard_format(date_str):
             # Try to parse the date string using the current format
             dt = datetime.strptime(date_str, fmt)
             # If parsing is successful, return the formatted string
-            return dt.strftime("%Y-%m-%d %H:%M:%S")
+            date_str =  dt.strftime("%Y-%m-%d %H:%M:%S")
+            return date_str      
         except ValueError:
             # If parsing fails, try the next format
             continue
-
-    # If none of the formats work, return a standard error message
     return "Invalid date format"
+
+def convert_to_standard_format(date_str):
+    from datetime import datetime
+    #first check the type of the date_str whether it is string or datetime and then convert it to standard format
+    if isinstance(date_str, str):
+        return convert_date_str_to_standard_format(date_str)
+    elif isinstance(date_str, datetime):
+        date_str = date_str.strftime("%Y-%m-%d %H:%M:%S")
+        return convert_date_str_to_standard_format(date_str)
+    else:
+        return "Invalid date format"
+
+    

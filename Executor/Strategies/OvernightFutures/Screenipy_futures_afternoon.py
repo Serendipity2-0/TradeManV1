@@ -17,7 +17,7 @@ import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as Instrume
 from Executor.ExecutorUtils.ExeUtils import holidays
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import update_fields_firebase
-from Executor.Strategies.StrategiesUtil import assign_trade_id
+from Executor.Strategies.StrategiesUtil import assign_trade_id,place_order_strategy_users
 
 hedge_transcation_type = "BUY"
 futures_option_type = "FUT"
@@ -67,6 +67,7 @@ hedge_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol
 futures_exchange_token = instrument_obj.get_exchange_token_by_criteria(base_symbol,futures_strikeprc, futures_option_type,monthly_expiry)
 next_trade_prefix = strategy_obj.NextTradeId
 
+
 future_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(futures_exchange_token)
 hedge_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(hedge_exchange_token)
 
@@ -81,7 +82,7 @@ orders_to_place = [
         "transaction_type": hedge_transcation_type,  
         "order_type" : order_type, 
         "product_type" : product_type,
-        "order_mode" : "Hedge",
+        "order_mode" : "HedgeEntry",
         "trade_id" : next_trade_prefix
     },
     {
@@ -124,7 +125,7 @@ def main():
     message_for_orders(prediction,future_trade_symbol,hedge_trade_symbol,weekly_expiry,monthly_expiry)
     orders_to_place = assign_trade_id(orders_to_place)
     print(orders_to_place)
-    # place_order.place_order_for_strategy(strategy_name,orders_to_place)
+    place_order_strategy_users(strategy_name,orders_to_place)
 
 
     hedge_exchange_token = np.int64(hedge_exchange_token)

@@ -65,7 +65,7 @@ def main():
         sleep(wait_time.total_seconds())
     
     # Update the JSON file with high-low range data
-    # MPWizard_calc.get_high_low_range_and_update_json()
+    MPWizard_calc.get_high_low_range_and_update_json()
     
     mood_data = mpwizard_strategy_obj.get_entry_params().InstrumentToday
     

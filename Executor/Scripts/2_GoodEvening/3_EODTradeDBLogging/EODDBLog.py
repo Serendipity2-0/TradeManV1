@@ -23,6 +23,7 @@ def process_n_log_trade():
     active_users = fetch_active_users_from_firebase()
     
     for user in active_users:
+        print(f"Processing trade for user: {user['Tr_No']}")
         db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
         conn = get_db_connection(db_path)
         if not user.get('Active'):
@@ -35,6 +36,12 @@ def process_n_log_trade():
             processed_trades = {}
             holdings = {}
 
+            #if there are no orders for the strategy, continue to the next strategy
+            if not orders:
+                print(f"No orders found for strategy: {strategy_name}")
+                continue
+
+            
             for order in orders:
                 trade_id_prefix = order['trade_id'].split('_')[0]
                 entry_orders = [o for o in orders if trade_id_prefix in o['trade_id'] and 'EN' in o['trade_id'] and 'HO' not in o['trade_id']]
@@ -100,7 +107,6 @@ def process_n_log_trade():
                 processed_trades[strategy_name] = processed_trade
 
             for data in processed_trades.values():
-                print("data",data)
                 df = pd.DataFrame([data])
                 decimal_columns = ['pnl', 'tax', 'entry_price', 'exit_price', 'hedge_entry_price', 'hedge_exit_price', 'trade_points', 'net_pnl']
                 dump_df_to_sqlite(conn, df, strategy_name, decimal_columns)
@@ -116,7 +122,7 @@ def process_n_log_trade():
         conn.close()
 
 # Example usage
-# process_n_log_trade()
+process_n_log_trade()
 
 
 
@@ -165,7 +171,7 @@ def update_signals_firebase():
         
         
         #fetch the users for the strategy
-
+# update_signals_firebase()
 #TODO: Update holdings table in user db
 #TODO: function to update dtd table in user
 #TODO: function to update signal db using primary account db values

@@ -70,10 +70,10 @@ update_qty_user_firebase(strategy_name,ltp,lot_size)
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(main_exchange_token)
 hedge_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(hedge_exchange_token)
 
+
 stoploss_transaction_type = calculate_transaction_type_sl(main_transaction_type)
 limit_prc = calculate_stoploss(ltp,main_transaction_type,stoploss_multiplier=stoploss_multiplier)
 trigger_prc = calculate_trigger_price(stoploss_transaction_type,limit_prc)
-
 
 orders_to_place = [
     {  
@@ -114,6 +114,7 @@ orders_to_place = [
     ]
 
 orders_to_place = assign_trade_id(orders_to_place)
+print("orders_to_place",orders_to_place)
 
 def message_for_orders(trade_type,prediction,main_trade_symbol,hedge_trade_symbol):
     message = ( f"{trade_type} Trade for {strategy_name}\n"
