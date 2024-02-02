@@ -1,0 +1,392 @@
+{
+    "AmiPy": {
+      "Description": "Signals are generated using SuperTrend",
+      "EntryParams": {
+        "EMAPeriod": 324,
+        "EntryTime": "09:20:00",
+        "HeikinAshiMAPeriod": 13,
+        "SupertrendMultiplier": 12,
+        "SupertrendPeriod": 7,
+        "TSLStepSize": 0.5
+      },
+      "ExitParams": {
+        "LastBuyTime": "14:50:00",
+        "SLType": "StrategySL",
+        "SquareOffTime": "14:55:00"
+      },
+      "ExtraInformation": {
+        "HedgeDistance": 500,
+        "Interval": "minute",
+        "StrategyParams": [
+          "EMAPeriod",
+          "HeikinAshiMAPeriod",
+          "SupertrendMultiplier",
+          "SupertrendPeriod",
+          "TSLStepSize"
+        ]
+      },
+      "GeneralParams": {
+        "ExpiryType": "Weekly",
+        "MaxMarginPerLot": 70000,
+        "NiftyToken": "256265",
+        "OrderType": "Market",
+        "ProductType": "MIS",
+        "Segment": "NFO",
+        "TimeFrame": "1Min"
+      },
+      "Instruments": [
+        "NIFTY"
+      ],
+      "MarketInfoParams": {
+        "OSQtyAmplifier": 1,
+        "TradeView": "Bearish"
+      },
+      "NextTradeId": "AP6",
+      "StrategyName": "AmiPy",
+      "StrategyPrefix": "AP",
+      "TodayOrders": {}
+    },
+    "GoldenCoin": {
+      "Description": "Flips a coin and enters the trade at random time",
+      "EntryParams": {
+        "EntryTime": "Random",
+        "StrikePriceMultiplier": 15
+      },
+      "ExitParams": {
+        "SLType": "NoSL"
+      },
+      "ExtraInformation": {
+        "QtyCalc": "DuringEntry"
+      },
+      "GeneralParams": {
+        "ExpiryType": "Weekly",
+        "OrderType": "Market",
+        "ProductType": "MIS",
+        "Segment": "NFO",
+        "StrategyType": "OB",
+        "TimeFrame": "SingleEntry",
+        "TransactionType": "BUY"
+      },
+      "Instruments": [
+        "NIFTY",
+        "BANKNIFTY",
+        "FINNIFTY",
+        "MIDCPNIFTY",
+        "SENSEX"
+      ],
+      "MarketInfoParams": {
+        "OBQtyAmplifier": 2,
+        "OSQtyAmplifier": 1,
+        "TradeView": "Bullish"
+      },
+      "NextTradeId": "GC36",
+      "StrategyName": "GoldenCoin",
+      "StrategyPrefix": "GC"
+    },
+    "ExpiryTrader": {
+      "Description": "Sells weekly OTM options of respective Instruments on its expiry day",
+      "EntryParams": {
+        "EntryTime": "09:20:00",
+        "HedgeMultiplier": 7,
+        "SLMultipler": 2,
+        "StrikeMultiplier": 2
+      },
+      "ExitParams": {
+        "SLType": "FixedSL",
+        "SqroffTime": "15:05:00"
+      },
+      "ExtraInformation": {
+        "QtyCalc": "DuringEntry"
+      },
+      "GeneralParams": {
+        "ExpiryType": "Weekly",
+        "HedgeTransactionType": "BUY",
+        "MainTransactionType": "SELL",
+        "OrderType": "Market",
+        "ProductType": "MIS",
+        "StrategyType": "OS",
+        "TimeFrame": "SingleEntry"
+      },
+      "Instruments": [
+        "NIFTY",
+        "BANKNIFTY",
+        "FINNIFTY",
+        "MIDCPNIFTY",
+        "SENSEX"
+      ],
+      "MarketInfoParams": {
+        "OBQtyAmplifier": 2,
+        "OSQtyAmplifier": 1,
+        "TradeView": "Bullish"
+      },
+      "NextTradeId": "ET131",
+      "StrategyName": "ExpiryTrader",
+      "StrategyPrefix": "ET",
+      "TodayOrders": {}
+    },
+    "Extra": {
+      "Description": "orders placed via telegram",
+      "Instruments": [
+        "NSE"
+      ],
+      "MarketInfoParams": {
+        "OBQtyAmplifier": 2,
+        "OSQtyAmplifier": 1,
+        "TradeView": "Bullish"
+      },
+      "StrategyName": "Extra",
+      "NextTradeId": "EX131",
+      "StrategyPrefix": "EX",
+      "TodayOrders": {}
+    },
+    "MPWizard": {
+      "Description": "Strategy based on Market Profile Points ",
+      "EntryParams": {
+        "EntryTime": "10:15:00",
+        "InstrumentToday": {
+          "BANKNIFTY": {
+            "ATR5D": 983.06,
+            "IBLevel": "Big",
+            "IBValue": 908.2999999999956,
+            "PriceRef": 80,
+            "Token": 260105,
+            "TriggerPoints": {
+              "IBHigh": 45397.7,
+              "IBLow": 44489.4
+            }
+          },
+          "FINNIFTY": {
+            "ATR5D": 397.48,
+            "IBLevel": "Big",
+            "IBValue": 402.25,
+            "PriceRef": 24,
+            "Token": 257801,
+            "TriggerPoints": {
+              "IBHigh": 20280.8,
+              "IBLow": 19878.55
+            }
+          },
+          "NIFTY": {
+            "ATR5D": 277.33,
+            "IBLevel": "Big",
+            "IBValue": 262,
+            "PriceRef": 24,
+            "Token": 256265,
+            "TriggerPoints": {
+              "IBHigh": 21200,
+              "IBLow": 21137.2
+            }
+          }
+        }
+      },
+      "ExitParams": {
+        "SLType": "TrailingSL",
+        "SqroffTime": "15:05:00"
+      },
+      "ExtraInformation": {
+        "PriceRef": {
+          "BANKNIFTY": [
+            50,
+            65,
+            80,
+            90,
+            40,
+            55,
+            22
+          ],
+          "FINNIFTY": [
+            18,
+            21,
+            24,
+            25,
+            15,
+            22,
+            22
+          ],
+          "NIFTY": [
+            18,
+            21,
+            24,
+            25,
+            15,
+            22,
+            22
+          ]
+        },
+        "QtyCalc": "PrcRef"
+      },
+      "GeneralParams": {
+        "ATRPeriod": 5,
+        "DataFetchEnd": "15:30:00",
+        "DataFetchStart": "09:15:00",
+        "ExpiryType": "Weekly",
+        "IndicesTokens": {
+          "BANKNIFTY": 260105,
+          "FINNIFTY": 257801,
+          "NIFTY": 256265
+        },
+        "OrderType": "Market",
+        "ProductType": "MIS",
+        "Segment": "NFO",
+        "StrategyType": "OB",
+        "TimeFrame": "1Min",
+        "TransactionType": "BUY"
+      },
+      "Instruments": [
+        "NIFTY",
+        "BANKNIFTY",
+        "FINNIFTY"
+      ],
+      "MarketInfoParams": {
+        "OBQtyAmplifier": 1,
+        "OSQtyAmplifier": 1,
+        "TradeView": "Bullish"
+      },
+      "NextTradeId": "MP15",
+      "StrategyName": "MPWizard",
+      "StrategyPrefix": "MP",
+      "TodayOrders": {}
+    },
+    "Namaha": {
+      "Description": "Expiry Trader Replica",
+      "EntryParams": {
+        "EntryTime": "09:20:00",
+        "HedgeMultiplier": 7,
+        "InstrumentToday": "MIDCPNIFTY",
+        "SLMultipler": 2,
+        "StrikeMultiplier": 2
+      },
+      "ExitParams": {
+        "SLType": "FixedSL",
+        "SqroffTime": "15:05:00"
+      },
+      "ExtraInformation": {
+        "QtyCalc": "DuringEntry"
+      },
+      "GeneralParams": {
+        "ExpiryType": "Weekly",
+        "HedgeTransactionType": "BUY",
+        "MainTransactionType": "SELL",
+        "OrderType": "Market",
+        "ProductType": "MIS",
+        "StrategyType": "OS",
+        "TimeFrame": "SingleEntry"
+      },
+      "Instruments": [
+        "NIFTY",
+        "BANKNIFTY",
+        "FINNIFTY",
+        "MIDCPNIFTY",
+        "SENSEX"
+      ],
+      "MarketInfoParams": {
+        "OBQtyAmplifier": 2,
+        "OSQtyAmplifier": 1,
+        "TradeView": "Bullish"
+      },
+      "NextTradeId": "NM28",
+      "StrategyName": "Namaha",
+      "StrategyPrefix": "NM",
+      "TodayOrders": {
+        }
+    },
+    "Om": {
+      "Description": "GoldenCoin Replica",
+      "EntryParams": {
+        "EntryTime": "09:20:00",
+        "HedgeMultiplier": 7,
+        "InstrumentToday": "MIDCPNIFTY",
+        "SLMultipler": 2,
+        "StrikeMultiplier": 2
+      },
+      "ExitParams": {
+        "SLType": "FixedSL",
+        "SqroffTime": "15:05:00"
+      },
+      "ExtraInformation": {
+        "QtyCalc": "DuringEntry"
+      },
+      "GeneralParams": {
+        "ExpiryType": "Weekly",
+        "MainTransactionType": "BUY",
+        "OrderType": "Market",
+        "ProductType": "MIS",
+        "StrategyType": "OB",
+        "TimeFrame": "SingleEntry"
+      },
+      "Instruments": [
+        "NIFTY",
+        "BANKNIFTY",
+        "FINNIFTY",
+        "MIDCPNIFTY",
+        "SENSEX"
+      ],
+      "MarketInfoParams": {
+        "OBQtyAmplifier": 1,
+        "OSQtyAmplifier": 1,
+        "TradeView": "Bullish"
+      },
+      "NextTradeId": "Om13",
+      "StrategyName": "Om",
+      "StrategyPrefix": "OM",
+      "TodayOrders": {
+      }
+    },
+    "OvernightFutures": {
+      "Description": "Orders are placed based on the predicition of the Screenipy algo",
+      "EntryParams": {
+        "EntryTime": "15:15:00",
+        "SLMultipler": 3,
+        "Token": "256265"
+      },
+      "ExitParams": {
+        "SLType": "TimeBased",
+        "SquareOffTime": "09:18:00"
+      },
+      "ExtraInformation": {
+        "FuturesExchangeToken": 55318,
+        "HedgeExchangeToken": 56584,
+        "Prediction": "Bullish",
+        "QtyCalc": "DuringEntry"
+      },
+      "GeneralParams": {
+        "ExpiryType": [
+          "Monthly",
+          "Weekly"
+        ],
+        "HedgeTransactionType": "SELL",
+        "OrderType": "Market",
+        "ProductType": "NRML",
+        "Segment": "NFO",
+        "TimeFrame": "Daily"
+      },
+      "Instruments": [
+        "NIFTY"
+      ],
+      "MarketInfoParams": {
+        "OBQtyAmplifier": 1,
+        "OSQtyAmplifier": 1,
+        "TradeView": "Bullish"
+      },
+       
+      "StrategyName": "OvernightFutures",
+      "StrategyPrefix": "OF",
+      "TodayOrders": {
+      }
+    },
+    "PyStocks": {
+      "Description": "orders placed via telegram",
+      "Instruments": [
+        "NSE"
+      ],
+      "MarketInfoParams": {
+        "OBQtyAmplifier": 2,
+        "OSQtyAmplifier": 1,
+        "TradeView": "Bullish"
+      },
+      "StrategyName": "Stocks",
+      "StrategyPrefix": "PS",
+      "NextTradeId": "PS84",
+      "TodayOrders": {}
+    }
+  }

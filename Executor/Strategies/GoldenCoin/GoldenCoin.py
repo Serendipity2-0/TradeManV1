@@ -9,12 +9,11 @@ sys.path.append(DIR_PATH)
 from Executor.Strategies.StrategiesUtil import StrategyBase
 from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users,calculate_transaction_type_sl
 
-import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
 
-class Coin(StrategyBase):
+class GoldenCoin(StrategyBase):
     def get_general_params(self):
         return self.GeneralParams
     
@@ -28,9 +27,9 @@ class Coin(StrategyBase):
         return super().get_raw_field(field_name)
     
 
-coin_strategy_obj = Coin.load_from_db('Coin')
+goldencoin_strategy_obj = GoldenCoin.load_from_db('GoldenCoin')
 instrument_obj = InstrumentCenterUtils.Instrument()
-next_trade_prefix = coin_strategy_obj.NextTradeId
+next_trade_prefix = goldencoin_strategy_obj.NextTradeId
 
 def flip_coin():
     # Randomly choose between 'Heads' and 'Tails'
@@ -40,11 +39,11 @@ def flip_coin():
 # Flipping the coin and printing the result
 
 def determine_strike_and_option():
-    strike_price_multiplier = coin_strategy_obj.get_raw_field("EntryParams").get('StrikePriceMultiplier')
-    base_symbol,_ = coin_strategy_obj.determine_expiry_index()
+    strike_price_multiplier = goldencoin_strategy_obj.get_raw_field("EntryParams").get('StrikePriceMultiplier')
+    base_symbol,_ = goldencoin_strategy_obj.determine_expiry_index()
     option_type = 'CE' if flip_coin() == 'Heads' else 'PE'
     prediction = 'Bullish' if option_type == 'CE' else 'Bearish'
-    strike_prc = coin_strategy_obj.calculate_current_atm_strike_prc(base_symbol=base_symbol,prediction=prediction,strike_prc_multiplier=strike_price_multiplier)
+    strike_prc = goldencoin_strategy_obj.calculate_current_atm_strike_prc(base_symbol=base_symbol,prediction=prediction,strike_prc_multiplier=strike_price_multiplier)
     return base_symbol,strike_prc, option_type
 
 def fetch_exchange_token(base_symbol,strike_prc, option_type):
@@ -57,52 +56,53 @@ def update_qty(base_symbol,strike_prc, option_type):
     token = instrument_obj.get_kite_token_by_exchange_token(exchange_token)
     ltp = InstrumentCenterUtils.get_single_ltp(token)
     lot_size = instrument_obj.get_lot_size_by_exchange_token(exchange_token)
-    update_qty_user_firebase(coin_strategy_obj.StrategyName,ltp,lot_size)
+    update_qty_user_firebase(goldencoin_strategy_obj.StrategyName,ltp,lot_size)
 
 def create_order_details(exchange_token,base_symbol):
-    stoploss_transaction_type = calculate_transaction_type_sl(coin_strategy_obj.get_general_params().TransactionType)
+    stoploss_transaction_type = calculate_transaction_type_sl(goldencoin_strategy_obj.get_general_params().TransactionType)
     order_details = [
         {  
-        "strategy": coin_strategy_obj.StrategyName,
+        "strategy": goldencoin_strategy_obj.StrategyName,
         "signal":"Long",
         "base_symbol": base_symbol,
         "exchange_token" : exchange_token,     
-        "transaction_type": coin_strategy_obj.get_general_params().TransactionType,  
-        "order_type" : coin_strategy_obj.get_general_params().OrderType, 
-        "product_type" : coin_strategy_obj.get_general_params().ProductType,
+        "transaction_type": goldencoin_strategy_obj.get_general_params().TransactionType,  
+        "order_type" : goldencoin_strategy_obj.get_general_params().OrderType, 
+        "product_type" : goldencoin_strategy_obj.get_general_params().ProductType,
         "order_mode" : "Main",
         "trade_id" : next_trade_prefix
         },
         {  
-        "strategy": coin_strategy_obj.StrategyName,
+        "strategy": goldencoin_strategy_obj.StrategyName,
         "signal":"Long",
         "base_symbol": base_symbol,
         "exchange_token" : exchange_token,     
         "transaction_type": stoploss_transaction_type,  
         "order_type" : "Stoploss", 
-        "product_type" : coin_strategy_obj.get_general_params().ProductType,
-        "limit_prc": 0.1,
-        "trigger_prc": 0.05,
+        "product_type" : goldencoin_strategy_obj.get_general_params().ProductType,
+        "limit_prc": 0.5,
+        "trigger_prc": 1.0,
         "order_mode" : "SL",
         "trade_id" : next_trade_prefix
         }]
     return order_details
 
 def send_signal_msg(base_symbol,strike_prc,option_type):
-    message = "Coin Order placed for " + base_symbol + " " + str(strike_prc) + " " + option_type
+    message = "GoldenCoin Order placed for " + base_symbol + " " + str(strike_prc) + " " + option_type
     print(message)
-    discord_bot(message, coin_strategy_obj.StrategyName)
+    discord_bot(message, goldencoin_strategy_obj.StrategyName)
 
 #TODO: Add stoploss to the strategy along with the main order
 
 def main():
+    from pprint import pprint
     base_symbol,strike_prc, option_type = determine_strike_and_option()
     exchange_token = fetch_exchange_token(base_symbol,strike_prc, option_type)
-    # update_qty(base_symbol,strike_prc, option_type)
+    update_qty(base_symbol,strike_prc, option_type)
     send_signal_msg(base_symbol,strike_prc,option_type)
     orders_to_place = create_order_details(exchange_token,base_symbol)
     orders_to_place = assign_trade_id(orders_to_place)
-    print(orders_to_place)
+    pprint(orders_to_place)
 
     main_trade_id = None
 
@@ -115,8 +115,8 @@ def main():
                     "EntryTime" : dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "Status" : "Open"}
                         
-    update_signal_firebase(coin_strategy_obj.StrategyName,signals_to_log,next_trade_prefix)
-    # place_order_strategy_users(coin_strategy_obj.StrategyName,orders_to_place)
+    update_signal_firebase(goldencoin_strategy_obj.StrategyName,signals_to_log,next_trade_prefix)
+    place_order_strategy_users(goldencoin_strategy_obj.StrategyName,orders_to_place)
 
 
 # current_time = time.localtime()

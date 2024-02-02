@@ -18,13 +18,13 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
 
 def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
     if avg_sl_points is not None:
-        raw_quantity = (risk * capital) / avg_sl_points   #avg_sl_points can be ltp/price_ref/avg trade points
+        raw_quantity = ((risk/100) * capital) / avg_sl_points   #avg_sl_points can be ltp/price_ref/avg trade points
         quantity = int((raw_quantity // lot_size) * lot_size)
         # if quantity == 0:
         #     quantity = lot_size
     else:
         # For other strategies, risk values represent the capital allocated
-        lots = capital / risk
+        lots = capital / (risk/100)
         quantity = math.ceil(lots) * lot_size
     return quantity
 

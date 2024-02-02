@@ -64,7 +64,6 @@ class GeneralParams(BaseModel):
     ProductType: str
     StrategyType: Optional[str] = None
     TimeFrame: str
-    TradeView: str
     ATRPeriod: Optional[int] = None
     IndicesTokens: Optional[Dict[str, int]] = None
 
@@ -272,8 +271,9 @@ def fetch_strategy_users(strategy_name):
 def fetch_freecash_firebase(strategy_name):
     accounts = fetch_strategy_users(strategy_name)  # Assuming there is a function to fetch accounts from Firebase
     freecash_dict = {}
+    freecash_key = dt.datetime.now().strftime("%d%b%y")+"_FreeCash"
     for account in accounts:
-        freecash_dict[account['Tr_No']] = account['Accounts']['FreeCash']
+        freecash_dict[account['Tr_No']] = account['Accounts'][freecash_key]
     return freecash_dict
 
 def fetch_risk_per_trade_firebase(strategy_name):

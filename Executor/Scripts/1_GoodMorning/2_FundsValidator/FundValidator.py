@@ -1,5 +1,6 @@
 import os, sys
 from dotenv import load_dotenv
+import datetime as dt
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -22,8 +23,9 @@ def fetch_freecash_all_brokers(active_users):####pass active_users['Brokers'] as
     return broker_free_cash
 
 def fetch_freecash_all_db(active_users):####pass active_users['Accounts'] as argument
+    previous_day_key = (dt.datetime.now() - dt.timedelta(days=1)).strftime("%d%b%y")+"_FreeCash"
     for user in active_users:
-        db_free_cash[user['Tr_No']] = user['Accounts']['FreeCash']
+        db_free_cash[user['Tr_No']] = user['Accounts'][previous_day_key]
     return db_free_cash
         
 def compare_freecash(broker_free_cash, db_free_cash):

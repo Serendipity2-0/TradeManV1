@@ -124,9 +124,9 @@ def get_today_orders_for_brokers(user):
         return kite_data
     
     elif user['Broker']['BrokerName'] == ALICEBLUE:
-        with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/aliceblue_orders.json') as f:
-            alice_data = json.load(f)
-        # alice_data = alice_adapter.aliceblue_todays_tradebook(user['Broker'])
+        # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/aliceblue_orders.json') as f:
+        #     alice_data = json.load(f)
+        alice_data = alice_adapter.aliceblue_todays_tradebook(user['Broker'])
         return alice_data
     
 def create_counter_order_details(tradebook,user):
@@ -150,11 +150,15 @@ def create_hedge_counter_order_details(tradebook,user):
     hedge_counter_order = []
     for trade in tradebook:
         if user['Broker']['BrokerName'] == ZERODHA:
+            if trade['tag'] is None:
+                continue
             if trade['status'] == 'COMPLETE' and trade['product'] == 'MIS' and 'HO_EN' in trade['tag'] and 'HO_EX' not in trade['tag']:
                 counter_order = zerodha_adapter.kite_create_hedge_counter_order(trade, user)
                 hedge_counter_order.append(counter_order)
         elif user['Broker']['BrokerName'] == ALICEBLUE:
-            if trade['Status'] == 'complete' and trade['Pcode'] == 'MIS' and 'HO_EN' in trade['ordersource'] and 'HO_EX' not in trade['ordersource']:
+            if trade['remarks'] is None:
+                continue
+            if trade['Status'] == 'complete' and trade['Pcode'] == 'MIS' and 'HO_EN' in trade['remarks'] and 'HO_EX' not in trade['remarks']:
                 counter_order = alice_adapter.ant_create_hedge_counter_order(trade, user)
                 hedge_counter_order.append(counter_order)
     return hedge_counter_order

@@ -1,0 +1,133 @@
+{"Tr00": {
+    "Accounts": {
+        "01Feb24_Account_Value": 2650474.58,
+        "01Feb24_Holdings": 129302.59,
+        "01Feb24_FreeCash": 2521171.99,
+        "02Feb24_Account_Value": 2650474.58,
+        "02Feb24_Holdings": 129302.59,
+        "02Feb24_FreeCash": 2586642.26,
+        "NetAdditions": 0,
+        "NetCharges": 0,
+        "NetCommission": 0,
+        "NetPnL": 0,
+        "NetWithdrawals": 0
+    },
+    "Active": true,
+    "Broker": {
+        "ApiKey": "6b0dp5ussukmo67h",
+        "ApiSecret": "eln2qrqob5neowjuedmbv0f0hzq6lhby",
+        "BrokerName": "Zerodha",
+        "BrokerPassword": "K@nnada444",
+        "BrokerUsername": "YY0222",
+        "SessionId": "aXRt6UqMMJ5b3rO2hQH8jKLYKmMjWudZ",
+        "TotpAccess": "3GN2DNUD35FZQDIIWJUK6CSUIWBPXSYJ"
+    },
+    "Profile": {
+        "AadharCardNo": "825686845371",
+      "AccountStartDate": "03Jul23",
+      "BankAccountNo": "00000064047663479",
+      "BankName": "State Bank of India",
+      "DOB": "25Apr90",
+      "Email": "nightyskykk@gmail.com",
+      "GmailPassword": "",
+      "Name": "Omkar Hegde",
+      "PANCardNo": "ABBPO2350F",
+      "PhoneNumber": "9902106162",
+      "RiskProfile": {
+        "AreaOfInvestment": [
+          "Debt",
+          "Equity",
+          "FnO"
+        ],
+        "Commission": "50-50",
+        "DrawdownTolerance": "35",
+        "Duration": "12 months",
+        "WithdrawalFrequency": "OnRequest"
+      }
+    },
+    "Strategies": {
+        "GoldenCoin": {
+            "RiskPerTrade": 0.01,
+            "StrategyName":"GoldenCoin"  
+        }
+        },
+    "Tr_No": "Tr00"
+  },
+  "Tr01": {
+    "Accounts": {
+        "01Feb24_Account_Value": 8781.92,
+        "01Feb24_Holdings": 2997.39,
+        "01Feb24_FreeCash": 5784.53,
+        "02Feb24_Account_Value": 88781.92,
+        "02Feb24_Holdings": 2997.39,
+        "02Feb24_FreeCash": 85784.53,
+        "NetAdditions": 0,
+        "NetCharges": 0,
+        "NetCommission": 0,
+        "NetPnL": 0,
+        "NetWithdrawals": 0
+    },
+    "Active": true,
+    "Broker": {
+        "ApiKey": "CBomUKElkhSmqOOIxSxeSMy49fANnfHmb5O85jkx9yTn6HhsPLlNBILrqqRQsrbaLTzK0MMFUHqOOOo2Ec5GllsLA3jdhkqHsjiEm0NqGFv7uRArn7r2gY5523Ur7M0y",
+        "ApiSecret": "IHbsPMlFuyDxYBxPGXjHsrJinqlNyQubbYFXfpjOYotVIMMBcLmnZebvmtkfvPUNWkRFzqoIoopUlUtCJqvthEDhlRoAtXCWeOuK",
+        "BrokerName": "AliceBlue",
+        "BrokerPassword": "K@nnada333",
+        "BrokerUsername": "AB068818",
+        "SessionId": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyam9lOFVScGxZU3FTcDB3RDNVemVBQkgxYkpmOE4wSDRDMGVVSWhXUVAwIn0.eyJleHAiOjE3MTE0MzgyNzYsImlhdCI6MTcwNjI1NDI3NiwianRpIjoiNTE3ZGM0ZDEtZTc4YS00N2VlLTg0MmQtNWFiYzk5OWQ5Y2MzIiwiaXNzIjoiaHR0cHM6Ly9hYjEuYW1vZ2EudGVjaC9hbXNzby9yZWFsbXMvQWxpY2VCbHVlIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImIwNWUzMmFlLTk2ZmEtNGU3Ni1hYTU3LTJlMGViY2E0OWZlMiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFsaWNlLWtiIiwic2Vzc2lvbl9zdGF0ZSI6IjQ5MWVjYmYyLTg2ODItNDEzNy05NmM4LTJiZTllZDYwNmJhNiIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDozMDAyIiwiaHR0cDovL2xvY2FsaG9zdDo1MDUwIiwiaHR0cDovL2xvY2FsaG9zdDo5OTQzIiwiaHR0cDovL2xvY2FsaG9zdDo5MDAwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsImRlZmF1bHQtcm9sZXMtYWxpY2VibHVla2IiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFsaWNlLWtiIjp7InJvbGVzIjpbIkdVRVNUX1VTRVIiLCJBQ1RJVkVfVVNFUiJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJlbWFpbCBwcm9maWxlIiwic2lkIjoiNDkxZWNiZjItODY4Mi00MTM3LTk2YzgtMmJlOWVkNjA2YmE2IiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInVjYyI6IkFCMDY4ODE4IiwiY2xpZW50Um9sZSI6WyJHVUVTVF9VU0VSIiwiQUNUSVZFX1VTRVIiXSwibmFtZSI6IkFNT0wgS0lUVFVSIiwibW9iaWxlIjoiODE5NzEzNzAwNyIsInByZWZlcnJlZF91c2VybmFtZSI6ImFiMDY4ODE4IiwiZ2l2ZW5fbmFtZSI6IkFNT0wiLCJmYW1pbHlfbmFtZSI6IktJVFRVUiIsImVtYWlsIjoiYW1vbGtpdHR1cjFAZ21haWwuY29tIn0.JPhBcqait4QBHhVFzBDOBPgpQYkhu0REyVu9BBgoV9bTkcMfikxS-LPDQm0VsOYiuHqkQ_1lxUChfn5CCuw6-pNBJ_1ticUG7JnW7xCok8B6hnT8mGOmjsP5psBS0guWbeA_JUQPMGqyY7wWMBusUdMZJo74LZnDQeAJ1WSl-JGXWPhOliGFGhm7dBi6ccwQl9EMRlBdXohjqLXB0kF8e34dzaSzq1hZGWualvPe5JygVkNIqQauIJwUQxoPWqdYdMLF4iglt-xeIetygBSWVttma7hIUFzWEOsu88Ml_fxUm_Ril-dP8KMyezWU4itx8wcFjqZ4MihpLd-mRuGB6Q",
+        "TotpAccess": "ARIAHUQYKPMKAASEOVNVZXCKOZGXBHPK",
+        "TwoFA": 1995
+    },
+    "Profile": {
+            "AadharCardNo": "461908851907",
+            "AccountStartDate": "03Jul23",
+            "BankAccountNo": "37186491752",
+            "BankName": "State Bank of India",
+            "DOB": "02Jul95",
+            "Email": "serendipity.amol@gmail.com",
+            "GmailPassword": "amol12345@",
+            "Name": "Amol Kittur",
+            "PANCardNo": "HISPK9323k",
+            "PhoneNumber": "8197137007",
+            "RiskProfile": {
+            "AreaOfInvestment": [
+                                "FnO"
+                                ],
+            "Commission": "50-50",
+            "DrawdownTolerance": "35",
+            "Duration": "12 months",
+            "WithdrawalFrequency": "OnRequest"
+            }},
+    "Strategies": {
+        "ExpiryTrader": {
+            "RiskPerTrade": 1,
+            "StrategyName":"ExpiryTrader"  
+        },
+        "GoldenCoin": {
+            "RiskPerTrade": 1,
+            "StrategyName":"GoldenCoin"  
+        },
+        "Om": {
+            "RiskPerTrade": 1,
+            "StrategyName":"Om"  
+        },
+        "Namah": {
+            "RiskPerTrade": 1,
+            "StrategyName":"Namah"  
+        },
+        "Amipy": {
+            "RiskPerTrade": 1,
+            "StrategyName":"Amipy"
+            },
+        "MPWizard": {
+            "RiskPerTrade": 1,
+            "StrategyName":"MPWizard"
+            },
+        "OvernightFutures": {
+            "RiskPerTrade": 1,
+            "StrategyName":"OvernightFutures"
+            }
+        },
+      "Tr_No": "Tr01"
+    }
+  }

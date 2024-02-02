@@ -71,7 +71,7 @@ def main():
         expected_tax = sum(trade["tax"] for trade in today_trades)
         
         today_string = datetime.now().strftime('%Y-%m-%d')
-        previous_trading_day_string = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        previous_day_key = (datetime.now() - timedelta(days=1)).strftime("%d%b%y")+"_FreeCash"
 
         previous_free_cash = user['Accounts'][f"{previous_trading_day_string}_FreeCash"]
         previous_holdings = user['Accounts'][f"{previous_trading_day_string}_Holdings"]
