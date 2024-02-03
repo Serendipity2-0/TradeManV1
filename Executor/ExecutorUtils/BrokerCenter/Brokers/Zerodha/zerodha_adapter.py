@@ -290,3 +290,47 @@ def kite_create_hedge_counter_order(trade, user):
         "qty": trade['quantity']
     }
     return counter_order
+
+
+def process_kite_ledger(csv_file_path):
+    # Define patterns for categorizing transactions
+    patterns = {
+        "Deposits": ["Funds added using UPI", "Opening Balance", "Funds added using payment gateway from YY0222"],
+        "Withdrawals": ["Funds transferred back as part of quarterly settlement", "Payout of"],
+        "Charges": ["Being payment gateway charges debited", "DPCharges", "Reversal of Brokerage", "Kite Connect API Charges", "Call and Trade charges", "AMC for Demat Account", "DP Charges for Sale of"],
+        "Trades": ["Net obligation for Equity F&O", "Net settlement for Equity", "Net obligation for Currency F&O"]
+    }
+
+    # Load the CSV file
+    ledger_data = pd.read_csv(csv_file_path)
+
+    # Function to categorize a transaction
+    def categorize_transaction(particulars):
+        for category, patterns_list in patterns.items():
+            for pattern in patterns_list:
+                if pattern in particulars:
+                    return category
+        return "Other"
+
+    # Categorize each transaction
+    ledger_data['Category'] = ledger_data['particulars'].apply(categorize_transaction)
+
+    # Filter out transactions with 'Closing Balance'
+    ledger_data_filtered = ledger_data[ledger_data['particulars'] != 'Closing Balance']
+
+    # Create dataframes for each category
+    categorized_dfs = {category: ledger_data_filtered[ledger_data_filtered['Category'] == category] for category in patterns.keys()}
+    
+    other_transactions_final = ledger_data_filtered[ledger_data_filtered['Category'] == 'Other']
+    other_transactions_final.to_csv(f"kite_other.csv", index=False)
+    
+    #save categorized_dfs to csv as {category}.csv
+    for category, df in categorized_dfs.items():
+        df.to_csv(f"kite_{category}.csv", index=False)
+
+    return categorized_dfs
+
+def calculate_kite_net_values(categorized_dfs):
+    # Calculate net values for each category
+    net_values = {category: df['debit'].sum() - df['credit'].sum() for category, df in categorized_dfs.items()}
+    return net_values

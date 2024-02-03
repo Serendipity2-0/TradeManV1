@@ -235,4 +235,20 @@ def convert_to_standard_format(date_str):
     else:
         return "Invalid date format"
 
+def get_ledger_for_user(user):
+    if user['Broker']['BrokerName'] == ZERODHA:
+        return zerodha_adapter.zerodha_get_ledger(user)
+    elif user['Broker']['BrokerName'] == ALICEBLUE:
+        return alice_adapter.alice_get_ledger(user)
     
+def process_user_ledger(user,ledger):
+    if user['Broker']['BrokerName'] == ZERODHA:
+        return zerodha_adapter.process_kite_ledger(ledger, user)
+    elif user['Broker']['BrokerName'] == ALICEBLUE:
+        return alice_adapter.process_alice_ledger(ledger, user)
+    
+def calculate_user_net_values(user, categorized_df):
+    if user['Broker']['BrokerName'] == ZERODHA:
+        return zerodha_adapter.calculate_kite_net_values(user, categorized_df)
+    elif user['Broker']['BrokerName'] == ALICEBLUE:
+        return alice_adapter.calculate_alice_net_values(user, categorized_df)

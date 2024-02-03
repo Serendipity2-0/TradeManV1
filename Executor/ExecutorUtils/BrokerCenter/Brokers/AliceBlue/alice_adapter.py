@@ -292,3 +292,86 @@ def ant_create_hedge_counter_order(trade,user):
 def ant_create_cancel_orders(trade,user):
     alice = create_alice_obj(user_details=user['Broker'])
     alice.cancel_order(trade['Nstordno'])
+
+def process_alice_ledger(excel_file_path):
+    # Read the Excel file starting from row 4 (5th row, 0-indexed)
+    all_data = pd.read_excel(excel_file_path, header=None, skiprows=4)
+
+    # Filtering out rows where all values are NaN across columns A:K (indexes 0 to 10)
+    filtered_data = all_data.dropna(how='all', subset=all_data.columns[:11])
+    
+    
+    # Drop the NaN column headers by selecting only those columns whose first row is not NaN
+    filtered_data = filtered_data.loc[:, filtered_data.iloc[0].notna()]
+
+    # Filtering out header rows by identifying rows that match the header pattern
+    headers = ['Date', 'Voucher', 'VoucherNo', 'Code', 'Narration', 'ChqNo', 'Debit', 'Credit', 'Running Bal']
+    filtered_data = filtered_data[~filtered_data[0].astype(str).str.contains('Date')]
+
+    
+    # Assigning proper header to the filtered data
+    filtered_data.columns = headers + list(filtered_data.columns[len(headers):])
+
+    # Define patterns for categorization with updated rules
+    patterns = {
+        "NetDeposits": [
+            "PAYMENT DONE VIA : RAZORPAY NET",
+            "RECEIVED AMOUNT THROUGH HDFC-CMS(OTH)",
+            "PAYMENT DONE VIA : RAZORPAY UPI"
+        ],
+        "NetWithdrawals": [
+            "PAYOUT OF FUNDS"
+        ],
+        "Netcharges": [
+            "CGST", "SGST", "BENEFICIARY CHARGES",
+            "DP MAINTENANCE CHARGES FOR THE PERIOD",
+            "CALL AND TRADE OR SQUARE OFF CHARGES FOR",
+            "BENEFICIARY CHARGES FOR SETT NO",
+            "BEING PAYMENT GATEWAY CHARGES DEBITED -"
+        ],
+        "trades": [
+            "BILL ENTRY FOR FO-", "BILL ENTRY FOR M-","BILL ENTRY FOR Z-"
+        ],
+        "ignore": [
+            "INTER EXCHANGE SETL JV FROM NSEFNO TO BSECASH",
+            "INTER EXCHANGE SETL JV FROM BSECASH TO NSEFNO",
+            "Narration"
+        ]
+    }
+
+    # Apply categorization patterns
+    def categorize_transaction(narration):
+        if pd.isna(narration):
+            return 'ignore'
+        for category, pattern_list in patterns.items():
+            for pattern in pattern_list:
+                if pattern in narration:
+                    return category
+        return "Other"
+
+    # Apply categorization patterns
+    filtered_data['Category'] = filtered_data.apply(
+        lambda row: categorize_transaction(row['Narration']), axis=1)
+
+    # Recalculate the net values for each category after re-categorization
+    categorized_dfs_final = {
+        category: filtered_data[filtered_data['Category'] == category]
+        for category in patterns if category != "ignore"
+}
+
+
+    # Save each categorized dataframe to a CSV file
+    for category, df in categorized_dfs_final.items():
+        print(f'Saving {category} transactions to CSV...')
+        df.to_csv(f'{category}_transactions.csv', index=False)
+
+    # Check for any 'Other' transactions left and save to CSV
+    other_transactions_final = filtered_data[filtered_data['Category'] == 'Other']
+    other_transactions_final.to_csv('Other_transactions_final.csv', index=False)
+
+    return categorized_dfs_final
+
+def calculate_alice_net_values(categorized_dfs):
+    # Calculate net values for each category
+    net_values = {category: df['Debit'].sum() - df['Credit'].sum() for category, df in categorized_dfs.items()}
+    return net_values
