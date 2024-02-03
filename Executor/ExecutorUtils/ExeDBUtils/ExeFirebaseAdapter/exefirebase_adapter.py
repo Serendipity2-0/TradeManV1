@@ -27,6 +27,14 @@ def fetch_collection_data_firebase(collection, document=None):
     else:
         data = ref.child(document).get()
         return data
+    
+#delete the values in the firebase
+def delete_fields_firebase(collection, document, field_key=None):
+    if field_key is None:
+        ref = db.reference(f'{collection}/{document}')
+    else:
+        ref = db.reference(f'{collection}/{document}/{field_key}')
+    ref.delete()
 
 def update_fields_firebase(collection, document, data, field_key=None):
     if field_key is None:

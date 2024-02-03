@@ -1,153 +1,156 @@
-import os
-import sys
-import pandas as pd
-from datetime import datetime
-from openpyxl import load_workbook
-from babel.numbers import format_currency
-from telethon.sync import TelegramClient
+import os, sys
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import pandas as pd
+from babel.numbers import format_currency
 
-# Setting up directory paths
+# Define constants and load environment variables
 DIR = os.getcwd()
-sys.path.append(DIR)
+sys.path.append(DIR)  # Add the current directory to the system path
 
-# Import custom modules
-import MarketUtils.general_calc as general_calc
-import MarketUtils.Main.dtdautomation as dtd
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
+from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import send_telegram_message
+from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 
-# Get the script directory and file paths
-broker_filepath = os.path.join(DIR, "MarketUtils", "broker.json")
+# Load environment variables fromx the trademan.env file
 ENV_PATH = os.path.join(DIR, 'trademan.env')
-
-# Loading environment variables from .env file
 load_dotenv(ENV_PATH)
-excel_dir = r"C:\Users\vanis\OneDrive\DONOTTOUCH\excel"
-# excel_dir = os.getenv('onedrive_excel_folder')
-# excel_dir = os.path.join(DIR, "UserProfile","excel")
-api_id = os.getenv('telethon_api_id')
-api_hash = os.getenv('telethon_api_hash')
 
-# Function to load an existing Excel file and return its data as a dictionary of pandas DataFrames
-def load_existing_excel(excel_path):
-    if not os.path.exists(excel_path):
-        raise FileNotFoundError(f"Excel file not found: {excel_path}")
+db_dir = os.getenv('DB_DIR')
+# ACTIVE_STRATEGIES = os.getenv('ACTIVE_STRATEGIES')
+active_stratgies = ['ExpiryTrader','GoldenCoin']####WARNING: This is a placeholder, replace with actual logic to get active strategies
 
-    try:
-        book = load_workbook(excel_path)
-        return {sheet_name: pd.read_excel(excel_path, sheet_name=sheet_name) for sheet_name in book.sheetnames}
-    except Exception as e:
-        print(f"An error occurred while loading the Excel file: {excel_path}")
-        print("Error:", e)
-        return {}
+def get_today_trades(user_tables):
+    # got to user db and find table names matching Active Strategies and get trades for today
+    today_string = datetime.now().strftime('%Y-%m-%d')
+    today_trades = []
+    # print("user_tables", user_tables)
+    for strategy in active_stratgies:
+        #user_tables is a list of dict with table name as key and table df as value, match the strategy name with the key and get the trades for today
+        for table in user_tables:
+            # print("strategy_name", list(table.keys())[0])
+            if strategy in list(table.keys())[0]:
+                trades = table[strategy]
+                #in the table the exit_time column is in this format '2021-08-25 15:30:00'. so i want convert it to '2021-08-25' and then compare it with today_string if matched append it to today_trades
+                trades['exit_time'] = trades['exit_time'].apply(lambda x: x.split(' ')[0])
+                if today_string in trades['exit_time'].values:
+                    today_trades.extend(trades[trades['exit_time'] == today_string].to_dict('records'))      
+    return today_trades
 
-def update_json_data(data, user, net_pnl, current_capital,expected_capital, broker_filepath):
-    for username in data:
-        if user["account_name"] == username["account_name"]:
-            user_details = username
-            user_details["current_capital"] = round(current_capital, 2)
-            user_details["yesterday_PnL"] = round(net_pnl,2)
-            user_details["expected_morning_balance"] = round(expected_capital, 2)
-    general_calc.write_json_file(broker_filepath,data )
+def get_additions_withdrawals(user_tables):
+    #key = Transactions and get the sum of the "amount" column for today under transaction_date which is in this format '2021-08-25 15:30:00'
+    today_string = datetime.now().strftime('%Y-%m-%d')
+    additions_withdrawals = 0
+    for table in user_tables: 
+        if list(table.keys())[0] == 'Transactions':
+            transactions = table['Transactions']
+            transactions['transaction_date'] = transactions['transaction_date'].apply(lambda x: x.split(' ')[0])
+            if today_string in transactions['transaction_date'].values:
+                additions_withdrawals = transactions[transactions['transaction_date'] == today_string]['amount'].sum()
+    print("additions_withdrawals", additions_withdrawals)
+    return round(additions_withdrawals)
 
-# Function to construct a PNL message for the user
-def build_message(user, strategy_results, gross_pnl, total_tax, current_capital, expected_capital):
-    message_parts = [
-        f"Hello {user}, We hope you're enjoying a wonderful day.\n Here are your PNLs for today:\n"
-    ]
-
-       # Iterating over each trade_id and its results
-    for trade_id, values in strategy_results.items():
-        formatted_pnl = format_currency(values['pnl'], 'INR', locale='en_IN')
-        # Using trade_id in the message instead of the strategy name
-        message_parts.append(f"{trade_id}: {formatted_pnl}")
-
-    message_parts.extend([
-        f"\nGross PnL: {format_currency(gross_pnl, 'INR', locale='en_IN')}",
-        f"Expected Tax: {format_currency(total_tax, 'INR', locale='en_IN')}",
-        f"Current Capital: {format_currency(current_capital, 'INR', locale='en_IN')}",
-        f"Expected Morning Balance : {format_currency(expected_capital, 'INR', locale='en_IN')}",
-        "\nBest Regards,\nSerendipity Trading Firm"
-    ])
-
-    return "\n".join(message_parts).replace('\u20b9', '₹')
-
-
-# Function to send a message via Telegram
-def send_telegram_message(phone_number, message):
-    # Define the session file path
-    session_filepath = os.path.join(DIR, "MarketUtils", "Telegram", "+918618221715.session")
+def get_new_holdings(user_tables):
+    # go to "Holdings" table and get net sum of "MarginUtilized" column
+    new_holdings = 0
+    for table in user_tables:
+        if list(table.keys())[0] == 'Holdings':
+            holdings = table['Holdings']
+            new_holdings = holdings['margin_utilized'].sum()
+    print("new_holdings", new_holdings)
+    return round(new_holdings)
     
-    # Create a Telegram client and send the message
-    with TelegramClient(session_filepath, api_id, api_hash) as client:
-        client.send_message(phone_number, message, parse_mode='md')
 
+def update_account_keys_fb(tr_no, today_fb_format, new_account, new_free_cash, new_holdings,previous_trading_day_fb_format):
+    from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import update_fields_firebase,delete_fields_firebase
+    #use this method to update the account keys in the firebase update_fields_firebase(collection, document, data, field_key=None)
+    update_fields_firebase('new_clients', tr_no, {f"{today_fb_format}_AccountValue": new_account, f"{today_fb_format}_FreeCash": new_free_cash, f"{today_fb_format}_Holdings": new_holdings}, 'Accounts')
 
-# The main function which processes user data and sends PNL messages
+    #i want to delete all the keys which have previous_trading_day_string in them
+    delete_fields_firebase('new_clients', tr_no, f"Accounts/{previous_trading_day_fb_format}_AccountValue")
+    delete_fields_firebase('new_clients', tr_no, f"Accounts/{previous_trading_day_fb_format}_FreeCash")
+    delete_fields_firebase('new_clients', tr_no, f"Accounts/{previous_trading_day_fb_format}_Holdings")
+
+    
+
+# Main function to generate and send the report
 def main():
-    # Load broker data from JSON file
-    broker_data = general_calc.read_json_file(broker_filepath)
+    #TODO: Logic to handle user transactions
     
-    # Filter active users
-    active_users = [user for user in broker_data if "Active" in user['account_type']]
-    # phone_number = user["mobile_number"]
-
-    # Get the current date
-    today = datetime.now().strftime('%Y-%m-%d')
-
+    
+    active_users = fetch_active_users_from_firebase()
+    
     for user in active_users:
-        excel_path = os.path.join(excel_dir, f"{user['account_name']}.xlsx")
-        all_dfs = load_existing_excel(excel_path)
+        user_db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
+        user_db_conn = get_db_connection(user_db_path)
+
+        user_tables = []
+        #get all the tables in the user db with table name as key and table df as value
+        for table in user_db_conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall():
+            user_table = {}
+            #create user table_df without the index column from sql table and append it to user_tables as a dict with table name as key and table df as value
+            user_table[table[0]] = pd.read_sql_query(f"SELECT * FROM {table[0]}", user_db_conn)
+            user_tables.append(user_table)
+            
+        phone_number = user['Profile']['PhoneNumber']
         
-        # Update the DTD sheet in the loaded Excel file
-        # dtd.main() 
-
-        # Create a dictionary to store the aggregated results for each strategy
-        strategy_results = {}
+        # Placeholder values, replace with actual queries and Firebase fetches
+        today_trades = get_today_trades(user_tables)
+        #TODO: add DTD function to append to the DTD table in the user's db
+        gross_pnl = sum(trade["pnl"] for trade in today_trades)
+        expected_tax = sum(trade["tax"] for trade in today_trades)
         
-        # Initialize total_tax, total_pnl, and pnl_sum to store the cumulative values from all sheets
-        total_tax = 0
-        total_pnl = 0
+        today_string = datetime.now().strftime('%Y-%m-%d')
+        today_fb_format = datetime.now().strftime('%d%b%y')
+        previous_trading_day_string = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d') #TODO: Replace with actual logic to get previous trading day
+        previous_trading_day_fb_format = (datetime.now() - timedelta(days=1)).strftime('%d%b%y')
+        #02Feb24_Account_Value
+        
 
-        for sheet_name, df in all_dfs.items():  
-            if 'exit_time' in df.columns and 'trade_id' in df.columns:
-                # df['entry_time'] = pd.to_datetime(df['entry_time']).dt.strftime('%Y-%m-%d')
-                df['exit_time'] = pd.to_datetime(df['exit_time']).dt.strftime('%Y-%m-%d')
+        previous_free_cash = user['Accounts'][f"{previous_trading_day_fb_format}_FreeCash"]
+        previous_holdings = user['Accounts'][f"{previous_trading_day_fb_format}_Holdings"]
+        previous_account = user['Accounts'][f"{previous_trading_day_fb_format}_AccountValue"]
 
-                df_today = df[df['exit_time'] == today]
+        # Assuming no additions/withdrawals for simplicity, replace with actual logic to calculate
+        additions_withdrawals = get_additions_withdrawals(user_tables)
 
-                if not df_today.empty:
-                    # Calculate the sum of taxes for the trades of the day
-                    tax_sum = round(df_today['tax'].sum(), 2)
-                    total_tax += tax_sum  # Update the total tax
+        new_free_cash = round(previous_free_cash + gross_pnl - expected_tax)
+        # Placeholder for calculating new holdings, assuming it's equal to previous for this example
+        new_holdings = get_new_holdings(user_tables)
+        new_account = round(previous_account + gross_pnl - expected_tax + additions_withdrawals)
 
-                    # Iterate through each trade in today's dataframe
-                    for index, trade in df_today.iterrows():
-                        trade_id = trade['trade_id']
-                        pnl = trade['pnl']
+        net_change = new_account - previous_account
+        net_change_percentage = (net_change / previous_account) * 100 if previous_account else 0
+        # Placeholder for drawdown calculation
+        drawdown = user['Accounts']["NetPnL"] - user['Accounts']["PnLWithdrawals"]
+        drawdown_percentage = drawdown / new_account * 100
+        
+        # update_account_keys_fb(user['Tr_No'], today_fb_format, new_account, new_free_cash, new_holdings,previous_trading_day_fb_format)
+        
+        # Format the message
+        user_name = user['Profile']['Name']
+        message = f"Hello {user_name}, We hope you're enjoying a wonderful day.\n\n"
+        message += "Here are your PNLs for today:\n\n"
+        message += "Today's Trades:\n"
+        for trade in today_trades:
+            message += f"{trade['trade_id']}: {format_currency(trade['pnl'],'INR', locale='en_IN')}\n"
+        message += f"\nGross PnL: {format_currency(gross_pnl, 'INR', locale='en_IN')}\n"
+        message += f"Expected Tax: {format_currency(expected_tax,'INR',locale='en_IN')}\n"
+        message += f"{previous_trading_day_fb_format} Free Cash: {format_currency(previous_free_cash,'INR', locale='en_IN')}\n"
+        message += f"{today_fb_format} Free Cash: {format_currency(new_free_cash,'INR', locale='en_IN')}\n\n"
+        message += "Holdings:\n"
+        message += f"{previous_trading_day_fb_format} Holdings: {format_currency(previous_holdings,'INR', locale='en_IN')}\n"
+        message += f"{today_fb_format} Holdings: {format_currency(new_holdings,'INR', locale='en_IN')}\n\n"
+        message += "Account:\n"
+        message += f"{previous_trading_day_fb_format} Account: {format_currency(previous_account,'INR', locale='en_IN')}\n"
+        message += f"Additions/Withdrawals: {format_currency(additions_withdrawals,'INR', locale='en_IN')}\n"
+        message += f"{today_fb_format} Account: {format_currency(new_account,'INR', locale='en_IN')}\n"
+        message += f"NetChange: {format_currency(net_change,'INR', locale='en_IN')} ({net_change_percentage:.2f}%)\n"
+        message += f"Drawdown: {format_currency(drawdown,'INR', locale='en_IN')}({drawdown_percentage:.2f}%)\n\n"
+        message += "Best Regards,\nTradeMan"
 
-                        # Initialize or update the pnl for each trade_id
-                        if trade_id not in strategy_results:
-                            strategy_results[trade_id] = {'pnl': 0, 'tax': tax_sum}
-                        strategy_results[trade_id]['pnl'] += pnl
+      # Send the report to Discord
+    send_telegram_message(phone_number, message)
 
-                        # Update the total pnl
-                        total_pnl += pnl
-
-        # Calculate net pnl and expected capital
-        gross_pnl = total_pnl   
-        expected_tax = total_tax
-        net_pnl = gross_pnl - expected_tax
-        current_capital = next(account["current_capital"] for account in broker_data if account["account_name"] == user["account_name"])
-        expected_capital = current_capital + net_pnl if net_pnl > 0 else current_capital - abs(net_pnl)
-
-        message = build_message(user['account_name'], strategy_results, gross_pnl, expected_tax, current_capital, expected_capital)
-        print(message)
-        # update_json_data(broker_data, user, net_pnl, current_capital, expected_capital, broker_filepath)
-
-        # # Sending the message via Telegram is currently commented out, remove the comments to enable.
-        # send_telegram_message(user['mobile_number'], message)
-
-
-# Execute the main function when the script is run
 if __name__ == "__main__":
     main()

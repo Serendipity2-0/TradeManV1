@@ -60,15 +60,18 @@ def process_n_log_trade():
                 print("Holding",order)
                 entry_price = sum([float(o['avg_prc']) for o in entry_orders]) / len(entry_orders)
                 hedge_entry_price = sum([float(o['avg_prc']) for o in hedge_orders if 'EN' in o['trade_id']]) / len([o for o in hedge_orders if 'EN' in o['trade_id']]) if hedge_orders else 0.0
+                #TODO: Process differently for FUT orders
+                margin_utilized = entry_price * order['qty'] 
 
                 holdings[strategy_name] = {
                     'trade_id': order['trade_id'],
                     'trading_symbol': instru().get_trading_symbol_by_exchange_token(str(order['exchange_token'])),
+                    'signal': signal,
                     'entry_time': datetime.strptime(order['time_stamp'], '%Y-%m-%d %H:%M'),
-                    'qty': order['qty'],
                     'entry_price': entry_price,
                     'hedge_entry_price': hedge_entry_price,
-                    'signal': signal,
+                    'qty': order['qty'],
+                    'margin_utilized': margin_utilized,
                 }
                 continue
 
