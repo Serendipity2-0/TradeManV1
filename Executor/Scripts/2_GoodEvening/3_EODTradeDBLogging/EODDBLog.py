@@ -48,66 +48,72 @@ def process_n_log_trade():
                 exit_orders = [o for o in orders if trade_id_prefix in o['trade_id'] and 'EX' in o['trade_id'] and 'HO' not in o['trade_id']]
                 hedge_orders = [o for o in orders if trade_id_prefix in o['trade_id'] and 'HO' in o['trade_id']]
                 signal = 'Short' if '_SH_' in order['trade_id'] else 'Long'
-                corresponding_exit_trade_id = order['trade_id'].replace('EN', 'EX')
                 
-                # Check if holding or completed trade
-                is_holding = not any(corresponding_exit_trade_id == exit_order['trade_id'] for exit_order in orders)
+                corresponding_exit_trade_id = order['trade_id'].replace('EN', 'EX')
+                corresponding_sl_trade_id = order['trade_id'].replace('SL', 'MO')
 
-                if is_holding:
-                    entry_price = sum([o['avg_prc'] for o in entry_orders]) / len(entry_orders)
-                    hedge_entry_price = sum([o['avg_prc'] for o in hedge_orders if 'EN' in o['trade_id']]) / len([o for o in hedge_orders if 'EN' in o['trade_id']]) if hedge_orders else 0.0
+            # Check if holding or completed trade
+            is_holding = not any(corresponding_exit_trade_id == exit_order['trade_id'] for exit_order in orders)
+            is_holding = is_holding and not any(corresponding_sl_trade_id == exit_order['trade_id'] for exit_order in orders)
 
-                    holdings[strategy_name] = {
-                        'trade_id': order['trade_id'],
-                        'trading_symbol': instru().get_trading_symbol_by_exchange_token(str(order['exchange_token'])),
-                        'entry_time': datetime.strptime(order['time_stamp'], '%Y-%m-%d %H:%M'),
-                        'qty': order['qty'],
-                        'entry_price': entry_price,
-                        'hedge_entry_price': hedge_entry_price,
-                        'signal': signal,
-                    }
-                    continue
+            if is_holding:
+                print("Holding",order)
+                entry_price = sum([float(o['avg_prc']) for o in entry_orders]) / len(entry_orders)
+                hedge_entry_price = sum([float(o['avg_prc']) for o in hedge_orders if 'EN' in o['trade_id']]) / len([o for o in hedge_orders if 'EN' in o['trade_id']]) if hedge_orders else 0.0
 
-                # Process completed trades
-                entry_time = min([o['time_stamp'] for o in entry_orders])
-                exit_time = max([o['time_stamp'] for o in exit_orders])
-                entry_price = sum([o['avg_prc'] for o in entry_orders]) / len(entry_orders)
-                exit_price = sum([o['avg_prc'] for o in exit_orders]) / len(exit_orders)
-                if hedge_orders:
-                    hedge_entry_price = sum([o['avg_prc'] for o in hedge_orders if 'EN' in o['trade_id']]) / len([o for o in hedge_orders if 'EN' in o['trade_id']])
-                    hedge_exit_price = sum([o['avg_prc'] for o in hedge_orders if 'EX' in o['trade_id']]) / len([o for o in hedge_orders if 'EX' in o['trade_id']])
-                else:
-                    hedge_entry_price = 0.0
-                    hedge_exit_price = 0.0
-                short_trade = (exit_price - entry_price) + (hedge_exit_price - hedge_entry_price)
-                long_trade = (entry_price - exit_price) + (hedge_entry_price - hedge_exit_price)
-                trade_points = short_trade if signal == 'Short' else long_trade
-                qty = sum([o['qty'] for o in entry_orders])
-                pnl = trade_points * qty
-                tax = calculate_taxes(user['Broker']['BrokerName'], signal, qty, entry_price, exit_price, len(orders))
-                net_pnl = pnl - tax
-                trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order['exchange_token']))
-
-                processed_trade = {
-                    'trade_id': trade_id_prefix,
-                    'trading_symbol': trading_symbol,
-                    'signal': signal,
-                    'entry_time': datetime.strptime(entry_time, '%Y-%m-%d %H:%M'),
-                    'exit_time': datetime.strptime(exit_time, '%Y-%m-%d %H:%M'),
+                holdings[strategy_name] = {
+                    'trade_id': order['trade_id'],
+                    'trading_symbol': instru().get_trading_symbol_by_exchange_token(str(order['exchange_token'])),
+                    'entry_time': datetime.strptime(order['time_stamp'], '%Y-%m-%d %H:%M'),
+                    'qty': order['qty'],
                     'entry_price': entry_price,
-                    'exit_price': exit_price,
                     'hedge_entry_price': hedge_entry_price,
-                    'hedge_exit_price': hedge_exit_price,
-                    'trade_points': trade_points,
-                    'qty': qty,
-                    'pnl': pnl,
-                    'tax': tax,
-                    'net_pnl': net_pnl
+                    'signal': signal,
                 }
-                processed_trades[strategy_name] = processed_trade
+                continue
+
+            # Process completed trades
+            entry_time = min([o['time_stamp'] for o in entry_orders])
+            exit_time = max([o['time_stamp'] for o in exit_orders])
+            entry_price = sum([float(o['avg_prc']) for o in entry_orders]) / len(entry_orders)
+            exit_price = sum([float(o['avg_prc']) for o in exit_orders]) / len(exit_orders)
+            if hedge_orders: #######Warning for hedge exit order the trade_id is SL
+                hedge_entry_price = sum([float(o['avg_prc']) for o in hedge_orders if 'EN' in o['trade_id']]) / len([o for o in hedge_orders if 'EN' in o['trade_id']])
+                hedge_exit_price = sum([float(o['avg_prc']) for o in hedge_orders if 'EX' in o['trade_id']]) / len([o for o in hedge_orders if 'EX' in o['trade_id']])
+            else:
+                hedge_entry_price = 0.0
+                hedge_exit_price = 0.0
+            short_trade = (exit_price - entry_price) + (hedge_exit_price - hedge_entry_price)
+            long_trade = (entry_price - exit_price) + (hedge_entry_price - hedge_exit_price)
+            trade_points = short_trade if signal == 'Short' else long_trade
+            qty = sum([o['qty'] for o in entry_orders])
+            pnl = trade_points * qty
+            tax = calculate_taxes(user['Broker']['BrokerName'], signal, qty, entry_price, exit_price, len(orders))
+            net_pnl = pnl - tax
+            trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order['exchange_token']))
+
+            processed_trade = {
+                'trade_id': trade_id_prefix,
+                'trading_symbol': trading_symbol,
+                'signal': signal,
+                'entry_time': datetime.strptime(entry_time, '%Y-%m-%d %H:%M'),
+                'exit_time': datetime.strptime(exit_time, '%Y-%m-%d %H:%M'),
+                'entry_price': entry_price,
+                'exit_price': exit_price,
+                'hedge_entry_price': hedge_entry_price,
+                'hedge_exit_price': hedge_exit_price,
+                'trade_points': trade_points,
+                'qty': qty,
+                'pnl': pnl,
+                'tax': tax,
+                'net_pnl': net_pnl
+            }
+            processed_trades[strategy_name] = processed_trade
 
             for data in processed_trades.values():
                 df = pd.DataFrame([data])
+                print("processed_trades",data)
+
                 decimal_columns = ['pnl', 'tax', 'entry_price', 'exit_price', 'hedge_entry_price', 'hedge_exit_price', 'trade_points', 'net_pnl']
                 dump_df_to_sqlite(conn, df, strategy_name, decimal_columns)
             
@@ -122,14 +128,14 @@ def process_n_log_trade():
         conn.close()
 
 # Example usage
-process_n_log_trade()
+# process_n_log_trade()
 
 
 
 #i want a function to update the dict in the firebase db with the trades of today for the user and strategy 
 def update_signals_firebase():
+    from datetime import datetime, timedelta
     signal_db_conn = get_db_connection(os.path.join(db_dir, 'signal.db'))
-
 
     strategy_user_dict = {}
 
@@ -144,11 +150,17 @@ def update_signals_firebase():
         db_path = os.path.join(db_dir, f"{user}.db")
         conn = get_db_connection(db_path)
 
-        strategy_data = read_strategy_table(conn, strategy_name)
-        # i want the entire row of the field which has the exit time as today
+        try:
+            strategy_data = read_strategy_table(conn, strategy_name)
+        except Exception as e:
+            print(f"Error reading strategy table for {strategy_name} in {user}.db: {e}")
+            continue
+
         for index, row in strategy_data.iterrows():
             datetime_object = datetime.strptime(row['exit_time'], '%Y-%m-%d %H:%M:%S')
-            if datetime_object.date() == datetime.today().date():
+            yesterday = datetime.today() - timedelta(days=1)
+            # if datetime_object.date() == datetime.today().date():
+            if datetime_object.date() == yesterday.date():
                 signal_data = {
                     "trade_id": row['trade_id'],
                     "trading_symbol": row['trading_symbol'],
@@ -160,9 +172,9 @@ def update_signals_firebase():
                     "hedge_points" : float(row['hedge_exit_price']) - float(row['hedge_entry_price']),
                     "trade_points": row['trade_points']
                 }
-                df = pd.DataFrame([signal_data])
-                decimal_columns = ['entry_price', 'exit_price', 'hedge_points', 'trade_points']
-                dump_df_to_sqlite(signal_db_conn, df,strategy_name , decimal_columns)
+        df = pd.DataFrame([signal_data])
+        decimal_columns = ['entry_price', 'exit_price', 'hedge_points', 'trade_points']
+        dump_df_to_sqlite(signal_db_conn, df,strategy_name , decimal_columns)
             
         conn.close()
     signal_db_conn.close()
@@ -171,7 +183,7 @@ def update_signals_firebase():
         
         
         #fetch the users for the strategy
-# update_signals_firebase()
+update_signals_firebase()
 #TODO: Update holdings table in user db
 #TODO: function to update dtd table in user
 #TODO: function to update signal db using primary account db values

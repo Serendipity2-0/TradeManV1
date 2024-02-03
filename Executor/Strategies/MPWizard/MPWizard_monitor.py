@@ -10,7 +10,7 @@ sys.path.append(DIR_PATH)
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentMonitor.instrument_monitor import monitor
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
 from Executor.Strategies.StrategiesUtil import \
-    StrategyBase, assign_trade_id,calculate_trigger_price,calculate_stoploss,calculate_transaction_type_sl,calculate_target,place_order_strategy_users,update_stoploss_orders
+    StrategyBase, assign_trade_id,calculate_trigger_price,calculate_stoploss,calculate_transaction_type_sl,calculate_target,place_order_strategy_users,update_stoploss_orders,update_qty_user_firebase
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 
 strategy_obj = StrategyBase.load_from_db('MPWizard')
@@ -208,6 +208,7 @@ class OrderMonitor:
             
             order_to_place = self.create_order_details(name,cross_type,ltp,price_ref)
             #TODO: Calculate the qty here
+            # update_qty_user_firebase(strategy_name,ltp,lot_size)
             print(order_to_place)
             place_order_strategy_users(strategy_obj.StrategyName,order_to_place)
             if message:

@@ -2,7 +2,7 @@
 # This function calculates the taxes and brokerage for a given broker for a given set of orders
 # trade_type is 'regular' for regular trades and 'futures' for future trades
 def calculate_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
-
+    #TODO : change the logic to calculate brokerage 
     # Brokerage
     if broker == 'Zerodha':
         brokerage_rate = 20 if trade_type == 'regular' else 0.03 / 100
