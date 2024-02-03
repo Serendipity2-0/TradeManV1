@@ -29,18 +29,18 @@ USR_TRADELOG_DB_FOLDER = os.getenv('USR_TRADELOG_DB_FOLDER')
 ACTIVE_STRATEGIES = os.getenv('ACTIVE_STRATEGIES').split(',')
 
 def get_today_trades(user_db):
-    # go to all tables matching name with any str in ACTIVE_STRATEGIES and check if 'exit_time' is today and return list of all such trades
+    # got to user db and find table names matching Active Strategies and get trades for today
+    today_string = datetime.now().strftime('%Y-%m-%d')
     today_trades = []
     for strategy in ACTIVE_STRATEGIES:
-        trades = user_db.execute(f"SELECT * FROM {strategy} WHERE exit_time = date('now')").fetchall()
-        today_trades.extend(trades)
-    print("today_trades", today_trades)
+        trades = user_db.execute(f"SELECT * FROM {strategy} WHERE trade_date = '{today_string}'").fetchall()
+        for trade in trades:
+            today_trades.append(trade)
     return today_trades
-    
 
 def get_additions_withdrawals(user_db):
     # go to "Transactions" table and check if 'transaction_date' is today and get sum of 'amount' column for all such transactions
-    additions_withdrawals = user_db.execute("SELECT SUM(amount) FROM Transactions WHERE transaction_date = date('now')").fetchone()[0]
+    additions_withdrawals = user_db.execute(f"SELECT SUM(amount) FROM Transactions WHERE transaction_date = '{datetime.now().strftime('%Y-%m-%d')}'").fetchone()[0]
     print("additions_withdrawals", additions_withdrawals)
     return additions_withdrawals
 
@@ -52,7 +52,14 @@ def get_new_holdings(user_db):
     
 
 def update_account_keys_fb(tr_no, today_string, new_account, new_free_cash, new_holdings):
-    pass
+    # # should update the new key values in Firebase and delete the old ones
+    ref = db.reference(f'Users/{tr_no}/Accounts') 
+    ref.update({
+        f"{today_string}_Account_Value": new_account,
+        f"{today_string}_FreeCash": new_free_cash,
+        f"{today_string}_Holdings": new_holdings
+    })
+    
 
 # Main function to generate and send the report
 def main():
@@ -71,7 +78,7 @@ def main():
         expected_tax = sum(trade["tax"] for trade in today_trades)
         
         today_string = datetime.now().strftime('%Y-%m-%d')
-        previous_day_key = (datetime.now() - timedelta(days=1)).strftime("%d%b%y")+"_FreeCash"
+        previous_trading_day_string = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
         previous_free_cash = user['Accounts'][f"{previous_trading_day_string}_FreeCash"]
         previous_holdings = user['Accounts'][f"{previous_trading_day_string}_Holdings"]
@@ -119,5 +126,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
- 
