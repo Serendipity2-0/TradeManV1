@@ -5,6 +5,11 @@ import datetime as dt
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
 
 active_users = broker_center_utils.fetch_active_users_from_firebase()
@@ -33,13 +38,13 @@ def compare_freecash(broker_free_cash, db_free_cash):
     for user in broker_free_cash:
         #check if the difference is more than 1%
         if abs(broker_free_cash[user] - db_free_cash[user]) > 0.01*db_free_cash[user]:
-            print(f"Free cash for {user} is not matching")
-            print(f"Free cash from broker: {broker_free_cash[user]}")
-            print(f"Free cash from DB: {db_free_cash[user]}")
+            logger.info(f"Free cash for {user} is not matching") # TODO Integrate discord notification
+            logger.info(f"Free cash from broker: {broker_free_cash[user]}")
+            logger.info(f"Free cash from DB: {db_free_cash[user]}")
         else:
-            print(f"Free cash for {user} is matching")
-            print(f"Free cash from broker: {broker_free_cash[user]}")
-            print(f"Free cash from DB: {db_free_cash[user]}")
+            logger.info(f"Free cash for {user} is matching")
+            logger.info(f"Free cash from broker: {broker_free_cash[user]}")
+            logger.info(f"Free cash from DB: {db_free_cash[user]}")
 
 def main():
     broker_free_cash = fetch_freecash_all_brokers(active_users)

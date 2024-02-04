@@ -8,6 +8,11 @@ from babel.numbers import format_currency
 DIR = os.getcwd()
 sys.path.append(DIR)  # Add the current directory to the system path
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import send_telegram_message
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
@@ -47,7 +52,7 @@ def get_additions_withdrawals(user_tables):
             transactions['transaction_date'] = transactions['transaction_date'].apply(lambda x: x.split(' ')[0])
             if today_string in transactions['transaction_date'].values:
                 additions_withdrawals = transactions[transactions['transaction_date'] == today_string]['amount'].sum()
-    print("additions_withdrawals", additions_withdrawals)
+    logger.debug("additions_withdrawals", additions_withdrawals)
     return round(additions_withdrawals)
 
 def get_new_holdings(user_tables):
@@ -57,7 +62,7 @@ def get_new_holdings(user_tables):
         if list(table.keys())[0] == 'Holdings':
             holdings = table['Holdings']
             new_holdings = holdings['margin_utilized'].sum()
-    print("new_holdings", new_holdings)
+    logger.info("new_holdings", new_holdings)
     return round(new_holdings)
     
 

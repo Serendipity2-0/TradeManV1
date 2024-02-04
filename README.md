@@ -121,34 +121,5 @@ NOTES
 1. TradeStateImplementation: If the program stops abruptly It should run all the scripts under strategy folder and generate Signals for each strategy. It should check the strategyDB and match with the signals. If there is any mismatch notify us through telegram
 
 Work to be done:
-1. Telegram Bot (check GoodMorning>TelegramOrderBot for more details)
-2. After the order is placed the order details are not uploaded in the TradeState/orders separate dict for each order
-
-
-
-1. MPWizard qty calculation
-2. Modify orders function
-3. 
-
-
-
-Omkar Tasks Status:
-Passed:
-
-Staging:
-O1. Strategy info implementation (StrategyCenterUtils)
-O2. Implementation of MarketInfo Update in Scripts(Scripts/MarketInfo Update)
-O3. SweepOrder implementation in GoodEvening and OrderCenterUtils
-O4. Implement DailyTradeBookValidator
-O5. User and Signal trade logging to DB
-
-Planned:
-
-TBD:
-O6. UI refactor for user app
-O7. Create execution management dashboard for frontend
-
-#31 Jan 2024
-
-1. Logging of executed order
+1. ExeDashboard
 

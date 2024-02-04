@@ -5,6 +5,11 @@ import datetime as dt
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
 from Executor.Strategies.StrategiesUtil import update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users,calculate_transaction_type_sl
@@ -89,20 +94,19 @@ def create_order_details(exchange_token,base_symbol):
 
 def send_signal_msg(base_symbol,strike_prc,option_type):
     message = "GoldenCoin Order placed for " + base_symbol + " " + str(strike_prc) + " " + option_type
-    print(message)
+    logger.info(message)
     discord_bot(message, goldencoin_strategy_obj.StrategyName)
 
 #TODO: Add stoploss to the strategy along with the main order
 
 def main():
-    from pprint import pprint
     base_symbol,strike_prc, option_type = determine_strike_and_option()
     exchange_token = fetch_exchange_token(base_symbol,strike_prc, option_type)
     update_qty(base_symbol,strike_prc, option_type)
     send_signal_msg(base_symbol,strike_prc,option_type)
     orders_to_place = create_order_details(exchange_token,base_symbol)
     orders_to_place = assign_trade_id(orders_to_place)
-    pprint(orders_to_place)
+    logger.info(orders_to_place)
 
     main_trade_id = None
 

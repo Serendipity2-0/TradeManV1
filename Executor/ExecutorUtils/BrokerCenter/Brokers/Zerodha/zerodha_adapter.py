@@ -2,10 +2,16 @@ import datetime
 
 import pandas as pd
 from kiteconnect import KiteConnect
+import os
 
 
 from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_signal_from_trade_id, calculate_transaction_type_sl
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
+
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
 
 def create_kite_obj(user_details=None,api_key=None,access_token=None):
     if api_key and access_token:
@@ -199,7 +205,7 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
             tag=orders_to_place.get('trade_id', None)
         )
         
-        print(f"Order placed. ID is: {order_id}")
+        logger.success(f"Order placed. ID is: {order_id}")
 
         # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
         message = f"Order placed successfully for {orders_to_place['username']}"
@@ -209,7 +215,7 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
 
     except Exception as e:
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
-        print(message)
+        logger.error(message)
         results.update({
             "message": message
             # Additional error details can be added here if needed
@@ -242,14 +248,13 @@ def kite_modify_orders_for_users(order_details, users_credentials):
                                         order_id=order_id, 
                                         price = new_stoploss,
                                         trigger_price = trigger_price)
-            print("zerodha order modified", modify_order)
+            logger.info("zerodha order modified", modify_order)
     except Exception as e:
         message = f"Order placement failed: {e} for {order_details['account_name']}"
-        print(message)
+        logger.error(message)
         discord_bot(message, order_details.get('strategy'))
         return None
         
-    print("zerodha order modified")
 
 def kite_create_sl_counter_order(trade, user):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument

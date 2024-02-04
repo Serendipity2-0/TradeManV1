@@ -7,6 +7,11 @@ import json
 import requests
 import pyotp
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 
 class CryptoJsAES:
     @staticmethod
@@ -101,16 +106,16 @@ def login_in_aliceblue(user_details):
                 try:
                     response_data = response.json()
                     if response_data.get("userSessionID"):
-                        print("Login Successfully")
+                        logger.success("Login Successfully")
                         return response_data
                     else:
-                        print("User is not enable TOTP! Please enable TOTP through mobile or web")
+                        logger.error("User is not enable TOTP! Please enable TOTP through mobile or web")
                 except json.JSONDecodeError:
-                    print(f"Could not parse response as JSON: {response.text}")
+                    logger.error(f"Could not parse response as JSON: {response.text}")
             else:
-                print(f"No data returned from server. HTTP Status Code: {response.status_code}")
+                logger.error(f"No data returned from server. HTTP Status Code: {response.status_code}")
         else:
-            print("Try Again")
+            logger.error("Try TOTP auth Again")
         return None
 
 
@@ -122,7 +127,7 @@ def login_in_aliceblue(user_details):
 
     alice = Aliceblue(user_id=user_details["BrokerUsername"], api_key=user_details["ApiKey"])
     alice_session_id = alice.get_session_id()["sessionID"]
-    print(f"Session id for {user_details['BrokerUsername']}: {alice_session_id}")
+    logger.info(f"Session id for {user_details['BrokerUsername']}: {alice_session_id}")
 
     return alice_session_id
 

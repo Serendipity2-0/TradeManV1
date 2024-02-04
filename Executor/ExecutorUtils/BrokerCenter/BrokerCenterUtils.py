@@ -2,6 +2,7 @@ import os
 import sys
 import json
 
+
 from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
@@ -12,6 +13,12 @@ load_dotenv(ENV_PATH)
 
 ZERODHA = os.getenv('ZERODHA_BROKER')
 ALICEBLUE = os.getenv('ALICEBLUE_BROKER')
+
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 
 import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
@@ -32,23 +39,41 @@ def modify_order_for_brokers(order_details,user_credentials):
         return alice_adapter.ant_modify_orders_for_users(order_details,user_credentials)
 
 def all_broker_login(active_users):
-    import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
-    import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
+    try:
+        import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
+    except ModuleNotFoundError as e:
+        logger.error(f"Module not found: {e}")
+        alice_blue = None  # Set to None to indicate the module couldn't be imported
+
+    try:
+        import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
+    except ModuleNotFoundError as e:
+        logger.error(f"Module not found: {e}")
+        zerodha = None  # Set to None to indicate the module couldn't be imported
 
     for user in active_users:
         if user['Broker']['BrokerName'] == ZERODHA:
-            print("Logging in for Zerodha")
+            logger.info("Logging in for Zerodha")
             session_id = zerodha.login_in_zerodha(user['Broker'])
             firebase_utils.update_fields_firebase('new_clients',user['Tr_No'],{'SessionId':session_id}, 'Broker')          
         elif user['Broker']['BrokerName'] == ALICEBLUE:
-            print("Logging in for AliceBlue")
-            session_id = alice_blue.login_in_aliceblue(user['Broker'])
-            firebase_utils.update_fields_firebase('new_clients',user['Tr_No'],{'SessionId':session_id}, 'Broker')
+            logger.info("Logging in for AliceBlue")
+            try:
+                session_id = alice_blue.login_in_aliceblue(user['Broker'])
+                firebase_utils.update_fields_firebase('new_clients',user['Tr_No'],{'SessionId':session_id}, 'Broker')
+            except Exception as e:
+                logger.error(f"Error while logging in for AliceBlue: {e}")
         else:
-            print("Broker not supported") 
+            logger.error("Broker not supported") 
     return active_users
 
 def fetch_active_users_from_firebase():
+    """
+    Fetches active users from Firebase.
+
+    Returns:
+        list: A list of active user account details.
+    """
     active_users = []
     account_details = firebase_utils.fetch_collection_data_firebase('new_clients')
     for account in account_details:
@@ -57,19 +82,33 @@ def fetch_active_users_from_firebase():
     return active_users
 
 def fetch_list_of_strategies_from_firebase():
+    """
+    Fetches a list of strategies from Firebase.
+
+    Returns:
+        list: A list of strategy names.
+    """
     strategies = []
     acounts = fetch_active_users_from_firebase()
     for account in acounts:
-        #i want to add the only the strategy name to the list only if it is not already present in the list
         for strategy in account['Strategies']:
             if strategy not in strategies:
                 strategies.append(strategy)
     return strategies
 
 def fetch_users_for_strategies_from_firebase(strategy_name):
+    """
+    Fetches users who have a specific strategy from Firebase.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        list: A list of user accounts that have the specified strategy.
+    """
     users = []
-    acounts = fetch_active_users_from_firebase()
-    for account in acounts:
+    accounts = fetch_active_users_from_firebase()
+    for account in accounts:
         if strategy_name in account['Strategies']:
             users.append(account)
     return users

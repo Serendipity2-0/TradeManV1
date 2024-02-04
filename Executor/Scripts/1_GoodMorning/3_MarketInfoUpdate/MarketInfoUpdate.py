@@ -8,6 +8,11 @@ import os,sys
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase, update_fields_firebase
 
 def update_maket_info_for_strategies():
@@ -19,4 +24,4 @@ def update_maket_info_for_strategies():
     return "Market info updated for all strategies."
 
 if __name__ == "__main__":
-    print(update_maket_info_for_strategies())
+    logger.success(update_maket_info_for_strategies())

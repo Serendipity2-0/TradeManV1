@@ -9,6 +9,11 @@ load_dotenv(ENV_PATH)
 
 ins_db_path = os.getenv('SQLITE_INS_PATH')
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 from datetime import datetime
 from calendar import monthrange
 
@@ -215,11 +220,11 @@ class  Instrument:
             return specific_symbols_today_expiry.drop_duplicates().tolist()
         except KeyError as e:
             # Handle cases where columns might not exist in the dataframe
-            print(f"Column not found in the dataframe: {e}")
+            logger.error(f"Column not found in the dataframe: {e}")
             return None
         except Exception as e:
             # Handle any other exceptions
-            print(f"An error occurred: {e}")
+            logger.error(f"An error occurred: {e}")
             return None
         
     def fetch_base_symbol_token(self, base_symbol):

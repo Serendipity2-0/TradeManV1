@@ -15,6 +15,11 @@ ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 fno_info_path = os.getenv('FNO_INFO_PATH')
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase, push_orders_firebase,update_fields_firebase)
 from Executor.ExecutorUtils.ExeUtils import holidays
@@ -135,7 +140,7 @@ class StrategyBase(BaseModel):
         elif strategy_option_mode == "OB":
             return 'CE' if prediction == 'Bullish' else 'PE'
         else:
-            print("Invalid option mode")
+            logger.error("Invalid option mode")
     
     def get_hedge_option_type(self,prediction):
         if prediction == 'Bearish':
@@ -143,7 +148,7 @@ class StrategyBase(BaseModel):
         elif prediction == 'Bullish':
             return 'PE'
         else:
-            print("Invalid option mode")
+            logger.error("Invalid option mode")
     
     def get_transaction_type(self,prediction):
         if prediction == 'Bearish':
@@ -151,7 +156,7 @@ class StrategyBase(BaseModel):
         elif prediction == 'Bullish':
             return 'BUY'
         else:
-            print("Invalid option mode")
+            logger.error("Invalid option mode")
     
    
     def get_token_from_info(self,base_symbol):
@@ -215,7 +220,7 @@ class StrategyBase(BaseModel):
         elif prediction == 'Bullish':
             return'SELL'
         else:
-            print("Invalid prediction")
+            logger.error("Invalid prediction")
 
     def get_strike_multiplier(self,base_symbol):
         fno_info_df = pd.read_csv(fno_info_path)
@@ -349,7 +354,7 @@ def update_signal_firebase(strategy_name,signal,trade_id = None):
     elif trade == 'EX':
         trade_prefix = 'exit'
     else:
-        print("Invalid trade")
+        logger.error("Invalid trade")
     
     trade = trade_no+"_"+trade_prefix
 

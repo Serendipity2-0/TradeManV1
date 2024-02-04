@@ -11,6 +11,11 @@ sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 db_dir = os.getenv('DB_DIR')
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase, fetch_list_of_strategies_from_firebase,fetch_users_for_strategies_from_firebase
@@ -23,7 +28,7 @@ def process_n_log_trade():
     active_users = fetch_active_users_from_firebase()
     
     for user in active_users:
-        print(f"Processing trade for user: {user['Tr_No']}")
+        logger.info(f"Processing trade for user: {user['Tr_No']}")
         db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
         conn = get_db_connection(db_path)
         if not user.get('Active'):
@@ -38,7 +43,7 @@ def process_n_log_trade():
 
             #if there are no orders for the strategy, continue to the next strategy
             if not orders:
-                print(f"No orders found for strategy: {strategy_name}")
+                logger.error(f"No orders found for strategy: {strategy_name}")
                 continue
 
             
@@ -57,7 +62,7 @@ def process_n_log_trade():
             is_holding = is_holding and not any(corresponding_sl_trade_id == exit_order['trade_id'] for exit_order in orders)
 
             if is_holding:
-                print("Holding",order)
+                logger.debug("Holding",order)
                 entry_price = sum([float(o['avg_prc']) for o in entry_orders]) / len(entry_orders)
                 hedge_entry_price = sum([float(o['avg_prc']) for o in hedge_orders if 'EN' in o['trade_id']]) / len([o for o in hedge_orders if 'EN' in o['trade_id']]) if hedge_orders else 0.0
                 #TODO: Process differently for FUT orders
@@ -115,7 +120,7 @@ def process_n_log_trade():
 
             for data in processed_trades.values():
                 df = pd.DataFrame([data])
-                print("processed_trades",data)
+                logger.debug("processed_trades",data)
 
                 decimal_columns = ['pnl', 'tax', 'entry_price', 'exit_price', 'hedge_entry_price', 'hedge_exit_price', 'trade_points', 'net_pnl']
                 dump_df_to_sqlite(conn, df, strategy_name, decimal_columns)
@@ -123,15 +128,12 @@ def process_n_log_trade():
             # Check if holdings dict is not empty
             if holdings:
                 for data in holdings.values():
-                    print("holdings",data)
+                    logger.debug("holdings",data)
                     df = pd.DataFrame([data])
                     decimal_columns = ['entry_price', 'hedge_entry_price']
                     dump_df_to_sqlite(conn, df, 'holdings', decimal_columns)
 
         conn.close()
-
-# Example usage
-# process_n_log_trade()
 
 
 
@@ -156,7 +158,7 @@ def update_signals_firebase():
         try:
             strategy_data = read_strategy_table(conn, strategy_name)
         except Exception as e:
-            print(f"Error reading strategy table for {strategy_name} in {user}.db: {e}")
+            logger.error(f"Error reading strategy table for {strategy_name} in {user}.db: {e}")
             continue
 
         for index, row in strategy_data.iterrows():

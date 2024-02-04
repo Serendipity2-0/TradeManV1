@@ -7,12 +7,21 @@ from pya3 import *
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_signal_from_trade_id,calculate_transaction_type_sl
 
 #This function fetches the available free cash balance for a user from the Aliceblue trading platform.
 def alice_fetch_free_cash(user_details):
+    
+    
+    
+    
     alice = Aliceblue(user_details['BrokerUsername'], user_details['ApiKey'],session_id=user_details['SessionId'])
     balance_details = alice.get_balance()  # This method might have a different name
 
@@ -30,7 +39,7 @@ def merge_ins_csv_files():
     "Expiry Date", "Lot Size", "Tick Size"
     ]
 
-    folder_path = os.path.join(DIR_PATH)#TODO: Change this file location to the actual location of the instrument csv files
+    folder_path = os.path.join(DIR_PATH)
     ins_files = ['NFO.csv', 'BFO.csv', 'NSE.csv']
     file_paths = [os.path.join(folder_path, file) for file in ins_files]
     
@@ -59,9 +68,9 @@ def merge_ins_csv_files():
 #This function downloads the instrument csv files from Aliceblue trading platform
 def get_ins_csv_alice(user_details):
     alice = Aliceblue(user_id=user_details['Broker']['BrokerUsername'], api_key=user_details['Broker']['ApiKey'], session_id=user_details['Broker']['SessionId'])
-    alice.get_contract_master("NFO") #TODO rename the NFO.csv to alice_instruments.csv
-    alice.get_contract_master("BFO") #TODO rename the NSE.csv to alice_instruments.csv
-    alice.get_contract_master("NSE") #TODO rename the BFO.csv to alice_instruments.csv
+    alice.get_contract_master("NFO") 
+    alice.get_contract_master("BFO") 
+    alice.get_contract_master("NSE") 
     alice_instrument_merged = merge_ins_csv_files()
     return alice_instrument_merged
 
@@ -196,7 +205,7 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
                                         trailing_sl = None,
                                         is_amo = False,
                                         order_tag = orders_to_place.get('trade_id', None))
-        print(f"Order placed. ID is: {order_id}")
+        logger.success(f"Order placed. ID is: {order_id}")
         order_status = get_order_status(alice, order_id['NOrdNo'])
         if order_status == "FAIL":
             order_history = alice.get_order_history(order_id['NOrdNo'])
@@ -220,7 +229,7 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         }
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
 
     return results
 
@@ -240,7 +249,6 @@ def ant_modify_orders_for_users(order_details,user_credentials):
     exchange_token = order_details.get('exchange_token')
     new_stoploss = order_details.get('limit_prc', 0.0)
     trigger_price = order_details.get('trigger_prc', None)
-    #TODO modify the code so that it modifies orders greater than max qty
     try:
         for order_id,qty in order_id_dict.items():
             modify_order =  alice.modify_order(transaction_type = transaction_type,
@@ -251,10 +259,10 @@ def ant_modify_orders_for_users(order_details,user_credentials):
                         product_type = product_type,
                         price=new_stoploss,
                         trigger_price = trigger_price)
-            print("alice modify_order",modify_order)
+            logger.info("alice modify_order",modify_order)
     except Exception as e:
         message = f"Order placement failed: {e} for {order_details['account_name']}"
-        print(message)
+        logger.error(message)
         discord_bot(message, order_details.get('strategy'))
         return None
 
@@ -362,7 +370,7 @@ def process_alice_ledger(excel_file_path):
 
     # Save each categorized dataframe to a CSV file
     for category, df in categorized_dfs_final.items():
-        print(f'Saving {category} transactions to CSV...')
+        logger.debug(f'Saving {category} transactions to CSV...')
         df.to_csv(f'{category}_transactions.csv', index=False)
 
     # Check for any 'Other' transactions left and save to CSV
@@ -375,3 +383,4 @@ def calculate_alice_net_values(categorized_dfs):
     # Calculate net values for each category
     net_values = {category: df['Debit'].sum() - df['Credit'].sum() for category, df in categorized_dfs.items()}
     return net_values
+

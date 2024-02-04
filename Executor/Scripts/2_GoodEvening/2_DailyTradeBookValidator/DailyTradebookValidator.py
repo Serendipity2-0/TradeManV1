@@ -9,6 +9,11 @@ sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 db_dir = os.getenv('DB_DIR')
 
 # from Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter import aliceblue_todays_tradebook
@@ -69,7 +74,7 @@ def daily_tradebook_validator():
             order_id_key = BrokerCenterUtils.get_order_id_broker_key(user['Broker']['BrokerName'])
             
             if not orders_from_firebase:
-                print(f"No orders found for user: {user['Tr_No']}")
+                logger.error(f"No orders found for user: {user['Tr_No']}")
                 continue
 
             for order in orders_from_firebase:
@@ -97,8 +102,8 @@ def daily_tradebook_validator():
 
         conn.close()
 
-        print("Matched Orders:", list(matched_orders))
-        print("Unmatched Orders:", list(unmatched_orders))
+        logger.debug("Matched Orders:", list(matched_orders))
+        logger.debug("Unmatched Orders:", list(unmatched_orders))
         #clear the lists after iterating through each user
         matched_orders.clear()
         unmatched_orders.clear()

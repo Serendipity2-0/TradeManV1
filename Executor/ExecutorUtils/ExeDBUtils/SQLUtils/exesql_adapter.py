@@ -1,5 +1,11 @@
 import sqlite3
 import pandas as pd
+import os
+
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
 
 def get_db_connection(db_path):
     """Create a database connection to the SQLite database specified by db_path."""
@@ -7,7 +13,7 @@ def get_db_connection(db_path):
     try:
         conn = sqlite3.connect(db_path)
     except sqlite3.Error as e:
-        print(e)
+        (e)
     return conn
 
 def format_decimal_values(df, decimal_columns):
@@ -30,7 +36,7 @@ def dump_df_to_sqlite(conn, df, table_name, decimal_columns):
         try:
             formatted_df.to_sql(table_name, conn, if_exists='append', index=False)
         except Exception as e:
-            print(f"An error occurred while appending to the table {table_name}: {e}")
+            logger.error(f"An error occurred while appending to the table {table_name}: {e}")
 
 def read_strategy_table(conn, strategy_name):
     """Read the strategy table from the database and return a DataFrame."""

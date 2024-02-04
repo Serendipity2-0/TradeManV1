@@ -10,6 +10,11 @@ sys.path.append(DIR)  # Add the current directory to the system path
 ENV_PATH = os.path.join(DIR, 'trademan.env')
 load_dotenv(ENV_PATH)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 # Retrieve API details and contact number from the environment variables
 api_id = os.getenv('TELETHON_API_ID')
 api_hash = os.getenv('TELETHON_API_HASH')
@@ -23,9 +28,9 @@ def telegram_msg_bot(message, token):
     }
     response = requests.post(url, json=data)
     if response.status_code == 200:
-        print("Message sent successfully!")
+        logger.info("Message sent successfully!")
     else:
-        print("Failed to send message.")
+        logger.error("Failed to send message.")
 
 def send_telegram_message(phone_number, message):
     global api_id, api_hash

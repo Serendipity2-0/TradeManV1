@@ -5,6 +5,11 @@ from datetime import datetime, timedelta
 DIR = os.getcwd()
 sys.path.append(DIR)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 # Function to find the start date of the current complete week
 def get_current_week_range():
     """Finds and returns the start date of the current complete week."""

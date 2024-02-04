@@ -4,6 +4,11 @@ import datetime as dt
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 from Executor.Strategies.StrategiesUtil import StrategyBase
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
@@ -71,7 +76,7 @@ def place_orders(strike_prc, signal):
             "trade_id": trade_id
         })
     message_for_orders(trade_type,signal,main_CE_exchange_token,main_PE_exchange_token, hedge_CE_exchange_token, hedge_PE_exchange_token)
-    print(orders_to_place)
+    logger.info(orders_to_place)
         # place_order.place_order_for_strategy(strategy_name, orders_to_place)
 
 def message_for_orders(trade_type,signal,main_CE_exchange_token,main_PE_exchange_token, hedge_CE_exchange_token, hedge_PE_exchange_token):
@@ -93,6 +98,6 @@ def message_for_orders(trade_type,signal,main_CE_exchange_token,main_PE_exchange
             f"main_PE_symbol : {main_trade_PE_symbol}\n"
             f"Hedge CE Trade {hedge_trade_CE_symbol} \n"
             f"Hedge PE Trade {hedge_trade_PE_symbol} \n")
-    print(message)    
+    logger.info(message)    
     
     discord_bot(message, strategy_obj.StrategyName)

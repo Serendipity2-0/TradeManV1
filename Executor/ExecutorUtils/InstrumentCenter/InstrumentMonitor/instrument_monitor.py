@@ -7,6 +7,11 @@ DIR = os.getcwd()
 sys.path.append(DIR)
 zerodha_primary = os.getenv('ZERODHA_PRIMARY_ACCOUNT')
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_primary_accounts_from_firebase
 from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import create_kite_obj
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
@@ -59,7 +64,7 @@ class InstrumentMonitor:
             limit = None
         
         if token in self.tokens_to_monitor:
-            print("Token already present:", token)
+            logger.error("Token already present:", token)
             return
         
         self.tokens_to_monitor[token] = {
@@ -94,15 +99,15 @@ class InstrumentMonitor:
     def monitor(self):
         while True:
             tokens = list(self.tokens_to_monitor.keys())
-            print(f"Monitoring tokens: {tokens}")
+            logger.info(f"Monitoring tokens: {tokens}")
             for token in tokens:
                 try:
                     ltp = self.fetch_ltp(token)
-                    print(f"The LTP for {token} is {ltp}")
+                    logger.info(f"The LTP for {token} is {ltp}")
                     data = self.tokens_to_monitor[token]
                     self._process_token(token, ltp, data)
                 except Exception as e:
-                    print(f"Error processing token {token}: {e}")
+                    logger.error(f"Error processing token {token}: {e}")
             sleep(10)
 
     def _process_token(self, token, ltp, data):

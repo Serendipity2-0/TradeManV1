@@ -7,6 +7,11 @@ from dotenv import load_dotenv
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+
 from Executor.Strategies.StrategiesUtil import StrategyBase
 from Executor.Strategies.StrategiesUtil import \
     update_qty_user_firebase, assign_trade_id, update_signal_firebase, place_order_strategy_users,calculate_stoploss,calculate_transaction_type_sl,calculate_trigger_price
@@ -114,14 +119,14 @@ orders_to_place = [
     ]
 
 orders_to_place = assign_trade_id(orders_to_place)
-print("orders_to_place",orders_to_place)
+logger.info("orders_to_place",orders_to_place)
 
 def message_for_orders(trade_type,prediction,main_trade_symbol,hedge_trade_symbol):
     message = ( f"{trade_type} Trade for {strategy_name}\n"
             f"Direction : {prediction}\n"
             f"Main Trade : {main_trade_symbol}\n"
             f"Hedge Trade {hedge_trade_symbol} \n")    
-    print(message)
+    logger.info(message)
     discord_bot(message, strategy_name)
     
 
@@ -130,16 +135,16 @@ def main():
     now = dt.datetime.now()
 
     if now.date() in ExeUtils.holidays:
-        print("Skipping execution as today is a holiday.")
+        logger.info("Skipping execution as today is a holiday.")
         return
 
     if now.time() < dt.time(9, 0):
-        print("Time is before 9:00 AM, Waiting to execute.")
+        logger.info("Time is before 9:00 AM, Waiting to execute.")
     else:
         wait_time = dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
         
         if wait_time.total_seconds() > 0:
-            print(f"Waiting for {wait_time} before starting the bot")
+            logger.info(f"Waiting for {wait_time} before starting the bot")
             sleep(wait_time.total_seconds())
         
         main_trade_id = None

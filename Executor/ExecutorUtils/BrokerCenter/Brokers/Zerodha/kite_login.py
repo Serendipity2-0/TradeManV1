@@ -6,6 +6,12 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
 from time import sleep
 import pyotp
+import os
+
+from loguru import logger
+ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
+logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
 
 
 def login_in_zerodha(user_details):
@@ -55,6 +61,6 @@ def login_in_zerodha(user_details):
     data = kite.generate_session(request_token, api_secret=api_secret)
     kite_access_token = data['access_token']
     kite.set_access_token(kite_access_token)
-    print(f'kite_access_token for {user_id}:', kite_access_token)
+    logger.info(f'kite_access_token for {user_id}:', kite_access_token)
 
     return kite_access_token 

@@ -1,7 +1,7 @@
 import base64
 import datetime
 import io
-import os,sys
+import os, sys
 
 import firebase_admin
 import pandas as pd
@@ -9,17 +9,33 @@ import streamlit as st
 from dotenv import load_dotenv
 from firebase_admin import credentials, db, storage
 from PIL import Image
+from loguru import logger
 
-DIR = r'/Users/omkar/Desktop/TradeManV1/' #TODO: Change this to your local path
+
+DIR = r"/Users/omkar/Desktop/TradeManV1/"  # TODO: Change this to your local path
 sys.path.append(DIR)
 
-ENV_PATH = os.path.join(DIR, 'trademan.env')
+ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 
-firebase_credentials_path = os.getenv('FIREBASE_CRED_PATH')
+
+
+
+
+
+
+
+
+
+
+
+
+firebase_credentials_path = os.getenv("FIREBASE_CRED_PATH")
 database_url = os.getenv("FIREBASE_DATABASE_URL")
 storage_bucket = os.getenv("STORAGE_BUCKET")
+
+logger.info(firebase_credentials_path)
 
 # Initialize Firebase app
 if not firebase_admin._apps:
@@ -29,9 +45,13 @@ if not firebase_admin._apps:
     )
 
 
+
+
+
 class SessionState:
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
+
 
 # Create a session state variable
 session_state = SessionState(
