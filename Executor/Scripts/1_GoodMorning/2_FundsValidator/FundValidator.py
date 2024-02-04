@@ -5,6 +5,10 @@ import datetime as dt
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+# Load environment variables from the trademan.env file
+ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
+load_dotenv(ENV_PATH)
+
 from loguru import logger
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
@@ -53,15 +57,22 @@ def fetch_freecash_all_db(active_users):  ####pass active_users['Accounts'] as a
 
 
 def compare_freecash(broker_free_cash, db_free_cash):
-    # TODO: add notification to this part of the code if the free cash is not matching
+    from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_admin_bot
+    
+    tolerable_difference = 0.03
+    
     for user in broker_free_cash:
         # check if the difference is more than 1%
-        if abs(broker_free_cash[user] - db_free_cash[user]) > 0.01 * db_free_cash[user]:
+        if abs(broker_free_cash[user] - db_free_cash[user]) > tolerable_difference * db_free_cash[user]:
             logger.info(
                 f"Free cash for {user} is not matching"
-            )  # TODO Integrate discord notification
+            )  
             logger.info(f"Free cash from broker: {broker_free_cash[user]}")
             logger.info(f"Free cash from DB: {db_free_cash[user]}")
+            discord_admin_bot(f"Free cash for {user} is not matching, Broker: {broker_free_cash[user]}, DB: {db_free_cash[user]}")
+            # TODO: Add logic to update the firebase DB with the broker free cash
+            # TODO: Add logic to get legder from broker and update the sqlite DB transactions table
+            
         else:
             logger.info(f"Free cash for {user} is matching")
             logger.info(f"Free cash from broker: {broker_free_cash[user]}")

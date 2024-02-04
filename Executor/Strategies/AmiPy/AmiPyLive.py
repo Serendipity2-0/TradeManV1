@@ -148,6 +148,7 @@ def job():
     to_date = datetime.datetime.strptime(
         f"{date.today()} 09:19:59", "%Y-%m-%d %H:%M:%S"
     )
+    
     nifty_data = kite.historical_data(
         instrument_token=nifty_token[0],
         from_date=from_date,

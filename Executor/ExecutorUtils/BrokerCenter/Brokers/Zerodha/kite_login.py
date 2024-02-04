@@ -88,6 +88,6 @@ def login_in_zerodha(user_details):
     data = kite.generate_session(request_token, api_secret=api_secret)
     kite_access_token = data["access_token"]
     kite.set_access_token(kite_access_token)
-    logger.info(f"kite_access_token for {user_id}:", kite_access_token)
+    logger.info(f"kite_access_token for {user_id}: {kite_access_token}")
 
     return kite_access_token

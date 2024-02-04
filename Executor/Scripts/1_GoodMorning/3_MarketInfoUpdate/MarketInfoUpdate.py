@@ -1,7 +1,12 @@
 import os, sys
-
+from dotenv import load_dotenv
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
+
+
+# Load environment variables from the trademan.env file
+ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
+load_dotenv(ENV_PATH)
 
 from loguru import logger
 
@@ -26,7 +31,7 @@ def update_maket_info_for_strategies():
     market_info = fetch_collection_data_firebase("market_info")
     strategies = fetch_collection_data_firebase("strategies")
     for strategy_key, strategy_data in strategies.items():
-        strategy_data["MarketInfo"] = market_info
+        strategy_data["MarketInfoParams"] = market_info
         update_fields_firebase("strategies", strategy_key, strategy_data)
     return "Market info updated for all strategies."
 

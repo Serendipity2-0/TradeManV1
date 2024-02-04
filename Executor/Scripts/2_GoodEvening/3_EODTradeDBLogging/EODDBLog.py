@@ -1,8 +1,9 @@
+import os
 import sqlite3
+import sys
 from datetime import datetime
 
 import pandas as pd
-import os, sys
 from dotenv import load_dotenv
 
 DIR = os.getcwd()
@@ -31,13 +32,13 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_list_of_strategies_from_firebase,
     fetch_users_for_strategies_from_firebase,
 )
-from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
-    dump_df_to_sqlite,
-    get_db_connection,
-    read_strategy_table,
-)
 from Executor.ExecutorUtils.BrokerCenter.BrokerUtils.TaxAndBrokerageCalculations.taxnbrok_calc import (
     calculate_taxes,
+)
+from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
+    append_df_to_sqlite,
+    get_db_connection,
+    read_strategy_table,
 )
 
 
@@ -212,7 +213,7 @@ def process_n_log_trade():
                     "trade_points",
                     "net_pnl",
                 ]
-                dump_df_to_sqlite(conn, df, strategy_name, decimal_columns)
+                append_df_to_sqlite(conn, df, strategy_name, decimal_columns)
 
             # Check if holdings dict is not empty
             if holdings:
@@ -220,7 +221,7 @@ def process_n_log_trade():
                     logger.debug("holdings", data)
                     df = pd.DataFrame([data])
                     decimal_columns = ["entry_price", "hedge_entry_price"]
-                    dump_df_to_sqlite(conn, df, "holdings", decimal_columns)
+                    append_df_to_sqlite(conn, df, "holdings", decimal_columns)
 
         conn.close()
 
@@ -273,7 +274,7 @@ def update_signals_firebase():
                 }
         df = pd.DataFrame([signal_data])
         decimal_columns = ["entry_price", "exit_price", "hedge_points", "trade_points"]
-        dump_df_to_sqlite(signal_db_conn, df, strategy_name, decimal_columns)
+        append_df_to_sqlite(signal_db_conn, df, strategy_name, decimal_columns)
 
         conn.close()
     signal_db_conn.close()

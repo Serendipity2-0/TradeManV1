@@ -114,8 +114,8 @@ class TodayOrder(BaseModel):
 
 
 class MarketInfoParams(BaseModel):
-    OBQtyAmplifier: Optional[int] = None
-    OSQtyAmplifier: Optional[int] = None
+    OBQtyAmplifier: Optional[float] = None
+    OSQtyAmplifier: Optional[float] = None
     TradeView: str
 
 

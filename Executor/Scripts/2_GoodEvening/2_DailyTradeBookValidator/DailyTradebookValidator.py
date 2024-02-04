@@ -1,7 +1,9 @@
+import os
+import sys
 from datetime import datetime
-import os, sys
-from dotenv import load_dotenv
+
 import pandas as pd
+from dotenv import load_dotenv
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -24,15 +26,16 @@ logger.add(
 
 db_dir = os.getenv("DB_DIR")
 
+import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
+
 # from Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter import aliceblue_todays_tradebook
 # from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import zerodha_todays_tradebook
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
     update_fields_firebase,
 )
-import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
-    dump_df_to_sqlite,
+    append_df_to_sqlite,
     get_db_connection,
 )
 
@@ -126,7 +129,7 @@ def daily_tradebook_validator():
                 )
                 unmatched_details = pd.DataFrame([unmatched_details])
                 decimal_columns = ["avg_prc"]
-                dump_df_to_sqlite(
+                append_df_to_sqlite(
                     conn, unmatched_details, "user_transactions", decimal_columns
                 )
                 unmatched_orders.add(trade_order_id)

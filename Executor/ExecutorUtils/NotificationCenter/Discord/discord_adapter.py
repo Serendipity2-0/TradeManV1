@@ -27,3 +27,22 @@ def discord_bot(message, strategy):
             f"Request to discord returned an error {response.status_code}, the response is:\n{response.text}"
         )
     return response
+
+def discord_admin_bot(message):
+    token = os.getenv("discord_bot_token")
+    channel_id = "1169540251325313034"
+
+    url = f"https://discord.com/api/v9/channels/{channel_id}/messages"
+    headers = {
+        "Authorization": f"Bot {token}",
+        "Content-Type": "application/json",
+    }
+    data = {"content": message}
+
+    response = requests.post(url, headers=headers, json=data)
+
+    if response.status_code != 200:
+        raise ValueError(
+            f"Request to discord returned an error {response.status_code}, the response is:\n{response.text}"
+        )
+    return response

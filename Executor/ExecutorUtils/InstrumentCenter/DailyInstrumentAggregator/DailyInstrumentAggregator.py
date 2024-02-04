@@ -1,6 +1,8 @@
-import os, sys
-from dotenv import load_dotenv
+import os
+import sys
+
 import pandas as pd
+from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -62,4 +64,6 @@ def main():
     conn = sql_utils.get_db_connection(os.getenv("SQLITE_INS_PATH"))
     # print number of rows in the table
     decimal_cols = []
-    sql_utils.dump_df_to_sqlite(conn, merged_ins_df, "instrument_master", decimal_cols)
+    sql_utils.dump_df_to_sqlite(
+        conn, merged_ins_df, "instrument_master", decimal_cols
+    )  
