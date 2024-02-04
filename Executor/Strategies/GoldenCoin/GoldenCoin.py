@@ -1,9 +1,13 @@
 import random, time
 import os, sys
 import datetime as dt
+from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
+
+ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
+load_dotenv(ENV_PATH)
 
 from loguru import logger
 

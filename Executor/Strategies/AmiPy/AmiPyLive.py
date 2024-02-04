@@ -27,6 +27,20 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
+from loguru import logger
+
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
+
+
+
 zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
@@ -55,7 +69,7 @@ strategy_obj = StrategyBase.load_from_db("AmiPy")
 base_symbols = strategy_obj.Instruments
 base_symbol = base_symbols[0]
 nifty_token = [base_symbol_token(base_symbol)]
-print("Nifty Token:", nifty_token)
+logger.info(f"Nifty Token: {nifty_token}")
 
 # convert the items in nifty token to int
 nifty_token = [int(i) for i in nifty_token]
@@ -142,22 +156,13 @@ for column, dtype in column_types.items():
 # Setting StrikePrc at 09.20 a.m.
 def job():
     global strike_prc, nifty_token
-    from_date = datetime.datetime.strptime(
-        f"{date.today()} 09:18:59", "%Y-%m-%d %H:%M:%S"
-    )
-    to_date = datetime.datetime.strptime(
-        f"{date.today()} 09:19:59", "%Y-%m-%d %H:%M:%S"
-    )
     
-    nifty_data = kite.historical_data(
-        instrument_token=nifty_token[0],
-        from_date=from_date,
-        to_date=to_date,
-        interval="minute",
-        oi=True,
-    )[0]["close"]
-    # nifty_data = kite.historical_data(instrument_token=nifty_token,from_date="2023-11-03 09:18:59",to_date="2023-11-03 09:19:59",interval='minute', oi=True)[0]['close']
-    strike_prc = round(nifty_data / 100) * 100
+    
+    nifty_ltp_dict = kite.ltp(nifty_token)
+    nifty_ltp = nifty_ltp_dict[str(nifty_token[0])]
+    logger.info(f"Nifty LTP: {nifty_ltp}")
+    
+    strike_prc = round(nifty_ltp['last_price'] / 100) * 100
     return strike_prc
 
 
@@ -427,11 +432,10 @@ def updateSignalDf(last_signal, trade_state):
         signals.append(signal)
         signals_df = pd.DataFrame(signal, index=[0])
         signals_df.to_csv(trade_sig_path, index=True)
-        signal_entry = strategy_obj.get_signal_entry()
+        signal_entry = strategy_obj.EntryParams.EntryTime
         signal_entry[trade_type] = signal
-        strategy_obj.set_signal_entry(signal_entry)
         # strategy_obj.write_strategy_json(STRATEGY_PATH)
-        amipy_orders.place_orders(strike_prc, trade_type)
+        # amipy_orders.place_orders(strike_prc, trade_type)
 
     elif trade_type == "LongCoverSignal" or trade_type == "ShortCoverSignal":
         if len(signals) != 0:

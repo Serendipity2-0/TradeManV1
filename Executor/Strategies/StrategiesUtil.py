@@ -196,6 +196,10 @@ class StrategyBase(BaseModel):
             return "NIFTY", "256265"
         elif day == 4:  # Friday
             return "SENSEX", "265"
+        elif day == 5:  # Saturday
+            return "MIDCPNIFTY", "288009"
+        elif day == 6:  # Sunday
+            return "MIDCPNIFTY", "288009"
         else:
             return "No expiry today"
 
