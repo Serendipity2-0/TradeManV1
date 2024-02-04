@@ -5,56 +5,78 @@ from kiteconnect import KiteConnect
 import os
 
 
-from Executor.Strategies.StrategiesUtil import get_strategy_name_from_trade_id, get_signal_from_trade_id, calculate_transaction_type_sl
-from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
+from Executor.Strategies.StrategiesUtil import (
+    get_strategy_name_from_trade_id,
+    get_signal_from_trade_id,
+    calculate_transaction_type_sl,
+)
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    discord_bot,
+)
 
 from loguru import logger
-ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
-logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
 
 
-def create_kite_obj(user_details=None,api_key=None,access_token=None):
+def create_kite_obj(user_details=None, api_key=None, access_token=None):
     if api_key and access_token:
-        return KiteConnect(api_key=api_key,access_token=access_token)
+        return KiteConnect(api_key=api_key, access_token=access_token)
     elif user_details:
-        return KiteConnect(api_key=user_details['ApiKey'],access_token=user_details['SessionId'])
+        return KiteConnect(
+            api_key=user_details["ApiKey"], access_token=user_details["SessionId"]
+        )
     else:
-        raise ValueError("Either user_details or api_key and access_token must be provided")
+        raise ValueError(
+            "Either user_details or api_key and access_token must be provided"
+        )
+
 
 def zerodha_fetch_free_cash(user_details):
-    kite = KiteConnect(api_key=user_details['ApiKey'])
-    kite.set_access_token(user_details['SessionId'])
+    kite = KiteConnect(api_key=user_details["ApiKey"])
+    kite.set_access_token(user_details["SessionId"])
     # Fetch the account balance details
-    balance_details = kite.margins(segment='equity')
+    balance_details = kite.margins(segment="equity")
 
     # Extract the 'cash' value
-    cash_balance = balance_details.get('cash', 0)
+    cash_balance = balance_details.get("cash", 0)
 
     # If 'cash' key is not at the top level, we need to find where it is
-    if cash_balance == 0 and 'cash' not in balance_details:
+    if cash_balance == 0 and "cash" not in balance_details:
         # Look for 'cash' in nested dictionaries
         for key, value in balance_details.items():
-            if isinstance(value, dict) and 'cash' in value:
-                cash_balance = value.get('cash', 0)
+            if isinstance(value, dict) and "cash" in value:
+                cash_balance = value.get("cash", 0)
                 break
     return cash_balance
 
+
 def get_csv_kite(user_details):
-    kite = KiteConnect(api_key=user_details['Broker']['ApiKey'])
-    kite.set_access_token(user_details['Broker']['SessionId'])
+    kite = KiteConnect(api_key=user_details["Broker"]["ApiKey"])
+    kite.set_access_token(user_details["Broker"]["SessionId"])
     instrument_dump = kite.instruments()
     instrument_df = pd.DataFrame(instrument_dump)
-    instrument_df['exchange_token'] = instrument_df['exchange_token'].astype(str)
-    return instrument_df 
+    instrument_df["exchange_token"] = instrument_df["exchange_token"].astype(str)
+    return instrument_df
+
 
 def fetch_zerodha_holdings(api_key, access_token):
-    kite = KiteConnect(api_key=api_key,access_token=access_token)
+    kite = KiteConnect(api_key=api_key, access_token=access_token)
     holdings = kite.holdings()
     return holdings
 
+
 def simplify_zerodha_order(detail):
-    trade_symbol = detail['tradingsymbol']
-    
+    trade_symbol = detail["tradingsymbol"]
+
     # Check if the tradingsymbol is of futures type
     if trade_symbol.endswith("FUT"):
         strike_price = 0
@@ -63,91 +85,100 @@ def simplify_zerodha_order(detail):
         strike_price = int(trade_symbol[-7:-2])  # Convert to integer to store as number
         option_type = trade_symbol[-2:]
 
-    trade_id = detail['tag']
-    if trade_id.endswith('_entry'):
+    trade_id = detail["tag"]
+    if trade_id.endswith("_entry"):
         order_type = "entry"
-    elif trade_id.endswith('_exit'):
+    elif trade_id.endswith("_exit"):
         order_type = "exit"
-    
+
     return {
-        'trade_id' : trade_id,  # This is the order_id for zerodha
-        'avg_price': detail['average_price'],
-        'qty': detail['quantity'],
-        'time': detail["order_timestamp"].strftime("%d/%m/%Y %H:%M:%S"),
-        'strike_price': strike_price,
-        'option_type': option_type,
-        'trading_symbol': trade_symbol,
-        'trade_type': detail['transaction_type'],
-        'order_type' : order_type
+        "trade_id": trade_id,  # This is the order_id for zerodha
+        "avg_price": detail["average_price"],
+        "qty": detail["quantity"],
+        "time": detail["order_timestamp"].strftime("%d/%m/%Y %H:%M:%S"),
+        "strike_price": strike_price,
+        "option_type": option_type,
+        "trading_symbol": trade_symbol,
+        "trade_type": detail["transaction_type"],
+        "order_type": order_type,
     }
 
+
 def zerodha_todays_tradebook(user):
-    kite = create_kite_obj(api_key=user['ApiKey'],access_token=user['SessionId'])
+    kite = create_kite_obj(api_key=user["ApiKey"], access_token=user["SessionId"])
     orders = kite.orders()
     return orders
-    
-def calculate_transaction_type(kite,transaction_type):
-    if transaction_type == 'BUY':
+
+
+def calculate_transaction_type(kite, transaction_type):
+    if transaction_type == "BUY":
         transaction_type = kite.TRANSACTION_TYPE_BUY
-    elif transaction_type == 'SELL':
+    elif transaction_type == "SELL":
         transaction_type = kite.TRANSACTION_TYPE_SELL
     else:
         raise ValueError("Invalid transaction_type in order_details")
     return transaction_type
 
-def calculate_order_type(kite,order_type):
-    if order_type.lower() == 'stoploss':
+
+def calculate_order_type(kite, order_type):
+    if order_type.lower() == "stoploss":
         order_type = kite.ORDER_TYPE_SL
-    elif order_type.lower() == 'market':
+    elif order_type.lower() == "market":
         order_type = kite.ORDER_TYPE_MARKET
-    elif order_type.lower() == 'limit':
+    elif order_type.lower() == "limit":
         order_type = kite.ORDER_TYPE_LIMIT
     else:
         raise ValueError("Invalid order_type in order_details")
     return order_type
 
-def calculate_product_type(kite,product_type):
-    if product_type == 'NRML':
+
+def calculate_product_type(kite, product_type):
+    if product_type == "NRML":
         product_type = kite.PRODUCT_NRML
-    elif product_type == 'MIS':
+    elif product_type == "MIS":
         product_type = kite.PRODUCT_MIS
-    elif product_type == 'CNC':
+    elif product_type == "CNC":
         product_type = kite.PRODUCT_CNC
     else:
         raise ValueError("Invalid product_type in order_details")
     return product_type
 
+
 def calculate_segment_type(kite, segment_type):
     # Prefix to indicate the exchange type
     prefix = "EXCHANGE_"
-    
+
     # Construct the attribute name
     attribute_name = prefix + segment_type
-    
+
     # Get the attribute from the kite object, or raise an error if it doesn't exist
     if hasattr(kite, attribute_name):
         return getattr(kite, attribute_name)
     else:
         raise ValueError(f"Invalid segment_type '{segment_type}' in order_details")
 
-def get_avg_prc(kite,order_id):
+
+def get_avg_prc(kite, order_id):
     if not order_id:
         raise Exception("Order_id not found")
-    
+
     order_history = kite.order_history(order_id=order_id)
     for order in order_history:
-        if order.get('status') == 'COMPLETE':
-            avg_prc = order.get('average_price', 0.0)
-            break 
+        if order.get("status") == "COMPLETE":
+            avg_prc = order.get("average_price", 0.0)
+            break
     return avg_prc
 
+
 def get_order_details(user):
-    kite = create_kite_obj(api_key=user['api_key'],access_token=user['access_token'])
+    kite = create_kite_obj(api_key=user["api_key"], access_token=user["access_token"])
     orders = kite.orders()
     return orders
 
+
 def kite_place_orders_for_users(orders_to_place, users_credentials):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+
     results = {
         "avg_prc": None,
         "exchange_token": None,
@@ -155,29 +186,37 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         "qty": None,
         "time_stamp": None,
         "trade_id": None,
-        "message": None
+        "message": None,
     }
 
-    kite = create_kite_obj(user_details=users_credentials)  # Create a KiteConnect instance with user's broker credentials
+    kite = create_kite_obj(
+        user_details=users_credentials
+    )  # Create a KiteConnect instance with user's broker credentials
     order_id = None
 
-    strategy = orders_to_place['strategy']
-    exchange_token = orders_to_place['exchange_token']
-    qty = orders_to_place.get('qty', 1)  # Default quantity to 1 if not specified
-    product = orders_to_place.get('product_type')
+    strategy = orders_to_place["strategy"]
+    exchange_token = orders_to_place["exchange_token"]
+    qty = orders_to_place.get("qty", 1)  # Default quantity to 1 if not specified
+    product = orders_to_place.get("product_type")
 
-    transaction_type = calculate_transaction_type(kite,orders_to_place.get('transaction_type'))
-    order_type = calculate_order_type(kite,orders_to_place.get('order_type'))
-    product_type = calculate_product_type(kite,product)
-    if product == 'CNC':
+    transaction_type = calculate_transaction_type(
+        kite, orders_to_place.get("transaction_type")
+    )
+    order_type = calculate_order_type(kite, orders_to_place.get("order_type"))
+    product_type = calculate_product_type(kite, product)
+    if product == "CNC":
         segment_type = kite.EXCHANGE_NSE
-        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(exchange_token, "NSE")
+        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+            exchange_token, "NSE"
+        )
     else:
         segment_type = Instrument().get_segment_by_exchange_token(exchange_token)
-        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(exchange_token)
-    
-    limit_prc = orders_to_place.get('limit_prc', None) 
-    trigger_price = orders_to_place.get('trigger_prc', None)
+        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+            exchange_token
+        )
+
+    limit_prc = orders_to_place.get("limit_prc", None)
+    trigger_price = orders_to_place.get("trigger_prc", None)
 
     if limit_prc is not None:
         limit_prc = round(float(limit_prc), 2)
@@ -185,7 +224,7 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
             limit_prc = 1.0
     else:
         limit_prc = 0.0
-    
+
     if trigger_price is not None:
         trigger_price = round(float(trigger_price), 2)
         if trigger_price < 0:
@@ -194,105 +233,115 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
     try:
         order_id = kite.place_order(
             variety=kite.VARIETY_REGULAR,
-            exchange=segment_type, 
+            exchange=segment_type,
             price=limit_prc,
             tradingsymbol=trading_symbol,
-            transaction_type=transaction_type, 
+            transaction_type=transaction_type,
             quantity=qty,
             trigger_price=trigger_price,
             product=product_type,
             order_type=order_type,
-            tag=orders_to_place.get('trade_id', None)
+            tag=orders_to_place.get("trade_id", None),
         )
-        
+
         logger.success(f"Order placed. ID is: {order_id}")
 
         # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
         message = f"Order placed successfully for {orders_to_place['username']}"
         # avg_prc = fetch_avg_price(kite, order_id['NOrdNo'])  # This function needs to be defined
 
-        
-
     except Exception as e:
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)
-        results.update({
-            "message": message
-            # Additional error details can be added here if needed
-        })
-    
-    results ={
-            "exchange_token": exchange_token,
-            "order_id": order_id,
-            "qty": qty,
-            "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "trade_id": orders_to_place.get('trade_id', ''),
-            "message": message
-        }
+        results.update(
+            {
+                "message": message
+                # Additional error details can be added here if needed
+            }
+        )
+
+    results = {
+        "exchange_token": exchange_token,
+        "order_id": order_id,
+        "qty": qty,
+        "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "trade_id": orders_to_place.get("trade_id", ""),
+        "message": message,
+    }
     return results
+
 
 def kite_modify_orders_for_users(order_details, users_credentials):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
-    kite = create_kite_obj(user_details=users_credentials)  # Create a KiteConnect instance with user's broker credentials
+
+    kite = create_kite_obj(
+        user_details=users_credentials
+    )  # Create a KiteConnect instance with user's broker credentials
     order_id_dict = retrieve_order_id(
-            order_details.get('account_name'),
-            order_details.get('strategy'),
-            order_details.get('exchange_token')
-        )
-    new_stoploss = order_details.get('limit_prc', 0.0)
-    trigger_price = order_details.get('trigger_prc', None)
+        order_details.get("account_name"),
+        order_details.get("strategy"),
+        order_details.get("exchange_token"),
+    )
+    new_stoploss = order_details.get("limit_prc", 0.0)
+    trigger_price = order_details.get("trigger_prc", None)
 
     try:
-        for order_id,qty in order_id_dict.items():
-            modify_order = kite.modify_order(variety=kite.VARIETY_REGULAR, 
-                                        order_id=order_id, 
-                                        price = new_stoploss,
-                                        trigger_price = trigger_price)
+        for order_id, qty in order_id_dict.items():
+            modify_order = kite.modify_order(
+                variety=kite.VARIETY_REGULAR,
+                order_id=order_id,
+                price=new_stoploss,
+                trigger_price=trigger_price,
+            )
             logger.info("zerodha order modified", modify_order)
     except Exception as e:
         message = f"Order placement failed: {e} for {order_details['account_name']}"
         logger.error(message)
-        discord_bot(message, order_details.get('strategy'))
+        discord_bot(message, order_details.get("strategy"))
         return None
-        
+
 
 def kite_create_sl_counter_order(trade, user):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-    strategy_name = get_strategy_name_from_trade_id(trade['tag'])
-    exchange_token = Instrument().get_exchange_token_by_token(trade['instrument_token'])
+
+    strategy_name = get_strategy_name_from_trade_id(trade["tag"])
+    exchange_token = Instrument().get_exchange_token_by_token(trade["instrument_token"])
     counter_order = {
         "strategy": strategy_name,
-        "signal": get_signal_from_trade_id(trade['tag']),
-        "base_symbol": "NIFTY",   #WARNING: dummy base symbol 
-        "exchange_token": exchange_token,     
-        "transaction_type": trade['transaction_type'], 
-        "order_type": 'MARKET',
-        "product_type": trade['product'],
-        "trade_id": trade['tag'],
+        "signal": get_signal_from_trade_id(trade["tag"]),
+        "base_symbol": "NIFTY",  # WARNING: dummy base symbol
+        "exchange_token": exchange_token,
+        "transaction_type": trade["transaction_type"],
+        "order_type": "MARKET",
+        "product_type": trade["product"],
+        "trade_id": trade["tag"],
         "order_mode": "Counter",
-        "qty": trade['quantity']
+        "qty": trade["quantity"],
     }
     return counter_order
 
+
 def kite_create_cancel_order(trade, user):
-    kite = create_kite_obj(user_details=user['Broker'])
-    kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade['order_id'])
+    kite = create_kite_obj(user_details=user["Broker"])
+    kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade["order_id"])
+
 
 def kite_create_hedge_counter_order(trade, user):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-    strategy_name = get_strategy_name_from_trade_id(trade['tag'])
-    exchange_token = Instrument().get_exchange_token_by_token(trade['instrument_token'])
+
+    strategy_name = get_strategy_name_from_trade_id(trade["tag"])
+    exchange_token = Instrument().get_exchange_token_by_token(trade["instrument_token"])
     counter_order = {
         "strategy": strategy_name,
-        "signal": get_signal_from_trade_id(trade['tag']),
-        "base_symbol": "NIFTY",   #WARNING: dummy base symbol 
-        "exchange_token": exchange_token,     
-        "transaction_type": calculate_transaction_type_sl(trade['transaction_type']), 
-        "order_type": 'MARKET',
-        "product_type": trade['product'],
-        "trade_id": trade['tag'],
+        "signal": get_signal_from_trade_id(trade["tag"]),
+        "base_symbol": "NIFTY",  # WARNING: dummy base symbol
+        "exchange_token": exchange_token,
+        "transaction_type": calculate_transaction_type_sl(trade["transaction_type"]),
+        "order_type": "MARKET",
+        "product_type": trade["product"],
+        "trade_id": trade["tag"],
         "order_mode": "Hedge",
-        "qty": trade['quantity']
+        "qty": trade["quantity"],
     }
     return counter_order
 
@@ -300,10 +349,29 @@ def kite_create_hedge_counter_order(trade, user):
 def process_kite_ledger(csv_file_path):
     # Define patterns for categorizing transactions
     patterns = {
-        "Deposits": ["Funds added using UPI", "Opening Balance", "Funds added using payment gateway from YY0222"],
-        "Withdrawals": ["Funds transferred back as part of quarterly settlement", "Payout of"],
-        "Charges": ["Being payment gateway charges debited", "DPCharges", "Reversal of Brokerage", "Kite Connect API Charges", "Call and Trade charges", "AMC for Demat Account", "DP Charges for Sale of"],
-        "Trades": ["Net obligation for Equity F&O", "Net settlement for Equity", "Net obligation for Currency F&O"]
+        "Deposits": [
+            "Funds added using UPI",
+            "Opening Balance",
+            "Funds added using payment gateway from YY0222",
+        ],
+        "Withdrawals": [
+            "Funds transferred back as part of quarterly settlement",
+            "Payout of",
+        ],
+        "Charges": [
+            "Being payment gateway charges debited",
+            "DPCharges",
+            "Reversal of Brokerage",
+            "Kite Connect API Charges",
+            "Call and Trade charges",
+            "AMC for Demat Account",
+            "DP Charges for Sale of",
+        ],
+        "Trades": [
+            "Net obligation for Equity F&O",
+            "Net settlement for Equity",
+            "Net obligation for Currency F&O",
+        ],
     }
 
     # Load the CSV file
@@ -318,24 +386,33 @@ def process_kite_ledger(csv_file_path):
         return "Other"
 
     # Categorize each transaction
-    ledger_data['Category'] = ledger_data['particulars'].apply(categorize_transaction)
+    ledger_data["Category"] = ledger_data["particulars"].apply(categorize_transaction)
 
     # Filter out transactions with 'Closing Balance'
-    ledger_data_filtered = ledger_data[ledger_data['particulars'] != 'Closing Balance']
+    ledger_data_filtered = ledger_data[ledger_data["particulars"] != "Closing Balance"]
 
     # Create dataframes for each category
-    categorized_dfs = {category: ledger_data_filtered[ledger_data_filtered['Category'] == category] for category in patterns.keys()}
-    
-    other_transactions_final = ledger_data_filtered[ledger_data_filtered['Category'] == 'Other']
+    categorized_dfs = {
+        category: ledger_data_filtered[ledger_data_filtered["Category"] == category]
+        for category in patterns.keys()
+    }
+
+    other_transactions_final = ledger_data_filtered[
+        ledger_data_filtered["Category"] == "Other"
+    ]
     other_transactions_final.to_csv(f"kite_other.csv", index=False)
-    
-    #save categorized_dfs to csv as {category}.csv
+
+    # save categorized_dfs to csv as {category}.csv
     for category, df in categorized_dfs.items():
         df.to_csv(f"kite_{category}.csv", index=False)
 
     return categorized_dfs
 
+
 def calculate_kite_net_values(categorized_dfs):
     # Calculate net values for each category
-    net_values = {category: df['debit'].sum() - df['credit'].sum() for category, df in categorized_dfs.items()}
+    net_values = {
+        category: df["debit"].sum() - df["credit"].sum()
+        for category, df in categorized_dfs.items()
+    }
     return net_values

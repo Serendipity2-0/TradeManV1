@@ -19,18 +19,6 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 firebase_credentials_path = os.getenv("FIREBASE_CRED_PATH")
 database_url = os.getenv("FIREBASE_DATABASE_URL")
 storage_bucket = os.getenv("STORAGE_BUCKET")
@@ -43,9 +31,6 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(
         cred, {"databaseURL": database_url, "storageBucket": storage_bucket}
     )
-
-
-
 
 
 class SessionState:

@@ -8,4 +8,3 @@ import strategies
 stock_symbols = fetcher.get_stock_codes()
 # Apply Mean Reversion Strategy and store selected stocks
 strategies.strategy_mean_reversion(stock_symbols)
-

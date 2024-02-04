@@ -3,8 +3,16 @@ import pandas as pd
 import os
 
 from loguru import logger
-ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
-logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
+
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
 
 
 def get_db_connection(db_path):
@@ -16,6 +24,7 @@ def get_db_connection(db_path):
         (e)
     return conn
 
+
 def format_decimal_values(df, decimal_columns):
     """Format specified columns of a DataFrame to show two decimal places."""
     for col in decimal_columns:
@@ -25,7 +34,8 @@ def format_decimal_values(df, decimal_columns):
 
     return df
 
-#dump the data from df to sqlite db
+
+# dump the data from df to sqlite db
 def dump_df_to_sqlite(conn, df, table_name, decimal_columns):
     if not df.empty:
         formatted_df = format_decimal_values(df, decimal_columns)
@@ -34,14 +44,15 @@ def dump_df_to_sqlite(conn, df, table_name, decimal_columns):
             if col in formatted_df.columns:
                 formatted_df[col] = formatted_df[col].astype(str)
         try:
-            formatted_df.to_sql(table_name, conn, if_exists='append', index=False)
+            formatted_df.to_sql(table_name, conn, if_exists="append", index=False)
         except Exception as e:
-            logger.error(f"An error occurred while appending to the table {table_name}: {e}")
+            logger.error(
+                f"An error occurred while appending to the table {table_name}: {e}"
+            )
+
 
 def read_strategy_table(conn, strategy_name):
     """Read the strategy table from the database and return a DataFrame."""
     query = f"SELECT * FROM {strategy_name}"
     df = pd.read_sql(query, conn)
     return df
-    
-

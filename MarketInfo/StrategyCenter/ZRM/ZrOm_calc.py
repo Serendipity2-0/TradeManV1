@@ -5,15 +5,31 @@ import json
 import requests
 import datetime
 
-Instrument = namedtuple("Instrument", ['exchange', 'token', 'symbol', 'name', 'expiry', 'lot_size'])
+Instrument = namedtuple(
+    "Instrument", ["exchange", "token", "symbol", "name", "expiry", "lot_size"]
+)
+
 
 def get_option_tokens(base_symbol, expiry_date, strike_prc, option_type):
-    #get out of the folder and then go to Utils folder and fetch the instruments.csv file
-    instrument_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Utils", "instruments.csv")
+    # get out of the folder and then go to Utils folder and fetch the instruments.csv file
+    instrument_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "Utils",
+        "instruments.csv",
+    )
     instruments_df = pd.read_csv(instrument_path)
 
     instruments_df = instruments_df[
-        ["instrument_token", "tradingsymbol", "name", "exchange", "lot_size", "instrument_type", "expiry", "strike"]
+        [
+            "instrument_token",
+            "tradingsymbol",
+            "name",
+            "exchange",
+            "lot_size",
+            "instrument_type",
+            "expiry",
+            "strike",
+        ]
     ]
     nfo_ins_df = instruments_df[
         (instruments_df["exchange"] == "NFO")
@@ -25,24 +41,31 @@ def get_option_tokens(base_symbol, expiry_date, strike_prc, option_type):
     tokens = []
     trading_symbol_list = []
 
-    tokens.append(int(nfo_ins_df['instrument_token'].values[0]))  # CE token
+    tokens.append(int(nfo_ins_df["instrument_token"].values[0]))  # CE token
 
-    trading_symbol_list.append(nfo_ins_df['tradingsymbol'].values[0])  # CE trading symbol
+    trading_symbol_list.append(
+        nfo_ins_df["tradingsymbol"].values[0]
+    )  # CE trading symbol
 
     # Extract the token from the trading symbol
-    token_CE = nfo_ins_df['tradingsymbol'].values[0]
+    token_CE = nfo_ins_df["tradingsymbol"].values[0]
 
-    print("Trading symbol: ",trading_symbol_list)
-    exchange = 'NFO'
+    print("Trading symbol: ", trading_symbol_list)
+    exchange = "NFO"
 
     trading_symbol_aliceblue = []
     for token, single_trading_symbol in zip(tokens, trading_symbol_list):
-        trading_symbol_aliceblue.append(Instrument(exchange, token, base_symbol, single_trading_symbol, expiry_date, 50))
+        trading_symbol_aliceblue.append(
+            Instrument(
+                exchange, token, base_symbol, single_trading_symbol, expiry_date, 50
+            )
+        )
 
     return tokens, trading_symbol_list, trading_symbol_aliceblue
 
+
 def get_zrm_users(broker_filepath):
-    with open(broker_filepath, 'r') as file:
+    with open(broker_filepath, "r") as file:
         broker_config = json.load(file)
     accounts_to_trade = []
     zerodha_accounts = broker_config.get("zerodha", {})
@@ -66,8 +89,9 @@ def get_zrm_users(broker_filepath):
 
     return accounts_to_trade
 
+
 def zrm_discord_bot(message):
-    CHANNEL_ID = "1129673128864391178" # MPWizard Discord channel
+    CHANNEL_ID = "1129673128864391178"  # MPWizard Discord channel
     # CHANNEL_ID = "1128567144565723147" # Test channel
     TOKEN = "MTEyNTY3MTgxODQxMDM0ODU2Ng.GQ5DLZ.BVLPrGy0AEX9ZiZOJsB6cSxOlf8hC2vaANuilA"
     url = f"https://discord.com/api/v9/channels/{CHANNEL_ID}/messages"
@@ -76,13 +100,13 @@ def zrm_discord_bot(message):
         "Authorization": f"Bot {TOKEN}",
         "Content-Type": "application/json",
     }
-    data = {
-        "content": message
-    }
+    data = {"content": message}
     response = requests.post(url, headers=headers, json=data)
-    
+
     if response.status_code != 200:
-        raise ValueError(f"Request to discord returned an error {response.status_code}, the response is:\n{response.text}")
+        raise ValueError(
+            f"Request to discord returned an error {response.status_code}, the response is:\n{response.text}"
+        )
     return response
 
 
@@ -102,8 +126,9 @@ holidays = [
     datetime.date(2023, 10, 24),
     datetime.date(2023, 11, 14),
     datetime.date(2023, 11, 27),
-    datetime.date(2023, 12, 25)
+    datetime.date(2023, 12, 25),
 ]
+
 
 def get_expiry_dates():
     # Initialize the list of Thursdays and Tuesdays in 2023
@@ -113,8 +138,8 @@ def get_expiry_dates():
     # Loop through each week in 2023
     for week in range(1, 53):
         # Calculate the date of the Thursday and Tuesday in the given week
-        thursday = datetime.datetime.strptime(f'2023-{week}-4', '%Y-%W-%w').date()
-        tuesday = datetime.datetime.strptime(f'2023-{week}-2', '%Y-%W-%w').date()
+        thursday = datetime.datetime.strptime(f"2023-{week}-4", "%Y-%W-%w").date()
+        tuesday = datetime.datetime.strptime(f"2023-{week}-2", "%Y-%W-%w").date()
 
         # Exclude the holidays
         if thursday not in holidays:

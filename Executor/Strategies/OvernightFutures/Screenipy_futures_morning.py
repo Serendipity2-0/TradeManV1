@@ -8,15 +8,15 @@ from time import sleep
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-ENV_PATH = os.path.join(DIR_PATH, 'trademan.env')
+ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.ExeUtils import holidays
-from Executor.Strategies.StrategiesUtil import assign_trade_id,fetch_previous_trade_id
+from Executor.Strategies.StrategiesUtil import assign_trade_id, fetch_previous_trade_id
 
-strategy_obj = StrategyBase.load_from_db('OvernightFutures')
+strategy_obj = StrategyBase.load_from_db("OvernightFutures")
 instrument_obj = InstrumentCenterUtils.Instrument()
 
 strategy_name = strategy_obj.StrategyName
@@ -38,28 +38,28 @@ signal = "Long" if prediction == "Bullish" else "Short"
 orders_to_place = [
     {
         "strategy": strategy_name,
-        "signal": signal, 
-        "base_symbol" : base_symbol,
-        "exchange_token" : futures_exchange_token,     
-        "transaction_type": strategy_obj.get_square_off_transaction(prediction), 
-        "order_type" : order_type, 
-        "product_type" : product_type,
-        "order_mode" : "Main",
-        "strategy_mode" : "CarryForward",
-        "trade_id" : previous_trade_prefix 
+        "signal": signal,
+        "base_symbol": base_symbol,
+        "exchange_token": futures_exchange_token,
+        "transaction_type": strategy_obj.get_square_off_transaction(prediction),
+        "order_type": order_type,
+        "product_type": product_type,
+        "order_mode": "Main",
+        "strategy_mode": "CarryForward",
+        "trade_id": previous_trade_prefix,
     },
-    {  
+    {
         "strategy": strategy_name,
         "signal": signal,
-        "base_symbol" : base_symbol,
-        "exchange_token" : hedge_exchange_token,     
-        "transaction_type": hedge_transcation_type,  
-        "order_type" : order_type, 
-        "product_type" : product_type,
-        "order_mode" : "Hedge",
-        "strategy_mode" : "CarryForward",
-        "trade_id" : previous_trade_prefix
-    }
+        "base_symbol": base_symbol,
+        "exchange_token": hedge_exchange_token,
+        "transaction_type": hedge_transcation_type,
+        "order_type": order_type,
+        "product_type": product_type,
+        "order_mode": "Hedge",
+        "strategy_mode": "CarryForward",
+        "trade_id": previous_trade_prefix,
+    },
 ]
 
 
@@ -67,6 +67,7 @@ def is_yesterday_holiday(today):
     """Check if yesterday was a holiday."""
     yesterday = today - dt.timedelta(days=1)
     return yesterday in holidays
+
 
 def main():
     global orders_to_place
@@ -78,16 +79,19 @@ def main():
         return
 
     desired_end_time_str = strategy_obj.ExitParams.SquareOffTime
-    start_hour, start_minute, start_second = map(int, desired_end_time_str.split(':'))
-    wait_time = dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
+    start_hour, start_minute, start_second = map(int, desired_end_time_str.split(":"))
+    wait_time = (
+        dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
+    )
     if wait_time.total_seconds() > 0:
         print(f"Waiting for {wait_time} before starting the bot")
         sleep(wait_time.total_seconds())
-        
+
     orders_to_place = assign_trade_id(orders_to_place)
 
     print(orders_to_place)
     # place_order.place_order_for_strategy(strategy_name,orders_to_place)
+
 
 if __name__ == "__main__":
     main()

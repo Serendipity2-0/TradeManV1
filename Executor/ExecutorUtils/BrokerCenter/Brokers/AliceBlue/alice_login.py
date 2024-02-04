@@ -8,9 +8,16 @@ import requests
 import pyotp
 
 from loguru import logger
-ERROR_LOG_PATH = os.getenv('ERROR_LOG_PATH')
-logger.add(ERROR_LOG_PATH,level="TRACE", rotation="00:00",enqueue=True,backtrace=True, diagnose=True)
 
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
 
 
 class CryptoJsAES:
@@ -22,7 +29,7 @@ class CryptoJsAES:
 
     @staticmethod
     def __unpad(data):
-        return data[:-(data[-1] if type(data[-1]) == int else ord(data[-1]))]
+        return data[: -(data[-1] if type(data[-1]) == int else ord(data[-1]))]
 
     def __bytes_to_key(data, salt, output=48):
         assert len(salt) == 8, len(salt)
@@ -41,7 +48,9 @@ class CryptoJsAES:
         key = key_iv[:32]
         iv = key_iv[32:]
         aes = AES.new(key, AES.MODE_CBC, iv)
-        return base64.b64encode(b"Salted__" + salt + aes.encrypt(CryptoJsAES.__pad(message)))
+        return base64.b64encode(
+            b"Salted__" + salt + aes.encrypt(CryptoJsAES.__pad(message))
+        )
 
     @staticmethod
     def decrypt(encrypted, passphrase):
@@ -53,55 +62,72 @@ class CryptoJsAES:
         iv = key_iv[32:]
         aes = AES.new(key, AES.MODE_CBC, iv)
         return CryptoJsAES.__unpad(aes.decrypt(encrypted[16:]))
-    
+
+
 def login_in_aliceblue(user_details):
-    BASE_URL="https://ant.aliceblueonline.com/rest/AliceBlueAPIService"
-    
+    BASE_URL = "https://ant.aliceblueonline.com/rest/AliceBlueAPIService"
+
     totp = pyotp.TOTP(user_details["TotpAccess"])
 
     def getEncryptionKey():
-        url = BASE_URL+"/customer/getEncryptionKey"
+        url = BASE_URL + "/customer/getEncryptionKey"
         payload = json.dumps({"userId": user_details["BrokerUsername"]})
-        headers = {'Content-Type': 'application/json'}
-        response = requests.post( url, headers=headers, data=payload)
-        return response.json()['encKey']
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(url, headers=headers, data=payload)
+        return response.json()["encKey"]
 
     getEncryptionKey = getEncryptionKey()
-    checksum = CryptoJsAES.encrypt(user_details["BrokerPassword"].encode(), getEncryptionKey.encode()).decode('UTF-8')
+    checksum = CryptoJsAES.encrypt(
+        user_details["BrokerPassword"].encode(), getEncryptionKey.encode()
+    ).decode("UTF-8")
 
     def weblogin():
-        url = BASE_URL+"/customer/webLogin"
-        payload = json.dumps({"userId": user_details["BrokerUsername"], "userData": checksum})                    
-        headers = {'Content-Type': 'application/json'}
-        response = requests.post( url, headers=headers, data=payload)
+        url = BASE_URL + "/customer/webLogin"
+        payload = json.dumps(
+            {"userId": user_details["BrokerUsername"], "userData": checksum}
+        )
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(url, headers=headers, data=payload)
         return response.json()
 
     weblogin = weblogin()
-    sCount = weblogin['sCount']
-    sIndex = weblogin['sIndex']
+    sCount = weblogin["sCount"]
+    sIndex = weblogin["sIndex"]
 
     def twoFa(sCount, sIndex):
-        url = BASE_URL+"/sso/2fa"
-        payload = json.dumps({"answer1": user_details["TwoFA"],
-                    "userId": user_details["BrokerUsername"],
-                    "sCount": sCount,
-                    "sIndex": sIndex})                    
-        headers = {'Content-Type': 'application/json'}
-        response = requests.post( url, headers=headers, data=payload)
+        url = BASE_URL + "/sso/2fa"
+        payload = json.dumps(
+            {
+                "answer1": user_details["TwoFA"],
+                "userId": user_details["BrokerUsername"],
+                "sCount": sCount,
+                "sIndex": sIndex,
+            }
+        )
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(url, headers=headers, data=payload)
         return response.json()
 
     twoFa = twoFa(sCount, sIndex)
-    loPreference = twoFa['loPreference']
-    totpAvailable = twoFa['totpAvailable']
+    loPreference = twoFa["loPreference"]
+    totpAvailable = twoFa["totpAvailable"]
 
     def verifyTotp(twofa):
         if twofa["loPreference"] == "TOTP" and twofa["totpAvailable"]:
-            url = BASE_URL+"/sso/verifyTotp"
-            payload = json.dumps({"tOtp": totp.now(), "userId": user_details["BrokerUsername"] })
+            url = BASE_URL + "/sso/verifyTotp"
+            payload = json.dumps(
+                {"tOtp": totp.now(), "userId": user_details["BrokerUsername"]}
+            )
             headers = {
-                'Authorization': 'Bearer '+user_details["BrokerUsername"]+' '+twofa['us'],
-                'Content-Type': 'application/json'}
-            response = requests.request("POST", url, headers=headers, data=payload,verify=True)
+                "Authorization": "Bearer "
+                + user_details["BrokerUsername"]
+                + " "
+                + twofa["us"],
+                "Content-Type": "application/json",
+            }
+            response = requests.request(
+                "POST", url, headers=headers, data=payload, verify=True
+            )
             if response.text:  # Check if response contains any data
                 try:
                     response_data = response.json()
@@ -109,25 +135,29 @@ def login_in_aliceblue(user_details):
                         logger.success("Login Successfully")
                         return response_data
                     else:
-                        logger.error("User is not enable TOTP! Please enable TOTP through mobile or web")
+                        logger.error(
+                            "User is not enable TOTP! Please enable TOTP through mobile or web"
+                        )
                 except json.JSONDecodeError:
                     logger.error(f"Could not parse response as JSON: {response.text}")
             else:
-                logger.error(f"No data returned from server. HTTP Status Code: {response.status_code}")
+                logger.error(
+                    f"No data returned from server. HTTP Status Code: {response.status_code}"
+                )
         else:
             logger.error("Try TOTP auth Again")
         return None
 
-
     if loPreference == "TOTP" and totpAvailable:
         verifyTotp = verifyTotp(twoFa)
-        userSessionID = verifyTotp['userSessionID']
+        userSessionID = verifyTotp["userSessionID"]
     else:
-        userSessionID = twoFa['userSessionID']
+        userSessionID = twoFa["userSessionID"]
 
-    alice = Aliceblue(user_id=user_details["BrokerUsername"], api_key=user_details["ApiKey"])
+    alice = Aliceblue(
+        user_id=user_details["BrokerUsername"], api_key=user_details["ApiKey"]
+    )
     alice_session_id = alice.get_session_id()["sessionID"]
     logger.info(f"Session id for {user_details['BrokerUsername']}: {alice_session_id}")
 
     return alice_session_id
-

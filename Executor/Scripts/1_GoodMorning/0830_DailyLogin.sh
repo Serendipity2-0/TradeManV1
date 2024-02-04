@@ -10,6 +10,7 @@ attempt=0
 telegram_bot_token='5994380365:AAFv0GSI78IxP6nI7g_xJPoqY3zWSfDHndQ'
 chat_id='-367108102'
 
+#TODO: Take the path from the environment variable
 # Run the script
 while true; do
     # Try to run the command

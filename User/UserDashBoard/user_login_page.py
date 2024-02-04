@@ -17,19 +17,7 @@ from streamlit_option_menu import option_menu
 # Load environment variables from .env file
 load_dotenv()
 
-# Retrieve values from .env
-firebase_credentials_path = os.getenv(
-database_url = os.getenv("FIREBASE_DATABASE_URL")
-storage_bucket = os.getenv("STORAGE_BUCKET")
 
-# Initialize Firebase app
-if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_credentials_path)
-    firebase_admin.initialize_app(
-        cred, {"databaseURL": database_url, "storageBucket": storage_bucket}
-    )
-
-# Create a SessionState class to manage session state variables
 
 
 class SessionState:

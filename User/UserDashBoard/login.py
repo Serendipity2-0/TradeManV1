@@ -13,7 +13,11 @@ from dotenv import load_dotenv
 from streamlit_calendar import calendar
 from firebase_admin import storage
 from streamlit_option_menu import option_menu
-from User.UserDashBoard.profile_page import display_performance_dashboard, table_style, display_profile_picture
+from User.UserDashBoard.profile_page import (
+    display_performance_dashboard,
+    table_style,
+    display_profile_picture,
+)
 
 
 # Load environment variables from .env file
@@ -21,18 +25,16 @@ load_dotenv()
 
 # Retrieve values from .env
 script_dir = os.path.dirname(os.path.realpath(__file__))
-firebase_credentials_path = os.path.join(
-    script_dir, 'firebasecredentials.json')
-database_url = os.getenv('DATABASE_URL')
-storage_bucket = os.getenv('STORAGE_BUCKET')
+firebase_credentials_path = os.path.join(script_dir, "firebasecredentials.json")
+database_url = os.getenv("DATABASE_URL")
+storage_bucket = os.getenv("STORAGE_BUCKET")
 
 # Initialize Firebase app
 if not firebase_admin._apps:
     cred = credentials.Certificate(firebase_credentials_path)
-    firebase_admin.initialize_app(cred, {
-        'databaseURL': database_url,
-        'storageBucket': storage_bucket
-    })
+    firebase_admin.initialize_app(
+        cred, {"databaseURL": database_url, "storageBucket": storage_bucket}
+    )
 
 # Create a SessionState class to manage session state variables
 
@@ -50,10 +52,10 @@ def login_page():
     # If the user is not logged in, show the login form
     if not session_state.logged_in:
         # Take inputs for login information
-        username = st.text_input(
-            "Email or Phone Number:", key="user_email_input")
+        username = st.text_input("Email or Phone Number:", key="user_email_input")
         password = st.text_input(
-            "Password:", type="password", key="user_Password_input")
+            "Password:", type="password", key="user_Password_input"
+        )
 
         # Add a login button
         login = st.button("Login")
@@ -63,14 +65,17 @@ def login_page():
             # Fetch data from Firebase Realtime Database to verify the credentials
             try:
                 # Get a reference to the 'clients' node in the database
-                ref = db.reference('clients')
+                ref = db.reference("clients")
 
                 # Fetch all clients data
                 clients = ref.get()
 
                 # Go through each client and check if the credentials match
                 for client_id, client_data in clients.items():
-                    if (client_data.get("Email") == username or client_data.get("Phone Number") == username) and client_data.get("Password") == password:
+                    if (
+                        client_data.get("Email") == username
+                        or client_data.get("Phone Number") == username
+                    ) and client_data.get("Password") == password:
                         # If credentials match, show a success message and break the loop
                         session_state.logged_in = True
                         session_state.client_data = client_data
@@ -98,11 +103,13 @@ def show_app_contents():
             ("Profile", "Performance Dashboard", "Logout"),
         )
 
-      # Show the respective content based on the selected option
+    # Show the respective content based on the selected option
     if selected == "Profile":
         client_data = session_state.client_data
         if client_data is not None:
-            show_profile(client_data,)
+            show_profile(
+                client_data,
+            )
         else:
             st.warning("No client data available.")
     elif selected == "Performance Dashboard":
@@ -115,12 +122,11 @@ def show_app_contents():
 
 def display_for_login(client_data):
     if client_data:  # Check if client_data is not None before processing
-        client_username = client_data.get("Username", '')
+        client_username = client_data.get("Username", "")
         client_username = client_username[0].lower() + client_username[1:]
         excel_file_name = f"{client_username}.xlsx"
         display_profile_picture(client_data)
-        display_performance_dashboard(
-            client_data, client_username, excel_file_name)
+        display_performance_dashboard(client_data, client_username, excel_file_name)
 
     else:
         st.warning("No client data available.")
