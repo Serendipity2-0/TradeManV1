@@ -40,11 +40,14 @@ logger.add(
 )
 
 
-
 zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
 
-from Executor.Strategies.StrategiesUtil import StrategyBase
-from Executor.Strategies.StrategiesUtil import StrategyBase, base_symbol_token
+from Executor.Strategies.StrategiesUtil import (
+    StrategyBase, 
+    base_symbol_token,
+    update_signal_firebase,
+    update_next_trade_id_firebase
+    )
 from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
     create_kite_obj,
 )
@@ -59,12 +62,10 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
 
-# import MarketUtils.Discord.discordchannels as discord_bot
-# from Strategies.StrategyBase import Strategy
-# import Brokers.BrokerUtils.Broker as Broker
-# from MarketUtils.Firebase.firebase_utils import fetch_collection_data_firebase
-
 strategy_obj = StrategyBase.load_from_db("AmiPy")
+strategy_name = strategy_obj.StrategyName
+next_trade_prefix = strategy_obj.NextTradeId
+
 
 base_symbols = strategy_obj.Instruments
 base_symbol = base_symbols[0]
@@ -243,12 +244,6 @@ trade_state_df = pd.DataFrame(
     ]
 )
 
-# Time params ### TTTT
-entry_time = pd.Timestamp(entry).time()
-last_buy_time = pd.Timestamp(last).time()
-sqroff_time = pd.Timestamp(sqroff).time()
-
-
 def genSignals(resultdf):
     counter = 0
     signals = []
@@ -422,6 +417,7 @@ def updateSignalDf(last_signal, trade_state):
 
     if trade_type == "LongSignal" or trade_type == "ShortSignal":
         signal = {
+            "TradeId" : next_trade_prefix,
             "Strike_Price": strike_prc,
             "Trade_No": trade_no,
             "Trade_Type": trade_type,
@@ -432,10 +428,8 @@ def updateSignalDf(last_signal, trade_state):
         signals.append(signal)
         signals_df = pd.DataFrame(signal, index=[0])
         signals_df.to_csv(trade_sig_path, index=True)
-        signal_entry = strategy_obj.EntryParams.EntryTime
-        signal_entry[trade_type] = signal
-        # strategy_obj.write_strategy_json(STRATEGY_PATH)
-        # amipy_orders.place_orders(strike_prc, trade_type)
+
+        amipy_orders.place_orders(strike_prc, trade_type)
 
     elif trade_type == "LongCoverSignal" or trade_type == "ShortCoverSignal":
         if len(signals) != 0:
@@ -448,6 +442,7 @@ def updateSignalDf(last_signal, trade_state):
             )
         else:
             signal = {
+                "TradeId" : next_trade_prefix,
                 "Strike_Price": strike_prc,
                 "Trade_No": trade_no,
                 "Trade_Type": trade_type,
@@ -460,10 +455,7 @@ def updateSignalDf(last_signal, trade_state):
         signal["NetTradePoints"] = signal["TradeExitPrice"] - signal["TradeEntryPrice"]
         signals_df = pd.DataFrame(signal, index=[0])
         signals_df.to_csv(trade_sig_path, index=True)
-        signal_entry = strategy_obj.get_signal_entry()
-        signal_entry[trade_type] = signal
-        strategy_obj.set_signal_entry(signal_entry)
-        # strategy_obj.write_strategy_json(STRATEGY_PATH)
+
         amipy_orders.place_orders(strike_prc, trade_type)
 
     try:

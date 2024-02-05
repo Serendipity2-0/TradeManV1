@@ -3,9 +3,24 @@ import math
 import os
 import sys
 import time
+from loguru import logger
+from dotenv import load_dotenv
 
 DIR = os.getcwd()
 sys.path.append(DIR)
+
+load_dotenv(os.path.join(DIR, "trademan.env"))
+
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
+
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     push_orders_firebase,
@@ -26,7 +41,10 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
     if avg_sl_points is not None:
         raw_quantity = ((risk / 100) * capital) / avg_sl_points
         # Calculate the number of lots
-        number_of_lots = raw_quantity // lot_size
+        number_of_lots = raw_quantity / lot_size
+        #ceil the number of lots
+        number_of_lots = math.ceil(number_of_lots)
+
         # Calculate the quantity as a multiple of lot_size
         quantity = int(number_of_lots * lot_size)
     else:
@@ -113,9 +131,7 @@ def retrieve_order_id(account_name, strategy, exchange_token: int):
     for strategy_name in user_details:
         if strategy_name == strategy:
             for trade in user_details[strategy_name]["TradeState"]["orders"]:
-                if trade["exchange_token"] == exchange_token and trade[
-                    "trade_id"
-                ].endswith("EX"):
+                if trade["exchange_token"] == exchange_token and trade["trade_id"].endswith("EX"):
                     order_ids[trade["order_id"]] = trade["qty"]
     return order_ids
 

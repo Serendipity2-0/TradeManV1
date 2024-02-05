@@ -278,7 +278,7 @@ def kite_modify_orders_for_users(order_details, users_credentials):
         user_details=users_credentials
     )  # Create a KiteConnect instance with user's broker credentials
     order_id_dict = retrieve_order_id(
-        order_details.get("account_name"),
+        order_details.get("username"),
         order_details.get("strategy"),
         order_details.get("exchange_token"),
     )
@@ -295,7 +295,7 @@ def kite_modify_orders_for_users(order_details, users_credentials):
             )
             logger.info("zerodha order modified", modify_order)
     except Exception as e:
-        message = f"Order placement failed: {e} for {order_details['account_name']}"
+        message = f"Order placement failed: {e} for {order_details['username']}"
         logger.error(message)
         discord_bot(message, order_details.get("strategy"))
         return None

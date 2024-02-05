@@ -14,6 +14,7 @@ sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 fno_info_path = os.getenv("FNO_INFO_PATH")
+user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 
 from loguru import logger
 
@@ -56,6 +57,7 @@ class ExitParams(BaseModel):
     SLType: str
     SquareOffTime: Optional[str] = None
     LastBuyTime: Optional[str] = None
+    AvgSLPoints: Optional[float] = None
 
     class Config:
         extra = "allow"
@@ -360,26 +362,25 @@ def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size):
         user["Strategies"][strategy_name]["Qty"] = qty
 
         update_fields_firebase(
-            "new_clients", user["Tr_No"], {"Qty": qty}, f"Strategies/{strategy_name}"
+            user_db_collection, user["Tr_No"], {"Qty": qty}, f"Strategies/{strategy_name}"
         )
 
 
-# TODO: shorten the trade_ids
 def assign_trade_id(orders_to_place):
     for order in orders_to_place:
         # Determine the last part of the trade_id based on order_mode
-        if order["order_mode"] in ["Main", "HedgeEntry"]:
+        if order["order_mode"] in ["Main", "HedgeEntry","MainEntry"]:
             trade_id_suffix = "EN"
-        elif order["order_mode"] in ["SL", "Trailling", "HedgeExit"]:
+        elif order["order_mode"] in ["SL", "Trailing", "HedgeExit","MainExit"]:
             trade_id_suffix = "EX"
         else:
             trade_id_suffix = "unknown"
 
         if order["order_mode"] == "HedgeEntry" or order["order_mode"] == "HedgeExit":
             order["order_mode"] = "HO"
-        if order["order_mode"] == "Main":
+        if order["order_mode"] == "Main" or order["order_mode"] == "MainEntry" or order["order_mode"] == "MainExit":
             order["order_mode"] = "MO"
-        if order["order_mode"] == "SL" or order["order_mode"] == "Trailling":
+        if order["order_mode"] == "SL" or order["order_mode"] == "Trailing":
             order["order_mode"] = "SL"
 
         if order["signal"] == "Long":
@@ -409,7 +410,6 @@ def fetch_previous_trade_id(trade_id):
 
 
 def update_signal_firebase(strategy_name, signal, trade_id=None):
-
     trade = signal["TradeId"].split("_")[3]
     trade_no = signal["TradeId"].split("_")[0]
     if trade == "EN":

@@ -20,8 +20,6 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
 )
 
 import MPWizard_calc as MPWizard_calc
-from MPWizard_monitor import OrderMonitor
-
 
 class MPWizard(StrategyBase):
     def get_general_params(self):
@@ -75,8 +73,10 @@ def main():
     # Update the JSON file with high-low range data
     MPWizard_calc.get_high_low_range_and_update_json()
 
-    mood_data = mpwizard_strategy_obj.get_entry_params().InstrumentToday
+    strat = MPWizard.load_from_db("MPWizard")
+    mood_data = strat.get_entry_params().InstrumentToday
 
+    from MPWizard_monitor import OrderMonitor
     # Initialize the OrderMonitor with the users and instruments, then start monitoring
     order_monitor = OrderMonitor(mood_data, max_orders=2)
     order_monitor.monitor_index()

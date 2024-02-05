@@ -120,6 +120,12 @@ NOTES
 
 1. TradeStateImplementation: If the program stops abruptly It should run all the scripts under strategy folder and generate Signals for each strategy. It should check the strategyDB and match with the signals. If there is any mismatch notify us through telegram
 
-Work to be done:
-1. ExeDashboard
+Test 2 Postmortem
+1. AmiPy
+   1. Recheck the logic for TradeId for exit (Previous trade_id is sent while placing the orders)
+
+2. MPWizard
+   1. Reload function in StrategyBase Class to fetch the latest values from Firebase
+   
+   
 

@@ -290,7 +290,7 @@ def ant_modify_orders_for_users(order_details, user_credentials):
 
     alice = create_alice_obj(user_credentials)
     order_id_dict = retrieve_order_id(
-        order_details.get("account_name"),
+        order_details.get("username"),
         order_details.get("strategy"),
         order_details.get("exchange_token"),
     )
@@ -316,7 +316,7 @@ def ant_modify_orders_for_users(order_details, user_credentials):
             )
             logger.info("alice modify_order", modify_order)
     except Exception as e:
-        message = f"Order placement failed: {e} for {order_details['account_name']}"
+        message = f"Order placement failed: {e} for {order_details['username']}"
         logger.error(message)
         discord_bot(message, order_details.get("strategy"))
         return None

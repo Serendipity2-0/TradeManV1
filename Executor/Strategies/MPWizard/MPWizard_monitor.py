@@ -6,6 +6,17 @@ import MPWizard_calc as MPWizard_calc
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+from loguru import logger
+
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
 
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentMonitor.instrument_monitor import (
     monitor,
@@ -24,9 +35,13 @@ from Executor.Strategies.StrategiesUtil import (
     place_order_strategy_users,
     update_stoploss_orders,
     update_qty_user_firebase,
+    update_signal_firebase,
 )
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
+)
+from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import (
+    FNOInfo
 )
 
 strategy_obj = StrategyBase.load_from_db("MPWizard")
@@ -55,6 +70,24 @@ class MPWInstrument:
     def get_ib_level(self):
         return self.ib_level
 
+def signal_log_firebase(orders_to_place,cross_type):
+    for order in orders_to_place:
+        if order.get("order_mode") == "MO":
+            main_trade_id = order.get("trade_id")
+
+    signal_to_log_firebase = {
+        "Signal": "Long",
+        "TradeId": main_trade_id,
+        "Time": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "StrategyInfo": {
+            "TradeView": strategy_obj.MarketInfoParams.TradeView,
+            "Direction": cross_type,
+            # "IBLevel": strategy_obj.EntryParams.InstrumentToday[self.get_index_name(order["exchange_token"])]["IBLevel"],
+            "PriceRef": str(order["price_ref"])
+            # "TriggerPoints": strategy_obj.EntryParams.InstrumentToday[self.get_index_name(order["exchange_token"])]["TriggerPoints"],
+        },
+    }
+    update_signal_firebase(strategy_obj.StrategyName, signal_to_log_firebase, strategy_obj.NextTradeId)
 
 class OrderMonitor:
     def __init__(self, json_data, max_orders):
@@ -178,13 +211,14 @@ class OrderMonitor:
             },
             {
                 "strategy": strategy_obj.StrategyName,
+                "price_ref": price_ref,
                 "signal": "Long",
                 "base_symbol": name,
                 "exchange_token": exchange_token,
                 "transaction_type": stoploss_transaction_type,
                 "order_type": "Stoploss",
                 "product_type": strategy_obj.GeneralParams.ProductType,
-                "order_mode": "Trailling",
+                "order_mode": "Trailing",
                 "trade_id": next_trade_prefix,
                 "limit_prc": limit_prc,
                 "trigger_prc": trigger_prc,
@@ -206,7 +240,7 @@ class OrderMonitor:
                 "trigger_prc": order_details["trigger_prc"],
                 "order_type": "Stoploss",
                 "product_type": order_details["product_type"],
-                "segment": order_details["segment"],
+                "segment": Instrument().get_segment_by_exchange_token(order_details["exchange_token"]),
                 "strategy_mode": "MultipleInstruments",
             }
         ]
@@ -230,18 +264,20 @@ class OrderMonitor:
         if index_name:
             name = index_name
             price_ref = MPWizard_calc.get_price_ref_for_today(name)
+            lot_size = FNOInfo().get_lot_size_by_base_symbol(name)
 
             if self.orders_placed_today >= self.max_orders_per_day:
                 print(
                     "Daily signal limit reached. No more signals will be generated today."
                 )
                 return
-
+            #TODO: Fetch the latest trade_id from the firebase
             order_to_place = self.create_order_details(name, cross_type, ltp, price_ref)
-            # TODO: Calculate the qty here
-            # update_qty_user_firebase(strategy_name,ltp,lot_size)
-            print(order_to_place)
+            update_qty_user_firebase(strategy_obj.StrategyName,price_ref,lot_size)
+            signal_log_firebase(order_to_place,cross_type)
             place_order_strategy_users(strategy_obj.StrategyName, order_to_place)
+
+
             if message:
                 print(message)
                 discord_bot(message, strategy_obj.StrategyName)
@@ -251,10 +287,10 @@ class OrderMonitor:
             if name in self.message_sent:
                 for level in self.message_sent[name]:
                     self.message_sent[name][level] = True
-            # i want to send the order details having order_mode as Trailling to the monitor.add_token
+            # i want to send the order details having order_mode as Trailing to the monitor.add_token
             if order_to_place:
                 for order in order_to_place:
-                    if order["order_mode"] == "Trailling":
+                    if order["order_mode"] == "SL":
                         self.instrument_monitor.add_token(order_details=order)
         else:
             print("Index name not found for token:", instrument)
@@ -268,8 +304,8 @@ class OrderMonitor:
         order_details["trigger_prc"] = order_details["limit_prc"] + 1.0
 
         order_to_modify = self.create_modify_order_details(order_details)
+        logger.debug(f"Modifying orders for {order_to_modify}")
         update_stoploss_orders(strategy_obj.StrategyName, order_to_modify)
-        # place_order.modify_orders(order_details=order_to_modify)
 
         order_details["target"] += price_ref / 2  # Adjust target by half of price_ref
         return (
