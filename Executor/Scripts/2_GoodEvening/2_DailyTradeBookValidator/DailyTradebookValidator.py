@@ -103,7 +103,7 @@ def daily_tradebook_validator():
             )
 
             if not orders_from_firebase:
-                logger.error(f"No orders found for user: {user['Tr_No']}")
+                logger.error(f"No orders found for user: {user['Tr_No']} for strategy: {strategy_key}")
                 continue
 
             for order in orders_from_firebase:
@@ -136,8 +136,6 @@ def daily_tradebook_validator():
 
         conn.close()
 
-        logger.debug("Matched Orders:", list(matched_orders))
-        logger.debug("Unmatched Orders:", list(unmatched_orders))
         # clear the lists after iterating through each user
         matched_orders.clear()
         unmatched_orders.clear()

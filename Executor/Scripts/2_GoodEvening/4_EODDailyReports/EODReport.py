@@ -3,12 +3,15 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import pandas as pd
 from babel.numbers import format_currency
+from loguru import logger
+from dotenv import load_dotenv
 
 # Define constants and load environment variables
 DIR = os.getcwd()
 sys.path.append(DIR)  # Add the current directory to the system path
 
-from loguru import logger
+ENV_PATH = os.path.join(DIR, "trademan.env")
+load_dotenv(ENV_PATH)
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 logger.add(
@@ -23,6 +26,7 @@ logger.add(
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
+    fetch_active_strategies_all_users
 )
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
     send_telegram_message,
@@ -34,22 +38,14 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 db_dir = os.getenv("DB_DIR")
-# ACTIVE_STRATEGIES = os.getenv('ACTIVE_STRATEGIES')
-active_stratgies = [
-    "ExpiryTrader",
-    "GoldenCoin",
-]  ####WARNING: This is a placeholder, replace with actual logic to get active strategies
 
-
-def get_today_trades(user_tables):
+def get_today_trades(user_tables,active_stratgies):
     # got to user db and find table names matching Active Strategies and get trades for today
     today_string = datetime.now().strftime("%Y-%m-%d")
     today_trades = []
-    # print("user_tables", user_tables)
     for strategy in active_stratgies:
         # user_tables is a list of dict with table name as key and table df as value, match the strategy name with the key and get the trades for today
         for table in user_tables:
-            # print("strategy_name", list(table.keys())[0])
             if strategy in list(table.keys())[0]:
                 trades = table[strategy]
                 # in the table the exit_time column is in this format '2021-08-25 15:30:00'. so i want convert it to '2021-08-25' and then compare it with today_string if matched append it to today_trades
@@ -77,7 +73,6 @@ def get_additions_withdrawals(user_tables):
                 additions_withdrawals = transactions[
                     transactions["transaction_date"] == today_string
                 ]["amount"].sum()
-    logger.debug("additions_withdrawals", additions_withdrawals)
     return round(additions_withdrawals)
 
 
@@ -134,10 +129,13 @@ def main():
     # TODO: Logic to handle user transactions
 
     active_users = fetch_active_users_from_firebase()
+    active_stratgies = fetch_active_strategies_all_users()
 
     for user in active_users:
+
         user_db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
         user_db_conn = get_db_connection(user_db_path)
+
 
         user_tables = []
         # get all the tables in the user db with table name as key and table df as value
@@ -154,10 +152,10 @@ def main():
         phone_number = user["Profile"]["PhoneNumber"]
 
         # Placeholder values, replace with actual queries and Firebase fetches
-        today_trades = get_today_trades(user_tables)
+        today_trades = get_today_trades(user_tables,active_stratgies)
         # TODO: add DTD function to append to the DTD table in the user's db
-        gross_pnl = sum(trade["pnl"] for trade in today_trades)
-        expected_tax = sum(trade["tax"] for trade in today_trades)
+        gross_pnl = sum(float(trade["pnl"]) for trade in today_trades)
+        expected_tax = sum(float(trade["tax"]) for trade in today_trades)
 
         today_string = datetime.now().strftime("%Y-%m-%d")
         today_fb_format = datetime.now().strftime("%d%b%y")

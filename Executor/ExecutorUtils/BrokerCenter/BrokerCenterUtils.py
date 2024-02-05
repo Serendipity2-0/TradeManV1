@@ -182,6 +182,16 @@ def fetch_strategy_details_for_user(username):
     for user in user_details:
         if user_details[user]["Broker"]["BrokerUsername"] == username:
             return user_details[user]["Strategies"]
+        
+def fetch_active_strategies_all_users():
+    user_details = firebase_utils.fetch_collection_data_firebase("new_clients")
+    strategies = []
+    for user in user_details:
+        if user_details[user]["Active"] == True:
+            for strategy in user_details[user]["Strategies"]:
+                if strategy not in strategies:
+                    strategies.append(strategy)
+    return strategies
 
 
 def get_today_orders_for_brokers(user):

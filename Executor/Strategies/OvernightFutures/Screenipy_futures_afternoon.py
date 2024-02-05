@@ -12,7 +12,7 @@ ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
 import Executor.Strategies.OvernightFutures.OvernightFutures_calc as OF_calc
-from Executor.Strategies.StrategiesUtil import StrategyBase, base_symbol_token
+from Executor.Strategies.StrategiesUtil import StrategyBase, base_symbol_token,update_qty_user_firebase,update_signal_firebase
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.ExeUtils import holidays
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
@@ -25,6 +25,7 @@ from Executor.Strategies.StrategiesUtil import (
     assign_trade_id,
     place_order_strategy_users,
 )
+from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 
 hedge_transcation_type = "BUY"
 futures_option_type = "FUT"
@@ -137,10 +138,29 @@ def message_for_orders(
     print(message)
     discord_bot(message, strategy_name)
 
+def signal_to_log_firebase(orders_to_place,predicition):
+    for order in orders_to_place:
+            if order.get("order_mode") == "MO":
+                main_trade_id = order.get("trade_id")
+    
+    trade_signal = "Long" if predicition == "Bullish" else "Short"
+
+    signals_to_log = {
+            "TradeId": main_trade_id,
+            "Signal": trade_signal,
+            "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "StrategyInfo": {
+                "Direction": predicition,
+            }
+        }
+    update_signal_firebase(strategy_obj.StrategyName, signals_to_log, next_trade_prefix)
 
 def main():
     global hedge_exchange_token, futures_exchange_token, prediction, orders_to_place
     now = dt.datetime.now()
+
+    lot_size = lot_size = FNOInfo().get_lot_size_by_base_symbol(strategy_obj.Instruments[0])
+    avg_sl_points = strategy_obj.ExitParams.AvgSLPoints
 
     if now.date() in holidays:
         print("Skipping execution as today is a holiday.")
@@ -162,7 +182,9 @@ def main():
     )
     orders_to_place = assign_trade_id(orders_to_place)
     print(orders_to_place)
-    place_order_strategy_users(strategy_name, orders_to_place)
+    update_qty_user_firebase(strategy_name, avg_sl_points, lot_size)
+    signal_to_log_firebase(orders_to_place,prediction)
+    # place_order_strategy_users(strategy_name, orders_to_place)
 
     hedge_exchange_token = np.int64(hedge_exchange_token)
     hedge_exchange_token = int(hedge_exchange_token)
