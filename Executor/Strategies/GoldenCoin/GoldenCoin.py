@@ -66,9 +66,8 @@ def flip_coin():
 
 
 def determine_strike_and_option():
-    strike_price_multiplier = goldencoin_strategy_obj.get_raw_field("EntryParams").get(
-        "StrikePriceMultiplier"
-    )
+    strike_price_multiplier = goldencoin_strategy_obj.EntryParams.StrikeMultiplier
+    strategy_type = goldencoin_strategy_obj.GeneralParams.StrategyType
     base_symbol, _ = goldencoin_strategy_obj.determine_expiry_index()
     option_type = "CE" if flip_coin() == "Heads" else "PE"
     prediction = "Bullish" if option_type == "CE" else "Bearish"
@@ -76,6 +75,7 @@ def determine_strike_and_option():
         base_symbol=base_symbol,
         prediction=prediction,
         strike_prc_multiplier=strike_price_multiplier,
+        strategy_type=strategy_type,
     )
     return base_symbol, strike_prc, option_type
 
@@ -142,10 +142,6 @@ def send_signal_msg(base_symbol, strike_prc, option_type):
     )
     logger.info(message)
     discord_bot(message, goldencoin_strategy_obj.StrategyName)
-
-
-# TODO: Add stoploss to the strategy along with the main order
-
 
 def main():
     base_symbol, strike_prc, option_type = determine_strike_and_option()

@@ -82,11 +82,12 @@ strike_prc_multiplier = expiry_trader_obj.EntryParams.StrikeMultiplier
 hedge_multiplier = expiry_trader_obj.EntryParams.HedgeMultiplier
 stoploss_multiplier = expiry_trader_obj.EntryParams.SLMultiplier
 desired_start_time_str = expiry_trader_obj.get_entry_params().EntryTime
+strategy_type = expiry_trader_obj.GeneralParams.StrategyType
 
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
 
 main_strikeprc = expiry_trader_obj.calculate_current_atm_strike_prc(
-    base_symbol, today_expiry_token, prediction, strike_prc_multiplier
+    base_symbol, today_expiry_token, prediction, strike_prc_multiplier,strategy_type
 )
 hedge_strikeprc = expiry_trader_obj.get_hedge_strikeprc(
     base_symbol, today_expiry_token, prediction, hedge_multiplier

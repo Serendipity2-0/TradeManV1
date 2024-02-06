@@ -1,14 +1,26 @@
-import os
-import sys
+import random, time
+import os, sys
 import datetime as dt
-from time import sleep
 from dotenv import load_dotenv
-import random
-
-from pprint import pprint
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
+
+ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
+load_dotenv(ENV_PATH)
+
+from loguru import logger
+
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
+
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
 from Executor.Strategies.StrategiesUtil import (
@@ -16,16 +28,13 @@ from Executor.Strategies.StrategiesUtil import (
     assign_trade_id,
     update_signal_firebase,
     place_order_strategy_users,
+    calculate_transaction_type_sl,
 )
 
-import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
-
-ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
-load_dotenv(ENV_PATH)
 
 
 class Om(StrategyBase):
@@ -42,98 +51,134 @@ class Om(StrategyBase):
         return super().get_raw_field(field_name)
 
 
-strategy_obj = Om.load_from_db("Om")
+om_strategy_obj = Om.load_from_db("Om")
 instrument_obj = InstrumentCenterUtils.Instrument()
+next_trade_prefix = om_strategy_obj.NextTradeId
 
 
-def message_for_orders(trade_type, prediction, main_trade_symbol, strategy_name):
-    # TODO: add noftication for the orders
-    message = (
-        f"{trade_type} Trade for {strategy_name}\n"
-        f"Direction : {prediction}\n"
-        f"Main Trade : {main_trade_symbol}"
-    )
-    print(message)
-    discord_bot(message, strategy_name)
-
-
-def om():
-    next_trade_prefix = strategy_obj.NextTradeId
+def flip_coin():
+    # Randomly choose between 'Heads' and 'Tails'
     result = random.choice(["Heads", "Tails"])
-    base_symbol, _ = strategy_obj.determine_expiry_index()
-    option_type = "CE" if result == "Heads" else "PE"
+    return result
+
+def determine_strike_and_option():
+    strike_price_multiplier = om_strategy_obj.EntryParams.StrikeMultiplier
+    strategy_type = om_strategy_obj.GeneralParams.StrategyType
+    base_symbol, _ = om_strategy_obj.determine_expiry_index()
+    option_type = "CE" if flip_coin() == "Heads" else "PE"
     prediction = "Bullish" if option_type == "CE" else "Bearish"
-    strike_price_multiplier = strategy_obj.get_raw_field("GeneralParams").get(
-        "StrikePriceMultiplier"
-    )
-    strike_prc = strategy_obj.calculate_current_atm_strike_prc(
+    strike_prc = om_strategy_obj.calculate_current_atm_strike_prc(
         base_symbol=base_symbol,
         prediction=prediction,
         strike_prc_multiplier=strike_price_multiplier,
+        strategy_type=strategy_type,
     )
+    return base_symbol, strike_prc, option_type
+
+
+def fetch_exchange_token(base_symbol, strike_prc, option_type):
     today_expiry = instrument_obj.get_expiry_by_criteria(
         base_symbol, strike_prc, option_type, "current_week"
     )
-
     exchange_token = instrument_obj.get_exchange_token_by_criteria(
         base_symbol, strike_prc, option_type, today_expiry
     )
-    trading_symbol = instrument_obj.get_trading_symbol_by_exchange_token(exchange_token)
+    return exchange_token
 
-    message_for_orders("Live", result, trading_symbol, strategy_obj.StrategyName)
 
-    orders_to_place = [
+def update_qty(base_symbol, strike_prc, option_type):
+    exchange_token = fetch_exchange_token(base_symbol, strike_prc, option_type)
+    token = instrument_obj.get_kite_token_by_exchange_token(exchange_token)
+    ltp = InstrumentCenterUtils.get_single_ltp(token)
+    lot_size = instrument_obj.get_lot_size_by_exchange_token(exchange_token)
+    update_qty_user_firebase(om_strategy_obj.StrategyName, ltp, lot_size)
+
+
+def create_order_details(exchange_token, base_symbol):
+    stoploss_transaction_type = calculate_transaction_type_sl(
+        om_strategy_obj.get_general_params().TransactionType
+    )
+    order_details = [
         {
-            "strategy": strategy_obj.StrategyName,
+            "strategy": om_strategy_obj.StrategyName,
             "signal": "Long",
             "base_symbol": base_symbol,
             "exchange_token": exchange_token,
-            "transaction_type": strategy_obj.get_general_params().MainTransactionType,
-            "order_type": strategy_obj.get_general_params().OrderType,
-            "product_type": strategy_obj.get_general_params().ProductType,
+            "transaction_type": om_strategy_obj.get_general_params().TransactionType,
+            "order_type": om_strategy_obj.get_general_params().OrderType,
+            "product_type": om_strategy_obj.get_general_params().ProductType,
             "order_mode": "Main",
             "trade_id": next_trade_prefix,
-        }
+        },
+        {
+            "strategy": om_strategy_obj.StrategyName,
+            "signal": "Long",
+            "base_symbol": base_symbol,
+            "exchange_token": exchange_token,
+            "transaction_type": stoploss_transaction_type,
+            "order_type": "Stoploss",
+            "product_type": om_strategy_obj.get_general_params().ProductType,
+            "limit_prc": 0.5,
+            "trigger_prc": 1.0,
+            "order_mode": "SL",
+            "trade_id": next_trade_prefix,
+        },
     ]
-    orders_to_place = assign_trade_id(orders_to_place)
-    return orders_to_place
+    return order_details
 
+
+def send_signal_msg(base_symbol, strike_prc, option_type):
+    message = (
+        "OM Order placed for "
+        + base_symbol
+        + " "
+        + str(strike_prc)
+        + " "
+        + option_type
+    )
+    logger.info(message)
+    discord_bot(message, om_strategy_obj.StrategyName)
 
 def main():
-    desired_start_time_str = strategy_obj.get_entry_params().EntryTime
-    start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
-    now = dt.datetime.now()
+    base_symbol, strike_prc, option_type = determine_strike_and_option()
+    exchange_token = fetch_exchange_token(base_symbol, strike_prc, option_type)
+    update_qty(base_symbol, strike_prc, option_type)
+    send_signal_msg(base_symbol, strike_prc, option_type)
+    orders_to_place = create_order_details(exchange_token, base_symbol)
+    orders_to_place = assign_trade_id(orders_to_place)
+    logger.info(orders_to_place)
 
-    if now.date() in ExeUtils.holidays:
-        print("Skipping execution as today is a holiday.")
-        return
+    main_trade_id = None
 
-    if now.time() < dt.time(9, 0):
-        print("Time is before 9:00 AM, Waiting to execute.")
-    else:
-        wait_time = (
-            dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
-        )
+    for order in orders_to_place:
+        if order.get("order_mode") == "MO":
+            main_trade_id = order.get("trade_id")
 
-        if wait_time.total_seconds() > 0:
-            print(f"Waiting for {wait_time} before starting the bot")
-            sleep(wait_time.total_seconds())
+    signals_to_log = {
+        "TradeId": main_trade_id,
+        "Signal": "Long",
+        "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Status": "Open",
+    }
 
-        signals_to_log = {
-            "TradeId": strategy_obj.NextTradeId,
-            "Signal": "Short",
-            "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "StrategyInfo": {
-                "Direction": strategy_obj.get_general_params().TradeView,
-            },
-            "Status": "Open",
-        }
-
-        update_signal_firebase(strategy_obj.StrategyName, signals_to_log)
-        orders_to_place = om()
-        print(orders_to_place)
-        # place_order_strategy_users(strategy_obj.StrategyName,orders_to_place)
+    update_signal_firebase(
+        om_strategy_obj.StrategyName, signals_to_log, next_trade_prefix
+    )
+    place_order_strategy_users(om_strategy_obj.StrategyName, orders_to_place)
 
 
-if __name__ == "__main__":
-    main()
+# current_time = time.localtime()
+# seconds_since_midnight = current_time.tm_hour * 3600 + current_time.tm_min * 60 + current_time.tm_sec
+# seconds_until_10_am = 10 * 3600 - seconds_since_midnight
+
+# # Calculate the total number of seconds in the 10 AM to 1 PM window
+# seconds_in_window = 3 * 3600  # 3 hours
+
+# # Generate a random number of seconds to wait within this window
+# random_seconds = random.randint(0, seconds_in_window)
+
+# # Wait until 10 AM, then an additional random amount of time
+# time.sleep(seconds_until_10_am + random_seconds)
+
+
+main()

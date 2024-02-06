@@ -219,7 +219,7 @@ class StrategyBase(BaseModel):
         return strike_step
 
     def calculate_current_atm_strike_prc(
-        self, base_symbol, token=None, prediction=None, strike_prc_multiplier=None
+        self, base_symbol, token=None, prediction=None, strike_prc_multiplier=None, strategy_type = None
     ):
         from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
             get_single_ltp,
@@ -231,12 +231,17 @@ class StrategyBase(BaseModel):
         base_strike = self.round_strike_prc(ltp, base_symbol)
         multiplier = self.get_strike_step(base_symbol)
         if strike_prc_multiplier:
-            adjustment = multiplier * (
-                strike_prc_multiplier
-                if prediction == "Bearish"
-                else +strike_prc_multiplier
-            )
-            return base_strike + adjustment
+            if prediction == "Bearish" and strategy_type == "OB":
+                adjusted_multiplier = multiplier * (-strike_prc_multiplier)
+            elif prediction == "Bullish" and strategy_type == "OB":
+                adjusted_multiplier = multiplier * strike_prc_multiplier
+            elif prediction == "Bearish" and strategy_type == "OS":
+                adjusted_multiplier = multiplier * strike_prc_multiplier
+            elif prediction == "Bullish" and strategy_type == "OS":
+                adjusted_multiplier = multiplier * (-strike_prc_multiplier)
+            else:
+                logger.error("Invalid prediction")
+            return base_strike + adjusted_multiplier
         else:
             return base_strike
 

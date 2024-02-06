@@ -82,11 +82,12 @@ strike_prc_multiplier = namaha_obj.EntryParams.StrikeMultiplier
 hedge_multiplier = namaha_obj.EntryParams.HedgeMultiplier
 stoploss_multiplier = namaha_obj.EntryParams.SLMultiplier
 desired_start_time_str = namaha_obj.get_entry_params().EntryTime
+strategy_type = namaha_obj.GeneralParams.StrategyType
 
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
 
 main_strikeprc = namaha_obj.calculate_current_atm_strike_prc(
-    base_symbol, today_expiry_token, prediction, strike_prc_multiplier
+    base_symbol, today_expiry_token, prediction, strike_prc_multiplier,strategy_type
 )
 hedge_strikeprc = namaha_obj.get_hedge_strikeprc(
     base_symbol, today_expiry_token, prediction, hedge_multiplier
