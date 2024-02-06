@@ -40,10 +40,6 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
 
-ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
-load_dotenv(ENV_PATH)
-
-
 class ExpiryTrader(StrategyBase):
     def get_general_params(self):
         return self.GeneralParams
@@ -58,9 +54,18 @@ class ExpiryTrader(StrategyBase):
         return super().get_raw_field(field_name)
 
 
-# Testing the class with ExpiryTrader data
 expiry_trader_obj = ExpiryTrader.load_from_db("ExpiryTrader")
 instrument_obj = InstrumentCenterUtils.Instrument()
+
+def message_for_orders(trade_type, prediction, main_trade_symbol, hedge_trade_symbol):
+    message = (
+        f"{trade_type} Trade for {strategy_name}\n"
+        f"Direction : {prediction}\n"
+        f"Main Trade : {main_trade_symbol}\n"
+        f"Hedge Trade {hedge_trade_symbol} \n"
+    )
+    logger.info(message)
+    discord_bot(message, strategy_name)
 
 hedge_transaction_type = expiry_trader_obj.get_general_params().HedgeTransactionType
 main_transaction_type = expiry_trader_obj.get_general_params().MainTransactionType
@@ -73,9 +78,9 @@ prediction = expiry_trader_obj.MarketInfoParams.TradeView
 order_type = expiry_trader_obj.get_general_params().OrderType
 product_type = expiry_trader_obj.get_general_params().ProductType
 
-strike_prc_multiplier = expiry_trader_obj.get_strike_multiplier(base_symbol)
-hedge_multiplier = expiry_trader_obj.get_hedge_multiplier(base_symbol)
-stoploss_multiplier = expiry_trader_obj.get_stoploss_multiplier(base_symbol)
+strike_prc_multiplier = expiry_trader_obj.EntryParams.StrikeMultiplier
+hedge_multiplier = expiry_trader_obj.EntryParams.HedgeMultiplier
+stoploss_multiplier = expiry_trader_obj.EntryParams.SLMultiplier
 desired_start_time_str = expiry_trader_obj.get_entry_params().EntryTime
 
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
@@ -157,18 +162,6 @@ orders_to_place = [
 ]
 
 orders_to_place = assign_trade_id(orders_to_place)
-logger.info("orders_to_place", orders_to_place)
-
-
-def message_for_orders(trade_type, prediction, main_trade_symbol, hedge_trade_symbol):
-    message = (
-        f"{trade_type} Trade for {strategy_name}\n"
-        f"Direction : {prediction}\n"
-        f"Main Trade : {main_trade_symbol}\n"
-        f"Hedge Trade {hedge_trade_symbol} \n"
-    )
-    logger.info(message)
-    discord_bot(message, strategy_name)
 
 
 def main():
@@ -191,6 +184,7 @@ def main():
             sleep(wait_time.total_seconds())
 
         main_trade_id = None
+        logger.info(f"orders_to_place{orders_to_place}")
 
         for order in orders_to_place:
             if order.get("order_mode") == "MO":

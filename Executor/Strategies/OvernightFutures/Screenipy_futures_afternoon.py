@@ -44,7 +44,7 @@ product_type = strategy_obj.GeneralParams.ProductType
 
 
 def get_strikeprc(instrument_token, strategy_index, prediction):
-    strike_prc_multiplier = strategy_obj.EntryParams.SLMultipler
+    strike_prc_multiplier = strategy_obj.EntryParams.SLMultiplier
     return strategy_obj.calculate_current_atm_strike_prc(
         base_symbol=strategy_index,
         token=instrument_token,

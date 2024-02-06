@@ -42,7 +42,7 @@ class EntryParams(BaseModel):
     EntryTime: str
     HedgeMultiplier: Optional[int] = None
     InstrumentToday: Optional[Union[str, dict]] = None
-    SLMultipler: Optional[int] = None
+    SLMultiplier: Optional[int] = None
     StrikeMultiplier: Optional[int] = None
     HeikinAshiMAPeriod: Optional[int] = None
     SupertrendPeriod: Optional[int] = None
@@ -230,12 +230,11 @@ class StrategyBase(BaseModel):
         ltp = get_single_ltp(token)
         base_strike = self.round_strike_prc(ltp, base_symbol)
         multiplier = self.get_strike_step(base_symbol)
-        # TODO: Check this logic
         if strike_prc_multiplier:
             adjustment = multiplier * (
-                -strike_prc_multiplier
+                strike_prc_multiplier
                 if prediction == "Bearish"
-                else strike_prc_multiplier
+                else +strike_prc_multiplier
             )
             return base_strike + adjustment
         else:
