@@ -1,11 +1,14 @@
 import os
 import sys
 import datetime as dt
-
+from dotenv import load_dotenv
 from pya3 import *
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
+
+ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
+load_dotenv(ENV_PATH)
 
 from loguru import logger
 
@@ -271,7 +274,7 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         # avg_prc = fetch_avg_price(alice, order_id['NOrdNo'])  # This function needs to be defined
 
         results = {
-            "exchange_token": exchange_token,
+            "exchange_token": int(exchange_token),
             "order_id": order_id["NOrdNo"],
             "qty": qty,
             "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),

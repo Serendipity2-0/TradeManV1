@@ -1,2 +1,2 @@
 in_trade,strike_price,trade_type,trade_points,TrendSL,close,TradeEntryPrice,SL_points
-True,21900,Short,0.0,472.52394446542235,301.05,301.05,171.47394446542233
+False,0,,0,0,256.4,0,0

@@ -233,7 +233,7 @@ class OrderMonitor:
             {
                 "strategy": strategy_obj.StrategyName,
                 "base_symbol": order_details["base_symbol"],
-                "exchange_token": order_details["exchange_token"],
+                "exchange_token": int(order_details["exchange_token"]),
                 "transaction_type": order_details["transaction_type"],
                 "target": order_details["target"],
                 "limit_prc": order_details["limit_prc"],
@@ -273,6 +273,7 @@ class OrderMonitor:
                 return
             #TODO: Fetch the latest trade_id from the firebase
             order_to_place = self.create_order_details(name, cross_type, ltp, price_ref)
+            logger.debug(f"Placing orders for {order_to_place}")
             update_qty_user_firebase(strategy_obj.StrategyName,price_ref,lot_size)
             signal_log_firebase(order_to_place,cross_type)
             place_order_strategy_users(strategy_obj.StrategyName, order_to_place)
@@ -357,4 +358,4 @@ class OrderMonitor:
             }
         self.instrument_monitor.start_monitoring()
 
-        sleep(10)
+        sleep(3)

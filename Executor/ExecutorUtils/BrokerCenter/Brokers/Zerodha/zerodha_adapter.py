@@ -261,7 +261,7 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         )
 
     results = {
-        "exchange_token": exchange_token,
+        "exchange_token": int(exchange_token),
         "order_id": order_id,
         "qty": qty,
         "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),

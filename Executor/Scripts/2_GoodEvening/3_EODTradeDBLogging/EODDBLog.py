@@ -206,6 +206,7 @@ def process_n_log_trade():
                     processed_strategy_trades.append(processed_trade)
                
             for data in processed_strategy_trades:
+                logger.debug(f"Processed trade data: {data}")
                 df = pd.DataFrame([data])
                 decimal_columns = [
                     "pnl",
@@ -228,7 +229,7 @@ def process_n_log_trade():
 
         conn.close()
 
-# process_n_log_trade()
+process_n_log_trade()
 
 # i want a function to update the dict in the firebase db with the trades of today for the user and strategy
 def update_signals_firebase():
@@ -287,7 +288,7 @@ def update_signals_firebase():
     # fetch the users for the strategy
 
 
-update_signals_firebase()
+# update_signals_firebase()
 # TODO: Update holdings table in user db
 # TODO: function to update dtd table in user
 # TODO: function to update signal db using primary account db values

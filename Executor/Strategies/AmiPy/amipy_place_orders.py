@@ -118,8 +118,6 @@ def place_orders(strike_prc, signal):
         base_symbol, strike_prc, "PE", expiry_date
     )
 
-    
-
     if "Short" in signal:
         hedge_ce_strike_prc = strike_prc + strategy_obj.ExtraInformation.HedgeDistance
         hedge_pe_strike_prc = strike_prc - strategy_obj.ExtraInformation.HedgeDistance
@@ -170,7 +168,9 @@ def place_orders(strike_prc, signal):
     
     #TODO: Add logger.debug and print the next_trade_id
     if signal == "ShortCoverSignal" or signal == 'LongCoverSignal':
-        trade_id = fetch_previous_trade_id(strategy_obj.NextTradeId)
+        #TODO: this step should read the updated firebase and fetch the next trade id
+        # trade_id = fetch_previous_trade_id(strategy_obj.NextTradeId)
+        trade_id = strategy_obj.NextTradeId
     else:
         trade_id = strategy_obj.NextTradeId
 
