@@ -184,7 +184,7 @@ def main():
     print(orders_to_place)
     update_qty_user_firebase(strategy_name, avg_sl_points, lot_size)
     signal_to_log_firebase(orders_to_place,prediction)
-    # place_order_strategy_users(strategy_name, orders_to_place)
+    place_order_strategy_users(strategy_name, orders_to_place)
 
     hedge_exchange_token = np.int64(hedge_exchange_token)
     hedge_exchange_token = int(hedge_exchange_token)

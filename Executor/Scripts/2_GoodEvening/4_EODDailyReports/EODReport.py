@@ -48,6 +48,9 @@ def get_today_trades(user_tables,active_stratgies):
         for table in user_tables:
             if strategy in list(table.keys())[0]:
                 trades = table[strategy]
+                # if row is None or 'exit_time' not in row or pd.isnull(row['exit_time'])
+                if trades.empty or "exit_time" not in trades.columns or trades["exit_time"].isnull().all():
+                    continue
                 # in the table the exit_time column is in this format '2021-08-25 15:30:00'. so i want convert it to '2021-08-25' and then compare it with today_string if matched append it to today_trades
                 trades["exit_time"] = trades["exit_time"].apply(
                     lambda x: x.split(" ")[0]
@@ -83,7 +86,7 @@ def get_new_holdings(user_tables):
         if list(table.keys())[0] == "Holdings":
             holdings = table["Holdings"]
             new_holdings = holdings["margin_utilized"].sum()
-    logger.info("new_holdings", new_holdings)
+    logger.info(f"new_holdings{new_holdings}")
     return round(new_holdings)
 
 

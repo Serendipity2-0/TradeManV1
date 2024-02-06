@@ -14,7 +14,7 @@ load_dotenv(ENV_PATH)
 from Executor.Strategies.StrategiesUtil import StrategyBase
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.ExeUtils import holidays
-from Executor.Strategies.StrategiesUtil import assign_trade_id, fetch_previous_trade_id
+from Executor.Strategies.StrategiesUtil import assign_trade_id, fetch_previous_trade_id, place_order_strategy_users
 
 strategy_obj = StrategyBase.load_from_db("OvernightFutures")
 instrument_obj = InstrumentCenterUtils.Instrument()
@@ -90,7 +90,7 @@ def main():
     orders_to_place = assign_trade_id(orders_to_place)
 
     print(orders_to_place)
-    # place_order.place_order_for_strategy(strategy_name,orders_to_place)
+    place_order_strategy_users(strategy_name,orders_to_place)
 
 
 if __name__ == "__main__":

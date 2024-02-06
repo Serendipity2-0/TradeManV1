@@ -120,9 +120,19 @@ NOTES
 
 1. TradeStateImplementation: If the program stops abruptly It should run all the scripts under strategy folder and generate Signals for each strategy. It should check the strategyDB and match with the signals. If there is any mismatch notify us through telegram
 
+
+TODO:
+1. For holdings fetch the qty from sql db
+2. Refresh the strategy base object from the strategies firebase
+3. Sweep order fix
+4. Delete order ids
+5. Update Holdings
+6. DTD automation
+7. Delete the SL orders in Firebase 
+
+
 Test 2 Postmortem
-1. AmiPy
-   1. Recheck the logic for TradeId for exit (Previous trade_id is sent while placing the orders)
+
 
 2. MPWizard
    1. Reload function in StrategyBase Class to fetch the latest values from Firebase

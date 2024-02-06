@@ -130,11 +130,14 @@ def daily_tradebook_validator():
                 unmatched_details = pd.DataFrame([unmatched_details])
                 decimal_columns = ["avg_prc"]
                 append_df_to_sqlite(
-                    conn, unmatched_details, "user_transactions", decimal_columns
+                    conn, unmatched_details, "UserTransactions", decimal_columns
                 )
                 unmatched_orders.add(trade_order_id)
 
         conn.close()
+
+        logger.debug(f"Matched Orders: {matched_orders}")
+        logger.debug(f"Unmatched Orders: {unmatched_orders}")
 
         # clear the lists after iterating through each user
         matched_orders.clear()

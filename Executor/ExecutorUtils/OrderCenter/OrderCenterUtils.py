@@ -57,7 +57,7 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
 def place_order_for_strategy(strategy_users, order_details):
     for user in strategy_users:
         all_order_statuses = []  # To store the status of all orders
-
+        #TODO: for holdings fetch the qty from db
         for order in order_details:
             order_with_user_and_broker = order.copy()
             order_with_user_and_broker.update(
