@@ -71,10 +71,7 @@ def compare_freecash(broker_free_cash, db_free_cash, trader_no):
             )  
             logger.info(f"Free cash from broker: {broker_free_cash[user]}")
             logger.info(f"Free cash from DB: {db_free_cash[user]}")
-            discord_admin_bot(f"Free cash for {user} is not matching, Broker: {broker_free_cash[user]}, DB: {db_free_cash[user]}")
-            # TODO: Update holdings and account value in the FirebaseDB using sqlite DB
-            # TODO: Add logic to get legder from broker and update the sqlite DB transactions table
-            
+            discord_admin_bot(f"Free cash for {user} is not matching, Broker: {broker_free_cash[user]}, DB: {db_free_cash[user]}")            
         else:
             logger.info(f"Free cash for {user} is matching")
             logger.info(f"Free cash from broker: {broker_free_cash[user]}")

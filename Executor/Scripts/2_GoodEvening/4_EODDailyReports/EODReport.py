@@ -26,7 +26,8 @@ logger.add(
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
-    fetch_active_strategies_all_users
+    fetch_active_strategies_all_users,
+    CLIENTS_DB
 )
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
     send_telegram_message,
@@ -39,9 +40,12 @@ load_dotenv(ENV_PATH)
 
 db_dir = os.getenv("DB_DIR")
 
+today_string = datetime.now().strftime("%Y-%m-%d")
+
 def get_today_trades(user_tables,active_stratgies):
+    global today_string
     # got to user db and find table names matching Active Strategies and get trades for today
-    today_string = datetime.now().strftime("%Y-%m-%d")
+    
     today_trades = []
     for strategy in active_stratgies:
         # user_tables is a list of dict with table name as key and table df as value, match the strategy name with the key and get the trades for today
@@ -63,8 +67,8 @@ def get_today_trades(user_tables,active_stratgies):
 
 
 def get_additions_withdrawals(user_tables):
+    global today_string
     # key = Transactions and get the sum of the "amount" column for today under transaction_date which is in this format '2021-08-25 15:30:00'
-    today_string = datetime.now().strftime("%Y-%m-%d")
     additions_withdrawals = 0
     for table in user_tables:
         if list(table.keys())[0] == "Transactions":
@@ -87,7 +91,8 @@ def get_new_holdings(user_tables):
             holdings = table["Holdings"]
             new_holdings = holdings["margin_utilized"].sum()
     logger.info(f"new_holdings{new_holdings}")
-    return round(new_holdings)
+
+    return round(float(new_holdings))
 
 
 def update_account_keys_fb(
@@ -105,7 +110,7 @@ def update_account_keys_fb(
 
     # use this method to update the account keys in the firebase update_fields_firebase(collection, document, data, field_key=None)
     update_fields_firebase(
-        "new_clients",
+        CLIENTS_DB,
         tr_no,
         {
             f"{today_fb_format}_AccountValue": new_account,
@@ -117,19 +122,19 @@ def update_account_keys_fb(
 
     # i want to delete all the keys which have previous_trading_day_string in them
     delete_fields_firebase(
-        "new_clients", tr_no, f"Accounts/{previous_trading_day_fb_format}_AccountValue"
+        CLIENTS_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_AccountValue"
     )
     delete_fields_firebase(
-        "new_clients", tr_no, f"Accounts/{previous_trading_day_fb_format}_FreeCash"
+        CLIENTS_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_FreeCash"
     )
     delete_fields_firebase(
-        "new_clients", tr_no, f"Accounts/{previous_trading_day_fb_format}_Holdings"
+        CLIENTS_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_Holdings"
     )
 
 
 # Main function to generate and send the report
 def main():
-    # TODO: Logic to handle user transactions
+    # TODO: Logic to handle user transactions filter the rejected orders
 
     active_users = fetch_active_users_from_firebase()
     active_stratgies = fetch_active_strategies_all_users()
@@ -156,11 +161,9 @@ def main():
 
         # Placeholder values, replace with actual queries and Firebase fetches
         today_trades = get_today_trades(user_tables,active_stratgies)
-        # TODO: add DTD function to append to the DTD table in the user's db
         gross_pnl = sum(float(trade["pnl"]) for trade in today_trades)
         expected_tax = sum(float(trade["tax"]) for trade in today_trades)
 
-        today_string = datetime.now().strftime("%Y-%m-%d")
         today_fb_format = datetime.now().strftime("%d%b%y")
         previous_trading_day_string = (datetime.now() - timedelta(days=1)).strftime(
             "%Y-%m-%d"
@@ -168,7 +171,6 @@ def main():
         previous_trading_day_fb_format = (datetime.now() - timedelta(days=1)).strftime(
             "%d%b%y"
         )
-        # 02Feb24_Account_Value
 
         previous_free_cash = user["Accounts"][
             f"{previous_trading_day_fb_format}_FreeCash"
@@ -198,7 +200,7 @@ def main():
         drawdown = user["Accounts"]["NetPnL"] - user["Accounts"]["PnLWithdrawals"]
         drawdown_percentage = drawdown / new_account * 100
 
-        # update_account_keys_fb(user['Tr_No'], today_fb_format, new_account, new_free_cash, new_holdings,previous_trading_day_fb_format)
+        update_account_keys_fb(user['Tr_No'], today_fb_format, new_account, new_free_cash, new_holdings,previous_trading_day_fb_format)
 
         # Format the message
         user_name = user["Profile"]["Name"]
@@ -225,7 +227,7 @@ def main():
         message += "Best Regards,\nTradeMan"
 
     # Send the report to Discord
-    send_telegram_message(phone_number, message)
+    # send_telegram_message(phone_number, message)
 
 
 if __name__ == "__main__":

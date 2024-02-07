@@ -35,6 +35,7 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     place_order_for_brokers,
     modify_order_for_brokers,
     fetch_strategy_details_for_user,
+    CLIENTS_DB
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     fetch_qty_for_holdings_sqldb,
@@ -60,7 +61,7 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
 def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=None):
     for user in strategy_users:
         all_order_statuses = []  # To store the status of all orders
-        #TODO: for holdings fetch the qty from db
+
         for order in order_details:
             order_with_user_and_broker = order.copy()
             if order_qty_mode == "Sweep":
@@ -115,8 +116,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
         # Update Firebase with order status
         update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
         for data in all_order_statuses:
-            push_orders_firebase("new_clients", user["Tr_No"], data, update_path)
-        # update_fields_firebase('new_clients', user['Tr_No'], all_order_statuses, update_path)
+            push_orders_firebase(CLIENTS_DB, user["Tr_No"], data, update_path)
 
         # Send notification if any orders failed # TODO: check for exact fail msgs and send notifications accordingly
         for status in all_order_statuses:
@@ -156,19 +156,3 @@ def retrieve_order_id(account_name, strategy, exchange_token: int):
                 if trade["exchange_token"] == exchange_token and trade["trade_id"].endswith("EX"):
                     order_ids[trade["order_id"]] = trade["qty"]
     return order_ids
-
-
-# TODO: sweep_orders from user/strategies/todayorders for sweep order enabled strategies
-def place_sweep_orders_for_strategy(strategy_users, order_details):
-    # get list of sweep enabled strategies from Strategies collection using 'SweepEnabled' field from StrategyCard
-    # match with {username}/"Strategies"/{strategy_name}/"StrategyName" value
-
-    # call place_order_for_strategy with appropriate details
-    pass
-
-
-# TODO: place morning SL orders for user/strategies/todayorders for morning_sl enabled strategies
-def place_morning_sl_orders_for_strategy(strategy_users, order_details):
-    # get morning_sl enabled order_ids and prepare a counter order_details
-    # call place_order_for_strategy with appropriate details
-    pass

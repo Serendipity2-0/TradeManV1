@@ -272,7 +272,6 @@ class OrderMonitor:
                     "Daily signal limit reached. No more signals will be generated today."
                 )
                 return
-            #TODO: Fetch the latest trade_id from the firebase
             order_to_place, trade_prefix = self.create_order_details(name, cross_type, ltp, price_ref)
             logger.debug(f"Placing orders for {order_to_place}")
             update_qty_user_firebase(strategy_obj.StrategyName,price_ref,lot_size)

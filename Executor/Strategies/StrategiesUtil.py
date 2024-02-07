@@ -146,7 +146,6 @@ class StrategyBase(BaseModel):
 
     @classmethod
     def load_from_db(cls, strategy_name: str):
-        # TODO: Add synthetic data for testing
         data = fetch_collection_data_firebase("strategies", document=strategy_name)
         if data is None:
             raise ValueError(f"No data found for strategy {strategy_name}")
@@ -211,7 +210,7 @@ class StrategyBase(BaseModel):
 
     def round_strike_prc(
         self, ltp, base_symbol
-    ):  # TODO: Add support for other base symbols using a csv list
+    ):
         strike_step = self.get_strike_step(base_symbol)
         return round(ltp / strike_step) * strike_step
 

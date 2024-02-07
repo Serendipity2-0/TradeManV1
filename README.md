@@ -122,23 +122,12 @@ NOTES
 
 
 TODO:
-2. Refresh the strategy base object from the strategies firebase  - Done
-1. For holdings fetch the qty from sql db
-3. Sweep order fix
-   1. Delete the SL orders in Firebase 
-4. Delete order ids
-5. Update Holdings
-6. DTD automation
-7. Order status for both the brokers after the order is placed(PASS/FAIL)
-8. After EOD report update the Holdings and account value fields in firebase
-9. Parameterise "new_clients" everywhere in the code
+1. Check Sweep Orders
+2. AmiPy reload db before fetching the next trade_id
+3. Logic to get the previous trading date
+4. Verify tax calculations
+5. Order status after order is placed (as of now for all orders the status is returned rejected)
+6. Filter the rejected orders when uploading the trades to UserTransactions table
 
-
-Test 2 Postmortem
-
-
-2. MPWizard
-   1. Reload function in StrategyBase Class to fetch the latest values from Firebase
-   
    
 

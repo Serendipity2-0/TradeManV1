@@ -32,6 +32,7 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
     fetch_list_of_strategies_from_firebase,
     fetch_users_for_strategies_from_firebase,
+    CLIENTS_DB
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     calculate_taxes,
@@ -39,60 +40,12 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     append_df_to_sqlite,
     get_db_connection,
-    read_strategy_table,
+    dump_df_to_sqlite
 )
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     delete_fields_firebase,
     fetch_collection_data_firebase
 )
-
-def process_holdings(corresponding_exit_trade_id,corresponding_sl_trade_id,orders,entry_orders,hedge_orders,strategy_name,holdings,order,signal):
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
-        Instrument as instru,
-    )
-    # Check if holding or completed trade
-    is_holding = not any(
-        corresponding_exit_trade_id == exit_order["trade_id"]
-        for exit_order in orders
-    )
-    is_holding = is_holding and not any(
-        corresponding_sl_trade_id == exit_order["trade_id"]
-        for exit_order in orders
-    )
-
-    if is_holding:
-        entry_price = sum([float(o["avg_prc"]) for o in entry_orders]) / len(
-            entry_orders
-        )
-        hedge_entry_price = (
-            sum(
-                [
-                    float(o["avg_prc"])
-                    for o in hedge_orders
-                    if "EN" in o["trade_id"]
-                ]
-            )
-            / len([o for o in hedge_orders if "EN" in o["trade_id"]])
-            if hedge_orders
-            else 0.0
-        )
-        # TODO: Process differently for FUT orders
-        margin_utilized = entry_price * order["qty"]
-
-        holdings[strategy_name] = {
-            "trade_id": order["trade_id"],
-            "trading_symbol": instru().get_trading_symbol_by_exchange_token(
-                str(order["exchange_token"])
-            ),
-            "signal": signal,
-            "entry_time": datetime.strptime(
-                order["time_stamp"], "%Y-%m-%d %H:%M"
-            ),
-            "entry_price": entry_price,
-            "hedge_entry_price": hedge_entry_price,
-            "qty": order["qty"],
-            "margin_utilized": margin_utilized,
-        }
 
 # i want a function to update the dict in the firebase db with the trades of today for the user and strategy
 def update_signals_firebase():
@@ -161,13 +114,19 @@ def update_signals_firebase():
 
     # fetch the users for the strategy
 
-# update_signals_firebase()
-# TODO: Update holdings table in user db
-# TODO: function to update dtd table in user
-# TODO: function to update signal db using primary account db values
+update_signals_firebase()
 
 def delete_orders_from_firebase(orders, strategy_name, user):
-    orders_firebase = fetch_collection_data_firebase("new_clients", user["Tr_No"])
+    entry_orders = orders["entry_orders"]
+    exit_orders = orders["exit_orders"]
+    hedge_orders = orders["hedge_orders"]
+
+    if not entry_orders or not exit_orders:
+        return
+    
+    orders = entry_orders + exit_orders + hedge_orders
+
+    orders_firebase = fetch_collection_data_firebase(CLIENTS_DB, user["Tr_No"])
     
     if "Strategies" in orders_firebase and strategy_name in orders_firebase["Strategies"]:
         if "TradeState" in orders_firebase["Strategies"][strategy_name]:
@@ -179,43 +138,18 @@ def delete_orders_from_firebase(orders, strategy_name, user):
         logger.error(f"Strategy {strategy_name} not found.")
         return
 
-    # Debug: Print the total number of orders fetched from Firebase for the strategy
-    print(f"Total orders fetched for {strategy_name}: {len(strategy_orders)}")
-
-    # Right before identifying indices to delete, print all fetched order IDs
-    # print("Fetched Order IDs:", [o.get("order_id") for o in strategy_orders if o is not None])
-
-
     order_ids_to_delete = {order["order_id"] for order in orders}
-
-    # Debug: Print the order IDs that are intended to be deleted
-    print(f"Order IDs to delete: {order_ids_to_delete}")
 
     indices_to_delete = []
     for index, value in enumerate(strategy_orders):
-        if isinstance(value, dict):
-            print(f"Order at Index {index}: ID {value.get('order_id', 'ID not found')}, intended for deletion: {'Yes' if value.get('order_id') in order_ids_to_delete else 'No'}")
-        else:
-            print(f"Order at Index {index}: Encountered unexpected data type (not a dict), Value: {value}")
         if value is not None and "order_id" in value and value["order_id"] in order_ids_to_delete:
             indices_to_delete.append(index)
-            # Debug: Print each order found for deletion
-            print(f"Marked for deletion: Index {index}, Order ID {value['order_id']}")
-
-    # Debug: Print indices that are marked for deletion
-    print(f"Indices marked for deletion: {indices_to_delete}")
 
     for index in sorted(indices_to_delete, reverse=True):
         try:
-            # Debug: Log the attempt to delete specific index and order ID
-            print(f"Attempting to delete at index: {index}, Order ID: {strategy_orders[index]['order_id']}")
-            delete_fields_firebase("new_clients", user["Tr_No"], f"Strategies/{strategy_name}/TradeState/orders/{index}")
-            # Debug: Log successful deletion
-            print(f"Successfully deleted order at index: {index}")
+            delete_fields_firebase(CLIENTS_DB, user["Tr_No"], f"Strategies/{strategy_name}/TradeState/orders/{index}")
         except Exception as e:
             logger.error(f"Error deleting order at index {index}: {e}")
-            # Debug: Log failure to delete
-            print(f"Failed to delete order at index: {index}, Error: {e}")
 
 def seggregate_orders_by_type(orders):
     entry_orders = [o for o in orders if "EN" in o["trade_id"] and "HO" not in o["trade_id"]]
@@ -303,50 +237,58 @@ def calculate_trade_details(trade_data, strategy_name, user):
                     "tax": tax,
                     "net_pnl": net_pnl,
     }
-    delete_orders_from_firebase(entry_orders, strategy_name, user)
-    print("Done deleting entry orders")
-    sleep(3)
-    delete_orders_from_firebase(exit_orders, strategy_name, user)
-    print("Done deleting exit orders")
-    sleep(3)
-    delete_orders_from_firebase(hedge_orders, strategy_name, user)
-    print("Done deleting hedge orders")
-    
     return trade_details
 
-def fetch_and_prepare_holdings_data(user):
+def fetch_and_prepare_holdings_data():
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
         Instrument as instru,
     )
-    holdings_data = []
-    strategies = user.get("Strategies", {})
-    
-    # Iterate through each strategy
-    for strategy_name, strategy_details in strategies.items():
-        # Check if there are orders in the TradeState
-        strategy_orders = strategy_details.get("TradeState", {}).get("orders", [])
-        if strategy_orders:
-            # If orders are present, consider it as a holding and process
-            for order in strategy_orders:
-                entry_orders = [o for o in order if "EN" in o["trade_id"] and "HO" not in o["trade_id"]]
-                hedge_orders = [o for o in order if "HO" in o["trade_id"]]
-                trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")))
+    active_users = fetch_active_users_from_firebase()
+    for user in active_users:
+        db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
+        conn = get_db_connection(db_path)
+        holdings_data = []
+        strategies = user.get("Strategies", {})
+        
+        # Iterate through each strategy
+        for strategy_name, strategy_details in strategies.items():
+            # Check if there are orders in the TradeState
+            strategy_orders = strategy_details.get("TradeState", {}).get("orders", [])
+            if strategy_orders:
+                logger.debug(f"Processing orders for strategy: {strategy_orders}")
+                entry_orders = []
+                hedge_orders = []
+                # If orders are present, consider it as a holding and process
+                for order_number, order in strategy_orders.items():
+                    logger.debug(f"Processing order: {order}")
+                    
+                    
+                    if "EN" in order["trade_id"] and "HO" not in order["trade_id"]:
+                        entry_orders = [order]
+                    if "HO" in order["trade_id"]:
+                        hedge_orders = [order]
+
+
+                    trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")))
                 entry_price = sum([float(o["avg_prc"]) for o in entry_orders]) / len(entry_orders) if entry_orders else 0
                 hedge_entry_price = sum([float(o["avg_prc"]) for o in hedge_orders if "EN" in o["trade_id"]]) / len([o for o in hedge_orders if "EN" in o["trade_id"]]) if hedge_orders else 0
 
-            holding = {
-                "trade_id": order.get("trade_id"),
-                "signal": "Short" if "_SH_" in order.get("trade_id") else "Long",
-                "trading_symbol": trading_symbol,
-                "entry_time": datetime.strptime(order.get("time_stamp"), "%Y-%m-%d %H:%M"),
-                "entry_price": entry_price,
-                "hedge_entry_price": hedge_entry_price,
-                "qty": order.get("qty", 0),
-                "margin_utilized": entry_price * order.get("qty", 0),
-                "tax": 0.0
-            }
-            holdings_data.append(holding)
-    
+                holding = {
+                    "trade_id": order.get("trade_id"),
+                    "signal": "Short" if "_SH_" in order.get("trade_id") else "Long",
+                    "trading_symbol": trading_symbol,
+                    "entry_time": datetime.strptime(order.get("time_stamp"), "%Y-%m-%d %H:%M"),
+                    "entry_price": entry_price,
+                    "hedge_entry_price": hedge_entry_price,
+                    "qty": order.get("qty", 0),
+                    "margin_utilized": entry_price * order.get("qty", 0),
+                    "tax": 0.0
+                }
+                holdings_data.append(holding)
+        if holdings_data:
+            holdings_df = pd.DataFrame(holdings_data)
+            decimal_columns = ["entry_price", "hedge_entry_price", "margin_utilized", "tax"]
+            dump_df_to_sqlite(conn, holdings_df, "Holdings", decimal_columns)
     return holdings_data
 
 def process_n_log_trade():
@@ -370,7 +312,6 @@ def process_n_log_trade():
             for trade_prefix, orders_group in segregated_orders.items():
                 trade_details = calculate_trade_details(orders_group, strategy_name, user)
                 # Append trade details to the database
-                # print(f"Processed trade details for {trade_prefix}: {trade_details}")
                 df = pd.DataFrame([trade_details])
                 decimal_columns = [
                     "pnl",
@@ -382,13 +323,12 @@ def process_n_log_trade():
                     "trade_points",
                     "net_pnl",
                 ]
-                # append_df_to_sqlite(conn, df, strategy_name, decimal_columns)
-                holdings_data = fetch_and_prepare_holdings_data(user)
-                if holdings_data:
-                    holdings_df = pd.DataFrame(holdings_data)
-                    print(holdings_df)
-                    # append_df_to_sqlite(conn, holdings_df, "Holdings", decimal_columns)
+                append_df_to_sqlite(conn, df, strategy_name, decimal_columns)
+                # Delete orders from Firebase
+                delete_orders_from_firebase(orders_group, strategy_name, user)
+                
         conn.close()
 
-process_n_log_trade()
+# process_n_log_trade()
+# fetch_and_prepare_holdings_data()
 

@@ -166,7 +166,6 @@ def place_orders(strike_prc, signal):
         "entry" if signal == "ShortSignal" or signal == "LongSignal" else "exit"
     )
     
-    #TODO: Add logger.debug and print the next_trade_id
     if signal == "ShortCoverSignal" or signal == 'LongCoverSignal':
         #TODO: this step should read the updated firebase and fetch the next trade id
         # trade_id = fetch_previous_trade_id(strategy_obj.NextTradeId)

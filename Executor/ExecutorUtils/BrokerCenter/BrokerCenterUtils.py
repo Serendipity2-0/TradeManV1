@@ -13,6 +13,7 @@ load_dotenv(ENV_PATH)
 
 ZERODHA = os.getenv("ZERODHA_BROKER")
 ALICEBLUE = os.getenv("ALICEBLUE_BROKER")
+CLIENTS_DB = os.getenv("FIREBASE_USER_COLLECTION")
 
 from loguru import logger
 
@@ -71,14 +72,14 @@ def all_broker_login(active_users):
             logger.info("Logging in for Zerodha")
             session_id = zerodha.login_in_zerodha(user["Broker"])
             firebase_utils.update_fields_firebase(
-                "new_clients", user["Tr_No"], {"SessionId": session_id}, "Broker"
+                CLIENTS_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
             )
         elif user["Broker"]["BrokerName"] == ALICEBLUE:
             logger.info("Logging in for AliceBlue")
             try:
                 session_id = alice_blue.login_in_aliceblue(user["Broker"])
                 firebase_utils.update_fields_firebase(
-                    "new_clients", user["Tr_No"], {"SessionId": session_id}, "Broker"
+                    CLIENTS_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
                 )
             except Exception as e:
                 logger.error(f"Error while logging in for AliceBlue: {e}")
@@ -95,7 +96,7 @@ def fetch_active_users_from_firebase():
         list: A list of active user account details.
     """
     active_users = []
-    account_details = firebase_utils.fetch_collection_data_firebase("new_clients")
+    account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
     for account in account_details:
         if account_details[account]["Active"] == True:
             active_users.append(account_details[account])
@@ -138,7 +139,7 @@ def fetch_users_for_strategies_from_firebase(strategy_name):
 
 def fetch_primary_accounts_from_firebase(primary_account):
     # fetch the tr_no from .env file and fetch the primary account from firebase
-    account_details = firebase_utils.fetch_collection_data_firebase("new_clients")
+    account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
     for account in account_details:
         if account_details[account]["Tr_No"] == primary_account:
             return account_details[account]
@@ -171,20 +172,20 @@ def fetch_holdings_for_brokers(user):
 
 
 def fetch_user_credentials_firebase(broker_user_name):
-    user_credentials = firebase_utils.fetch_collection_data_firebase("new_clients")
+    user_credentials = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
     for user in user_credentials:
         if user_credentials[user]["Broker"]["BrokerUsername"] == broker_user_name:
             return user_credentials[user]["Broker"]
 
 
 def fetch_strategy_details_for_user(username):
-    user_details = firebase_utils.fetch_collection_data_firebase("new_clients")
+    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
     for user in user_details:
         if user_details[user]["Broker"]["BrokerUsername"] == username:
             return user_details[user]["Strategies"]
         
 def fetch_active_strategies_all_users():
-    user_details = firebase_utils.fetch_collection_data_firebase("new_clients")
+    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
     strategies = []
     for user in user_details:
         if user_details[user]["Active"] == True:
@@ -226,20 +227,16 @@ def get_today_open_orders_for_brokers(user):
         return alice_data
 
 def create_counter_order_details(tradebook, user):
-    # TODO: Create cancel order methods
-
     counter_order_details = []
     for trade in tradebook:
         if user["Broker"]["BrokerName"] == ZERODHA:
             if trade["status"] == "TRIGGER PENDING" and trade["product"] == "MIS":
-                cancel_order = zerodha_adapter.kite_create_cancel_order(trade, user)
-                counter_order = zerodha_adapter.kite_create_sl_counter_order(
-                    trade, user
-                )
+                zerodha_adapter.kite_create_cancel_order(trade, user)
+                counter_order = zerodha_adapter.kite_create_sl_counter_order(trade, user)
                 counter_order_details.append(counter_order)
         elif user["Broker"]["BrokerName"] == ALICEBLUE:
             if trade["Status"] == "trigger pending" and trade["Pcode"] == "MIS":
-                cancel_order = alice_adapter.ant_create_cancel_orders(trade, user)
+                alice_adapter.ant_create_cancel_orders(trade, user)
                 counter_order = alice_adapter.ant_create_counter_order(trade, user)
                 counter_order_details.append(counter_order)
     return counter_order_details

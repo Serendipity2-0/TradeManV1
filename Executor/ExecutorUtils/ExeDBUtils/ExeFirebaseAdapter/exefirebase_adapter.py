@@ -14,6 +14,7 @@ load_dotenv(ENV_PATH)
 
 cred_filepath = os.getenv("FIREBASE_CRED_PATH")
 firebase_db_url = os.getenv("FIREBASE_DATABASE_URL")
+CLIENTS_DB = os.getenv("FIREBASE_USER_COLLECTION")
 
 cred = credentials.Certificate(cred_filepath)
 firebase_admin.initialize_app(cred, {"databaseURL": firebase_db_url})
@@ -74,7 +75,7 @@ def push_orders_firebase(collection, document, new_order, field_key=None):
 
 # New function to get client by 'Tr_No'
 def get_client_by_tr_no(tr_no):
-    clients = fetch_collection_data_firebase("new_clients")
+    clients = fetch_collection_data_firebase(CLIENTS_DB)
     for client_key, client_data in clients.items():
         if client_data.get("Tr_No") == tr_no:
             return client_data
@@ -114,10 +115,10 @@ def update_client_by_tr_no_from_file(tr_no, file_path):
     with open(file_path, "r") as file:
         modified_data = json.load(file)
 
-    clients = fetch_collection_data_firebase("new_clients")
+    clients = fetch_collection_data_firebase(CLIENTS_DB)
     for client_key, client_data in clients.items():
         if client_data.get("Tr_No") == tr_no:
-            update_fields_firebase("new_clients", client_key, modified_data)
+            update_fields_firebase(CLIENTS_DB, client_key, modified_data)
             return f"Client data with Tr_No {tr_no} updated successfully from file {file_path}."
     return "Client not found to update."
 

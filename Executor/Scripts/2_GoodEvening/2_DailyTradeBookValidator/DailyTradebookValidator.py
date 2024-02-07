@@ -33,6 +33,7 @@ import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtil
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
     update_fields_firebase,
+    delete_fields_firebase,
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     append_df_to_sqlite,
@@ -120,7 +121,7 @@ def daily_tradebook_validator():
                 avg_prc = trade[avg_price_key]
                 update_path = get_update_path(trade_order_id, strategies)
                 update_fields_firebase(
-                    "new_clients", user["Tr_No"], {"avg_prc": avg_prc}, update_path
+                    BrokerCenterUtils.CLIENTS_DB, user["Tr_No"], {"avg_prc": avg_prc}, update_path
                 )
                 matched_orders.add(trade_order_id)
             else:
@@ -145,3 +146,21 @@ def daily_tradebook_validator():
 
 
 daily_tradebook_validator()
+
+def clear_extra_orders_firebase():
+    active_users = BrokerCenterUtils.fetch_active_users_from_firebase()
+    for user in active_users:
+        strategies = user.get("Strategies", {})
+    for strategy_key, strategy_data in strategies.items():
+            trade_state = strategy_data.get("TradeState", {})
+            orders_from_firebase = trade_state.get("orders", [])
+            # i want to delete all the dicts which do not have avg_price field in them
+            orders_to_delete = []
+            for i, order in enumerate(orders_from_firebase):
+                if "avg_prc" not in order:
+                    orders_to_delete.append(i)
+            for i in orders_to_delete:
+                order_path = f"Strategies/{strategy_key}/TradeState/orders/{i}"
+                print(f"Deleting order at path: {order_path}")
+
+clear_extra_orders_firebase()
