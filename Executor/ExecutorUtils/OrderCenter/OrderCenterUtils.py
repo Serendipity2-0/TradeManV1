@@ -10,6 +10,7 @@ DIR = os.getcwd()
 sys.path.append(DIR)
 
 load_dotenv(os.path.join(DIR, "trademan.env"))
+db_dir = os.getenv("DB_DIR")
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 logger.add(
@@ -35,7 +36,9 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     modify_order_for_brokers,
     fetch_strategy_details_for_user,
 )
-
+from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
+    fetch_qty_for_holdings_sqldb,
+)
 
 def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
     if avg_sl_points is not None:
@@ -54,17 +57,28 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
     return quantity
 
 
-def place_order_for_strategy(strategy_users, order_details, order_qty:bool=None):
+def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=None):
     for user in strategy_users:
         all_order_statuses = []  # To store the status of all orders
         #TODO: for holdings fetch the qty from db
         for order in order_details:
             order_with_user_and_broker = order.copy()
-            if order_qty:
+            if order_qty_mode == "Sweep":
                 order_with_user_and_broker.update(
                     {
                         "broker": user["Broker"]["BrokerName"],
                         "username": user["Broker"]["BrokerUsername"],
+                    }
+                )
+            elif order_qty_mode == "Holdings":
+                logger.debug(f"Fetching qty for trade_id {order.get('trade_id')}")
+                qty = fetch_qty_for_holdings_sqldb(user['Tr_No'], order.get("trade_id"))
+                logger.debug(f"Qty for trade_id {order.get('trade_id')} is {qty}")
+                order_with_user_and_broker.update(
+                    {
+                        "broker": user["Broker"]["BrokerName"],
+                        "username": user["Broker"]["BrokerUsername"],
+                        "qty": int(qty),
                     }
                 )
             else:

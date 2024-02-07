@@ -449,13 +449,13 @@ def update_next_trade_id_firebase(strategy_name, trade_id):
     update_fields_firebase("strategies", strategy_name, {"NextTradeId": trade_id})
 
 
-def place_order_strategy_users(strategy_name, orders_to_place):
+def place_order_strategy_users(strategy_name, orders_to_place, order_qty_mode=None):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
         place_order_for_strategy,
     )
 
     strategy_users = fetch_strategy_users(strategy_name)
-    place_order_for_strategy(strategy_users, orders_to_place)
+    place_order_for_strategy(strategy_users, orders_to_place, order_qty_mode)
     pass
 
 

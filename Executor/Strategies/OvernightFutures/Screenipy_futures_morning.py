@@ -90,7 +90,7 @@ def main():
     orders_to_place = assign_trade_id(orders_to_place)
 
     print(orders_to_place)
-    place_order_strategy_users(strategy_name,orders_to_place)
+    place_order_strategy_users(strategy_name,orders_to_place, "Holdings")
 
 
 if __name__ == "__main__":

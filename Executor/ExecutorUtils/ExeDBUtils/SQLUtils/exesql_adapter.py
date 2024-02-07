@@ -22,7 +22,6 @@ logger.add(
     diagnose=True,
 )
 
-
 def get_db_connection(db_path):
     """Create a database connection to the SQLite database specified by db_path."""
     conn = None
@@ -32,7 +31,6 @@ def get_db_connection(db_path):
         (e)
     return conn
 
-
 def format_decimal_values(df, decimal_columns):
     """Format specified columns of a DataFrame to show two decimal places."""
     for col in decimal_columns:
@@ -41,7 +39,6 @@ def format_decimal_values(df, decimal_columns):
             df[col] = df[col].apply(lambda x: "{:.2f}".format(float(x)))
 
     return df
-
 
 # append the data from df to sqlite db
 def append_df_to_sqlite(conn, df, table_name, decimal_columns):
@@ -73,9 +70,22 @@ def dump_df_to_sqlite(conn, df, table_name, decimal_columns):
                 f"An error occurred while dumping to the table {table_name}: {e}"
             )
 
-
 def read_strategy_table(conn, strategy_name):
     """Read the strategy table from the database and return a DataFrame."""
     query = f"SELECT * FROM {strategy_name}"
     df = pd.read_sql(query, conn)
     return df
+
+def fetch_qty_for_holdings_sqldb(Tr_No, trade_id):
+    # i want just the trade_id.split[0] to match the trade_id.split[0] in the db
+    trade_id = trade_id.split("_")[0]
+    db_path = os.path.join(os.getenv("DB_DIR"), f"{Tr_No}.db")
+    conn = get_db_connection(db_path) 
+    """Fetch the quantity from the Holdings table from database which match the first part of the trade_id."""
+    query = f"SELECT * FROM Holdings WHERE trade_id LIKE '{trade_id}%'"
+    df = pd.read_sql(query, conn)
+    if not df.empty:
+        qty = df["qty"].values[0]
+    else:
+        qty = 0
+    return qty

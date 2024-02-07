@@ -41,7 +41,7 @@ def sweep_sl_order():
         tradebook = get_today_orders_for_brokers(user)
         counter_order_detail = create_counter_order_details(tradebook, user)
         if counter_order_detail:
-            OrderCenterUtils.place_order_for_strategy([user], counter_order_detail, True)
+            OrderCenterUtils.place_order_for_strategy([user], counter_order_detail, "Sweep")
 
 
 def sweep_hedge_orders():
@@ -56,7 +56,7 @@ def sweep_hedge_orders():
         open_orders = get_today_open_orders_for_brokers(user)
         hedge_counter_order_details = create_hedge_counter_order_details(tradebook, user,open_orders)
         if hedge_counter_order_details:
-            OrderCenterUtils.place_order_for_strategy([user], hedge_counter_order_details, True)
+            OrderCenterUtils.place_order_for_strategy([user], hedge_counter_order_details, "Sweep")
 
 
 # TODO : Add a function to sweep the orders for the day including orders with no SL
