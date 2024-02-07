@@ -54,19 +54,27 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
     return quantity
 
 
-def place_order_for_strategy(strategy_users, order_details):
+def place_order_for_strategy(strategy_users, order_details, order_qty:bool=None):
     for user in strategy_users:
         all_order_statuses = []  # To store the status of all orders
         #TODO: for holdings fetch the qty from db
         for order in order_details:
             order_with_user_and_broker = order.copy()
-            order_with_user_and_broker.update(
-                {
-                    "broker": user["Broker"]["BrokerName"],
-                    "username": user["Broker"]["BrokerUsername"],
-                    "qty": user["Strategies"][order.get("strategy")]["Qty"],
-                }
-            )
+            if order_qty:
+                order_with_user_and_broker.update(
+                    {
+                        "broker": user["Broker"]["BrokerName"],
+                        "username": user["Broker"]["BrokerUsername"],
+                    }
+                )
+            else:
+                order_with_user_and_broker.update(
+                    {
+                        "broker": user["Broker"]["BrokerName"],
+                        "username": user["Broker"]["BrokerUsername"],
+                        "qty": user["Strategies"][order.get("strategy")]["Qty"],
+                    }
+                )
 
             max_qty = FNOInfo().get_max_order_qty_by_base_symbol(
                 order_with_user_and_broker.get("base_symbol")

@@ -46,7 +46,6 @@ from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import (
 
 strategy_obj = StrategyBase.load_from_db("MPWizard")
 
-
 class MPWInstrument:
     def __init__(self, name, token, trigger_points, price_ref, ib_level=None):
         self.name = name
@@ -70,7 +69,7 @@ class MPWInstrument:
     def get_ib_level(self):
         return self.ib_level
 
-def signal_log_firebase(orders_to_place,cross_type):
+def signal_log_firebase(orders_to_place,cross_type,trade_prefix):
     for order in orders_to_place:
         if order.get("order_mode") == "MO":
             main_trade_id = order.get("trade_id")
@@ -87,7 +86,7 @@ def signal_log_firebase(orders_to_place,cross_type):
             # "TriggerPoints": strategy_obj.EntryParams.InstrumentToday[self.get_index_name(order["exchange_token"])]["TriggerPoints"],
         },
     }
-    update_signal_firebase(strategy_obj.StrategyName, signal_to_log_firebase, strategy_obj.NextTradeId)
+    update_signal_firebase(strategy_obj.StrategyName, signal_to_log_firebase, trade_prefix)
 
 class OrderMonitor:
     def __init__(self, json_data, max_orders):
@@ -183,7 +182,9 @@ class OrderMonitor:
         exchange_token = Instrument().get_exchange_token_by_criteria(
             name, strikeprc, option_type, expiry_date
         )
-        next_trade_prefix = strategy_obj.NextTradeId
+        new_base = strategy_obj.reload_strategy(strategy_obj.StrategyName)
+        next_trade_prefix = new_base.NextTradeId
+        logger.debug(f"Next trade prefix: {next_trade_prefix}")
 
         option_ltp = get_single_ltp(exchange_token=exchange_token)
 
@@ -226,7 +227,7 @@ class OrderMonitor:
             },
         ]
         orders_to_place = assign_trade_id(orders_to_place)
-        return orders_to_place
+        return orders_to_place, next_trade_prefix
 
     def create_modify_order_details(self, order_details):
         modify_order_details = [
@@ -272,10 +273,10 @@ class OrderMonitor:
                 )
                 return
             #TODO: Fetch the latest trade_id from the firebase
-            order_to_place = self.create_order_details(name, cross_type, ltp, price_ref)
+            order_to_place, trade_prefix = self.create_order_details(name, cross_type, ltp, price_ref)
             logger.debug(f"Placing orders for {order_to_place}")
             update_qty_user_firebase(strategy_obj.StrategyName,price_ref,lot_size)
-            signal_log_firebase(order_to_place,cross_type)
+            signal_log_firebase(order_to_place,cross_type,trade_prefix)
             place_order_strategy_users(strategy_obj.StrategyName, order_to_place)
 
 

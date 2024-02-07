@@ -122,13 +122,16 @@ NOTES
 
 
 TODO:
+2. Refresh the strategy base object from the strategies firebase  - Done
 1. For holdings fetch the qty from sql db
-2. Refresh the strategy base object from the strategies firebase
 3. Sweep order fix
+   1. Delete the SL orders in Firebase 
 4. Delete order ids
 5. Update Holdings
 6. DTD automation
-7. Delete the SL orders in Firebase 
+7. Order status for both the brokers after the order is placed(PASS/FAIL)
+8. After EOD report update the Holdings and account value fields in firebase
+9. Parameterise "new_clients" everywhere in the code
 
 
 Test 2 Postmortem

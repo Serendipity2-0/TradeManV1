@@ -416,3 +416,9 @@ def calculate_kite_net_values(categorized_dfs):
         for category, df in categorized_dfs.items()
     }
     return net_values
+
+def fetch_open_orders(user_details):
+    kite = create_kite_obj(api_key=user_details["ApiKey"], access_token=user_details["SessionId"])
+    positions = kite.positions()
+    return positions
+    

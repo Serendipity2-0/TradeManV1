@@ -34,16 +34,12 @@ class MPWizard(StrategyBase):
 
 mpwizard_strategy_obj = MPWizard.load_from_db("MPWizard")
 instrument_obj = InstrumentCenterUtils.Instrument()
-next_trade_prefix = mpwizard_strategy_obj.NextTradeId
-
 
 # Fetch the desired start time from the environment variables
 desired_start_time_str = mpwizard_strategy_obj.get_entry_params().EntryTime
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
 
 # Fetch the list of users to trade with the strategy
-
-
 def main():
     """
     Main function to execute the trading strategy.

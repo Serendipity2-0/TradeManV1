@@ -217,6 +217,13 @@ def get_today_orders_for_brokers(user):
         ]
         return alice_data
 
+def get_today_open_orders_for_brokers(user):
+    if user["Broker"]["BrokerName"] == ZERODHA:
+        kite_data = zerodha_adapter.fetch_open_orders(user)
+        return kite_data
+    elif user["Broker"]["BrokerName"] == ALICEBLUE:
+        alice_data = alice_adapter.fetch_open_orders(user)
+        return alice_data
 
 def create_counter_order_details(tradebook, user):
     # TODO: Create cancel order methods
@@ -238,37 +245,45 @@ def create_counter_order_details(tradebook, user):
     return counter_order_details
 
 
-def create_hedge_counter_order_details(tradebook, user):
+def create_hedge_counter_order_details(tradebook, user, open_orders):
     hedge_counter_order = []
-    for trade in tradebook:
-        if user["Broker"]["BrokerName"] == ZERODHA:
+    if user["Broker"]["BrokerName"] == ZERODHA:
+        open_order_tokens = {position['instrument_token'] for position in open_orders['net'] if position['product'] == 'MIS' and position['quantity'] != 0}
+        for trade in tradebook:
             if trade["tag"] is None:
                 continue
+
             if (
                 trade["status"] == "COMPLETE"
                 and trade["product"] == "MIS"
                 and "HO_EN" in trade["tag"]
                 and "HO_EX" not in trade["tag"]
+                and trade["instrument_token"] in open_order_tokens
             ):
                 counter_order = zerodha_adapter.kite_create_hedge_counter_order(
                     trade, user
                 )
-                hedge_counter_order.append(counter_order)
-        elif user["Broker"]["BrokerName"] == ALICEBLUE:
+                if counter_order not in hedge_counter_order:
+                    hedge_counter_order.append(counter_order)
+
+    elif user["Broker"]["BrokerName"] == ALICEBLUE:
+        open_order_tokens = open_order_tokens = {position['Token']: abs(int(position['Netqty'])) for position in open_orders if position['Pcode'] == 'MIS' and position['Netqty'] != '0.00'}        
+        for trade in tradebook:
             if trade["remarks"] is None:
                 continue
+
+            trade_token_str = str(trade["token"])
             if (
                 trade["Status"] == "complete"
                 and trade["Pcode"] == "MIS"
                 and "HO_EN" in trade["remarks"]
                 and "HO_EX" not in trade["remarks"]
+                and trade_token_str in open_order_tokens
             ):
-                counter_order = alice_adapter.ant_create_hedge_counter_order(
-                    trade, user
-                )
-                hedge_counter_order.append(counter_order)
+                counter_order = alice_adapter.ant_create_hedge_counter_order(trade, user)
+                if counter_order not in hedge_counter_order:
+                    hedge_counter_order.append(counter_order)
     return hedge_counter_order
-
 
 def get_avg_prc_broker_key(broker_name):
     if broker_name == ZERODHA:

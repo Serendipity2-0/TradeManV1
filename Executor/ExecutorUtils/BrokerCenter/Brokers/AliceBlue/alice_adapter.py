@@ -287,7 +287,6 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
 
     return results
 
-
 def ant_modify_orders_for_users(order_details, user_credentials):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
 
@@ -456,3 +455,9 @@ def calculate_alice_net_values(categorized_dfs):
         for category, df in categorized_dfs.items()
     }
     return net_values
+
+def fetch_open_orders(user):
+    alice = create_alice_obj(user['Broker'])
+    Net_position = alice.get_netwise_positions()
+    open_position= Alice_Wrapper.open_net_position(Net_position)
+    return open_position

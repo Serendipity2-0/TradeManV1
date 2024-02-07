@@ -151,7 +151,11 @@ class StrategyBase(BaseModel):
         if data is None:
             raise ValueError(f"No data found for strategy {strategy_name}")
         return cls.parse_obj(data)
-
+    
+    @staticmethod
+    def reload_strategy(strategy_name: str):
+        return StrategyBase.load_from_db(strategy_name)
+    
     ###########################################################################
     def get_option_type(self, prediction, strategy_option_mode):
         if strategy_option_mode == "OS":
