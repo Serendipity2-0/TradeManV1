@@ -1,9 +1,10 @@
 trademan.env
+*.csv
+*.json
 *.pyc
 *.log
 *.xlsx
 *.DS_Store
 *.cursorignore
 *.wav
-code_embedding.json
 trail.py
