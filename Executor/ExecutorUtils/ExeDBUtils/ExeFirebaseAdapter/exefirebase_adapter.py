@@ -142,3 +142,9 @@ def update_maket_info_for_strategies():
         strategy_data["market_info"] = market_info
         update_fields_firebase("strategies", strategy_key, strategy_data)
     return "Market info updated for all strategies."
+
+
+def upload_client_data_to_firebase(user_dict):
+    ref = db.reference("trademan_clients")
+    ref.push(user_dict)
+    return "Data uploaded successfully"

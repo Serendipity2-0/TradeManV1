@@ -32,7 +32,7 @@ def main():
         st.title("TradeMan Execution Dashboard")
 
         # Create tabs for 'Data', 'Stats', and 'Charts'
-        tab1, tab2, tab3 = st.tabs(["Live View", "Order Exector", "Error Monitor"])
+        tab1, tab2, tab3 = st.tabs(["Live View", "Order Executor", "Error Monitor"])
 
         with tab1:
             st.header("Live View")
