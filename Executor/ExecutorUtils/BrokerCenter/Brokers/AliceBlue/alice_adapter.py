@@ -193,7 +193,7 @@ def calculate_product_type(product_type):
 
 def get_order_status(alice, order_id):
     order_status = alice.get_order_history(order_id)
-    if order_status["reporttype"] != "fill":
+    if order_status["Status"] == "rejected":
         return "FAIL"
 
 
@@ -227,7 +227,7 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
     if product == "CNC":
         segment = "NSE"
     else:
-        segment = Instru().get_segment_by_exchange_token(exchange_token)
+        segment = Instru().get_segment_by_exchange_token(str(exchange_token))
 
     limit_prc = orders_to_place.get("limit_prc", None)
     trigger_price = orders_to_place.get("trigger_prc", None)
@@ -245,6 +245,16 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
             trigger_price = 1.5
 
     try:
+        # logger.debug(f"transaction_type: {transaction_type}")
+        # logger.debug(f"order_type: {order_type}")
+        # logger.debug(f"product_type: {product_type}")
+        # logger.debug(f"segment: {segment}")
+        # logger.debug(f"exchange_token: {exchange_token}")
+        # logger.debug(f"qty: {qty}")
+        # logger.debug(f"limit_prc: {limit_prc}")
+        # logger.debug(f"trigger_price: {trigger_price}")
+        # logger.debug(f"instrument: {alice.get_instrument_by_token(segment, int(exchange_token))}")
+        # logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
         order_id = alice.place_order(
             transaction_type=transaction_type,
             instrument=alice.get_instrument_by_token(segment, int(exchange_token)),
@@ -268,10 +278,6 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
             message = "Order placed successfully"
 
         discord_bot(message, strategy)
-
-        # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
-        avg_prc = 0
-        # avg_prc = fetch_avg_price(alice, order_id['NOrdNo'])  # This function needs to be defined
 
         results = {
             "exchange_token": int(exchange_token),
@@ -342,6 +348,7 @@ def ant_create_counter_order(trade, user):
 
 
 def ant_create_hedge_counter_order(trade, user):
+    trade_id = trade["remarks"].replace("EN", "EX")
     counter_order = {
         "strategy": get_strategy_name_from_trade_id(trade["remarks"]),
         "signal": get_signal_from_trade_id(trade["remarks"]),
@@ -350,7 +357,7 @@ def ant_create_hedge_counter_order(trade, user):
         "transaction_type": calculate_transaction_type_sl(trade["Trantype"]),
         "order_type": "MARKET",
         "product_type": trade["Pcode"],
-        "trade_id": trade["remarks"],
+        "trade_id": trade_id,
         "order_mode": "Hedge",
         "qty": trade["Qty"],
     }

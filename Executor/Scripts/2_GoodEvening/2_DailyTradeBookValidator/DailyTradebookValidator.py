@@ -151,16 +151,18 @@ def clear_extra_orders_firebase():
     active_users = BrokerCenterUtils.fetch_active_users_from_firebase()
     for user in active_users:
         strategies = user.get("Strategies", {})
-    for strategy_key, strategy_data in strategies.items():
-            trade_state = strategy_data.get("TradeState", {})
-            orders_from_firebase = trade_state.get("orders", [])
-            # i want to delete all the dicts which do not have avg_price field in them
-            orders_to_delete = []
-            for i, order in enumerate(orders_from_firebase):
-                if "avg_prc" not in order:
-                    orders_to_delete.append(i)
-            for i in orders_to_delete:
-                order_path = f"Strategies/{strategy_key}/TradeState/orders/{i}"
-                print(f"Deleting order at path: {order_path}")
+        for strategy_key, strategy_data in strategies.items():
+                trade_state = strategy_data.get("TradeState", {})
+                orders_from_firebase = trade_state.get("orders", [])
+                # i want to delete all the dicts which do not have avg_price field in them
+                orders_to_delete = []
+                for i, order in enumerate(orders_from_firebase):
+                    avg_price = order.get("avg_prc", None)
+                    if float(avg_price) == 0.0:
+                        orders_to_delete.append(i)
+                for i in orders_to_delete:
+                    order_path = f"Strategies/{strategy_key}/TradeState/orders/{i}"
+                    print(f"Deleting order at path: {order_path}")
+                    delete_fields_firebase(BrokerCenterUtils.CLIENTS_DB, user["Tr_No"], order_path)
 
 clear_extra_orders_firebase()

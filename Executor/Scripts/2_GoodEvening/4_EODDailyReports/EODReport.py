@@ -140,7 +140,6 @@ def main():
     active_stratgies = fetch_active_strategies_all_users()
 
     for user in active_users:
-
         user_db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
         user_db_conn = get_db_connection(user_db_path)
 
@@ -226,8 +225,8 @@ def main():
         message += f"Drawdown: {format_currency(drawdown,'INR', locale='en_IN')}({drawdown_percentage:.2f}%)\n\n"
         message += "Best Regards,\nTradeMan"
 
-    # Send the report to Discord
-    # send_telegram_message(phone_number, message)
+        # Send the report to Discord
+        send_telegram_message(phone_number, message)
 
 
 if __name__ == "__main__":

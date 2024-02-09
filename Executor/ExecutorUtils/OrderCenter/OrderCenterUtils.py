@@ -60,6 +60,7 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
 
 def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=None):
     for user in strategy_users:
+        # logger.debug(f"Placing orders for user {user['Broker']['BrokerUsername']}")
         all_order_statuses = []  # To store the status of all orders
 
         for order in order_details:
@@ -90,7 +91,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                         "qty": user["Strategies"][order.get("strategy")]["Qty"],
                     }
                 )
-
+            # logger.debug(f"Order with user and broker: {order_with_user_and_broker}")
             max_qty = FNOInfo().get_max_order_qty_by_base_symbol(
                 order_with_user_and_broker.get("base_symbol")
             )
@@ -106,6 +107,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                 order_to_place = order_with_user_and_broker.copy()
                 order_to_place["qty"] = current_qty
 
+                # logger.debug(f"Placing order for {order_to_place}")
                 order_status = place_order_for_brokers(order_to_place, user_credentials)
                 all_order_statuses.append(order_status)
 

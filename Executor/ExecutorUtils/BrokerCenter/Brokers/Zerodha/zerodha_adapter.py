@@ -245,6 +245,7 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         )
 
         logger.success(f"Order placed. ID is: {order_id}")
+        #TODO: Fetch the order status of the order_id and check if it is complete
 
         # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
         message = f"Order placed successfully for {orders_to_place['username']}"
@@ -331,6 +332,10 @@ def kite_create_hedge_counter_order(trade, user):
 
     strategy_name = get_strategy_name_from_trade_id(trade["tag"])
     exchange_token = Instrument().get_exchange_token_by_token(trade["instrument_token"])
+    # i want to replace EN to EX in the trade['tag']
+    trade_id = trade['tag'].replace('EN', 'EX')
+
+
     counter_order = {
         "strategy": strategy_name,
         "signal": get_signal_from_trade_id(trade["tag"]),
@@ -339,7 +344,7 @@ def kite_create_hedge_counter_order(trade, user):
         "transaction_type": calculate_transaction_type_sl(trade["transaction_type"]),
         "order_type": "MARKET",
         "product_type": trade["product"],
-        "trade_id": trade["tag"],
+        "trade_id": trade_id,
         "order_mode": "Hedge",
         "qty": trade["quantity"],
     }
@@ -418,7 +423,7 @@ def calculate_kite_net_values(categorized_dfs):
     return net_values
 
 def fetch_open_orders(user_details):
-    kite = create_kite_obj(api_key=user_details["ApiKey"], access_token=user_details["SessionId"])
+    kite = create_kite_obj(user_details['Broker'])
     positions = kite.positions()
     return positions
     

@@ -170,19 +170,30 @@ def main():
     )
     place_order_strategy_users(goldencoin_strategy_obj.StrategyName, orders_to_place)
 
+hour = 11
+minute = 27
+window = 1  # 5 minutes
 
-# current_time = time.localtime()
-# seconds_since_midnight = current_time.tm_hour * 3600 + current_time.tm_min * 60 + current_time.tm_sec
-# seconds_until_10_am = 10 * 3600 - seconds_since_midnight
+current_time = time.localtime()
+seconds_since_midnight = current_time.tm_hour * 3600 + current_time.tm_min * 60 + current_time.tm_sec
 
-# # Calculate the total number of seconds in the 10 AM to 1 PM window
-# seconds_in_window = 3 * 3600  # 3 hours
+# Calculate the total number of seconds until 11:30 AM
+seconds_until_11_30_am = (hour * 3600 + minute * 60) - seconds_since_midnight
 
-# # Generate a random number of seconds to wait within this window
-# random_seconds = random.randint(0, seconds_in_window)
+# The window is now from 11:30 AM to 11:35 AM, so it's 5 minutes long
+seconds_in_window = window * 60  # 5 minutes
 
-# # Wait until 10 AM, then an additional random amount of time
-# time.sleep(seconds_until_10_am + random_seconds)
+# Generate a random number of seconds to wait within this 5-minute window
+random_seconds = random.randint(0, seconds_in_window)
+
+# If it's already past 11:35 AM, no need to wait
+if seconds_until_11_30_am < 0:
+    print("The window has already passed.")
+else:
+    # Wait until 11:30 AM, then an additional random amount of time within the 5-minute window
+    total_wait_seconds = max(seconds_until_11_30_am, 0) + random_seconds
+    print(f"Waiting for {total_wait_seconds} seconds.")
+    time.sleep(total_wait_seconds)
 
 
 main()
