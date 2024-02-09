@@ -1,6 +1,6 @@
 # Required imports
 import glob
-import os
+import os,sys
 import sqlite3
 
 import pandas as pd
@@ -9,27 +9,36 @@ import stats as stats
 import streamlit as st
 from portfoliostats_view import PortfolioStats
 from profile_page import show_profile
+from dotenv import load_dotenv
 
-from User.UserDashBoard.user_login_page import session_state, user_login_page
 
-strategy_table_names = [
-    "AmiPy",
-    "MPWizard",
-    "OvernightFutures",
-    "ExpiryTrader",
-    "PyStocks",
-    "ExtraTrades",
-    "ErrorTrade",
-]
+DIR = os.getcwd()
+sys.path.append(DIR)
+ENV_PATH = os.path.join(DIR, "trademan.env")
+load_dotenv(ENV_PATH)
 
-#######################
-# Page configuration
-st.set_page_config(
-    page_title="TradeMan User Dashboard",
-    page_icon="🏂",
-    layout="wide",
-    initial_sidebar_state="expanded",
+
+ACTIVE_STRATEGIES = os.getenv("ACTIVE_STRATEGIES")
+USR_TRADELOG_DB_FOLDER = os.getenv("USR_TRADELOG_DB_FOLDER")
+user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
+
+from loguru import logger
+
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
 )
+
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+    
+if 'client_data' not in st.session_state:
+    st.session_state.client_data = None
 
 
 def display_formatted_statistics(formatted_stats):
@@ -50,7 +59,7 @@ def display_formatted_statistics(formatted_stats):
             pass  # Keep default color for non-numeric values
         return f"color: {color};"
 
-    st.write(stats_df.style.applymap(color_value))
+    st.write(stats_df.style.map(color_value))
 
 
 ##################################################################
@@ -126,7 +135,7 @@ def process_tables(db_path, table_name):
     print("db_path", db_path)
     try:
         # Check if the table_name exists in the database
-        if table_name in strategy_table_names:
+        if table_name in ACTIVE_STRATEGIES:
             conn = sqlite3.connect(db_path)
             data = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
             data["exit_time"] = pd.to_datetime(data["exit_time"])
@@ -150,22 +159,24 @@ def determine_file_type(file_name):
 
 # Streamlit app
 def main():
-    user_login_page()
+    from user_login_page import  user_login_page
+    st.title("Trading Strategy Analyzer")
 
-    if session_state.logged_in:
-        st.title("Trading Strategy Analyzer")
+    if not st.session_state.logged_in:
+        logger.debug("User not logged in")
+        user_login_page()
 
-        # Define path of folder containing SQLite files
-        folder_path = r"/Users/omkar/Desktop/TradeManV1/SampleData/sqlitedb"
+    if st.session_state.logged_in:
 
         # Extract username or another unique identifier from the session state
-        print("client_data", session_state.client_data)
-        username = session_state.client_data[
-            "TradeManID"
+        username = st.session_state.client_data[
+            "Username"
         ]  # Adjust based on actual data
+        
+        print("username", username)
 
         # Modify the logic to select only the file associated with the logged-in user
-        db_files = [f for f in get_db_files(folder_path) if username in f]
+        db_files = [f for f in get_db_files(USR_TRADELOG_DB_FOLDER) if username in f]
 
         # Get list of SQLite database file names
         db_file_names = [os.path.basename(file) for file in db_files]
@@ -173,10 +184,10 @@ def main():
         selected_file = db_file_names[0]
 
         # Get table names (strategies) from the selected file
-        table_names = get_table_names(os.path.join(folder_path, selected_file))
+        table_names = get_table_names(os.path.join(USR_TRADELOG_DB_FOLDER, selected_file))
 
         user_strategy_table_names = [
-            table for table in table_names if table in strategy_table_names
+            table for table in table_names if table in ACTIVE_STRATEGIES
         ]
 
         # Sidebar for strategy selection
@@ -189,20 +200,20 @@ def main():
 
         # Process the selected sheet and get data, stats, and charts
         data = process_tables(
-            os.path.join(folder_path, selected_file), selected_strategy
+            os.path.join(USR_TRADELOG_DB_FOLDER, selected_file), selected_strategy
         )
 
-        dtd_data = process_tables(os.path.join(folder_path, selected_file), "DTD")
+        dtd_data = process_tables(os.path.join(USR_TRADELOG_DB_FOLDER, selected_file), "DTD")
 
         transactions_data = process_tables(
-            os.path.join(folder_path, selected_file), "Transactions"
+            os.path.join(USR_TRADELOG_DB_FOLDER, selected_file), "Transactions"
         )
 
         holdings_data = process_tables(
-            os.path.join(folder_path, selected_file), "Holdings"
+            os.path.join(USR_TRADELOG_DB_FOLDER, selected_file), "Holdings"
         )
 
-        account_value = 2500000
+        account_value = 2500000 # TODO: This should be fetched from the database
         port_stats = PortfolioStats(dtd_data, account_value)
 
         # Create tabs for 'Data', 'Stats', and 'Charts'
@@ -219,8 +230,7 @@ def main():
         )
 
         with tab1:
-            st.header("Profile")
-            show_profile(session_state.client_data)
+            show_profile(st.session_state.client_data)
 
         with tab2:
             st.header("Portfolio View")
@@ -246,7 +256,7 @@ def main():
         with tab3:
             st.header("Strategy View")
 
-            if selected_strategy in strategy_table_names:
+            if selected_strategy in ACTIVE_STRATEGIES:
                 column_for_calc = "trade_points" if is_signals else "net_pnl"
                 equity_chart, drawdown_chart = create_charts(
                     data, column_for_calc

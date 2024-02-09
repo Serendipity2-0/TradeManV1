@@ -1,9 +1,6 @@
-import base64
-import datetime
-import io
-import os
 
-import firebase_admin
+import os,sys
+
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
@@ -14,23 +11,35 @@ from register_page import register_page
 from streamlit_calendar import calendar
 from streamlit_option_menu import option_menu
 
-# Load environment variables from .env file
-load_dotenv()
+DIR = os.getcwd()
+sys.path.append(DIR)
+ENV_PATH = os.path.join(DIR, "trademan.env")
+load_dotenv(ENV_PATH)
 
+from loguru import logger
 
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
 
-
-class SessionState:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-
-
-# Create a session state variable
-session_state = SessionState(logged_in=False, client_data=None)
+#######################
+# Page configuration
+st.set_page_config(
+    page_title="TradeMan User Dashboard",
+    page_icon="🏂",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 
 def user_login_page():
-    if not session_state.logged_in:
+    if not st.session_state.logged_in:
         # create sidebar with radio buttons for login page, Admin Page and register page
         st.sidebar.title("Welcome to TradeMan")
         radio = st.sidebar.radio("", ("Login", "Admin Page", "Register"))
@@ -40,11 +49,14 @@ def user_login_page():
             admin_login()
         elif radio == "Register":
             register_page()
+            
+
 
 
 def login():
+
     # If the user is not logged in, show the login form
-    if not session_state.logged_in:
+    if not st.session_state.logged_in:
         # Take inputs for login information
         username = st.text_input("Email or Phone Number:", key="user_email_input")
         password = st.text_input(
@@ -71,8 +83,9 @@ def login():
                         or client_data.get("Phone Number") == username
                     ) and client_data.get("Password") == password:
                         # If credentials match, show a success message and break the loop
-                        session_state.logged_in = True
-                        session_state.client_data = client_data
+                        st.success("Logged in successfully.")
+                        st.session_state.logged_in = True
+                        st.session_state.client_data = client_data
                         st.experimental_rerun()
                         break
                 else:
@@ -83,7 +96,6 @@ def login():
                 st.error("Failed to fetch data: " + str(e))
     else:
         # If the user is already logged in, show the other contents
-        # show_app_contents()
         pass
 
 
@@ -91,47 +103,11 @@ def admin_login():
     pass
 
 
-def show_app_contents():
-    # Create a container for the horizontal menu
-    menu_container = st.container()
-
-    # Add the horizontal menu to the container
-    with menu_container:
-        selected = st.sidebar.selectbox(
-            "Select",
-            ("Profile", "Performance Dashboard", "Logout"),
-        )
-
-    # Show the respective content based on the selected option
-    if selected == "Profile":
-        client_data = session_state.client_data
-        if client_data is not None:
-            show_profile(
-                client_data,
-            )
-        else:
-            st.warning("No client data available.")
-    elif selected == "Performance Dashboard":
-        # Modified this line to use display_for_login
-        display_for_login(session_state.client_data)
-    elif selected == "Logout":
-        logout()
-        st.experimental_rerun()
-
-
-def display_for_login(client_data):
-    if client_data:  # Check if client_data is not None before processing
-        client_username = client_data.get("Username", "")
-        client_username = client_username[0].lower() + client_username[1:]
-        excel_file_name = f"{client_username}.xlsx"
-        display_profile_picture(client_data)
-        display_performance_dashboard(client_data, client_username, excel_file_name)
-
-    else:
-        st.warning("No client data available.")
 
 
 def logout():
+    from user_main_app import session_state
+
     # Reset session state variables
     session_state.logged_in = False
     session_state.client_data = None
