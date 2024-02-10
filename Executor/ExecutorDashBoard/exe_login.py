@@ -33,20 +33,11 @@ if not firebase_admin._apps:
     )
 
 
-class SessionState:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-
-
-# Create a session state variable
-session_state = SessionState(
-    logged_in=False, client_data=None
-)  # Session state update from get_firebase_conn_for_page
 
 
 def exe_login_page():
     # If the user is not logged in, show the login form
-    if not session_state.logged_in:
+    if not st.session_state.logged_in:
         # Take inputs for login information
         username = st.text_input("Username:", key="username_input")
         password = st.text_input(
