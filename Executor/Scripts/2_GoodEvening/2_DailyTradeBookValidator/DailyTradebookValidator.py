@@ -128,6 +128,10 @@ def daily_tradebook_validator():
                 unmatched_details = create_user_transaction_db_entry(
                     trade, user["Broker"]["BrokerName"]
                 )
+
+                if float(unmatched_details["avg_prc"]) == 0.0:
+                    continue
+
                 unmatched_details = pd.DataFrame([unmatched_details])
                 decimal_columns = ["avg_prc"]
                 append_df_to_sqlite(

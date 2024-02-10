@@ -169,6 +169,9 @@ def get_avg_prc(kite, order_id):
             break
     return avg_prc
 
+def get_order_status(kite, order_id):
+    order_history = kite.order_history(order_id=order_id)
+    logger.debug(f"Order history: {order_history}")
 
 def get_order_details(user):
     kite = create_kite_obj(api_key=user["api_key"], access_token=user["access_token"])
@@ -210,9 +213,9 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
             exchange_token, "NSE"
         )
     else:
-        segment_type = Instrument().get_segment_by_exchange_token(exchange_token)
+        segment_type = Instrument().get_segment_by_exchange_token(str(exchange_token))
         trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
-            exchange_token
+            str(exchange_token)
         )
 
     limit_prc = orders_to_place.get("limit_prc", None)
@@ -231,6 +234,16 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
             trigger_price = 1.5
 
     try:
+        # logger.debug(f"transaction_type: {transaction_type}")
+        # logger.debug(f"order_type: {order_type}")
+        # logger.debug(f"product_type: {product_type}")
+        # logger.debug(f"segment: {segment_type}")
+        # logger.debug(f"exchange_token: {exchange_token}")
+        # logger.debug(f"qty: {qty}")
+        # logger.debug(f"limit_prc: {limit_prc}")
+        # logger.debug(f"trigger_price: {trigger_price}")
+        # logger.debug(f"instrument: {trading_symbol}")
+        # logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
         order_id = kite.place_order(
             variety=kite.VARIETY_REGULAR,
             exchange=segment_type,

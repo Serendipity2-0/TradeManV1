@@ -347,7 +347,6 @@ def convert_date_str_to_standard_format(date_str):
             continue
     return "Invalid date format"
 
-
 def convert_to_standard_format(date_str):
     from datetime import datetime
 
@@ -359,7 +358,6 @@ def convert_to_standard_format(date_str):
         return convert_date_str_to_standard_format(date_str)
     else:
         return "Invalid date format"
-
 
 def get_ledger_for_user(user):
     if user["Broker"]["BrokerName"] == ZERODHA:
@@ -381,30 +379,26 @@ def calculate_user_net_values(user, categorized_df):
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         return alice_adapter.calculate_alice_net_values(user, categorized_df)
 
-
-# This function calculates the taxes and brokerage for a given broker for a given set of orders
-# trade_type is 'regular' for regular trades and 'futures' for future trades
-def calculate_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
-    # TODO : change the logic to calculate brokerage
+def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
     # Brokerage
     if broker == "Zerodha":
-        brokerage_rate = 20 
+        brokerage_rate = 20 if trade_type == "regular" else 0.03 / 100
     elif broker == "AliceBlue":
-        brokerage_rate = 15 
+        brokerage_rate = 15 if trade_type == "regular" else 0.03 / 100
     brokerage = brokerage_rate * no_of_orders
 
     # STT/CTT
-    intrinsic_value = max(0, net_exit_prc - net_entry_prc) * qty
+    intrinsic_value = max(0, float(net_exit_prc) - float(net_entry_prc)) * qty
     stt_ctt_rate = 0.125 / 100 if trade_type == "regular" else 0.0125 / 100
     stt_ctt = stt_ctt_rate * intrinsic_value
 
     # Transaction charges
     transaction_charges_rate = 0.05 / 100 if trade_type == "regular" else 0.0019 / 100
-    transaction_charges = transaction_charges_rate * net_exit_prc * qty
+    transaction_charges = transaction_charges_rate * float(net_exit_prc) * qty
 
     # SEBI charges
     sebi_charges_rate = 10 / 10000000
-    sebi_charges = sebi_charges_rate * net_exit_prc * qty
+    sebi_charges = sebi_charges_rate * float(net_exit_prc) * qty
 
     # GST
     gst_rate = 18 / 100
@@ -412,9 +406,42 @@ def calculate_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_
 
     # Stamp charges
     stamp_charges_rate = 0.003 / 100 if trade_type == "regular" else 0.002 / 100
-    stamp_charges = stamp_charges_rate * net_entry_prc * qty
+    stamp_charges = stamp_charges_rate * float(net_exit_prc) * qty
 
     total_charges = (
         brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
     )
     return total_charges
+
+def calculate_taxes(entry_orders,exit_orders,hedge_orders,broker):
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as instru
+    
+    taxes = 0
+    for entry_order in entry_orders:
+        for exit_order in exit_orders:
+            if entry_order["exchange_token"] == exit_order["exchange_token"]:
+                is_fut = instru().get_instrument_type_by_exchange_token(entry_order["exchange_token"]) == "FUTIDX"
+                tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", entry_order["qty"], entry_order["avg_prc"], exit_order["avg_prc"], 2)
+                taxes += tax
+    
+    if hedge_orders:
+        orders_by_token = {}
+        for order in hedge_orders:
+            token = order['exchange_token']
+            if token not in orders_by_token:
+                orders_by_token[token] = {'entry_orders': [], 'exit_orders': []}
+            
+            # Classify the order based on trade_id
+            if 'EN' in order['trade_id']:
+                orders_by_token[token]['entry_orders'].append(order)
+            elif 'EX' in order['trade_id']:
+                orders_by_token[token]['exit_orders'].append(order)
+
+        for token, orders in orders_by_token.items():
+            if orders['entry_orders'] and orders['exit_orders']:  # Ensure there is at least one entry and one exit order
+                entry_order = orders['entry_orders'][0]  # Taking the first entry order as an example
+                exit_order = orders['exit_orders'][0]  # Taking the first exit order as an example
+                is_fut = instru().get_instrument_type_by_exchange_token(token) == "FUTIDX"
+                tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", entry_order["qty"], entry_order["avg_prc"], exit_order["avg_prc"], 2)
+                taxes += tax
+    return taxes         

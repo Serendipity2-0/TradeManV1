@@ -1,5 +1,5 @@
 import os, sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,date
 from dotenv import load_dotenv
 import pandas as pd
 from babel.numbers import format_currency
@@ -33,6 +33,7 @@ from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import 
     send_telegram_message,
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
+from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 
 # Load environment variables fromx the trademan.env file
 ENV_PATH = os.path.join(DIR, "trademan.env")
@@ -134,7 +135,6 @@ def update_account_keys_fb(
 
 # Main function to generate and send the report
 def main():
-    # TODO: Logic to handle user transactions filter the rejected orders
 
     active_users = fetch_active_users_from_firebase()
     active_stratgies = fetch_active_strategies_all_users()
@@ -164,12 +164,8 @@ def main():
         expected_tax = sum(float(trade["tax"]) for trade in today_trades)
 
         today_fb_format = datetime.now().strftime("%d%b%y")
-        previous_trading_day_string = (datetime.now() - timedelta(days=1)).strftime(
-            "%Y-%m-%d"
-        )  # TODO: Replace with actual logic to get previous trading day
-        previous_trading_day_fb_format = (datetime.now() - timedelta(days=1)).strftime(
-            "%d%b%y"
-        )
+
+        previous_trading_day_fb_format = get_previous_trading_day(date.today())
 
         previous_free_cash = user["Accounts"][
             f"{previous_trading_day_fb_format}_FreeCash"
@@ -226,6 +222,7 @@ def main():
         message += "Best Regards,\nTradeMan"
 
         # Send the report to Discord
+        print(message)
         send_telegram_message(phone_number, message)
 
 

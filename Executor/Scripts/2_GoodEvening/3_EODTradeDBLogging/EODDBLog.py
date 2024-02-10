@@ -227,14 +227,8 @@ def calculate_trade_details(trade_data, strategy_name, user):
 
     pnl = trade_points * qty
 
-    tax = calculate_taxes(
-                    user["Broker"]["BrokerName"],
-                    signal,
-                    qty,
-                    entry_price,
-                    exit_price,
-                    len(exit_orders)*2,
-                )
+    tax = calculate_taxes(entry_orders,exit_orders,hedge_orders,user["Broker"]["BrokerName"])
+
     net_pnl = pnl - tax
 
     trade_details = {

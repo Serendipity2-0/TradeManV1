@@ -120,7 +120,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
         for data in all_order_statuses:
             push_orders_firebase(CLIENTS_DB, user["Tr_No"], data, update_path)
 
-        # Send notification if any orders failed # TODO: check for exact fail msgs and send notifications accordingly
+        # Send notification if any orders failed # TODO: check for Zerodha exact fail msgs and send notifications accordingly
         for status in all_order_statuses:
             if status.get("message", "") == "Order placement failed":
                 discord_bot(

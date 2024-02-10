@@ -229,6 +229,14 @@ class Instrument:
             return filtered_data.iloc[0]["exchange_token"]
         else:
             return None
+        
+        # get_instrument_type with exchange_token
+    def get_instrument_type_by_exchange_token(self, exchange_token):
+        filtered_data = self._filter_data_by_exchange_token(exchange_token)
+        if not filtered_data.empty:
+            return filtered_data.iloc[0]["instrument_type"]
+        else:
+            return None
 
     def get_token_by_name(self, name):
         filtered_data = self._filter_data_by_name(name)
@@ -281,10 +289,8 @@ class Instrument:
             "NIFTY": "256265",
             "SENSEX": "265",
         }
-
         # Return the token for the given base symbol, or a default message if not found
         return symbol_to_token.get(base_symbol, "No token found for given symbol")
-
 
 def get_single_ltp(token=None, exchange_token=None):
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")

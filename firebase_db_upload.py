@@ -4,14 +4,14 @@ from firebase_admin import db
 import json,math
 
 # Fetch the service account key JSON file contents
-cred = credentials.Certificate('/Users/amolkittur/Desktop/Dev/MarketUtils/Firebase/credentials.json')
+cred = credentials.Certificate('/Users/amolkittur/Desktop/TradeManV1/firebase_credentials.json')
 
 # Initialize the app with a service account, granting admin privileges
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://trading-app-caf8e-default-rtdb.firebaseio.com/'
 })
 
-with open('/Users/amolkittur/Desktop/Dev/clients.json', 'r') as file:
+with open('/Users/amolkittur/Desktop/TradeManV1/clients.json', 'r') as file:
     data = json.load(file)
 
 # Set the reference for the data upload
