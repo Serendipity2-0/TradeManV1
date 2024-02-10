@@ -3,7 +3,9 @@ import yfinance as yf
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+DIR = os.getcwd()
+ENV_PATH = os.path.join(DIR, "trademan.env")
+load_dotenv(ENV_PATH)
 
 
 def get_stock_codes():

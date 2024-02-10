@@ -101,19 +101,25 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
 
             order_qty = order_with_user_and_broker["qty"]
 
-            # Split and place orders if necessary
-            while order_qty > 0:
-                current_qty = min(order_qty, max_qty)
-                order_to_place = order_with_user_and_broker.copy()
-                order_to_place["qty"] = current_qty
+            if max_qty:
+                # Split and place orders if necessary
+                while order_qty > 0:
+                    current_qty = min(order_qty, max_qty)
+                    order_to_place = order_with_user_and_broker.copy()
+                    order_to_place["qty"] = current_qty
 
-                # logger.debug(f"Placing order for {order_to_place}")
-                order_status = place_order_for_brokers(order_to_place, user_credentials)
+                    # logger.debug(f"Placing order for {order_to_place}")
+                    order_status = place_order_for_brokers(order_to_place, user_credentials)
+                    all_order_statuses.append(order_status)
+
+                    if "Hedge" in order_to_place.get("order_mode", ""):
+                        time.sleep(1)
+                    order_qty -= current_qty
+            else:
+                # Place the order
+                # logger.debug(f"Placing order for {order_with_user_and_broker}")
+                order_status = place_order_for_brokers(order_with_user_and_broker, user_credentials)
                 all_order_statuses.append(order_status)
-
-                if "Hedge" in order_to_place.get("order_mode", ""):
-                    time.sleep(1)
-                order_qty -= current_qty
 
         # Update Firebase with order status
         update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"

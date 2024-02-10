@@ -167,9 +167,12 @@ class Instrument:
         else:
             return None
 
-    def get_kite_token_by_exchange_token(self, exchange_token):
+    def get_kite_token_by_exchange_token(self, exchange_token,segment=None):
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
         if not filtered_data.empty:
+            if segment:
+                filtered_data = filtered_data[filtered_data["segment"] == segment]
+                return int(filtered_data.iloc[0]["instrument_token"])
             return int(filtered_data.iloc[0]["instrument_token"])
         else:
             return None
@@ -217,7 +220,7 @@ class Instrument:
             return None
 
     def _filter_data_by_name(self, name):
-        return self._dataframe[self._dataframe["tradingsymbol"] == name]
+        return self._dataframe[self._dataframe["Symbol"] == name]
 
     def get_exchange_token_by_name(self, name, segment=None):
         if segment:
@@ -292,7 +295,7 @@ class Instrument:
         # Return the token for the given base symbol, or a default message if not found
         return symbol_to_token.get(base_symbol, "No token found for given symbol")
 
-def get_single_ltp(token=None, exchange_token=None):
+def get_single_ltp(token=None, exchange_token=None, segment=None):
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
     primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(
         zerodha_primary
@@ -301,8 +304,12 @@ def get_single_ltp(token=None, exchange_token=None):
     kite.set_access_token(
         access_token=primary_account_session_id["Broker"]["SessionId"]
     )
+    
     if exchange_token:
-        kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
+        if segment:
+            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token,segment)
+        else:
+            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
         ltp = kite.ltp(kite_token)
         return ltp[str(kite_token)]["last_price"]
     else:

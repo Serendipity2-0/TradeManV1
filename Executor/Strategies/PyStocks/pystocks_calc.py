@@ -4,7 +4,10 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+DIR = os.getcwd()
+ENV_PATH = os.path.join(DIR, "trademan.env")
+load_dotenv(ENV_PATH)
+
 # Fetch stock symbols
 stock_symbols = fetcher.get_stock_codes()
 
@@ -82,14 +85,15 @@ def longTerm_pick(stock_symbols):
 
 
 shortterm_top5 = shortTerm_pick(stock_symbols)[1:6]
-midterm_top5 = midTerm_pick(stock_symbols)[1:6]
-longterm_top5 = longTerm_pick(stock_symbols)[1:6]
+# midterm_top5 = midTerm_pick(stock_symbols)[1:6]
+# longterm_top5 = longTerm_pick(stock_symbols)[1:6]
+
 # converting to Dataframe Object
 df_shortterm_top5 = pd.DataFrame(shortterm_top5, columns=["Symbol", "ATH_to_LTP_Ratio"])
-df_midterm_top5 = pd.DataFrame(midterm_top5, columns=["Symbol", "ATH_to_LTP_Ratio"])
-df_longterm_top5 = pd.DataFrame(longterm_top5, columns=["Symbol", "Stoploss"])
+# df_midterm_top5 = pd.DataFrame(midterm_top5, columns=["Symbol", "ATH_to_LTP_Ratio"])
+# df_longterm_top5 = pd.DataFrame(longterm_top5, columns=["Symbol", "Stoploss"])
 
 # converting to CSV file
-df_shortterm_top5.to_csv("Strategies/PyStocks/stocks_csv/shortterm_best5.csv")
-df_midterm_top5.to_csv(os.getenv("best5_midterm_path"), index=False)
-df_longterm_top5.to_csv(os.getenv("best5_longterm_path"), index=False)
+df_shortterm_top5.to_csv(os.getenv("best5_shortterm_path"), index=False)
+# df_midterm_top5.to_csv(os.getenv("best5_midterm_path"), index=False)
+# df_longterm_top5.to_csv(os.getenv("best5_longterm_path"), index=False)
