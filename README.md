@@ -129,5 +129,6 @@ TODO:
 5. Order status after order is placed (as of now for all orders the status is returned rejected)
 6. Filter the rejected orders when uploading the trades to UserTransactions table
 
-   
+Longterm TODO:
+1. Refactor each strategy and add signal info for each strategy
 

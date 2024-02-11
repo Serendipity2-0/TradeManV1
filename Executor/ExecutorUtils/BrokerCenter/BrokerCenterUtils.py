@@ -43,7 +43,6 @@ def place_order_for_brokers(order_details, user_credentials):
 
 
 def modify_order_for_brokers(order_details, user_credentials):
-    # based on the broker name call the respective function with order_details and user_credentials with broker details
     if order_details["broker"] == ZERODHA:
         return zerodha_adapter.kite_modify_orders_for_users(
             order_details, user_credentials
