@@ -41,9 +41,8 @@ def alice_fetch_free_cash(user_details):
         user_details["ApiKey"],
         session_id=user_details["SessionId"],
     )
-    balance_details = alice.get_balance()  # This method might have a different name
+    balance_details = alice.get_balance()  
 
-    # Search for 'cashmarginavailable' in the balance_details
     for item in balance_details:
         if isinstance(item, dict) and "cashmarginavailable" in item:
             cash_margin_available = item.get("cashmarginavailable", 0)
@@ -75,12 +74,10 @@ def merge_ins_csv_files():
     bfo_df = pd.read_csv(file_paths[1])
     nse_df = pd.read_csv(file_paths[2])
 
-    # Add empty columns for 'Option Type', 'Strike Price', and 'Expiry Date' to NSE DataFrame
     nse_df["Option Type"] = None
     nse_df["Strike Price"] = None
     nse_df["Expiry Date"] = None
 
-    # Filter each DataFrame to keep only the specified columns
     nfo_df_filtered = nfo_df[columns_to_keep]
     nse_df_filtered = nse_df[columns_to_keep]
     bfo_df_filtered = bfo_df[columns_to_keep]
