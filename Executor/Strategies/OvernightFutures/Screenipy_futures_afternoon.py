@@ -192,8 +192,6 @@ def main():
     futures_exchange_token = np.int64(futures_exchange_token)
     futures_exchange_token = int(futures_exchange_token)
 
-    # i want to update hedge_exchange_token, futures_exchange_token and prediction to firebase
-
     extra_info = {
         "FuturesExchangeToken": futures_exchange_token,
         "HedgeExchangeToken": hedge_exchange_token,

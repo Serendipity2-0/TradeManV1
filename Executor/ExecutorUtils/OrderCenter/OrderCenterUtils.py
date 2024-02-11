@@ -42,15 +42,16 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
 )
 
 def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
+    logger.debug(f"Calculating quantity for strategy with capital: {capital} risk: {risk} avg_sl_points: {avg_sl_points} lot_size: {lot_size}")
     if avg_sl_points is not None:
         raw_quantity = ((risk / 100) * capital) / avg_sl_points
         # Calculate the number of lots
         number_of_lots = raw_quantity / lot_size
         #ceil the number of lots
         number_of_lots = math.ceil(number_of_lots)
-
         # Calculate the quantity as a multiple of lot_size
         quantity = int(number_of_lots * lot_size)
+        logger.debug(f"Quantity calculated for strategy: {quantity} raw_quantity: {raw_quantity} number_of_lots: {number_of_lots} lot_size: {lot_size}")
     else:
         # For other strategies, risk values represent the capital allocated
         lots = capital / (risk / 100)

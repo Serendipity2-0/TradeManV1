@@ -10,6 +10,7 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
+from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     update_fields_firebase)
@@ -46,24 +47,24 @@ def fetch_freecash_all_brokers(
                 user["Broker"]
             )
             broker_free_cash[user["Tr_No"]] = cash_margin
-    return broker_free_cash, user["Tr_No"]
+    return broker_free_cash
 
 
 def fetch_freecash_all_db(active_users):  ####pass active_users['Accounts'] as argument
-    previous_day_key = (dt.datetime.now() - dt.timedelta(days=1)).strftime(
-        "%d%b%y"
-    ) + "_FreeCash"
+    previous_trading_day_fb_format = get_previous_trading_day(dt.date.today())
+    previous_day_key = previous_trading_day_fb_format+"_"+'FreeCash'
     for user in active_users:
         db_free_cash[user["Tr_No"]] = user["Accounts"][previous_day_key]
     return db_free_cash
 
 
-def compare_freecash(broker_free_cash, db_free_cash, trader_no):
+def compare_freecash(broker_free_cash, db_free_cash):
     from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_admin_bot
     
     tolerable_difference = 0.03
     
     for user in broker_free_cash:
+        logger.info(f"Comparing free cash for {user}")
         # check if the difference is more than 1%
         if abs(broker_free_cash[user] - db_free_cash[user]) > tolerable_difference * db_free_cash[user]:
             logger.info(
@@ -76,13 +77,13 @@ def compare_freecash(broker_free_cash, db_free_cash, trader_no):
             logger.info(f"Free cash for {user} is matching")
             logger.info(f"Free cash from broker: {broker_free_cash[user]}")
             logger.info(f"Free cash from DB: {db_free_cash[user]}")
-
-        update_fields_firebase(user_db_collection, trader_no, {dt.datetime.now().strftime("%d%b%y") + "_FreeCash": broker_free_cash[user]},"Accounts")
+        logger.debug(f"Updating free cash for {user} in DB")
+        update_fields_firebase(user_db_collection, user, {dt.datetime.now().strftime("%d%b%y") + "_FreeCash": broker_free_cash[user]},"Accounts")
 
 def main():
-    broker_free_cash, trader_no = fetch_freecash_all_brokers(active_users)
+    broker_free_cash = fetch_freecash_all_brokers(active_users)
     db_free_cash = fetch_freecash_all_db(active_users)
-    compare_freecash(broker_free_cash, db_free_cash, trader_no)
+    compare_freecash(broker_free_cash, db_free_cash)
 
 
 if __name__ == "__main__":

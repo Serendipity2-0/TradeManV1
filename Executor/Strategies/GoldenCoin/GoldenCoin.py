@@ -168,10 +168,10 @@ def main():
     update_signal_firebase(
         goldencoin_strategy_obj.StrategyName, signals_to_log, next_trade_prefix
     )
-    place_order_strategy_users(goldencoin_strategy_obj.StrategyName, orders_to_place)
+    # place_order_strategy_users(goldencoin_strategy_obj.StrategyName, orders_to_place)
 
 hour = 11
-minute = 15
+minute = 31
 window = 1  # 5 minutes
 
 current_time = time.localtime()
