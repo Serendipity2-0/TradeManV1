@@ -488,7 +488,7 @@ def calculate_multipler_stoploss(main_transaction_type, ltp, stoploss_multiplier
         stoploss = round(float(ltp - (ltp * stoploss_multiplier)), 1)
     elif main_transaction_type == "SELL":
         stoploss = round(float(ltp + (ltp * stoploss_multiplier)), 1)
-
+    logger.debug(f"stoploss: {stoploss}, ltp: {ltp}, stoploss_multiplier: {stoploss_multiplier}")
     if stoploss < 0:
         return 1
 

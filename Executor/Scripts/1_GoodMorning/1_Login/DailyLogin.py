@@ -30,9 +30,12 @@ logger.info("Market is Supreme")
 today = pendulum.today().format("DD-MM-YYYY")
 logger.info(f"Today's date: {today}")
 
+def main():
+    import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
 
-import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
+    broker_center_utils.all_broker_login(
+        broker_center_utils.fetch_active_users_from_firebase()
+    )
 
-active_users = broker_center_utils.all_broker_login(
-    broker_center_utils.fetch_active_users_from_firebase()
-)
+if __name__ == "__main__":
+    main()

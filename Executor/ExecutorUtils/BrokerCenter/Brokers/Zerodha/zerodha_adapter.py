@@ -171,16 +171,19 @@ def get_avg_prc(kite, order_id):
 
 def get_order_status(kite, order_id):
     order_history = kite.order_history(order_id=order_id)
-    logger.debug(f"Order history: {order_history}")
+    for order in order_history:
+        if order.get("status") == "REJECTED":
+            return order.get('status_message')
+        elif order.get("status") == "COMPLETE":
+            return "PASS"
 
 def get_order_details(user):
     kite = create_kite_obj(api_key=user["api_key"], access_token=user["access_token"])
     orders = kite.orders()
     return orders
 
-
 def kite_place_orders_for_users(orders_to_place, users_credentials):
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
 
     results = {
         "avg_prc": None,
@@ -225,6 +228,8 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         limit_prc = round(float(limit_prc), 2)
         if limit_prc < 0:
             limit_prc = 1.0
+    elif product == "CNC":
+        limit_prc = get_single_ltp(exchange_token=exchange_token, segment="NSE")
     else:
         limit_prc = 0.0
 
@@ -234,16 +239,16 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
             trigger_price = 1.5
 
     try:
-        # logger.debug(f"transaction_type: {transaction_type}")
-        # logger.debug(f"order_type: {order_type}")
-        # logger.debug(f"product_type: {product_type}")
-        # logger.debug(f"segment: {segment_type}")
-        # logger.debug(f"exchange_token: {exchange_token}")
-        # logger.debug(f"qty: {qty}")
-        # logger.debug(f"limit_prc: {limit_prc}")
-        # logger.debug(f"trigger_price: {trigger_price}")
-        # logger.debug(f"instrument: {trading_symbol}")
-        # logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
+        logger.debug(f"transaction_type: {transaction_type}")
+        logger.debug(f"order_type: {order_type}")
+        logger.debug(f"product_type: {product_type}")
+        logger.debug(f"segment: {segment_type}")
+        logger.debug(f"exchange_token: {exchange_token}")
+        logger.debug(f"qty: {qty}")
+        logger.debug(f"limit_prc: {limit_prc}")
+        logger.debug(f"trigger_price: {trigger_price}")
+        logger.debug(f"instrument: {trading_symbol}")
+        logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
         order_id = kite.place_order(
             variety=kite.VARIETY_REGULAR,
             exchange=segment_type,
@@ -258,12 +263,19 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         )
 
         logger.success(f"Order placed. ID is: {order_id}")
-        #TODO: Fetch the order status of the order_id and check if it is complete
-
-        # Assuming 'avg_prc' can be fetched from a method or is returned in order history/details
-        message = f"Order placed successfully for {orders_to_place['username']}"
-        # avg_prc = fetch_avg_price(kite, order_id['NOrdNo'])  # This function needs to be defined
-
+        # #TODO: Fetch the order status of the order_id and check if it is complete
+        order_status = get_order_status(kite, order_id)
+        if order_status != "PASS":
+            message = f"Order placement failed: {order_status} for {orders_to_place['username']}"
+            logger.error(message)
+            results.update(
+                {
+                    "message": message
+                    # Additional error details can be added here if needed
+                }
+            )
+            discord_bot(message, strategy)
+            return results
     except Exception as e:
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)

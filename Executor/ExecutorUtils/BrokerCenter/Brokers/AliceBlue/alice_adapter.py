@@ -271,9 +271,6 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         if order_status == "FAIL":
             order_history = alice.get_order_history(order_id["NOrdNo"])
             message = f"Order placement failed, Reason: {order_history['RejReason']} for {orders_to_place['username']}"
-        else:
-            message = "Order placed successfully"
-
         discord_bot(message, strategy)
 
         results = {

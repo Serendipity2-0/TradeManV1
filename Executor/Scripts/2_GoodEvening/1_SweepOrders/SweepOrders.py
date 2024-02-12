@@ -61,7 +61,9 @@ def sweep_hedge_orders():
             OrderCenterUtils.place_order_for_strategy([user], hedge_counter_order_details, "Sweep")
 
 
+def main():
+    sweep_sl_order()
+    sweep_hedge_orders()
 
-# Execute the functions
-sweep_sl_order()
-sweep_hedge_orders()
+if __name__ == "__main__":
+    main()

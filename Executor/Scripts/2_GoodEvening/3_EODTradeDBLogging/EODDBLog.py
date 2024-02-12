@@ -355,8 +355,10 @@ def process_n_log_trade():
                 
         conn.close()
 
-process_n_log_trade()
-fetch_and_prepare_holdings_data()
-update_signals_firebase()
+def main():
+    process_n_log_trade()
+    fetch_and_prepare_holdings_data()
+    update_signals_firebase()
 
-
+if __name__ == "__main__":
+    main()

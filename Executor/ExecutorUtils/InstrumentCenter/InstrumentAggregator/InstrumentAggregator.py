@@ -59,7 +59,7 @@ def merge_ins_df(zerodha_ins_df, aliceblue_ins_df):
     return final_merged_df
 
 
-def main():
+def aggregate_ins():
     merged_ins_df = merge_ins_df(zerodha_ins_df, aliceblue_ins_df)
     conn = sql_utils.get_db_connection(os.getenv("SQLITE_INS_PATH"))
     # print number of rows in the table

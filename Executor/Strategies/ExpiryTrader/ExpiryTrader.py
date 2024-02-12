@@ -84,6 +84,8 @@ stoploss_multiplier = expiry_trader_obj.EntryParams.SLMultiplier
 desired_start_time_str = expiry_trader_obj.get_entry_params().EntryTime
 strategy_type = expiry_trader_obj.GeneralParams.StrategyType
 
+logger.debug(f"Values from Firebase for {strategy_name}: {base_symbol}, {today_expiry_token}, {prediction}, {order_type}, {product_type}, {strike_prc_multiplier}, {hedge_multiplier}, {stoploss_multiplier}, {desired_start_time_str}, {strategy_type}")
+
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
 
 main_strikeprc = expiry_trader_obj.calculate_current_atm_strike_prc(
@@ -122,6 +124,7 @@ stoploss_transaction_type = calculate_transaction_type_sl(main_transaction_type)
 limit_prc = calculate_stoploss(
     ltp, main_transaction_type, stoploss_multiplier=stoploss_multiplier
 )
+logger.debug(f"stoploss_transaction_type: {stoploss_transaction_type}, limit_prc: {limit_prc}")
 trigger_prc = calculate_trigger_price(stoploss_transaction_type, limit_prc)
 
 orders_to_place = [
@@ -163,6 +166,7 @@ orders_to_place = [
 ]
 
 orders_to_place = assign_trade_id(orders_to_place)
+logger.debug(f"orders_to_place for {strategy_name}: {orders_to_place}")
 
 
 def main():
@@ -205,7 +209,7 @@ def main():
 
         message_for_orders("Live", prediction, main_trade_symbol, hedge_trade_symbol)
 
-        place_order_strategy_users(strategy_name, orders_to_place)
+        # place_order_strategy_users(strategy_name, orders_to_place)
 
 
 if __name__ == "__main__":

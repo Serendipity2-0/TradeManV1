@@ -22,9 +22,12 @@ logger.add(
 )
 
 
+def main():
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentAggregator.InstrumentAggregator import (
+        aggregate_ins as instrument_aggregator,
+    )
 
-from Executor.ExecutorUtils.InstrumentCenter.DailyInstrumentAggregator.DailyInstrumentAggregator import (
-    main as instrument_aggregator,
-)
+    instrument_aggregator()
 
-instrument_aggregator()
+if __name__ == "__main__":
+    main()
