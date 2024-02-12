@@ -27,11 +27,7 @@ logger.add(
 db_dir = os.getenv("DB_DIR")
 
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
-
-# from Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter import aliceblue_todays_tradebook
-# from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import zerodha_todays_tradebook
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
-    fetch_collection_data_firebase,
     update_fields_firebase,
     delete_fields_firebase,
 )
@@ -149,8 +145,6 @@ def daily_tradebook_validator():
         unmatched_orders.clear()
 
 
-daily_tradebook_validator()
-
 def clear_extra_orders_firebase():
     active_users = BrokerCenterUtils.fetch_active_users_from_firebase()
     for user in active_users:
@@ -169,4 +163,9 @@ def clear_extra_orders_firebase():
                     print(f"Deleting order at path: {order_path}")
                     delete_fields_firebase(BrokerCenterUtils.CLIENTS_DB, user["Tr_No"], order_path)
 
-clear_extra_orders_firebase()
+def main():
+    daily_tradebook_validator()
+    clear_extra_orders_firebase()
+
+if __name__ == "__main__":
+    main()

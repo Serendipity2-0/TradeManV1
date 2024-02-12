@@ -9,4 +9,8 @@ load_dotenv(ENV_PATH)
 
 from MarketInfo.DataCenter.DailyEODDB import main as daily_eod_db
 
-daily_eod_db()
+def main():
+    daily_eod_db()
+
+if __name__ == "__main__":
+    main()
