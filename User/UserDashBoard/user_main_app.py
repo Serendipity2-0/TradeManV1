@@ -19,7 +19,7 @@ load_dotenv(ENV_PATH)
 
 
 ACTIVE_STRATEGIES = os.getenv("ACTIVE_STRATEGIES")
-USR_TRADELOG_DB_FOLDER = os.getenv("USR_TRADELOG_DB_FOLDER")
+USR_TRADELOG_DB_FOLDER = os.getenv("DB_DIR")
 user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 
 from loguru import logger
@@ -170,7 +170,7 @@ def main():
 
         # Extract username or another unique identifier from the session state
         username = st.session_state.client_data[
-            "Username"
+            "Tr_No"
         ]  # Adjust based on actual data
         
         print("username", username)
@@ -235,23 +235,23 @@ def main():
         with tab2:
             st.header("Portfolio View")
 
-            equity_curve_fig = port_stats.show_equity_curve()
-            st.pyplot(equity_curve_fig)
+            # equity_curve_fig = port_stats.show_equity_curve()
+            # st.pyplot(equity_curve_fig)
 
-            monthly_returns_table = port_stats.calculate_monthly_returns()
-            weekly_returns_table = port_stats.calculate_weekly_returns
-            st.write("Monthly Returns:", monthly_returns_table)
-            st.write("Weekly Returns:", weekly_returns_table)
+            # monthly_returns_table = port_stats.calculate_monthly_returns()
+            # weekly_returns_table = port_stats.calculate_weekly_returns
+            # st.write("Monthly Returns:", monthly_returns_table)
+            # st.write("Weekly Returns:", weekly_returns_table)
 
-            max_impact_df = port_stats.max_impact_day()
+            # max_impact_df = port_stats.max_impact_day()
 
-            st.write("Max Impact Day:")
-            st.table(max_impact_df)
+            # st.write("Max Impact Day:")
+            # st.table(max_impact_df)
 
-            portfolio_statistics = port_stats.portfolio_stats()
-            with st.expander("Portfolio Statistics"):
-                # st.write("Portfolio Statistics:")
-                st.write(portfolio_statistics)
+            # portfolio_statistics = port_stats.portfolio_stats()
+            # with st.expander("Portfolio Statistics"):
+            #     # st.write("Portfolio Statistics:")
+            #     st.write(portfolio_statistics)
 
         with tab3:
             st.header("Strategy View")

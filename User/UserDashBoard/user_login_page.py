@@ -71,17 +71,20 @@ def login():
             # Fetch data from Firebase Realtime Database to verify the credentials
             try:
                 # Get a reference to the 'clients' node in the database
-                ref = db.reference("clients")
+                ref = db.reference("trademan_clients")
 
                 # Fetch all clients data
                 clients = ref.get()
 
                 # Go through each client and check if the credentials match
                 for client_id, client_data in clients.items():
+                    logger.debug("")
+                    
                     if (
-                        client_data.get("Email") == username
-                        or client_data.get("Phone Number") == username
-                    ) and client_data.get("Password") == password:
+                        client_data.get('Profile').get("Email") == username
+                        or client_data.get('Profile').get("PhoneNumber") == username
+                    ) and client_data.get('Profile').get("GmailPassword") == password:
+                        logger.debug(f"client_data: {client_data}")
                         # If credentials match, show a success message and break the loop
                         st.success("Logged in successfully.")
                         st.session_state.logged_in = True
