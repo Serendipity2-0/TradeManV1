@@ -173,9 +173,11 @@ def seggregate_orders_by_type(orders):
 
 def process_orders_for_strategy(strategy_orders):
     processed_trades = {}
+    logger.debug(f"strategy_order{strategy_orders}")
     for order in strategy_orders:
         if order is None:
             continue
+        logger.debug(f"order[trade_id] : {order['trade_id']}")
         trade_prefix = order["trade_id"].split("_")[0]
         if trade_prefix not in processed_trades:
             processed_trades[trade_prefix] = {
@@ -266,9 +268,15 @@ def fetch_and_prepare_holdings_data():
             if isinstance(strategy_orders, dict):  # Convert dict to list if needed
                 strategy_orders = list(strategy_orders.values())
 
+            logger.debug(f"name : {strategy_name}")
+            logger.debug(f"strategy_orders {strategy_orders}")
+
+            #continue if any object in the list is none
+
             # Separate main and hedge orders
-            main_orders = [order for order in strategy_orders if "MO" in order.get("trade_id", "")]
-            hedge_orders = [order for order in strategy_orders if "HO" in order.get("trade_id", "")]
+            main_orders = [order for order in strategy_orders if order is not None and "MO" in order.get("trade_id", "")]
+            hedge_orders = [order for order in strategy_orders if order is not None and "HO" in order.get("trade_id", "")]
+
 
             # Calculate the average price of hedge orders
             if hedge_orders:
@@ -356,7 +364,7 @@ def process_n_log_trade():
         conn.close()
 
 def main():
-    process_n_log_trade()
+    # process_n_log_trade()
     fetch_and_prepare_holdings_data()
     update_signals_firebase()
 
