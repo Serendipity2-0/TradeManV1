@@ -24,10 +24,10 @@ while true; do
     echo "Attempt: $attempt"
     
     # Source conda, activate the environment and run the script
-    source /Users/amolkittur/miniconda3/etc/profile.d/conda.sh && \
-    conda activate traderscafe && \
-    cd /Users/amolkittur/Desktop/TradeManV1/  && \
-    /Users/amolkittur/miniconda3/envs/traderscafe/bin/python Executor/Strategies/GoldenCoin/GoldenCoin.py && \
+    source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
+    conda activate tradingenv && \
+    cd /Users/traderscafe/Desktop/TradeManV1/ && \
+    /Users/traderscafe/miniconda3/envs/tradingenv/bin/python Executor/Strategies/GoldenCoin/GoldenCoin.py && \
     echo "Program started successfully" && break
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit

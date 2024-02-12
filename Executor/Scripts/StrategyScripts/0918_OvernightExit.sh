@@ -19,9 +19,8 @@ while true; do
     # Source conda, activate the environment and run the script
     source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
 	conda activate tradingenv && \
-    cd /Users/traderscafe/Desktop/Main/ && \
-	# cd /Users/traderscafe/Documents/NiftyStrategy/Brokers/ && \
-	/Users/traderscafe/miniconda3/envs/tradingenv/bin/python Strategies/OvernightFutures/Screenipy_futures_morning.py && \
+    cd /Users/traderscafe/Desktop/TradeManV1/ && \
+	/Users/traderscafe/miniconda3/envs/tradingenv/bin/python Executor/Strategies/OvernightFutures/Screenipy_futures_morning.py && \
 	echo "Program started successfully" && break
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit

@@ -676,7 +676,7 @@ def update_graph_scatter(n):
 
 if current_time > datetime.time(9, 0):
     #  __name__ == '__main__':
-    app.run_server(host="0.0.0.0", port="8050", debug=True, use_reloader=False)
+    app.run_server(host="0.0.0.0", port="8051", debug=True, use_reloader=False)
 
     print("Waiting for ticks...")
 
