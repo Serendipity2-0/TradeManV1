@@ -392,13 +392,13 @@ def process_alice_ledger(excel_file_path):
 
     # Define patterns for categorization with updated rules
     patterns = {
-        "NetDeposits": [
+        "Deposits": [
             "PAYMENT DONE VIA : RAZORPAY NET",
             "RECEIVED AMOUNT THROUGH HDFC-CMS(OTH)",
             "PAYMENT DONE VIA : RAZORPAY UPI",
         ],
-        "NetWithdrawals": ["PAYOUT OF FUNDS"],
-        "Netcharges": [
+        "Withdrawals": ["PAYOUT OF FUNDS"],
+        "Charges": [
             "CGST",
             "SGST",
             "BENEFICIARY CHARGES",
@@ -407,7 +407,7 @@ def process_alice_ledger(excel_file_path):
             "BENEFICIARY CHARGES FOR SETT NO",
             "BEING PAYMENT GATEWAY CHARGES DEBITED -",
         ],
-        "trades": ["BILL ENTRY FOR FO-", "BILL ENTRY FOR M-", "BILL ENTRY FOR Z-"],
+        "Trades": ["BILL ENTRY FOR FO-", "BILL ENTRY FOR M-", "BILL ENTRY FOR Z-"],
         "ignore": [
             "INTER EXCHANGE SETL JV FROM NSEFNO TO BSECASH",
             "INTER EXCHANGE SETL JV FROM BSECASH TO NSEFNO",
