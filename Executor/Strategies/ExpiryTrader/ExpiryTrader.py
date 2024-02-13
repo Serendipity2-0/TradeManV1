@@ -209,7 +209,7 @@ def main():
 
         message_for_orders("Live", prediction, main_trade_symbol, hedge_trade_symbol)
 
-        # place_order_strategy_users(strategy_name, orders_to_place)
+        place_order_strategy_users(strategy_name, orders_to_place)
 
 
 if __name__ == "__main__":

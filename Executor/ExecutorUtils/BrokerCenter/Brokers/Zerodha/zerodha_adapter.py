@@ -267,33 +267,21 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         order_status = get_order_status(kite, order_id)
         if order_status != "PASS":
             message = f"Order placement failed: {order_status} for {orders_to_place['username']}"
-            logger.error(message)
-            results.update(
-                {
-                    "message": message
-                    # Additional error details can be added here if needed
-                }
-            )
             discord_bot(message, strategy)
-            return results
+
     except Exception as e:
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)
-        results.update(
-            {
-                "message": message
-                # Additional error details can be added here if needed
-            }
-        )
-
+        discord_bot(message, strategy)
+        
     results = {
-        "exchange_token": int(exchange_token),
-        "order_id": order_id,
-        "qty": qty,
-        "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "trade_id": orders_to_place.get("trade_id", ""),
-        "message": message,
-    }
+                "exchange_token": int(exchange_token),
+                "order_id": order_id,
+                "qty": qty,
+                "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "trade_id": orders_to_place.get("trade_id", "")
+            }
+    
     return results
 
 

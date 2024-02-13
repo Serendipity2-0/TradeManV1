@@ -14,6 +14,7 @@ load_dotenv(ENV_PATH)
 ZERODHA = os.getenv("ZERODHA_BROKER")
 ALICEBLUE = os.getenv("ALICEBLUE_BROKER")
 CLIENTS_DB = os.getenv("FIREBASE_USER_COLLECTION")
+STRATEGY_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 from loguru import logger
 

@@ -146,6 +146,7 @@ def send_signal_msg(base_symbol, strike_prc, option_type):
     discord_bot(message, goldencoin_strategy_obj.StrategyName)
 
 def main():
+    global start_hour, start_minute, window
     hour = int(start_hour)
     minute = int(start_minute)
     window = int(window)

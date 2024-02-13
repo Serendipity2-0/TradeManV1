@@ -90,7 +90,9 @@ def get_new_holdings(user_tables):
     for table in user_tables:
         if list(table.keys())[0] == "Holdings":
             holdings = table["Holdings"]
-            new_holdings = holdings["margin_utilized"].sum()
+            #iterate through the rows and convert it to float and get the sum of the "MarginUtilized" column 
+            new_holdings = sum(float(holding) for holding in holdings["margin_utilized"])
+
     logger.info(f"new_holdings{new_holdings}")
 
     return round(float(new_holdings))

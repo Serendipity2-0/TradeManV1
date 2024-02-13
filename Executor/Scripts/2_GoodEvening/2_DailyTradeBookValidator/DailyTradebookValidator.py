@@ -104,6 +104,8 @@ def daily_tradebook_validator():
                 continue
 
             for order in orders_from_firebase:
+                if order is None:
+                    continue
                 order_id_str = str(order["order_id"])
                 order_date_timestamp = order.get("time_stamp", "").split(" ")[0]
                 if order_date_timestamp == today:
@@ -155,6 +157,8 @@ def clear_extra_orders_firebase():
                 # i want to delete all the dicts which do not have avg_price field in them
                 orders_to_delete = []
                 for i, order in enumerate(orders_from_firebase):
+                    if order is None:
+                        continue
                     avg_price = order.get("avg_prc", None)
                     if float(avg_price) == 0.0:
                         orders_to_delete.append(i)

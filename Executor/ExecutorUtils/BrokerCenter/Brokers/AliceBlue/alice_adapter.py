@@ -271,19 +271,20 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         if order_status == "FAIL":
             order_history = alice.get_order_history(order_id["NOrdNo"])
             message = f"Order placement failed, Reason: {order_history['RejReason']} for {orders_to_place['username']}"
-        discord_bot(message, strategy)
+            discord_bot(message, strategy)
 
-        results = {
+    except Exception as e:
+        message = f"Order placement failed: {e} for {orders_to_place['username']}"
+        logger.error(message)
+        discord_bot(message, strategy)
+    
+    results = {
             "exchange_token": int(exchange_token),
             "order_id": order_id["NOrdNo"],
             "qty": qty,
             "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "trade_id": orders_to_place.get("trade_id", ""),
-            "message": message,
+            "trade_id": orders_to_place.get("trade_id", "")
         }
-
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
 
     return results
 
