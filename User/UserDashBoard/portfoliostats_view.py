@@ -10,13 +10,13 @@ class PortfolioStats:
         if not isinstance(dtd_data, pd.DataFrame):
             raise ValueError("dtd_data must be a pandas DataFrame")
         self.dtd_data = dtd_data
-        self.dtd_data["Date"] = pd.to_datetime(self.dtd_data["Date"])
+        self.dtd_data["exit_time"] = pd.to_datetime(self.dtd_data["exit_time"])
         self.account_value = account_value
         self._ensure_datetime_format()
 
     def _ensure_datetime_format(self):
         """Ensure 'Date' is in datetime format and extract common attributes."""
-        self.dtd_data["Date"] = pd.to_datetime(self.dtd_data["Date"])
+        self.dtd_data["Date"] = pd.to_datetime(self.dtd_data["exit_time"])
         self.dtd_data["Month"] = self.dtd_data["Date"].dt.month_name()
         self.dtd_data["Year"] = self.dtd_data["Date"].dt.year
 
@@ -26,7 +26,7 @@ class PortfolioStats:
         self.dtd_data.sort_values("Date", inplace=True)
 
         # Calculate the cumulative NetPnL to simulate the equity curve
-        self.dtd_data["Cumulative NetPnL"] = self.dtd_data["NetPnL"].cumsum()
+        self.dtd_data["Cumulative NetPnL"] = self.dtd_data["net_pnl"].cumsum()
         self.dtd_data["Equity"] = (
             self.account_value + self.dtd_data["Cumulative NetPnL"]
         )
@@ -74,7 +74,7 @@ class PortfolioStats:
     def calculate_monthly_returns(self):
         """Calculate and return monthly absolute returns."""
         monthly_absolute_returns = (
-            self.dtd_data.groupby(["Year", "Month"])["NetPnL"].sum().reset_index()
+            self.dtd_data.groupby(["Year", "Month"])["net_pnl"].sum().reset_index()
         )
         monthly_absolute_returns.columns = [
             "Year",
@@ -92,10 +92,10 @@ class PortfolioStats:
 
         # Calculate weekly absolute returns and cumulative returns
         weekly_absolute_returns = (
-            self.dtd_data.groupby(["Week_Ending_Date"])["NetPnL"].sum().reset_index()
+            self.dtd_data.groupby(["Week_Ending_Date"])["net_pnl"].sum().reset_index()
         )
         weekly_absolute_returns["abs_cum_returns"] = weekly_absolute_returns[
-            "NetPnL"
+            "net_pnl"
         ].cumsum()
         weekly_absolute_returns = weekly_absolute_returns.sort_values(
             by="Week_Ending_Date"
@@ -106,7 +106,7 @@ class PortfolioStats:
 
         # Assign and reorder columns
         weekly_absolute_returns = weekly_absolute_returns[
-            ["Week_Ending_Date", "NetPnL", "abs_cum_returns"]
+            ["Week_Ending_Date", "net_pnl", "abs_cum_returns"]
         ]
         weekly_absolute_returns.columns = [
             "Week_Ending_Date",
@@ -208,14 +208,14 @@ class PortfolioStats:
 
     def max_impact_day(self):
 
-        max_loss_day = self.dtd_data.loc[self.dtd_data["NetPnL"].idxmin()]
-        max_profit_day = self.dtd_data.loc[self.dtd_data["NetPnL"].idxmax()]
+        max_loss_day = self.dtd_data.loc[self.dtd_data["net_pnl"].idxmin()]
+        max_profit_day = self.dtd_data.loc[self.dtd_data["net_pnl"].idxmax()]
 
         max_loss_day_date = max_loss_day["Date"]
-        max_loss_day_value = max_loss_day["NetPnL"]
+        max_loss_day_value = max_loss_day["net_pnl"]
 
         max_profit_day_date = max_profit_day["Date"]
-        max_profit_day_value = max_profit_day["NetPnL"]
+        max_profit_day_value = max_profit_day["net_pnl"]
 
         max_impact_df = pd.DataFrame(
             {
@@ -229,21 +229,21 @@ class PortfolioStats:
 
     def portfolio_stats(self):
         # Recovery Factor: Net Profit / Maximum Drawdown
-        net_profit = self.dtd_data["NetPnL"].sum()
+        net_profit = self.dtd_data["net_pnl"].sum()
         max_drawdown = -self.dtd_data[
             "Drawdown"
         ].min()  # Drawdown values are negative, so taking the negative of the minimum gives the maximum drawdown
         recovery_factor = net_profit / max_drawdown if max_drawdown != 0 else np.nan
 
         # Risk-Return Ratio: Average Annual Return / Standard Deviation of Annual Returns
-        annual_return = self.dtd_data["NetPnL"].sum() / len(
+        annual_return = self.dtd_data["net_pnl"].sum() / len(
             self.dtd_data["Year"].unique()
         )
-        annual_std = self.dtd_data.groupby("Year")["NetPnL"].sum().std()
+        annual_std = self.dtd_data.groupby("Year")["net_pnl"].sum().std()
         risk_return_ratio = annual_return / annual_std if annual_std != 0 else np.nan
 
         # Average Loss
-        average_loss = self.dtd_data[self.dtd_data["NetPnL"] < 0]["NetPnL"].mean()
+        average_loss = self.dtd_data[self.dtd_data["net_pnl"] < 0]["net_pnl"].mean()
 
         # Compound Annual Growth Rate (CAGR)
         days = (self.dtd_data["Date"].max() - self.dtd_data["Date"].min()).days
@@ -252,15 +252,15 @@ class PortfolioStats:
         ) * 100
 
         # Win-Loss Ratio: Total Wins / Total Losses
-        wins = self.dtd_data[self.dtd_data["NetPnL"] > 0]["NetPnL"].sum()
-        losses = -self.dtd_data[self.dtd_data["NetPnL"] < 0][
-            "NetPnL"
+        wins = self.dtd_data[self.dtd_data["net_pnl"] > 0]["net_pnl"].sum()
+        losses = -self.dtd_data[self.dtd_data["net_pnl"] < 0][
+            "net_pnl"
         ].sum()  # Losses are negative, so we take the negative to make it positive
         win_loss_ratio = wins / losses if losses != 0 else np.nan
 
         # Sharpe Ratio: (Return of Investment - Risk Free Rate) / Standard Deviation of Returns
         # Assuming a risk-free rate of 0 for simplicity.
-        daily_return = self.dtd_data["NetPnL"] / self.account_value
+        daily_return = self.dtd_data["net_pnl"] / self.account_value
         sharpe_ratio = (
             daily_return.mean() / daily_return.std()
             if daily_return.std() != 0
@@ -270,7 +270,7 @@ class PortfolioStats:
         # Calculating consecutive losses, consecutive wins, gain to pain ratio, and kelly criterion.
 
         # Consecutive losses and wins
-        self.dtd_data["Win"] = self.dtd_data["NetPnL"] > 0
+        self.dtd_data["Win"] = self.dtd_data["net_pnl"] > 0
         consecutive_losses = (
             self.dtd_data["Win"]
             .astype(int)
@@ -288,9 +288,9 @@ class PortfolioStats:
         max_consecutive_wins = consecutive_wins.max()
 
         # Gain to Pain Ratio: Total Returns / Absolute Sum of All Losses
-        total_returns = self.dtd_data["NetPnL"].sum()
-        total_losses = -self.dtd_data[self.dtd_data["NetPnL"] < 0][
-            "NetPnL"
+        total_returns = self.dtd_data["net_pnl"].sum()
+        total_losses = -self.dtd_data[self.dtd_data["net_pnl"] < 0][
+            "net_pnl"
         ].sum()  # Sum of absolute losses
         gain_to_pain_ratio = (
             total_returns / total_losses if total_losses != 0 else np.nan
@@ -298,11 +298,11 @@ class PortfolioStats:
 
         # Kelly Criterion: (Winning Probability * Average Win) / Average Loss - (Losing Probability * Average Loss) / Average Win
         # It's a formula used to determine the optimal size of a series of bets.
-        winning_prob = len(self.dtd_data[self.dtd_data["NetPnL"] > 0]) / len(
+        winning_prob = len(self.dtd_data[self.dtd_data["net_pnl"] > 0]) / len(
             self.dtd_data
         )
-        average_win = self.dtd_data[self.dtd_data["NetPnL"] > 0]["NetPnL"].mean()
-        losing_prob = len(self.dtd_data[self.dtd_data["NetPnL"] < 0]) / len(
+        average_win = self.dtd_data[self.dtd_data["net_pnl"] > 0]["net_pnl"].mean()
+        losing_prob = len(self.dtd_data[self.dtd_data["net_pnl"] < 0]) / len(
             self.dtd_data
         )
         kelly_criterion = (

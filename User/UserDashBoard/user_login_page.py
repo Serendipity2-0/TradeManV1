@@ -16,6 +16,8 @@ sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
+clients_fb_db = os.getenv("FIREBASE_USER_COLLECTION")
+
 from loguru import logger
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
@@ -71,7 +73,7 @@ def login():
             # Fetch data from Firebase Realtime Database to verify the credentials
             try:
                 # Get a reference to the 'clients' node in the database
-                ref = db.reference("trademan_clients")
+                ref = db.reference(clients_fb_db)
 
                 # Fetch all clients data
                 clients = ref.get()
@@ -81,10 +83,10 @@ def login():
                     logger.debug("")
                     
                     if (
-                        client_data.get('Profile').get("Email") == username
+                        client_data.get('Profile').get("usr") == username
                         or client_data.get('Profile').get("PhoneNumber") == username
-                    ) and client_data.get('Profile').get("GmailPassword") == password:
-                        logger.debug(f"client_data: {client_data}")
+                    ) and client_data.get('Profile').get("pwd") == password:
+                        logger.debug(f"client_data: {client_data.get('Profile').get('Name')}")
                         # If credentials match, show a success message and break the loop
                         st.success("Logged in successfully.")
                         st.session_state.logged_in = True
