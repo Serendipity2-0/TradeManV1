@@ -32,7 +32,8 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
     fetch_list_of_strategies_from_firebase,
     fetch_users_for_strategies_from_firebase,
-    CLIENTS_DB
+    CLIENTS_DB,
+    STRATEGY_DB
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     calculate_taxes,
@@ -113,6 +114,11 @@ def update_signals_firebase():
     return strategy_user_dict
 
     # fetch the users for the strategy
+
+def clear_today_orders_firebase():
+    active_strategies = fetch_list_of_strategies_from_firebase()
+    for strategy in active_strategies:
+        delete_fields_firebase(STRATEGY_DB, strategy, "TodayOrders")
 
 def delete_orders_from_firebase(orders, strategy_name, user):
     entry_orders = orders["entry_orders"]
@@ -364,9 +370,10 @@ def process_n_log_trade():
         conn.close()
 
 def main():
-    # process_n_log_trade()
+    process_n_log_trade()
     fetch_and_prepare_holdings_data()
     update_signals_firebase()
+    clear_today_orders_firebase()
 
 if __name__ == "__main__":
     main()
