@@ -122,13 +122,30 @@ NOTES
 
 
 TODO:
-1. Check Sweep Orders
-2. AmiPy reload db before fetching the next trade_id
-3. Logic to get the previous trading date
-4. Verify tax calculations
-5. Order status after order is placed (as of now for all orders the status is returned rejected)
-6. Filter the rejected orders when uploading the trades to UserTransactions table
+2. Expiry Trader SL check(Distance is more )
+3. Good evening cron jobs setup
+4. Pystocks cron job setup
+5. Clear Today orders from firebase and SignalInfo dump to db
+8. Cronjob for streamlit
+9. Onboarding all the users including the excel to db migration
+10. Docs and debug statements function wise
+
 
 Longterm TODO:
 1. Refactor each strategy and add signal info for each strategy
+2. Emergency notification system
+   1. WatchDog the log files and send notifications for any code level errors via telegram
+   2. Pingpong between the ISP if any one fails send notification via telegram and log
+3. Insurance Telegram bot
+4. VPOC
+5. Async Functionality
+6. MongoDB Migration
+7. Pystock Sweep orders
+8. pathlib integration
+9. Selenium script for weekly ledger download
+
+Bugs and Known Issues
+1. Avoid multiple log enteries in .log file
+
+
 
