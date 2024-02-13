@@ -138,7 +138,7 @@ class InstrumentMonitor:
                     data = self.tokens_to_monitor[token]
                     self._process_token(token, ltp, data)
                 except Exception as e:
-                    logger.error(f"Error processing token {token}: {e.with_traceback()}")
+                    logger.error(f"Error processing token {token}: {e}")
             sleep(10)
 
     def _process_token(self, token, ltp, data):
