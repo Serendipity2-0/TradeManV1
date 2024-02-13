@@ -1,4 +1,5 @@
 trademan.env
+*.db
 *.csv
 *.json
 *.pyc

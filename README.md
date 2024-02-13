@@ -122,7 +122,6 @@ NOTES
 
 
 TODO:
-2. Expiry Trader SL check(Distance is more )
 3. Good evening cron jobs setup
 4. Pystocks cron job setup
 5. Clear Today orders from firebase and SignalInfo dump to db
