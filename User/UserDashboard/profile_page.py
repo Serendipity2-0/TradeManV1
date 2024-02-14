@@ -110,29 +110,29 @@ def show_profile(client_data):
     # Display the broker list in vertical tabular form
     st.write("Broker")
     
-    # Display the strategy list in vertical tabular form
-    st.subheader("Strategies")
-    if isinstance(Strategy_list, list) and len(Strategy_list) > 0:
-        strategy_data = {"Strategy Name": [], "Broker": [], "Percentage Allocated": []}
-        for strategy in Strategy_list:
-            strategy_name = strategy.get("strategy_name", "")
-            broker = strategy.get("broker", "")
+    # # Display the strategy list in vertical tabular form
+    # st.subheader("Strategies")
+    # if isinstance(Strategy_list, list) and len(Strategy_list) > 0:
+    #     strategy_data = {"Strategy Name": [], "Broker": [], "Percentage Allocated": []}
+    #     for strategy in Strategy_list:
+    #         strategy_name = strategy.get("strategy_name", "")
+    #         broker = strategy.get("broker", "")
 
-            for selected_strategy in strategy_name:
-                for selected_broker in broker:
-                    perc_allocated_key = f"strategy_perc_allocated_{selected_strategy}_{selected_broker}_0"
-                    percentage_allocated = strategy.get(perc_allocated_key, "")
+    #         for selected_strategy in strategy_name:
+    #             for selected_broker in broker:
+    #                 perc_allocated_key = f"strategy_perc_allocated_{selected_strategy}_{selected_broker}_0"
+    #                 percentage_allocated = strategy.get(perc_allocated_key, "")
 
-                    strategy_data["Strategy Name"].append(selected_strategy)
-                    strategy_data["Broker"].append(selected_broker)
-                    strategy_data["Percentage Allocated"].append(percentage_allocated)
+    #                 strategy_data["Strategy Name"].append(selected_strategy)
+    #                 strategy_data["Broker"].append(selected_broker)
+    #                 strategy_data["Percentage Allocated"].append(percentage_allocated)
 
-        strategy_df = pd.DataFrame(strategy_data)
-        # Display the DataFrame as a table with CSS styling and remove index column
-        st.markdown(table_style, unsafe_allow_html=True)
-        st.write(strategy_df.to_html(index=False, escape=False), unsafe_allow_html=True)
+    #     strategy_df = pd.DataFrame(strategy_data)
+    #     # Display the DataFrame as a table with CSS styling and remove index column
+    #     st.markdown(table_style, unsafe_allow_html=True)
+    #     st.write(strategy_df.to_html(index=False, escape=False), unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
+    #     st.markdown("<br>", unsafe_allow_html=True)
 
    
 

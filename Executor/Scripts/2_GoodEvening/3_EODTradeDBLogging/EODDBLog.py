@@ -181,6 +181,8 @@ def delete_orders_from_firebase(orders, strategy_name, user):
             delete_fields_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], delete_path)
         except Exception as e:
             print(f"Error deleting order with key/index {key}: {e}")
+    pending_orders_firebase = fetch_collection_data_firebase(CLIENTS_DB, user["Tr_No"])
+    convert_trade_state_to_list(pending_orders_firebase,user["Tr_No"])
 
     pending_orders_firebase = fetch_collection_data_firebase(CLIENTS_USER_FB_DB, user["Tr_No"])
     convert_trade_state_to_list(pending_orders_firebase,user["Tr_No"])

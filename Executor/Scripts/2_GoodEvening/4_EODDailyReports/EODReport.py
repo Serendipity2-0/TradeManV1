@@ -177,7 +177,8 @@ def main():
         ]
 
         # Assuming no additions/withdrawals for simplicity, replace with actual logic to calculate
-        additions_withdrawals = get_additions_withdrawals(user_tables)
+        # additions_withdrawals = get_additions_withdrawals(user_tables)
+        additions_withdrawals = 0   #TODO : get the actual additions_withdrawals
 
         new_free_cash = round(previous_free_cash + gross_pnl - expected_tax)
         # Placeholder for calculating new holdings, assuming it's equal to previous for this example

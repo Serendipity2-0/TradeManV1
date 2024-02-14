@@ -38,29 +38,34 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-# Streamlit app
 def main():
-    # log.info("Starting TradeMan Executor Dashboard")
-    # exe_login_page()
+    from Executor.ExecutorDashBoard.live_trade_viewer import trade_state_viewer, calculate_trademan_stats
+    tab1, tab2, tab3, tab4,tab5 = st.tabs(["Admin","Error Monitor", "Trade State", "Order Executor","Signal Log"])
+    
+    st.balloons()
 
-    # if session_state.logged_in:
-    #     st.title("TradeMan Execution Dashboard")
-
-    # Create tabs for 'Data', 'Stats', and 'Charts'
-    tab1, tab2, tab3 = st.tabs(["Live View", "Order Executor", "Error Monitor"])
-
+    # TODO: Add streamlit notifications for errors as well as trade state updates
     with tab1:
-        st.header("Live View")
+        st.header("TradeMan Admin")
+        calculate_trademan_stats()
 
     with tab2:
-        st.header("Order Executor")
+        st.header("Error Monitor")
+        
+        #TODO: Add streamlit toast when error dataframe is updated to notify the user
+
+        st.dataframe(error_logging_page.read_n_process_err_log(),use_container_width=True,hide_index=True)
+    
+        st.header("Trade State")
+        trade_state_viewer()
 
     with tab3:
-        st.header("Error Monitor")
-        st.dataframe(error_logging_page.read_n_process_err_log(),use_container_width=True,hide_index=True)
-            
-
+        st.header("Order Executor")
+      
+    
+    with tab4:
+        st.header("Signal Log")
+        
 
 # Run the app
 if __name__ == "__main__":
