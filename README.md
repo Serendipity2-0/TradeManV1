@@ -122,12 +122,22 @@ NOTES
 
 
 TODO:
-3. Good evening cron jobs setup
-4. Pystocks cron job setup
-5. Clear Today orders from firebase and SignalInfo dump to db
-8. Cronjob for streamlit
-9. Onboarding all the users including the excel to db migration
-10. Docs and debug statements function wise
+> Good evening cron jobs setup (individual cron scripts)
+> Cronjob for streamlit
+> Remove all previous cron jobs
+
+> Onboarding all the users including the excel to db migration
+
+> Docs and debug statements function wise
+> Review tax calculation
+
+> after sending messages and while uploading holdings the orders are getting updated in dict not in list
+> Discord notification for kite orders (order failed for None type)
+> Add EOD db login script to this repo and cronjob
+
+> Append signal orders after assign trade id to fb under StrategySignals > orders
+> Trade Executer in stream lit using StrategySignals(TodayOrders)
+
 
 
 Longterm TODO:

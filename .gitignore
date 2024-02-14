@@ -9,3 +9,4 @@ trademan.env
 *.cursorignore
 *.wav
 trail.py
+*.session

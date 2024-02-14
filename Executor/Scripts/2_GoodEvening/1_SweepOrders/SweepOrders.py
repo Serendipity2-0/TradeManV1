@@ -1,6 +1,7 @@
 import datetime as dt
 import os, sys
 from dotenv import load_dotenv
+from loguru import logger
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -8,7 +9,13 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from loguru import logger
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
+    download_json
+)
+
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+    CLIENTS_USER_FB_DB
+)
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 logger.add(
@@ -62,8 +69,10 @@ def sweep_hedge_orders():
 
 
 def main():
+    download_json(CLIENTS_USER_FB_DB, "before_sweep_orders")
     sweep_sl_order()
     sweep_hedge_orders()
+    
 
 if __name__ == "__main__":
     main()

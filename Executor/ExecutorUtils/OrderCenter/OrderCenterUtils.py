@@ -35,7 +35,7 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     place_order_for_brokers,
     modify_order_for_brokers,
     fetch_strategy_details_for_user,
-    CLIENTS_DB
+    CLIENTS_USER_FB_DB
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     fetch_qty_for_holdings_sqldb,
@@ -125,7 +125,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
         # Update Firebase with order status
         update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
         for data in all_order_statuses:
-            push_orders_firebase(CLIENTS_DB, user["Tr_No"], data, update_path)
+            push_orders_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], data, update_path)
 
         # Send notification if any orders failed # TODO: check for Zerodha exact fail msgs and send notifications accordingly
         for status in all_order_statuses:

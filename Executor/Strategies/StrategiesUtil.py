@@ -42,7 +42,7 @@ class EntryParams(BaseModel):
     EntryTime: str
     HedgeMultiplier: Optional[int] = None
     InstrumentToday: Optional[Union[str, dict]] = None
-    SLMultiplier: Optional[int] = None
+    SLMultiplier: Optional[float] = None
     StrikeMultiplier: Optional[int] = None
     HeikinAshiMAPeriod: Optional[int] = None
     SupertrendPeriod: Optional[int] = None

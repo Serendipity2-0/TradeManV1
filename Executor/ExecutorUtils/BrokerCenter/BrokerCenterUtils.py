@@ -13,8 +13,8 @@ load_dotenv(ENV_PATH)
 
 ZERODHA = os.getenv("ZERODHA_BROKER")
 ALICEBLUE = os.getenv("ALICEBLUE_BROKER")
-CLIENTS_DB = os.getenv("FIREBASE_USER_COLLECTION")
-STRATEGY_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
+CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
+STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 from loguru import logger
 
@@ -72,14 +72,14 @@ def all_broker_login(active_users):
             logger.info("Logging in for Zerodha")
             session_id = zerodha.login_in_zerodha(user["Broker"])
             firebase_utils.update_fields_firebase(
-                CLIENTS_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
+                CLIENTS_USER_FB_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
             )
         elif user["Broker"]["BrokerName"] == ALICEBLUE:
             logger.info("Logging in for AliceBlue")
             try:
                 session_id = alice_blue.login_in_aliceblue(user["Broker"])
                 firebase_utils.update_fields_firebase(
-                    CLIENTS_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
+                    CLIENTS_USER_FB_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
                 )
             except Exception as e:
                 logger.error(f"Error while logging in for AliceBlue: {e}")
@@ -96,7 +96,7 @@ def fetch_active_users_from_firebase():
         list: A list of active user account details.
     """
     active_users = []
-    account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
+    account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
     for account in account_details:
         if account_details[account]["Active"] == True:
             active_users.append(account_details[account])
@@ -139,7 +139,7 @@ def fetch_users_for_strategies_from_firebase(strategy_name):
 
 def fetch_primary_accounts_from_firebase(primary_account):
     # fetch the tr_no from .env file and fetch the primary account from firebase
-    account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
+    account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
     for account in account_details:
         if account_details[account]["Tr_No"] == primary_account:
             return account_details[account]
@@ -172,20 +172,20 @@ def fetch_holdings_for_brokers(user):
 
 
 def fetch_user_credentials_firebase(broker_user_name):
-    user_credentials = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
+    user_credentials = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
     for user in user_credentials:
         if user_credentials[user]["Broker"]["BrokerUsername"] == broker_user_name:
             return user_credentials[user]["Broker"]
 
 
 def fetch_strategy_details_for_user(username):
-    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
+    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
     for user in user_details:
         if user_details[user]["Broker"]["BrokerUsername"] == username:
             return user_details[user]["Strategies"]
         
 def fetch_active_strategies_all_users():
-    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_DB)
+    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
     strategies = []
     for user in user_details:
         if user_details[user]["Active"] == True:
@@ -380,38 +380,36 @@ def calculate_user_net_values(user, categorized_df):
         return alice_adapter.calculate_alice_net_values(user, categorized_df)
 
 def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
+    logger.debug(f"broker = {broker}, trade_type = {trade_type}, qty = {qty}, net_entry_prc = {net_entry_prc}, net_exit_prc = {net_exit_prc}, no_of_orders = {no_of_orders}")
     # Brokerage
     if broker == "Zerodha":
-        brokerage_rate = 20 if trade_type == "regular" else 0.03 / 100
+        brokerage = min(20, 0.03 / 100 * qty * (net_exit_prc + net_entry_prc) / 2) * no_of_orders if trade_type == "futures" else 20
     elif broker == "AliceBlue":
-        brokerage_rate = 15 if trade_type == "regular" else 0.03 / 100
-    brokerage = brokerage_rate * no_of_orders
+        brokerage = min(15, 0.03 / 100 * qty * (net_exit_prc + net_entry_prc) / 2) * no_of_orders if trade_type == "futures" else 20
 
     # STT/CTT
-    intrinsic_value = max(0, float(net_exit_prc) - float(net_entry_prc)) * qty
-    stt_ctt_rate = 0.125 / 100 if trade_type == "regular" else 0.0125 / 100
-    stt_ctt = stt_ctt_rate * intrinsic_value
+    if trade_type == "regular":  # Assuming "regular" means options
+        stt_ctt = 0.05 / 100 * qty * net_exit_prc
+    else:  # futures
+        stt_ctt = 0.0125 / 100 * qty * net_exit_prc
 
     # Transaction charges
-    transaction_charges_rate = 0.05 / 100 if trade_type == "regular" else 0.0019 / 100
-    transaction_charges = transaction_charges_rate * float(net_exit_prc) * qty
+    transaction_charges = 0.00345 / 100 * qty * net_exit_prc  # Example rate, adjust based on actual
 
     # SEBI charges
-    sebi_charges_rate = 10 / 10000000
-    sebi_charges = sebi_charges_rate * float(net_exit_prc) * qty
+    sebi_charges = 10 / 10000000 * qty * net_exit_prc
 
     # GST
-    gst_rate = 18 / 100
-    gst = gst_rate * (brokerage + sebi_charges + transaction_charges)
+    gst = 18 / 100 * (brokerage + transaction_charges + sebi_charges)
 
-    # Stamp charges
-    stamp_charges_rate = 0.003 / 100 if trade_type == "regular" else 0.002 / 100
-    stamp_charges = stamp_charges_rate * float(net_exit_prc) * qty
+    # Stamp charges (simplified/general rate)
+    stamp_charges = 0.003 / 100 * qty * net_exit_prc if trade_type == "regular" else 0.002 / 100 * qty * net_exit_prc
 
-    total_charges = (
-        brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
-    )
+    # Total charges
+    total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
+    logger.debug(f"brokerage = {brokerage}, stt_ctt = {stt_ctt}, transaction_charges = {transaction_charges}, gst = {gst}, sebi_charges = {sebi_charges}, stamp_charges = {stamp_charges}")
     return total_charges
+
 
 def calculate_taxes(entry_orders,exit_orders,hedge_orders,broker):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as instru
@@ -420,7 +418,11 @@ def calculate_taxes(entry_orders,exit_orders,hedge_orders,broker):
     for entry_order in entry_orders:
         for exit_order in exit_orders:
             if entry_order["exchange_token"] == exit_order["exchange_token"]:
-                is_fut = instru().get_instrument_type_by_exchange_token(entry_order["exchange_token"]) == "FUTIDX"
+                logger.debug(f"entry_order = {entry_order['exchange_token']}")
+                logger.debug(f"order {instru().get_instrument_type_by_exchange_token(entry_order['exchange_token']) }")
+                is_fut = instru().get_instrument_type_by_exchange_token(str(entry_order["exchange_token"])) == "FUTIDX" or instru().get_instrument_type_by_exchange_token(str(entry_order["exchange_token"])) == "FUT"
+                logger.debug(f"is_fut = {is_fut}")
+
                 tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", entry_order["qty"], entry_order["avg_prc"], exit_order["avg_prc"], 2)
                 taxes += tax
     

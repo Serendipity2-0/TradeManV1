@@ -23,9 +23,12 @@ logger.add(
     diagnose=True,
 )
 
+CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
+CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 
-db_dir = os.getenv("DB_DIR")
-
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
+    download_json
+)
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     update_fields_firebase,
@@ -79,7 +82,7 @@ def daily_tradebook_validator():
     unmatched_orders = set()
 
     for user in active_users:
-        db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
+        db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
         conn = get_db_connection(db_path)
         strategies = user.get("Strategies", {})
         today = get_todays_date()
@@ -119,7 +122,7 @@ def daily_tradebook_validator():
                 avg_prc = trade[avg_price_key]
                 update_path = get_update_path(trade_order_id, strategies)
                 update_fields_firebase(
-                    BrokerCenterUtils.CLIENTS_DB, user["Tr_No"], {"avg_prc": avg_prc}, update_path
+                    BrokerCenterUtils.CLIENTS_USER_FB_DB, user["Tr_No"], {"avg_prc": avg_prc}, update_path
                 )
                 matched_orders.add(trade_order_id)
             else:
@@ -165,9 +168,10 @@ def clear_extra_orders_firebase():
                 for i in orders_to_delete:
                     order_path = f"Strategies/{strategy_key}/TradeState/orders/{i}"
                     print(f"Deleting order at path: {order_path}")
-                    delete_fields_firebase(BrokerCenterUtils.CLIENTS_DB, user["Tr_No"], order_path)
+                    delete_fields_firebase(BrokerCenterUtils.CLIENTS_USER_FB_DB, user["Tr_No"], order_path)
 
 def main():
+    download_json(CLIENTS_USER_FB_DB, "before_daily_tradebook_validator")
     daily_tradebook_validator()
     clear_extra_orders_firebase()
 

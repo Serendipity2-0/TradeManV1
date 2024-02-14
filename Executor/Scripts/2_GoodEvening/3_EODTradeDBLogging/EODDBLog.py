@@ -26,14 +26,14 @@ logger.add(
 )
 
 
-db_dir = os.getenv("DB_DIR")
+CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
+CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
+STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
     fetch_list_of_strategies_from_firebase,
-    fetch_users_for_strategies_from_firebase,
-    CLIENTS_DB,
-    STRATEGY_DB
+    fetch_users_for_strategies_from_firebase
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     calculate_taxes,
@@ -45,8 +45,13 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
 )
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     delete_fields_firebase,
-    fetch_collection_data_firebase
+    fetch_collection_data_firebase,
+    update_fields_firebase
 )
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
+    download_json
+)
+
 
 # i want a function to update the dict in the firebase db with the trades of today for the user and strategy
 def update_signals_firebase():
@@ -56,7 +61,7 @@ def update_signals_firebase():
         read_strategy_table,
     )
 
-    signal_db_conn = get_db_connection(os.path.join(db_dir, "signal.db"))
+    signal_db_conn = get_db_connection(os.path.join(CLIENTS_TRADE_SQL_DB, "signal.db"))
 
     strategy_user_dict = {}
     list_of_strategies = fetch_list_of_strategies_from_firebase()
@@ -68,7 +73,7 @@ def update_signals_firebase():
             strategy_user_dict[strategy] = selected_user["Tr_No"]
 
     for strategy_name, user in strategy_user_dict.items():
-        db_path = os.path.join(db_dir, f"{user}.db")
+        db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user}.db")
         conn = get_db_connection(db_path)
 
         try:
@@ -118,8 +123,17 @@ def update_signals_firebase():
 def clear_today_orders_firebase():
     active_strategies = fetch_list_of_strategies_from_firebase()
     for strategy in active_strategies:
-        delete_fields_firebase(STRATEGY_DB, strategy, "TodayOrders")
+        delete_fields_firebase(STRATEGY_FB_DB, strategy, "TodayOrders")
 
+def convert_trade_state_to_list(orders_firebase,user_TR_No):
+    strategies = orders_firebase.get("Strategies", {})
+    for strategy_name, strategy_details in strategies.items():
+        orders = strategy_details.get("TradeState", {}).get("orders", [])
+        if isinstance(orders, dict):
+            orders = list(orders.values())
+            update_path = f"Strategies/{strategy_name}/TradeState/"
+            update_fields_firebase(CLIENTS_USER_FB_DB, user_TR_No, {"orders": orders}, update_path)
+         
 def delete_orders_from_firebase(orders, strategy_name, user):
     entry_orders = orders["entry_orders"]
     exit_orders = orders["exit_orders"]
@@ -131,7 +145,7 @@ def delete_orders_from_firebase(orders, strategy_name, user):
 
     combined_orders = entry_orders + exit_orders + hedge_orders
 
-    orders_firebase = fetch_collection_data_firebase(CLIENTS_DB, user["Tr_No"])
+    orders_firebase = fetch_collection_data_firebase(CLIENTS_USER_FB_DB, user["Tr_No"])
 
     if "Strategies" in orders_firebase and strategy_name in orders_firebase["Strategies"] \
             and "TradeState" in orders_firebase["Strategies"][strategy_name]:
@@ -141,7 +155,6 @@ def delete_orders_from_firebase(orders, strategy_name, user):
         return
 
     order_ids_to_delete = {order["order_id"] for order in combined_orders}
-
     keys_to_delete = []
     if isinstance(strategy_orders, list):
         for index, order_details in enumerate(strategy_orders):
@@ -165,10 +178,12 @@ def delete_orders_from_firebase(orders, strategy_name, user):
                 delete_path = f"Strategies/{strategy_name}/TradeState/orders/{key}"
             else:
                 delete_path = f"Strategies/{strategy_name}/TradeState/orders/{key}"
-            delete_fields_firebase(CLIENTS_DB, user["Tr_No"], delete_path)
+            delete_fields_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], delete_path)
         except Exception as e:
             print(f"Error deleting order with key/index {key}: {e}")
 
+    pending_orders_firebase = fetch_collection_data_firebase(CLIENTS_USER_FB_DB, user["Tr_No"])
+    convert_trade_state_to_list(pending_orders_firebase,user["Tr_No"])
     print("Deletion process completed.")
 
 def seggregate_orders_by_type(orders):
@@ -179,7 +194,6 @@ def seggregate_orders_by_type(orders):
 
 def process_orders_for_strategy(strategy_orders):
     processed_trades = {}
-    logger.debug(f"strategy_order{strategy_orders}")
     for order in strategy_orders:
         if order is None:
             continue
@@ -264,7 +278,7 @@ def fetch_and_prepare_holdings_data():
     active_users = fetch_active_users_from_firebase()
     
     for user in active_users:
-        db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
+        db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
         conn = get_db_connection(db_path)
         all_holdings = []  # Reset for each user
         strategies = user.get("Strategies", {})
@@ -273,9 +287,6 @@ def fetch_and_prepare_holdings_data():
             strategy_orders = strategy_details.get("TradeState", {}).get("orders", [])
             if isinstance(strategy_orders, dict):  # Convert dict to list if needed
                 strategy_orders = list(strategy_orders.values())
-
-            logger.debug(f"name : {strategy_name}")
-            logger.debug(f"strategy_orders {strategy_orders}")
 
             #continue if any object in the list is none
 
@@ -325,7 +336,7 @@ def process_n_log_trade():
 
     for user in active_users:
         print(f"Processing trade for user: {user['Tr_No']}")
-        db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")  # Ensure db_dir is defined
+        db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")  # Ensure db_dir is defined
         conn = get_db_connection(db_path)
         if not user.get("Active"):
             continue
@@ -366,10 +377,10 @@ def process_n_log_trade():
                 append_df_to_sqlite(conn, df, strategy_name, decimal_columns)
                 # Delete orders from Firebase
                 delete_orders_from_firebase(orders_group, strategy_name, user)
-                
         conn.close()
 
 def main():
+    download_json(CLIENTS_USER_FB_DB, "before_eod_db_log")
     process_n_log_trade()
     fetch_and_prepare_holdings_data()
     update_signals_firebase()

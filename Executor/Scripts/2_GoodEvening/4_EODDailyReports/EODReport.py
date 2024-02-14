@@ -23,24 +23,21 @@ logger.add(
     diagnose=True,
 )
 
-
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
+    download_json
+)
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
-    fetch_active_strategies_all_users,
-    CLIENTS_DB
-)
+    fetch_active_strategies_all_users
+    )
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
     send_telegram_message,
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 
-# Load environment variables fromx the trademan.env file
-ENV_PATH = os.path.join(DIR, "trademan.env")
-load_dotenv(ENV_PATH)
-
-db_dir = os.getenv("DB_DIR")
-
+CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
+CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 today_string = datetime.now().strftime("%Y-%m-%d")
 
 def get_today_trades(user_tables,active_stratgies):
@@ -113,7 +110,7 @@ def update_account_keys_fb(
 
     # use this method to update the account keys in the firebase update_fields_firebase(collection, document, data, field_key=None)
     update_fields_firebase(
-        CLIENTS_DB,
+        CLIENTS_USER_FB_DB,
         tr_no,
         {
             f"{today_fb_format}_AccountValue": new_account,
@@ -125,24 +122,24 @@ def update_account_keys_fb(
 
     # i want to delete all the keys which have previous_trading_day_string in them
     delete_fields_firebase(
-        CLIENTS_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_AccountValue"
+        CLIENTS_USER_FB_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_AccountValue"
     )
     delete_fields_firebase(
-        CLIENTS_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_FreeCash"
+        CLIENTS_USER_FB_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_FreeCash"
     )
     delete_fields_firebase(
-        CLIENTS_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_Holdings"
+        CLIENTS_USER_FB_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_Holdings"
     )
 
 
 # Main function to generate and send the report
 def main():
-
+    download_json(CLIENTS_USER_FB_DB, "before_eod_report")
     active_users = fetch_active_users_from_firebase()
     active_stratgies = fetch_active_strategies_all_users()
 
     for user in active_users:
-        user_db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
+        user_db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
         user_db_conn = get_db_connection(user_db_path)
 
 
