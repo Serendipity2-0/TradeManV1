@@ -1,4 +1,3 @@
-from loguru import logger
 import os,sys
 from dotenv import load_dotenv
 import pandas as pd

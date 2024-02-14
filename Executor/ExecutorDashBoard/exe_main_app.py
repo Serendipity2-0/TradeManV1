@@ -6,7 +6,6 @@ import sqlite3
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from loguru import logger as log
 import error_logging_page
 from dotenv import load_dotenv
 

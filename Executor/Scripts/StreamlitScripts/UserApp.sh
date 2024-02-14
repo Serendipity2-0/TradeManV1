@@ -19,15 +19,15 @@ while true; do
     source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
     conda activate tradingenv && \
     cd /Users/traderscafe/Desktop/TradeManV1/  && \
-    streamlit run Executor/ExecutorDashBoard/exe_main_app.py --server.address 0.0.0.0 && \
+    streamlit run User/UserDashBoard/user_main_app.py --server.address 0.0.0.0 && \
     echo "Program started successfully" && break
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit
     if ((attempt==max_attempts)); then
-        echo "The script ExeApp has some errors. Please Check !!!"
+        echo "The script UserApp has some errors. Please Check !!!"
         
         # Send a message on Telegram
-        curl -s -X POST https://api.telegram.org/bot$telegram_bot_token/sendMessage -d chat_id=$chat_id -d text="ExeApp errors. Please Check !!!"
+        curl -s -X POST https://api.telegram.org/bot$telegram_bot_token/sendMessage -d chat_id=$chat_id -d text="UserApp errors. Please Check !!!"
 
         exit 1
     fi
