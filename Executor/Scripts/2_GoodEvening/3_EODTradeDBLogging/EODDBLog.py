@@ -45,7 +45,8 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
 )
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     delete_fields_firebase,
-    fetch_collection_data_firebase
+    fetch_collection_data_firebase,
+    update_fields_firebase
 )
 
 # i want a function to update the dict in the firebase db with the trades of today for the user and strategy
@@ -120,6 +121,15 @@ def clear_today_orders_firebase():
     for strategy in active_strategies:
         delete_fields_firebase(STRATEGY_DB, strategy, "TodayOrders")
 
+def convert_trade_state_to_list(orders_firebase,user_TR_No):
+    strategies = orders_firebase.get("Strategies", {})
+    for strategy_name, strategy_details in strategies.items():
+        orders = strategy_details.get("TradeState", {}).get("orders", [])
+        if isinstance(orders, dict):
+            orders = list(orders.values())
+            update_path = f"Strategies/{strategy_name}/TradeState/"
+            update_fields_firebase(CLIENTS_DB, user_TR_No, {"orders": orders}, update_path)
+
 def delete_orders_from_firebase(orders, strategy_name, user):
     entry_orders = orders["entry_orders"]
     exit_orders = orders["exit_orders"]
@@ -168,6 +178,8 @@ def delete_orders_from_firebase(orders, strategy_name, user):
             delete_fields_firebase(CLIENTS_DB, user["Tr_No"], delete_path)
         except Exception as e:
             print(f"Error deleting order with key/index {key}: {e}")
+    pending_orders_firebase = fetch_collection_data_firebase(CLIENTS_DB, user["Tr_No"])
+    convert_trade_state_to_list(pending_orders_firebase,user["Tr_No"])
 
     print("Deletion process completed.")
 

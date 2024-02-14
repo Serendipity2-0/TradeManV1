@@ -199,23 +199,33 @@ def get_today_orders_for_brokers(user):
     if user["Broker"]["BrokerName"] == ZERODHA:
         # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/kite_orders.json') as f:
         #     kite_data = json.load(f)
-        kite_data = zerodha_adapter.zerodha_todays_tradebook(user["Broker"])
-        kite_data = [
-            trade
-            for trade in kite_data
-            if trade["status"] != "REJECTED" or trade["status"] != "CANCELLED"
-        ]
+        try:
+            logger.debug(f"Fetching today's orders for {user['Broker']['BrokerUsername']}")
+            kite_data = zerodha_adapter.zerodha_todays_tradebook(user["Broker"])
+            kite_data = [
+                trade
+                for trade in kite_data
+                if trade["status"] != "REJECTED" or trade["status"] != "CANCELLED"
+            ]
+        except Exception as e:
+            logger.error(f"Error while fetching today's orders for {user['Broker']['BrokerUsername']}: {e}")
+            kite_data = []
         return kite_data
 
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/aliceblue_orders.json') as f:
         #     alice_data = json.load(f)
-        alice_data = alice_adapter.aliceblue_todays_tradebook(user["Broker"])
-        alice_data = [
-            trade
-            for trade in alice_data
-            if trade["Status"] != "rejected" or trade["Status"] != "cancelled"
-        ]
+        try:
+            logger.debug(f"Fetching today's tradebook for {user['Broker']['BrokerUsername']}")
+            alice_data = alice_adapter.aliceblue_todays_tradebook(user["Broker"])
+            alice_data = [
+                trade
+                for trade in alice_data
+                if trade["Status"] != "rejected" or trade["Status"] != "cancelled"
+            ]
+        except Exception as e:
+            logger.error(f"Error while fetching today's tradebook for {user['Broker']['BrokerUsername']}: {e}")
+            alice_data = []
         return alice_data
 
 def get_today_open_orders_for_brokers(user):
