@@ -1,5 +1,5 @@
 import io
-import os
+import os, sys
 import base64
 import datetime
 from PIL import Image
@@ -11,6 +11,32 @@ import json
 from io import BytesIO
 import streamlit.components.v1 as components
 from streamlit_option_menu import option_menu
+from dotenv import load_dotenv
+
+
+
+DIR = os.getcwd()
+sys.path.append(DIR)
+ENV_PATH = os.path.join(DIR, "trademan.env")
+load_dotenv(ENV_PATH)
+
+from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
+
+ACTIVE_STRATEGIES = os.getenv("ACTIVE_STRATEGIES")
+USR_TRADELOG_DB_FOLDER = os.getenv("USR_TRADELOG_DB_FOLDER")
+user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
+
+from loguru import logger
+
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
 
 
 def display_profile_picture(client_data, style=None):
@@ -58,26 +84,27 @@ def show_profile(client_data):
     pd.options.display.float_format = "{:,.2f}".format
     # Set the title for the Streamlit app
     st.markdown("<h3 style='color: darkblue'>Profile</h3>", unsafe_allow_html=True)
+    
+    client_profile = client_data.get("Profile", {})
+    client_broker = client_data.get("Broker", {})
+    # get all list of "StrategyName" under client_data.get("Strategies")
 
     # Extract client data from the dictionary
-    Name = client_data.get("Name", "")
-    Username = client_data.get("Username", "")
-    Email = client_data.get("Email", "")
-    Phone_Number = client_data.get("Phone Number", "")
-    Date_of_Birth = client_data.get("Date of Birth", "")
-    Aadhar_Card_No = client_data.get("Aadhar Card No", "")
-    PAN_Card_No = client_data.get("PAN Card No", "")
-    Bank_Name = client_data.get("Bank Name", "")
-    Bank_Account_No = client_data.get("Bank Account No", "")
-    Strategy_list = client_data.get("Strategy list", [])
-    Comments = client_data.get("Comments", "")
-    Smart_Contract = client_data.get("Smart Contract", "")
+    Name = client_profile.get("Name", "")
+    Email = client_profile.get("Email", "")
+    Phone_Number = client_profile.get("PhoneNumber", "")
+    Date_of_Birth = client_profile.get("DOB", "")
+    Aadhar_Card_No = client_profile.get("AadharCardNo", "")
+    PAN_Card_No = client_profile.get("PANCard No", "")
+    Bank_Name = client_profile.get("BankName", "")
+    Bank_Account_No = client_profile.get("BankAccountNo", "")
+    Broker = client_broker.get("BrokerName", "")
+    Strategy_list = client_data.get("Strategies", {}).get("StrategyName", [])
 
     # Create a DataFrame to display the client data in tabular form
     data = {
         "Field": [
             "Name",
-            "Username",
             "Email",
             "Phone Number",
             "Date of Birth",
@@ -85,12 +112,11 @@ def show_profile(client_data):
             "PAN Card No",
             "Bank Name",
             "Bank Account No",
-            "Comments",
-            "Smart Contract",
+            "BrokerName",
+            "Strategies",
         ],
         "Value": [
             str(Name),
-            str(Username),
             str(Email),
             str(Phone_Number),
             str(Date_of_Birth),
@@ -98,43 +124,16 @@ def show_profile(client_data):
             str(PAN_Card_No),
             str(Bank_Name),
             str(Bank_Account_No),
-            str(Comments),
-            str(Smart_Contract),
+            str(Broker),
+            str(Strategy_list),
         ],
     }
+    logger.debug(f"Data: {data}")
     df = pd.DataFrame(data)
     # Display the DataFrame as a table with CSS styling and remove index column
     st.markdown(table_style, unsafe_allow_html=True)
     st.write(df.to_html(index=False, escape=False), unsafe_allow_html=True)
 
-    # Display the broker list in vertical tabular form
-    st.write("Broker")
-    
-    # # Display the strategy list in vertical tabular form
-    # st.subheader("Strategies")
-    # if isinstance(Strategy_list, list) and len(Strategy_list) > 0:
-    #     strategy_data = {"Strategy Name": [], "Broker": [], "Percentage Allocated": []}
-    #     for strategy in Strategy_list:
-    #         strategy_name = strategy.get("strategy_name", "")
-    #         broker = strategy.get("broker", "")
-
-    #         for selected_strategy in strategy_name:
-    #             for selected_broker in broker:
-    #                 perc_allocated_key = f"strategy_perc_allocated_{selected_strategy}_{selected_broker}_0"
-    #                 percentage_allocated = strategy.get(perc_allocated_key, "")
-
-    #                 strategy_data["Strategy Name"].append(selected_strategy)
-    #                 strategy_data["Broker"].append(selected_broker)
-    #                 strategy_data["Percentage Allocated"].append(percentage_allocated)
-
-    #     strategy_df = pd.DataFrame(strategy_data)
-    #     # Display the DataFrame as a table with CSS styling and remove index column
-    #     st.markdown(table_style, unsafe_allow_html=True)
-    #     st.write(strategy_df.to_html(index=False, escape=False), unsafe_allow_html=True)
-
-    #     st.markdown("<br>", unsafe_allow_html=True)
-
-   
 
 table_style = """
 <style>

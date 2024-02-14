@@ -2,6 +2,35 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import calendar
+import os, sys
+
+from dotenv import load_dotenv
+
+
+
+DIR = os.getcwd()
+sys.path.append(DIR)
+ENV_PATH = os.path.join(DIR, "trademan.env")
+load_dotenv(ENV_PATH)
+
+from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
+
+ACTIVE_STRATEGIES = os.getenv("ACTIVE_STRATEGIES")
+USR_TRADELOG_DB_FOLDER = os.getenv("USR_TRADELOG_DB_FOLDER")
+user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
+
+from loguru import logger
+
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+logger.add(
+    ERROR_LOG_PATH,
+    level="TRACE",
+    rotation="00:00",
+    enqueue=True,
+    backtrace=True,
+    diagnose=True,
+)
+
 
 
 class PortfolioStats:
@@ -83,37 +112,74 @@ class PortfolioStats:
         ]
         return monthly_absolute_returns
 
+    # def calculate_weekly_returns(self):
+    #     """Calculate and return weekly absolute returns and cumulative returns."""
+    #     logger.debug(f"self.dtd_data: {self.dtd_data.head()}")
+    #     # Calculate week ending (Saturday) date
+    #     self.dtd_data["Week_Ending_Date"] = self.dtd_data["Date"] + pd.to_timedelta(
+    #         (5 - self.dtd_data["Date"].dt.weekday), unit="d"
+    #     )
+
+    #     # Calculate weekly absolute returns and cumulative returns
+    #     weekly_absolute_returns = (
+    #         self.dtd_data.groupby(["Week_Ending_Date"])["net_pnl"].sum().reset_index()
+    #     )
+    #     weekly_absolute_returns["abs_cum_returns"] = weekly_absolute_returns[
+    #         "net_pnl"
+    #     ].cumsum()
+    #     weekly_absolute_returns = weekly_absolute_returns.sort_values(
+    #         by="Week_Ending_Date"
+    #     )
+    #     weekly_absolute_returns["Week_Ending_Date"] = weekly_absolute_returns[
+    #         "Week_Ending_Date"
+    #     ].dt.strftime("%d%b%y")
+
+    #     # Assign and reorder columns
+    #     weekly_absolute_returns = weekly_absolute_returns[
+    #         ["Week_Ending_Date", "net_pnl", "abs_cum_returns"]
+    #     ]
+    #     weekly_absolute_returns.columns = [
+    #         "Week_Ending_Date",
+    #         "Weekly Absolute Returns (Rs.)",
+    #         "abs_cum_returns",
+    #     ]
+    #     logger.debug(f"weekly_absolute_returns: {weekly_absolute_returns.head()}")
+    #     return weekly_absolute_returns
+    
     def calculate_weekly_returns(self):
         """Calculate and return weekly absolute returns and cumulative returns."""
+        # Ensure 'Date' is in datetime format
+        self.dtd_data['Date'] = pd.to_datetime(self.dtd_data['exit_time'])
+
         # Calculate week ending (Saturday) date
         self.dtd_data["Week_Ending_Date"] = self.dtd_data["Date"] + pd.to_timedelta(
             (5 - self.dtd_data["Date"].dt.weekday), unit="d"
         )
 
-        # Calculate weekly absolute returns and cumulative returns
-        weekly_absolute_returns = (
-            self.dtd_data.groupby(["Week_Ending_Date"])["net_pnl"].sum().reset_index()
-        )
-        weekly_absolute_returns["abs_cum_returns"] = weekly_absolute_returns[
-            "net_pnl"
-        ].cumsum()
-        weekly_absolute_returns = weekly_absolute_returns.sort_values(
-            by="Week_Ending_Date"
-        )
-        weekly_absolute_returns["Week_Ending_Date"] = weekly_absolute_returns[
-            "Week_Ending_Date"
-        ].dt.strftime("%d%b%y")
+        # Calculate weekly absolute returns by summing net_pnl for each Week_Ending_Date
+        weekly_absolute_returns = self.dtd_data.groupby("Week_Ending_Date")["net_pnl"].sum().reset_index()
 
-        # Assign and reorder columns
-        weekly_absolute_returns = weekly_absolute_returns[
-            ["Week_Ending_Date", "net_pnl", "abs_cum_returns"]
-        ]
+        # Calculate cumulative returns
+        weekly_absolute_returns["Cumulative Absolute Returns (Rs.)"] = weekly_absolute_returns["net_pnl"].cumsum()
+
+        # Sort by Week_Ending_Date for clarity
+        weekly_absolute_returns = weekly_absolute_returns.sort_values(by="Week_Ending_Date")
+
+        # Format Week_Ending_Date for readability
+        weekly_absolute_returns["Week_Ending_Date"] = weekly_absolute_returns["Week_Ending_Date"].dt.strftime("%d%b%y")
+
+        # Rename columns appropriately
         weekly_absolute_returns.columns = [
             "Week_Ending_Date",
             "Weekly Absolute Returns (Rs.)",
-            "abs_cum_returns",
+            "Cumulative Absolute Returns (Rs.)"
         ]
+
+        logger.debug(f"Aggregated weekly_absolute_returns: {weekly_absolute_returns}")
+
         return weekly_absolute_returns
+
+
 
     def calculate_weekly_withdrawals(self, new_df):
 
@@ -326,5 +392,8 @@ class PortfolioStats:
             "Gain to Pain Ratio": gain_to_pain_ratio,
             "Kelly Criterion": kelly_criterion,
         }
+        
+        stats_df = pd.DataFrame(list(stats_dict.items()), columns=['Statistic', 'Value'])
 
-        return pd.DataFrame([stats_dict])
+
+        return stats_df

@@ -219,23 +219,22 @@ def main():
         today_fb_format = datetime.now().strftime("%d%b%y")
         today_acc_key = f"{today_fb_format}_AccountValue"
         logger.debug(f"Today Account Key: {today_acc_key}")
+        previous_trading_day_fb_format = get_previous_trading_day(datetime.today())
+        previous_day_key = previous_trading_day_fb_format+"_"+'AccountValue'
 
-        # previous_trading_day_fb_format = get_previous_trading_day(date.today())
 
-        account_value = st.session_state.client_data.get("Accounts").get(today_acc_key)
+        account_value = st.session_state.client_data.get("Accounts").get(previous_day_key)
         logger.debug(f"Account Value for : {account_value}")
         port_stats = PortfolioStats(dtd_data, account_value)
 
         # Create tabs for 'Data', 'Stats', and 'Charts'
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+        tab1, tab2, tab3, tab4, tab5= st.tabs(
             [
                 "Profile",
                 "PortfolioView",
                 "Strategy Data",
                 "Holdings",
-                "DailyTrades",
                 "Transactions",
-                "UserTrades",
             ]
         )
 
@@ -249,9 +248,10 @@ def main():
             st.pyplot(equity_curve_fig)
 
             monthly_returns_table = port_stats.calculate_monthly_returns()
-            weekly_returns_table = port_stats.calculate_weekly_returns
-            st.write("Monthly Returns:", monthly_returns_table)
-            st.write("Weekly Returns:", weekly_returns_table)
+            weekly_returns_table = port_stats.calculate_weekly_returns()
+            
+            st.dataframe(monthly_returns_table,use_container_width=True)
+            st.dataframe(weekly_returns_table,use_container_width=True)
 
             max_impact_df = port_stats.max_impact_day()
 
@@ -261,51 +261,51 @@ def main():
             portfolio_statistics = port_stats.portfolio_stats()
             with st.expander("Portfolio Statistics"):
                 # st.write("Portfolio Statistics:")
-                st.write(portfolio_statistics)
+                st.dataframe(portfolio_statistics,use_container_width=True)
 
         with tab3:
             st.header("Strategy View")
-            
-            # Sidebar for strategy selection
-            selected_strategy = st.sidebar.radio(
-                "Choose a strategy", user_strategy_table_names
-            )
-            # Process the selected sheet and get data, stats, and charts
-            data = process_tables(
-                os.path.join(USR_TRADELOG_DB_FOLDER, selected_file), selected_strategy
-            )
-            
-            # Determine whether the selected file is 'Signals' or a user file
-            is_signals = "Signals" in selected_file
+            st.session_state.active_tab = "StrategyView"
 
-            if selected_strategy in ACTIVE_STRATEGIES:
-                column_for_calc = "trade_points" if is_signals else "net_pnl"
-                equity_chart, drawdown_chart = create_charts(
-                    data, column_for_calc
-                )  # This should return a plotly.graph_objs.Figure
-                # Use the figure directly in st.plotly_chart
-                formatted_stats = stats.return_statistics(data, is_signals)
-                display_formatted_statistics(formatted_stats)
-                st.header("Strategy Equity Curve")
-                st.divider()
-                st.plotly_chart(equity_chart, use_container_width=True)
-                st.divider()
-                st.header("Strategy Drawdown Curve")
-                st.plotly_chart(drawdown_chart, use_container_width=True)
-                st.divider()
-                st.write(f"Data for {selected_strategy}", data)
-                st.divider()
+            if st.session_state.active_tab == "StrategyView":
+            
+                # Conditionally render the sidebar within this tab
+                selected_strategy = st.sidebar.radio(
+                    "Choose a strategy", user_strategy_table_names
+                )
+            
+                # Process the selected sheet and get data, stats, and charts
+                data = process_tables(
+                    os.path.join(USR_TRADELOG_DB_FOLDER, selected_file), selected_strategy
+                )
+                
+                # Determine whether the selected file is 'Signals' or a user file
+                is_signals = "Signals" in selected_file
 
-                # Display the plot in Streamlit
+                if selected_strategy in ACTIVE_STRATEGIES:
+                    column_for_calc = "trade_points" if is_signals else "net_pnl"
+                    equity_chart, drawdown_chart = create_charts(
+                        data, column_for_calc
+                    )  # This should return a plotly.graph_objs.Figure
+                    # Use the figure directly in st.plotly_chart
+                    formatted_stats = stats.return_statistics(data, is_signals)
+                    display_formatted_statistics(formatted_stats)
+                    st.header("Strategy Equity Curve")
+                    st.divider()
+                    st.plotly_chart(equity_chart, use_container_width=True)
+                    st.divider()
+                    st.header("Strategy Drawdown Curve")
+                    st.plotly_chart(drawdown_chart, use_container_width=True)
+                    st.divider()
+                    st.write(f"Data for {selected_strategy}", data)
+                    st.divider()
 
         with tab4:
             st.header("Holdings")
             # st.write(holdings_data)
 
-        # with tab5:
-        #     st.header("Daily Trades")
-
-        with tab6:
+       
+        with tab5:
             st.header("Transactions")
             deposits =  process_tables(selected_file_path, 'Deposits')
             withdrawals = process_tables(selected_file_path, 'Withdrawals')
@@ -330,9 +330,6 @@ def main():
             with st.expander("Charges"):    
                 st.write(f"Net Charges: {net_charges}")
                 st.write(charges)
-
-        with tab7:
-            st.header("User Trades")
 
 
 # Run the app

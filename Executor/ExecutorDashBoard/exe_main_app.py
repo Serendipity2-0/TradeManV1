@@ -40,7 +40,9 @@ st.set_page_config(
 
 def main():
     from Executor.ExecutorDashBoard.live_trade_viewer import trade_state_viewer, calculate_trademan_stats
-    tab1, tab2, tab3, tab4,tab5 = st.tabs(["Admin","Error Monitor", "Trade State", "Order Executor","Signal Log"])
+    from Executor.ExecutorDashBoard.signal_log_viewer import signal_log_viewer
+    from Executor.ExecutorDashBoard.modify_trademan_params import modify_strategy_params, modify_market_info
+    tab1, tab2, tab3, tab4,tab5,tab6,tab7 = st.tabs(["Admin","Order Executor", "Trade State","Error Monitor", "Signal Log","Modify Strategy Params","Modify Market Info"])
     
     st.balloons()
 
@@ -50,21 +52,28 @@ def main():
         calculate_trademan_stats()
 
     with tab2:
-        st.header("Error Monitor")
-        
-        #TODO: Add streamlit toast when error dataframe is updated to notify the user
-
-        st.dataframe(error_logging_page.read_n_process_err_log(),use_container_width=True,hide_index=True)
-    
-        st.header("Trade State")
-        trade_state_viewer()
+        st.header("Order Executor")
 
     with tab3:
-        st.header("Order Executor")
-      
+        st.header("Trade State")
+        trade_state_viewer()
     
     with tab4:
+        st.header("Error Monitor")
+        #TODO: Add streamlit toast when error dataframe is updated to notify the user
+        st.dataframe(error_logging_page.read_n_process_err_log(),use_container_width=True,hide_index=True)
+        
+    with tab5:
         st.header("Signal Log")
+        signal_log_viewer()
+        
+    with tab6:
+        st.header("Modify Strategy Params")
+        modify_strategy_params()
+        
+    with tab7:
+        modify_market_info()
+        
         
 
 # Run the app
