@@ -13,7 +13,7 @@ database_url = 'https://trading-app-caf8e-default-rtdb.firebaseio.com/'
 # Fetch the service account key JSON file contents
 cred = credentials.Certificate(service_account_path)
 
-app_name = 'uniqueAppName'
+app_name = 'TradeManV1'
 
 try:
     firebase_app = firebase_admin.get_app(app_name)
