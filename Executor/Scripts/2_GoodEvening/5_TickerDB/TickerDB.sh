@@ -20,7 +20,7 @@ while true; do
     source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
 	conda activate tradingenv && \
     cd /Users/traderscafe/Desktop/TradeManV1/ && \
-	/Users/traderscafe/miniconda3/envs/tradingenv/bin/python Executor/Scripts/2_GoodEvening/5_TickerDB/TickerDB.sh && \
+	/Users/traderscafe/miniconda3/envs/tradingenv/bin/python Executor/Scripts/2_GoodEvening/5_TickerDB/TickerDB.py && \
 	echo "Program started successfully" && break
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit

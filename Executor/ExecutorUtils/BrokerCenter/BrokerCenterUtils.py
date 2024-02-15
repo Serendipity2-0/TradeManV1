@@ -29,9 +29,9 @@ logger.add(
 )
 
 
+import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
 import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
-import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
 
 
 def place_order_for_brokers(order_details, user_credentials):
@@ -386,27 +386,27 @@ def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc,
     logger.debug(f"broker = {broker}, trade_type = {trade_type}, qty = {qty}, net_entry_prc = {net_entry_prc}, net_exit_prc = {net_exit_prc}, no_of_orders = {no_of_orders}")
     # Brokerage
     if broker == "Zerodha":
-        brokerage = min(20, 0.03 / 100 * qty * (net_exit_prc + net_entry_prc) / 2) * no_of_orders if trade_type == "futures" else 20
+        brokerage = min(20, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20
     elif broker == "AliceBlue":
-        brokerage = min(15, 0.03 / 100 * qty * (net_exit_prc + net_entry_prc) / 2) * no_of_orders if trade_type == "futures" else 20
+        brokerage = min(15, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20
 
     # STT/CTT
     if trade_type == "regular":  # Assuming "regular" means options
-        stt_ctt = 0.05 / 100 * qty * net_exit_prc
+        stt_ctt = 0.05 / 100 * float(qty) * float(net_exit_prc)
     else:  # futures
-        stt_ctt = 0.0125 / 100 * qty * net_exit_prc
+        stt_ctt = 0.0125 / 100 * float(qty) * float(net_exit_prc)
 
     # Transaction charges
-    transaction_charges = 0.00345 / 100 * qty * net_exit_prc  # Example rate, adjust based on actual
+    transaction_charges = 0.00345 / 100 * float(qty) * float(net_exit_prc)  # Example rate, adjust based on actual
 
     # SEBI charges
-    sebi_charges = 10 / 10000000 * qty * net_exit_prc
+    sebi_charges = 10 / 10000000 * float(qty) * float(net_exit_prc)
 
     # GST
     gst = 18 / 100 * (brokerage + transaction_charges + sebi_charges)
 
     # Stamp charges (simplified/general rate)
-    stamp_charges = 0.003 / 100 * qty * net_exit_prc if trade_type == "regular" else 0.002 / 100 * qty * net_exit_prc
+    stamp_charges = 0.003 / 100 * float(qty) * float(net_exit_prc) if trade_type == "regular" else 0.002 / 100 * float(qty) * float(net_exit_prc)
 
     # Total charges
     total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
@@ -447,6 +447,6 @@ def calculate_taxes(entry_orders,exit_orders,hedge_orders,broker):
                 entry_order = orders['entry_orders'][0]  # Taking the first entry order as an example
                 exit_order = orders['exit_orders'][0]  # Taking the first exit order as an example
                 is_fut = instru().get_instrument_type_by_exchange_token(token) == "FUTIDX"
-                tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", entry_order["qty"], entry_order["avg_prc"], exit_order["avg_prc"], 2)
+                tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", float(entry_order["qty"]), float(entry_order["avg_prc"]), float(exit_order["avg_prc"]), 2)
                 taxes += tax
     return taxes         

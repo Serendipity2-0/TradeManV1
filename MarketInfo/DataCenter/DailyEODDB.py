@@ -37,7 +37,7 @@ def connect_to_db(base_symbol):
     return psycopg2.connect(
         dbname=base_symbol.lower(),
         user="postgres",
-        password="K@nnada0",
+        password="K@nnada1",
         host="localhost",
         port="5432",
     )
