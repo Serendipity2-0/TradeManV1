@@ -55,36 +55,30 @@ def modify_order_for_brokers(order_details, user_credentials):
 
 
 def all_broker_login(active_users):
-    try:
-        import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
-    except ModuleNotFoundError as e:
-        logger.error(f"Module not found: {e}")
-        alice_blue = None  # Set to None to indicate the module couldn't be imported
-
-    try:
-        import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
-    except ModuleNotFoundError as e:
-        logger.error(f"Module not found: {e}")
-        zerodha = None  # Set to None to indicate the module couldn't be imported
-
+    import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
+    import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
+    
     for user in active_users:
         if user["Broker"]["BrokerName"] == ZERODHA:
-            logger.info("Logging in for Zerodha")
-            session_id = zerodha.login_in_zerodha(user["Broker"])
-            firebase_utils.update_fields_firebase(
-                CLIENTS_USER_FB_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
-            )
+            logger.debug(f"Logging in for Zerodha for user: {user['Broker']['BrokerUsername']}")
+            try:
+                session_id = zerodha.login_in_zerodha(user["Broker"])
+                firebase_utils.update_fields_firebase(
+                    CLIENTS_USER_FB_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
+                )
+            except Exception as e:
+                logger.error(f"Error while logging in for Zerodha: {e} for user: {user['Broker']['BrokerUsername']}")
         elif user["Broker"]["BrokerName"] == ALICEBLUE:
-            logger.info("Logging in for AliceBlue")
+            logger.debug(f"Logging in for AliceBlue for user: {user['Broker']['BrokerUsername']}")
             try:
                 session_id = alice_blue.login_in_aliceblue(user["Broker"])
                 firebase_utils.update_fields_firebase(
                     CLIENTS_USER_FB_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
                 )
             except Exception as e:
-                logger.error(f"Error while logging in for AliceBlue: {e}")
+                logger.error(f"Error while logging in for AliceBlue: {e} for user: {user['Broker']['BrokerUsername']}")
         else:
-            logger.error("Broker not supported")
+            logger.error(f"Broker not supported for user: {user['Broker']['BrokerUsername']}")
     return active_users
 
 
@@ -197,8 +191,6 @@ def fetch_active_strategies_all_users():
 
 def get_today_orders_for_brokers(user):
     if user["Broker"]["BrokerName"] == ZERODHA:
-        # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/kite_orders.json') as f:
-        #     kite_data = json.load(f)
         try:
             logger.debug(f"Fetching today's orders for {user['Broker']['BrokerUsername']}")
             kite_data = zerodha_adapter.zerodha_todays_tradebook(user["Broker"])
@@ -211,10 +203,7 @@ def get_today_orders_for_brokers(user):
             logger.error(f"Error while fetching today's orders for {user['Broker']['BrokerUsername']}: {e}")
             kite_data = []
         return kite_data
-
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
-        # with open('/Users/amolkittur/Desktop/TradeManV1/SampleData/aliceblue_orders.json') as f:
-        #     alice_data = json.load(f)
         try:
             logger.debug(f"Fetching today's tradebook for {user['Broker']['BrokerUsername']}")
             alice_data = alice_adapter.aliceblue_todays_tradebook(user["Broker"])
@@ -244,11 +233,13 @@ def create_counter_order_details(tradebook, user):
                 zerodha_adapter.kite_create_cancel_order(trade, user)
                 counter_order = zerodha_adapter.kite_create_sl_counter_order(trade, user)
                 counter_order_details.append(counter_order)
+                logger.info(f"Created counter orders for {["Broker"]["BrokerName"]} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
         elif user["Broker"]["BrokerName"] == ALICEBLUE:
             if trade["Status"] == "trigger pending" and trade["Pcode"] == "MIS":
                 alice_adapter.ant_create_cancel_orders(trade, user)
                 counter_order = alice_adapter.ant_create_counter_order(trade, user)
                 counter_order_details.append(counter_order)
+                logger.info(f"Created counter orders for {["Broker"]["BrokerName"]} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
     return counter_order_details
 
 
@@ -272,6 +263,7 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
                 )
                 if counter_order not in hedge_counter_order:
                     hedge_counter_order.append(counter_order)
+                    logger.info(f"Created hedge counter orders for {["Broker"]["BrokerName"]} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
 
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         open_order_tokens = open_order_tokens = {position['Token']: abs(int(position['Netqty'])) for position in open_orders if position['Pcode'] == 'MIS' and position['Netqty'] != '0.00'}        
@@ -290,6 +282,7 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
                 counter_order = alice_adapter.ant_create_hedge_counter_order(trade, user)
                 if counter_order not in hedge_counter_order:
                     hedge_counter_order.append(counter_order)
+                    logger.info(f"Created hedge counter orders for {["Broker"]["BrokerName"]} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
     return hedge_counter_order
 
 def get_avg_prc_broker_key(broker_name):

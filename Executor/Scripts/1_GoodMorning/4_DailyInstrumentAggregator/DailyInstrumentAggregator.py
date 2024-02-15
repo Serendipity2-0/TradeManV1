@@ -21,13 +21,13 @@ logger.add(
     diagnose=True,
 )
 
-
 def main():
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentAggregator.InstrumentAggregator import (
         aggregate_ins as instrument_aggregator,
     )
 
     instrument_aggregator()
+    logger.success("Instruments aggregated successfully.")
 
 if __name__ == "__main__":
     main()
