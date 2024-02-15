@@ -1,16 +1,26 @@
 import firebase_admin
-from firebase_admin import credentials
+from firebase_admin import credentials, initialize_app, get_app
 from firebase_admin import db
 import json,math
 import datetime
 
-# Fetch the service account key JSON file contents
-cred = credentials.Certificate('/Users/amolkittur/Desktop/TradeManV1/firebase_credentials.json')
+# Path to your Firebase service account key file
+service_account_path = '/Users/traderscafe/Desktop/TradeManV1/Executor/ExecutorUtils/ExeDBUtils/ExeFirebaseAdapter/firebase_credentials.json'
 
-# Initialize the app with a service account, granting admin privileges
-firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://trading-app-caf8e-default-rtdb.firebaseio.com/'
-})
+# Firebase database URL
+database_url = 'https://trading-app-caf8e-default-rtdb.firebaseio.com/'
+
+# Fetch the service account key JSON file contents
+cred = credentials.Certificate(service_account_path)
+
+app_name = 'uniqueAppName'
+
+try:
+    firebase_app = firebase_admin.get_app(app_name)
+except ValueError:
+    firebase_app = firebase_admin.initialize_app(cred, {"databaseURL": database_url}, name=app_name)
+
+
 
 def file_upload(collection_name):
     with open('/Users/amolkittur/Desktop/TradeManV1/clients.json', 'r') as file:
@@ -23,7 +33,6 @@ def file_upload(collection_name):
     #upload the data
     ref.set(data)
     print("Data uploaded successfully")
-
 
 def update_fields_firebase(collection, document, data, field_key=None):
     if field_key is None:

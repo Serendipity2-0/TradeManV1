@@ -13,11 +13,6 @@ chat_id='-367108102'
 # Run the script
 while true; do
     # Check if the current hour is greater than 16 (4 pm)
-    current_hour=$(date +%H)
-    if ((current_hour >= 16)); then
-        echo "The script will not retry after 4 pm."
-        break
-    fi
 
     # Try to run the command
     ((attempt++))
