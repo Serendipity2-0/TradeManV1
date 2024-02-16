@@ -52,6 +52,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils impo
     download_json
 )
 
+from Executor.Strategies.StrategiesUtil import StrategyBase
 
 # i want a function to update the dict in the firebase db with the trades of today for the user and strategy
 def update_signals_firebase():
@@ -111,7 +112,7 @@ def update_signals_firebase():
         if today_signals:
             df = pd.DataFrame(today_signals)
             decimal_columns = ["entry_price", "exit_price", "hedge_points", "trade_points"]
-            append_df_to_sqlite(signal_db_conn, df, strategy_name, decimal_columns)  # Assuming "signals" is your table name
+            # append_df_to_sqlite(signal_db_conn, df, strategy_name, decimal_columns)  # Assuming "signals" is your table name
 
         conn.close()
 
@@ -215,7 +216,7 @@ def process_orders_for_strategy(strategy_orders):
             processed_trades[trade_prefix]["hedge_orders"].append(order)
     return processed_trades
 
-def calculate_trade_details(trade_data, strategy_name, user):
+def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
         Instrument as instru,
     )
@@ -224,15 +225,20 @@ def calculate_trade_details(trade_data, strategy_name, user):
     exit_orders = trade_data["exit_orders"]
     if not entry_orders or not exit_orders:
         return
+    
     hedge_orders = trade_data["hedge_orders"]
-    entry_price = sum([float(o["avg_prc"]) for o in entry_orders]) / len(entry_orders) if entry_orders else 0
-    exit_price = sum([float(o["avg_prc"]) for o in exit_orders]) / len(exit_orders) if exit_orders else 0
-    if hedge_orders:
+
+    if multileg:
+        entry_price = sum([float(o["avg_prc"]) for o in entry_orders]) if entry_orders else 0
+        exit_price = sum([float(o["avg_prc"]) for o in exit_orders]) if exit_orders else 0
+        hedge_entry_price = sum([float(o["avg_prc"]) for o in hedge_orders if "EN" in o["trade_id"]]) if hedge_orders else 0
+        hedge_exit_price = sum([float(o["avg_prc"]) for o in hedge_orders if "EX" in o["trade_id"]]) if hedge_orders else 0
+    else:
+        entry_price = sum([float(o["avg_prc"]) for o in entry_orders]) / len(entry_orders) if entry_orders else 0
+        exit_price = sum([float(o["avg_prc"]) for o in exit_orders]) / len(exit_orders) if exit_orders else 0
         hedge_entry_price = sum([float(o["avg_prc"]) for o in hedge_orders if "EN" in o["trade_id"]]) / len([o for o in hedge_orders if "EN" in o["trade_id"]]) if hedge_orders else 0
         hedge_exit_price = sum([float(o["avg_prc"]) for o in hedge_orders if "EX" in o["trade_id"]]) / len([o for o in hedge_orders if "EX" in o["trade_id"]]) if hedge_orders else 0  
-    else:
-        hedge_entry_price = 0
-        hedge_exit_price = 0
+
     trade_id_prefix = entry_orders[0]["trade_id"].split("_")[0]
     exchange_token = [o["exchange_token"] for o in entry_orders if "MO" in o["trade_id"]][0]
 
@@ -352,7 +358,8 @@ def process_n_log_trade():
 
             segregated_orders = process_orders_for_strategy(strategy_orders)
             for trade_prefix, orders_group in segregated_orders.items():
-                trade_details = calculate_trade_details(orders_group, strategy_name, user)
+                multileg = StrategyBase.load_from_db(strategy_name).ExtraInformation.MultiLeg
+                trade_details = calculate_trade_details(orders_group, strategy_name, user, multileg)
                 # Check if trade_details is None or empty before proceeding
                 if trade_details is None or not any(trade_details.values()):
                     print(f"Skipping trade {trade_prefix} due to invalid trade details.")

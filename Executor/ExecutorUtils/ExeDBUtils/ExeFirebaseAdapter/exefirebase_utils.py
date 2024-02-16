@@ -3,15 +3,22 @@ from firebase_admin import credentials, initialize_app, get_app
 from firebase_admin import db
 import json,math
 import datetime
+import os,sys
+from dotenv import load_dotenv
 
-# Path to your Firebase service account key file
-service_account_path = '/Users/traderscafe/Desktop/TradeManV1/Executor/ExecutorUtils/ExeDBUtils/ExeFirebaseAdapter/firebase_credentials.json'
+DIR_PATH = os.getcwd()
+sys.path.append(DIR_PATH)
+
+ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
+load_dotenv(ENV_PATH)
+
+cred_filepath = os.getenv("FIREBASE_CRED_PATH")
 
 # Firebase database URL
 database_url = 'https://trading-app-caf8e-default-rtdb.firebaseio.com/'
 
 # Fetch the service account key JSON file contents
-cred = credentials.Certificate(service_account_path)
+cred = credentials.Certificate(cred_filepath)
 
 app_name = 'uniqueAppName'
 

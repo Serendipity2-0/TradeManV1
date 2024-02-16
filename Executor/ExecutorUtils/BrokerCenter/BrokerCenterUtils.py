@@ -233,13 +233,13 @@ def create_counter_order_details(tradebook, user):
                 zerodha_adapter.kite_create_cancel_order(trade, user)
                 counter_order = zerodha_adapter.kite_create_sl_counter_order(trade, user)
                 counter_order_details.append(counter_order)
-                logger.info(f"Created counter orders for {["Broker"]["BrokerName"]} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
+                logger.info(f"Created counter orders for {['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
         elif user["Broker"]["BrokerName"] == ALICEBLUE:
             if trade["Status"] == "trigger pending" and trade["Pcode"] == "MIS":
                 alice_adapter.ant_create_cancel_orders(trade, user)
                 counter_order = alice_adapter.ant_create_counter_order(trade, user)
                 counter_order_details.append(counter_order)
-                logger.info(f"Created counter orders for {["Broker"]["BrokerName"]} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
+                logger.info(f"Created counter orders for {['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
     return counter_order_details
 
 
@@ -263,7 +263,7 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
                 )
                 if counter_order not in hedge_counter_order:
                     hedge_counter_order.append(counter_order)
-                    logger.info(f"Created hedge counter orders for {["Broker"]["BrokerName"]} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
+                    logger.info(f"Created hedge counter orders for {['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
 
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         open_order_tokens = open_order_tokens = {position['Token']: abs(int(position['Netqty'])) for position in open_orders if position['Pcode'] == 'MIS' and position['Netqty'] != '0.00'}        
@@ -282,7 +282,7 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
                 counter_order = alice_adapter.ant_create_hedge_counter_order(trade, user)
                 if counter_order not in hedge_counter_order:
                     hedge_counter_order.append(counter_order)
-                    logger.info(f"Created hedge counter orders for {["Broker"]["BrokerName"]} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
+                    logger.info(f"Created hedge counter orders for {['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
     return hedge_counter_order
 
 def get_avg_prc_broker_key(broker_name):

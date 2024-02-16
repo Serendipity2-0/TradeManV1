@@ -15,6 +15,7 @@ load_dotenv(ENV_PATH)
 cred_filepath = os.getenv("FIREBASE_CRED_PATH")
 firebase_db_url = os.getenv("FIREBASE_DATABASE_URL")
 CLIENTS_DB = os.getenv("FIREBASE_USER_COLLECTION")
+STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 cred = credentials.Certificate(cred_filepath)
 firebase_admin.initialize_app(cred, {"databaseURL": firebase_db_url})
@@ -84,7 +85,7 @@ def get_client_by_tr_no(tr_no):
 
 # New function to get strategy by 'StrategyName'
 def get_strategy_by_name(strategy_name):
-    strategies = fetch_collection_data_firebase("strategies")
+    strategies = fetch_collection_data_firebase(STRATEGIES_DB)
     for strategy_key, strategy_data in strategies.items():
         if strategy_data.get("StrategyName") == strategy_name:
             return strategy_data

@@ -13,8 +13,10 @@ DIR = os.getcwd()
 sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
+
 fno_info_path = os.getenv("FNO_INFO_PATH")
 user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
+STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 from loguru import logger
 
@@ -71,6 +73,7 @@ class ExtraInformation(BaseModel):
     Prediction: Optional[str] = None
     HedgeExchangeToken: Optional[int] = None
     FuturesExchangeToken: Optional[int] = None
+    MultiLeg : Optional[bool] = None
 
     class Config:
         extra = "allow"
@@ -146,7 +149,7 @@ class StrategyBase(BaseModel):
 
     @classmethod
     def load_from_db(cls, strategy_name: str):
-        data = fetch_collection_data_firebase("strategies", document=strategy_name)
+        data = fetch_collection_data_firebase(STRATEGIES_DB, document=strategy_name)
         if data is None:
             raise ValueError(f"No data found for strategy {strategy_name}")
         return cls.parse_obj(data)
