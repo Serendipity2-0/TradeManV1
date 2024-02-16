@@ -207,11 +207,12 @@ def get_today_orders_for_brokers(user):
         try:
             logger.debug(f"Fetching today's tradebook for {user['Broker']['BrokerUsername']}")
             alice_data = alice_adapter.aliceblue_todays_tradebook(user["Broker"])
-            alice_data = [
-                trade
-                for trade in alice_data
-                if trade["Status"] != "rejected" or trade["Status"] != "cancelled"
-            ]
+            if alice_data:
+                alice_data = [
+                    trade
+                    for trade in alice_data
+                    if trade["Status"] != "rejected" or trade["Status"] != "cancelled"
+                ]
         except Exception as e:
             logger.error(f"Error while fetching today's tradebook for {user['Broker']['BrokerUsername']}: {e}")
             alice_data = []
@@ -233,13 +234,13 @@ def create_counter_order_details(tradebook, user):
                 zerodha_adapter.kite_create_cancel_order(trade, user)
                 counter_order = zerodha_adapter.kite_create_sl_counter_order(trade, user)
                 counter_order_details.append(counter_order)
-                logger.info(f"Created counter orders for {['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
+                logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
         elif user["Broker"]["BrokerName"] == ALICEBLUE:
             if trade["Status"] == "trigger pending" and trade["Pcode"] == "MIS":
                 alice_adapter.ant_create_cancel_orders(trade, user)
                 counter_order = alice_adapter.ant_create_counter_order(trade, user)
                 counter_order_details.append(counter_order)
-                logger.info(f"Created counter orders for {['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
+                logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
     return counter_order_details
 
 
@@ -263,7 +264,7 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
                 )
                 if counter_order not in hedge_counter_order:
                     hedge_counter_order.append(counter_order)
-                    logger.info(f"Created hedge counter orders for {['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
+                    logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
 
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         open_order_tokens = open_order_tokens = {position['Token']: abs(int(position['Netqty'])) for position in open_orders if position['Pcode'] == 'MIS' and position['Netqty'] != '0.00'}        
@@ -282,7 +283,7 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
                 counter_order = alice_adapter.ant_create_hedge_counter_order(trade, user)
                 if counter_order not in hedge_counter_order:
                     hedge_counter_order.append(counter_order)
-                    logger.info(f"Created hedge counter orders for {['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
+                    logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
     return hedge_counter_order
 
 def get_avg_prc_broker_key(broker_name):
@@ -386,18 +387,18 @@ def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc,
     logger.debug(f"broker = {broker}, trade_type = {trade_type}, qty = {qty}, net_entry_prc = {net_entry_prc}, net_exit_prc = {net_exit_prc}, no_of_orders = {no_of_orders}")
     # Brokerage
     if broker == "Zerodha":
-        brokerage = min(20, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20
+        brokerage = min(20, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20 * no_of_orders
     elif broker == "AliceBlue":
-        brokerage = min(15, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20
+        brokerage = min(15, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 15 * no_of_orders
 
     # STT/CTT
     if trade_type == "regular":  # Assuming "regular" means options
         stt_ctt = 0.05 / 100 * float(qty) * float(net_exit_prc)
     else:  # futures
-        stt_ctt = 0.0125 / 100 * float(qty) * float(net_exit_prc)
+        stt_ctt = 0.0625 / 100 * float(qty) * float(net_exit_prc)
 
     # Transaction charges
-    transaction_charges = 0.00345 / 100 * float(qty) * float(net_exit_prc)  # Example rate, adjust based on actual
+    transaction_charges = 0.0019 / 100 * float(qty) * float(net_exit_prc) if trade_type == "futures" else 0.05 / 100 * float(qty) * float(net_exit_prc)
 
     # SEBI charges
     sebi_charges = 10 / 10000000 * float(qty) * float(net_exit_prc)
@@ -406,11 +407,11 @@ def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc,
     gst = 18 / 100 * (brokerage + transaction_charges + sebi_charges)
 
     # Stamp charges (simplified/general rate)
-    stamp_charges = 0.003 / 100 * float(qty) * float(net_exit_prc) if trade_type == "regular" else 0.002 / 100 * float(qty) * float(net_exit_prc)
+    stamp_charges = 0.003 / 100 * float(qty) * float(net_entry_prc) if trade_type == "regular" else 0.002 / 100 * float(qty) * float(net_entry_prc)
 
     # Total charges
     total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
-    logger.debug(f"brokerage = {brokerage}, stt_ctt = {stt_ctt}, transaction_charges = {transaction_charges}, gst = {gst}, sebi_charges = {sebi_charges}, stamp_charges = {stamp_charges}")
+    logger.debug(f"brokerage = {brokerage}, stt_ctt = {stt_ctt}, transaction_charges = {transaction_charges}, gst = {gst}, sebi_charges = {sebi_charges}, stamp_charges = {stamp_charges} and total_charges = {total_charges}")
     return total_charges
 
 
@@ -421,11 +422,7 @@ def calculate_taxes(entry_orders,exit_orders,hedge_orders,broker):
     for entry_order in entry_orders:
         for exit_order in exit_orders:
             if entry_order["exchange_token"] == exit_order["exchange_token"]:
-                logger.debug(f"entry_order = {entry_order['exchange_token']}")
-                logger.debug(f"order {instru().get_instrument_type_by_exchange_token(entry_order['exchange_token']) }")
                 is_fut = instru().get_instrument_type_by_exchange_token(str(entry_order["exchange_token"])) == "FUTIDX" or instru().get_instrument_type_by_exchange_token(str(entry_order["exchange_token"])) == "FUT"
-                logger.debug(f"is_fut = {is_fut}")
-
                 tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", entry_order["qty"], entry_order["avg_prc"], exit_order["avg_prc"], 2)
                 taxes += tax
     

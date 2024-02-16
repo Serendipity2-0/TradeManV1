@@ -124,15 +124,16 @@ NOTES
 TODO for TradeMan V1.1:
 
 Bugs:
+> AmiPy calculation for entry price and exit price during db entry
 > Review tax calculation
-> Logic to handle the get_today_orders if 0 orders are placed
+
+> Change attempt to 1 in sh files
+> Logic to handle the get_today_orders if 0 orders are placed (Kite is pending)
 > Add EOD db login script to this repo and cronjob
 > Check Sweep orders
-> Still getting kite noftication for SL orders
 > Tradebook reconsilation with commission table and pnl withdrawal table
 > Avoid multiple log enteries in .log file (Error log watch)
 > Delete the previous_trading_key during good morning script instead daily reports
-> AmiPy calculation for entry price and exit price during db entry
 
 Performance:
 > Docs and debug statements function wise

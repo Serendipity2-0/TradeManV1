@@ -156,6 +156,8 @@ def create_alice_obj(user_details):
 def aliceblue_todays_tradebook(user):
     alice = create_alice_obj(user)
     orders = alice.get_order_history("")
+    if orders.get("stat") == "Not_Ok":
+        return None
     return orders
 
 
