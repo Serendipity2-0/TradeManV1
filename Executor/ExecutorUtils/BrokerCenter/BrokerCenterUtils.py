@@ -194,11 +194,12 @@ def get_today_orders_for_brokers(user):
         try:
             logger.debug(f"Fetching today's orders for {user['Broker']['BrokerUsername']}")
             kite_data = zerodha_adapter.zerodha_todays_tradebook(user["Broker"])
-            kite_data = [
-                trade
-                for trade in kite_data
-                if trade["status"] != "REJECTED" or trade["status"] != "CANCELLED"
-            ]
+            if kite_data:
+                kite_data = [
+                    trade
+                    for trade in kite_data
+                    if trade["status"] != "REJECTED" or trade["status"] != "CANCELLED"
+                ]
         except Exception as e:
             logger.error(f"Error while fetching today's orders for {user['Broker']['BrokerUsername']}: {e}")
             kite_data = []

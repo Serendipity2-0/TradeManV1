@@ -110,6 +110,8 @@ def simplify_zerodha_order(detail):
 def zerodha_todays_tradebook(user):
     kite = create_kite_obj(api_key=user["ApiKey"], access_token=user["SessionId"])
     orders = kite.orders()
+    if not orders:
+        return None
     return orders
 
 
