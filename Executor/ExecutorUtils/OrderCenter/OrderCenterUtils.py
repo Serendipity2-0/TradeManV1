@@ -162,6 +162,6 @@ def retrieve_order_id(account_name, strategy, exchange_token: int):
     for strategy_name in user_details:
         if strategy_name == strategy:
             for trade in user_details[strategy_name]["TradeState"]["orders"]:
-                if trade["exchange_token"] == exchange_token and trade["trade_id"].endswith("EX"):
+                if trade is not None and trade["exchange_token"] == exchange_token and trade["trade_id"].endswith("EX"):
                     order_ids[trade["order_id"]] = trade["qty"]
     return order_ids

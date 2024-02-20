@@ -10,3 +10,4 @@ trademan.env
 *.wav
 trail.py
 *.session
+*.sh

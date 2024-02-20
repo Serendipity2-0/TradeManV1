@@ -19,6 +19,9 @@ from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import 
     create_kite_obj,
 )
 from Executor.ExecutorUtils.ExeUtils import holidays
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    discord_bot,
+)
 
 strategy_obj = StrategyBase.load_from_db("ExpiryTrader")
 primary_account = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
@@ -158,6 +161,9 @@ def main():
     for base_symbol in base_symbols:
         conn = connect_to_db(base_symbol)
         cursor = conn.cursor()
+
+        message = f"Uploading historical data for {base_symbol}..."
+        discord_bot(message,"db")
 
         start_date = (dt.datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         end_date = dt.datetime.now().strftime("%Y-%m-%d")

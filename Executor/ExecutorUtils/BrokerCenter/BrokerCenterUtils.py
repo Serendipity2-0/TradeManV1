@@ -390,7 +390,6 @@ def calculate_user_net_values(user, categorized_df):
         return alice_adapter.calculate_alice_net_values(user, categorized_df)
 
 def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
-    logger.debug(f"broker = {broker}, trade_type = {trade_type}, qty = {qty}, net_entry_prc = {net_entry_prc}, net_exit_prc = {net_exit_prc}, no_of_orders = {no_of_orders}")
     # Brokerage
     if broker == "Zerodha":
         brokerage = min(20, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20
@@ -417,7 +416,6 @@ def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc,
 
     # Total charges
     total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
-    logger.debug(f"brokerage = {brokerage}, stt_ctt = {stt_ctt}, transaction_charges = {transaction_charges}, gst = {gst}, sebi_charges = {sebi_charges}, stamp_charges = {stamp_charges}")
     return total_charges
 
 
@@ -428,10 +426,8 @@ def calculate_taxes(entry_orders,exit_orders,hedge_orders,broker):
     for entry_order in entry_orders:
         for exit_order in exit_orders:
             if entry_order["exchange_token"] == exit_order["exchange_token"]:
-                logger.debug(f"entry_order = {entry_order['exchange_token']}")
-                logger.debug(f"order {instru().get_instrument_type_by_exchange_token(entry_order['exchange_token']) }")
+                # logger.debug(f"order {instru().get_instrument_type_by_exchange_token(entry_order['exchange_token']) }")
                 is_fut = instru().get_instrument_type_by_exchange_token(str(entry_order["exchange_token"])) == "FUTIDX" or instru().get_instrument_type_by_exchange_token(str(entry_order["exchange_token"])) == "FUT"
-                logger.debug(f"is_fut = {is_fut}")
 
                 tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", entry_order["qty"], entry_order["avg_prc"], exit_order["avg_prc"], 2)
                 taxes += tax
