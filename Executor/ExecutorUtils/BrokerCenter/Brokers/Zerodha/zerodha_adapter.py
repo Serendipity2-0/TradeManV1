@@ -85,7 +85,7 @@ def fetch_zerodha_holdings(api_key, access_token):
         return None
 
 def simplify_zerodha_order(detail):
-    logger.debug(f"Processing order details: {detail["tag"]}")
+    logger.debug(f"Processing order details: {detail['tag']}")
     try:
         trade_symbol = detail["tradingsymbol"]
 

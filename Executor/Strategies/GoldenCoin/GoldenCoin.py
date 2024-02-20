@@ -66,13 +66,14 @@ def flip_coin():
 
 # Flipping the coin and printing the result
 
+prediction = "Bullish" if flip_coin() == "Heads" else "Bearish"
 
 def determine_strike_and_option():
+    global prediction
     strike_price_multiplier = goldencoin_strategy_obj.EntryParams.StrikeMultiplier
     strategy_type = goldencoin_strategy_obj.GeneralParams.StrategyType
     base_symbol, _ = goldencoin_strategy_obj.determine_expiry_index()
     option_type = "CE" if flip_coin() == "Heads" else "PE"
-    prediction = "Bullish" if option_type == "CE" else "Bearish"
     strike_prc = goldencoin_strategy_obj.calculate_current_atm_strike_prc(
         base_symbol=base_symbol,
         prediction=prediction,
@@ -186,12 +187,17 @@ def main():
     for order in orders_to_place:
         if order.get("order_mode") == "MO":
             main_trade_id = order.get("trade_id")
+            main_trade_id_prefix = main_trade_id.split("_")[0]
 
     signals_to_log = {
         "TradeId": main_trade_id,
         "Signal": "Long",
         "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Status": "Open",
+        "StrategyInfo": {
+            "trade_id": main_trade_id_prefix,
+            "prediction": prediction,
+        },
     }
 
     update_signal_firebase(

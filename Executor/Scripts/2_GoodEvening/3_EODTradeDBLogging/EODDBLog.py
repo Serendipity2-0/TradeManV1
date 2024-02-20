@@ -54,7 +54,27 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils impo
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
 
-# i want a function to update the dict in the firebase db with the trades of today for the user and strategy
+def update_signal_info():
+    active_strategies = fetch_list_of_strategies_from_firebase()
+    signal_info_db_conn = get_db_connection(os.path.join(CLIENTS_TRADE_SQL_DB, "signal_info.db"))
+    
+    for strategy_name in active_strategies:
+        logger.debug(f"Updating signal info for {strategy_name}")
+        try:
+            strategy_info = fetch_collection_data_firebase(STRATEGY_FB_DB, strategy_name)
+            today_orders = strategy_info.get("TodayOrders", {})
+            for order,values in today_orders.items():
+                if values.get('StrategyInfo'):
+                    strategy_info_dict = values.get('StrategyInfo')
+                    df = pd.DataFrame([strategy_info_dict])
+                    # Move trade_id column to the first column
+                    df = df[['trade_id'] + [col for col in df.columns if col != 'trade_id']]
+                    append_df_to_sqlite(signal_info_db_conn, df, strategy_name, [])
+        except Exception as e:
+            logger.error(f"Error updating signal info for {strategy_name}: {e}")
+            continue
+
+
 def update_signals_firebase():
     from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
         append_df_to_sqlite,
@@ -437,6 +457,7 @@ def main():
     process_n_log_trade()
     fetch_and_prepare_holdings_data()
     update_signals_firebase()
+    update_signal_info()
     clear_today_orders_firebase()
 
 if __name__ == "__main__":

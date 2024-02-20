@@ -73,16 +73,18 @@ def signal_log_firebase(orders_to_place,cross_type,trade_prefix):
     for order in orders_to_place:
         if order.get("order_mode") == "MO":
             main_trade_id = order.get("trade_id")
+            main_trade_id_prefix = main_trade_id.split("_")[0]
 
     signal_to_log_firebase = {
         "Signal": "Long",
         "TradeId": main_trade_id,
         "Time": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "StrategyInfo": {
-            "TradeView": strategy_obj.MarketInfoParams.TradeView,
-            "Direction": cross_type,
+            "trade_id" : main_trade_id_prefix,
+            "trade_view": strategy_obj.MarketInfoParams.TradeView,
+            "direction": cross_type,
             # "IBLevel": strategy_obj.EntryParams.InstrumentToday[self.get_index_name(order["exchange_token"])]["IBLevel"],
-            "PriceRef": str(order["price_ref"])
+            "price_ref": str(order["price_ref"])
             # "TriggerPoints": strategy_obj.EntryParams.InstrumentToday[self.get_index_name(order["exchange_token"])]["TriggerPoints"],
         },
     }

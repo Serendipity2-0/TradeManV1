@@ -189,13 +189,19 @@ def main():
         for order in orders_to_place:
             if order.get("order_mode") == "MO":
                 main_trade_id = order.get("trade_id")
+                main_trade_id_prefix = main_trade_id.split("_")[0]
 
         signals_to_log = {
             "TradeId": main_trade_id,
             "Signal": "Short",
             "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "StrategyInfo": {
-                "Direction": prediction,
+                "direction": prediction,
+                "sl_multipler": stoploss_multiplier,
+                "strike_multipler": strike_prc_multiplier,
+                "hedge_multipler": hedge_multiplier,
+                "trade_id": main_trade_id_prefix,
+
             },
             "Status": "Open",
         }
