@@ -50,30 +50,34 @@ def create_user_transaction_db_entry(trade, broker):
     qty_key = BrokerCenterUtils.get_qty_broker_key(broker)
     time_stamp_key = BrokerCenterUtils.get_time_stamp_broker_key(broker)
     trade_id_key = BrokerCenterUtils.get_trade_id_broker_key(broker)
-    trade_id = trade[trade_id_key]
-    if trade_id == None:
-        trade_id = 0
+    trade_id = trade[trade_id_key] or 0
 
-    time_stamp = BrokerCenterUtils.convert_to_standard_format(trade[time_stamp_key])
+    try:
+        time_stamp = BrokerCenterUtils.convert_to_standard_format(trade[time_stamp_key])
+    except Exception as e:
+        logger.error(f"Error converting timestamp: {e}")
+        time_stamp = None
 
     return {
-        "order_id": trade[order_id_key],
-        "trading_symbol": trade[trading_symbol_key],
+        "order_id": trade.get(order_id_key),
+        "trading_symbol": trade.get(trading_symbol_key),
         "time_stamp": time_stamp,
-        "avg_prc": trade[avg_price_key],
-        "qty": trade[qty_key],
+        "avg_prc": trade.get(avg_price_key),
+        "qty": trade.get(qty_key),
         "trade_id": trade_id,
     }
 
 
 def get_update_path(order_id, strategies):
-    for strategy_key, strategy_data in strategies.items():
-        trade_state = strategy_data.get("TradeState", {})
-        orders_from_firebase = trade_state.get("orders", [])
-        for i, order in enumerate(orders_from_firebase):
-            if str(order["order_id"]) == order_id:
-                return f"Strategies/{strategy_key}/TradeState/orders/{i}"
-
+    try:
+        for strategy_key, strategy_data in strategies.items():
+            trade_state = strategy_data.get("TradeState", {})
+            orders_from_firebase = trade_state.get("orders", [])
+            for i, order in enumerate(orders_from_firebase):
+                if str(order["order_id"]) == order_id:
+                    return f"Strategies/{strategy_key}/TradeState/orders/{i}"
+    except Exception as e:
+        logger.error(f"Error in get_update_path: {e}")
 
 def get_order_ids_from_strategies(user,strategies):
     today = get_todays_date()
@@ -115,42 +119,45 @@ def daily_tradebook_validator():
         processed_order_ids = set()
         order_ids = get_order_ids_from_strategies(user,strategies)
 
-        for trade in user_tradebook:
-            avg_price_key = BrokerCenterUtils.get_avg_prc_broker_key(
-                user["Broker"]["BrokerName"]
-            )
-            order_id_key = BrokerCenterUtils.get_order_id_broker_key(
-                user["Broker"]["BrokerName"]
-            )
-            trade_order_id = str(trade[order_id_key])
-            processed_order_ids.add(trade_order_id)
-
-            if trade_order_id in order_ids:
-                avg_prc = trade[avg_price_key]
-                update_path = get_update_path(trade_order_id, strategies)
-                update_fields_firebase(
-                    BrokerCenterUtils.CLIENTS_USER_FB_DB, user["Tr_No"], {"avg_prc": avg_prc}, update_path
+        try:
+            for trade in user_tradebook:
+                avg_price_key = BrokerCenterUtils.get_avg_prc_broker_key(
+                    user["Broker"]["BrokerName"]
                 )
-                matched_orders.add(trade_order_id)
-            else:
-                unmatched_details = create_user_transaction_db_entry(
-                    trade, user["Broker"]["BrokerName"]
+                order_id_key = BrokerCenterUtils.get_order_id_broker_key(
+                    user["Broker"]["BrokerName"]
                 )
+                trade_order_id = str(trade[order_id_key])
+                processed_order_ids.add(trade_order_id)
 
-                if not float(unmatched_details["avg_prc"]):
-                    continue
+                if trade_order_id in order_ids:
+                    avg_prc = trade[avg_price_key]
+                    update_path = get_update_path(trade_order_id, strategies)
+                    update_fields_firebase(
+                        BrokerCenterUtils.CLIENTS_USER_FB_DB, user["Tr_No"], {"avg_prc": avg_prc}, update_path
+                    )
+                    matched_orders.add(trade_order_id)
+                else:
+                    unmatched_details = create_user_transaction_db_entry(
+                        trade, user["Broker"]["BrokerName"]
+                    )
 
-                unmatched_details = pd.DataFrame([unmatched_details])
-                decimal_columns = ["avg_prc"]
-                append_df_to_sqlite(
-                    conn, unmatched_details, "UserTransactions", decimal_columns
-                )
-                unmatched_orders.add(trade_order_id)
+                    if not float(unmatched_details["avg_prc"]):
+                        continue
 
-        conn.close()
+                    unmatched_details = pd.DataFrame([unmatched_details])
+                    decimal_columns = ["avg_prc"]
+                    append_df_to_sqlite(
+                        conn, unmatched_details, "UserTransactions", decimal_columns
+                    )
+                    unmatched_orders.add(trade_order_id)
 
-        logger.debug(f"Matched Orders: {matched_orders}")
-        logger.debug(f"Unmatched Orders: {unmatched_orders}")
+            conn.close()
+
+            logger.debug(f"Matched Orders: {matched_orders}")
+            logger.debug(f"Unmatched Orders: {unmatched_orders}")
+        except Exception as e:
+            logger.error(f"Error in daily_tradebook_validator for user: {user['Broker']['BrokerUsername']}. Error: {e}") 
 
         # clear the lists after iterating through each user
         matched_orders.clear()
@@ -162,18 +169,19 @@ def clear_extra_orders_firebase():
     for user in active_users:
         logger.debug(f"Clearing extra orders for user: {user['Broker']['BrokerUsername']}")
         strategies = user.get("Strategies", {})
-        for strategy_key, strategy_data in strategies.items():
-                logger.debug(f"Clearing extra orders for strategy: {strategy_key}")
-                trade_state = strategy_data.get("TradeState", {})
-                orders_from_firebase = trade_state.get("orders", [])
-                orders_to_delete = [i for i, order in enumerate(orders_from_firebase) if order is not None and not order.get("avg_prc")]
-                for i in orders_to_delete:
-                    order_path = f"Strategies/{strategy_key}/TradeState/orders/{i}"
-                    logger.debug(f"Deleting order at path: {order_path}")
-                    try:
-                        delete_fields_firebase(BrokerCenterUtils.CLIENTS_USER_FB_DB, user["Tr_No"], order_path)
-                    except Exception as e:
-                        logger.error(f"Error deleting order at path: {order_path}. Error: {str(e)}")
+        if strategies:
+            for strategy_key, strategy_data in strategies.items():
+                    logger.debug(f"Clearing extra orders for strategy: {strategy_key}")
+                    trade_state = strategy_data.get("TradeState", {})
+                    orders_from_firebase = trade_state.get("orders", [])
+                    orders_to_delete = [i for i, order in enumerate(orders_from_firebase) if order is not None and not order.get("avg_prc")]
+                    for i in orders_to_delete:
+                        order_path = f"Strategies/{strategy_key}/TradeState/orders/{i}"
+                        logger.debug(f"Deleting order at path: {order_path}")
+                        try:
+                            delete_fields_firebase(BrokerCenterUtils.CLIENTS_USER_FB_DB, user["Tr_No"], order_path)
+                        except Exception as e:
+                            logger.error(f"Error deleting order at path: {order_path}. Error: {str(e)}")
 
 def main():
     download_json(CLIENTS_USER_FB_DB, "before_daily_tradebook_validator")

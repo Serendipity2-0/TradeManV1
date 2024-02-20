@@ -123,11 +123,14 @@ def fetch_users_for_strategies_from_firebase(strategy_name):
     Returns:
         list: A list of user accounts that have the specified strategy.
     """
-    users = []
     accounts = fetch_active_users_from_firebase()
+    users = []
     for account in accounts:
-        if strategy_name in account["Strategies"]:
-            users.append(account)
+        try:
+            if strategy_name in account["Strategies"]:
+                users.append(account)
+        except Exception as e:
+            logger.error(f"Error while fetching users for strategy {strategy_name}: {e}")
     return users
 
 
