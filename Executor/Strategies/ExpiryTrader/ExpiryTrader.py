@@ -200,6 +200,7 @@ def main():
             "TradeId": main_trade_id,
             "Signal": "Short",
             "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Orders" : orders_to_place,
             "StrategyInfo": {
                 "direction": prediction,
                 "sl_multipler": stoploss_multiplier,

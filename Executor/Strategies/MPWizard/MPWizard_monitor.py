@@ -79,6 +79,7 @@ def signal_log_firebase(orders_to_place,cross_type,trade_prefix):
         "Signal": "Long",
         "TradeId": main_trade_id,
         "Time": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Orders": orders_to_place,
         "StrategyInfo": {
             "trade_id" : main_trade_id_prefix,
             "trade_view": strategy_obj.MarketInfoParams.TradeView,

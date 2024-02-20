@@ -189,6 +189,7 @@ def main():
         "Signal": "Long",
         "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Status": "Open",
+        "Orders": orders_to_place,
         "StrategyInfo": {
             "trade_id": main_trade_id_prefix,
             "prediction": prediction,

@@ -150,6 +150,7 @@ def signal_to_log_firebase(orders_to_place,predicition):
             "TradeId": main_trade_id,
             "Signal": trade_signal,
             "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Orders" : orders_to_place,
             "StrategyInfo": {
                 "trade_id": main_trade_id_prefix,
                 "direction": predicition,
