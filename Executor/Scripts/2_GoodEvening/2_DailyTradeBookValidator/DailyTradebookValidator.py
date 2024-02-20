@@ -74,13 +74,36 @@ def get_update_path(order_id, strategies):
             if str(order["order_id"]) == order_id:
                 return f"Strategies/{strategy_key}/TradeState/orders/{i}"
 
-#TODO: Break down this function into smaller functions
+
+def get_order_ids_from_strategies(user,strategies):
+    today = get_todays_date()
+    order_ids = set()
+    logger.debug(f"Getting order ids for user: {user['Broker']['BrokerUsername']}")
+    try:
+        for strategy_key, strategy_data in strategies.items():
+            trade_state = strategy_data.get("TradeState", {})
+            orders_from_firebase = trade_state.get("orders", [])
+
+            if not orders_from_firebase:
+                logger.error(f"No orders found for user: {user['Broker']['BrokerUsername']} for strategy: {strategy_key}")
+                continue
+
+            for order in orders_from_firebase:
+                if order is not None:
+                    order_id_str = str(order["order_id"])
+                    order_date_timestamp = order.get("time_stamp", "").split(" ")[0]
+                    if order_date_timestamp == today:
+                        order_ids.add(order_id_str)
+        return order_ids
+    except Exception as e:
+        logger.error(f"Error in get_order_ids_from_strategies for user: {user['Broker']['BrokerUsername']}. Error: {e}")
+
+
 def daily_tradebook_validator():
     active_users = BrokerCenterUtils.fetch_active_users_from_firebase()
     logger.debug(f"Validating tradebook for no of users: {len(active_users)}")
     matched_orders = set()
     unmatched_orders = set()
-    today = get_todays_date()
 
     for user in active_users:
         logger.debug(f"Validating tradebook for user: {user['Broker']['BrokerUsername']}")
@@ -90,31 +113,15 @@ def daily_tradebook_validator():
 
         user_tradebook = BrokerCenterUtils.get_today_orders_for_brokers(user)
         processed_order_ids = set()
-        order_ids = set()
-        for strategy_key, strategy_data in strategies.items():
-            trade_state = strategy_data.get("TradeState", {})
-            orders_from_firebase = trade_state.get("orders", [])
+        order_ids = get_order_ids_from_strategies(user,strategies)
 
+        for trade in user_tradebook:
             avg_price_key = BrokerCenterUtils.get_avg_prc_broker_key(
                 user["Broker"]["BrokerName"]
             )
             order_id_key = BrokerCenterUtils.get_order_id_broker_key(
                 user["Broker"]["BrokerName"]
             )
-
-            if not orders_from_firebase:
-                logger.error(f"No orders found for user: {user['Broker']['BrokerUsername']} for strategy: {strategy_key}")
-                continue
-
-            for order in orders_from_firebase:
-                if order is None:
-                    continue
-                order_id_str = str(order["order_id"])
-                order_date_timestamp = order.get("time_stamp", "").split(" ")[0]
-                if order_date_timestamp == today:
-                    order_ids.add(order_id_str)
-
-        for trade in user_tradebook:
             trade_order_id = str(trade[order_id_key])
             processed_order_ids.add(trade_order_id)
 
@@ -130,7 +137,7 @@ def daily_tradebook_validator():
                     trade, user["Broker"]["BrokerName"]
                 )
 
-                if float(unmatched_details["avg_prc"]) == 0.0:
+                if not float(unmatched_details["avg_prc"]):
                     continue
 
                 unmatched_details = pd.DataFrame([unmatched_details])
@@ -156,20 +163,17 @@ def clear_extra_orders_firebase():
         logger.debug(f"Clearing extra orders for user: {user['Broker']['BrokerUsername']}")
         strategies = user.get("Strategies", {})
         for strategy_key, strategy_data in strategies.items():
+                logger.debug(f"Clearing extra orders for strategy: {strategy_key}")
                 trade_state = strategy_data.get("TradeState", {})
                 orders_from_firebase = trade_state.get("orders", [])
-                # i want to delete all the dicts which do not have avg_price field in them
-                orders_to_delete = []
-                for i, order in enumerate(orders_from_firebase):
-                    if order is None:
-                        continue
-                    avg_price = order.get("avg_prc", None)
-                    if float(avg_price) == 0.0:
-                        orders_to_delete.append(i)
+                orders_to_delete = [i for i, order in enumerate(orders_from_firebase) if order is not None and not order.get("avg_prc")]
                 for i in orders_to_delete:
                     order_path = f"Strategies/{strategy_key}/TradeState/orders/{i}"
-                    print(f"Deleting order at path: {order_path}")
-                    delete_fields_firebase(BrokerCenterUtils.CLIENTS_USER_FB_DB, user["Tr_No"], order_path)
+                    logger.debug(f"Deleting order at path: {order_path}")
+                    try:
+                        delete_fields_firebase(BrokerCenterUtils.CLIENTS_USER_FB_DB, user["Tr_No"], order_path)
+                    except Exception as e:
+                        logger.error(f"Error deleting order at path: {order_path}. Error: {str(e)}")
 
 def main():
     download_json(CLIENTS_USER_FB_DB, "before_daily_tradebook_validator")

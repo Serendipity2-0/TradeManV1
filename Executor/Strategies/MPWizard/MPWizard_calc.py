@@ -17,6 +17,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_primary_accounts_from_firebase,
+    STRATEGY_FB_DB
 )
 from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
     create_kite_obj,
@@ -28,7 +29,7 @@ zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
 
 def get_price_reference_firebase(strategy_name, instrument):
     # Here we are using a mock strategy JSON for demonstration purposes
-    strategy_data = fetch_collection_data_firebase("strategies")
+    strategy_data = fetch_collection_data_firebase(STRATEGY_FB_DB)
     today_index = dt.datetime.today().weekday()
     key = f"{instrument}OptRef"
     price_ref_values = strategy_data[strategy_name]["ExtraInformation"].get(key, [])
@@ -83,7 +84,7 @@ def get_average_range_and_update_json(days):
         # #I want to update the average range inside InstrumentToday for the instrument in the entry_params
         field_path = f"EntryParams/InstrumentToday/{instrument}"
         update_fields_firebase(
-            "strategies",
+            STRATEGY_FB_DB,
             strategy_obj.StrategyName,
             {"ATR5D": round(average_range, 2)},
             field_path,
@@ -170,7 +171,7 @@ def get_high_low_range_and_update_json():
             }
             field_location = f"EntryParams/InstrumentToday"
             update_fields_firebase(
-                "strategies", strategy_obj.StrategyName, entry_params, field_location
+                STRATEGY_FB_DB, strategy_obj.StrategyName, entry_params, field_location
             )
 
 

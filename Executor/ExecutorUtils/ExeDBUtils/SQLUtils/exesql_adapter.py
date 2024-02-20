@@ -28,7 +28,7 @@ def get_db_connection(db_path):
     try:
         conn = sqlite3.connect(db_path)
     except sqlite3.Error as e:
-        (e)
+        logger.error(f"An error occurred while connecting to the database: {e}")
     return conn
 
 def format_decimal_values(df, decimal_columns):

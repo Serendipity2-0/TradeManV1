@@ -10,6 +10,7 @@ DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
+EOD_JSON_DIR = os.path.join(DIR_PATH, "Data/JsonData")
 load_dotenv(ENV_PATH)
 
 cred_filepath = os.getenv("FIREBASE_CRED_PATH")
@@ -61,7 +62,7 @@ def download_json(path, status):
 
     # Save the data to a file with the current date and time
     file_name = f"{date_time}_{status}.json"
-    with open(file_name, 'w') as file:
+    with open(f"{EOD_JSON_DIR}/{file_name}", 'w') as file:
         json.dump(data, file,indent=4)
 
     print(f"Data downloaded successfully to {file_name}")

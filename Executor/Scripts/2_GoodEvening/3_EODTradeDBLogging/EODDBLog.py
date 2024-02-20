@@ -80,7 +80,7 @@ def update_signals_firebase():
         try:
             strategy_data = read_strategy_table(conn, strategy_name)
         except Exception as e:
-            print(f"Error reading strategy table for {strategy_name} in {user}.db: {e}")
+            logger.error(f"Error reading strategy table for {strategy_name} in {user}.db: {e}")
             continue
 
         today_signals = []  # Store signals for today's date
@@ -92,6 +92,7 @@ def update_signals_firebase():
             try:
                 datetime_object = datetime.strptime(row["exit_time"], "%Y-%m-%d %H:%M:%S")
             except ValueError:  # Handles incorrect date format or missing exit_time
+                logger.error(f"Error processing signal data for {strategy_name} in {user}.db: {e}")
                 continue
 
             if datetime_object.date() == datetime.today().date():
@@ -112,7 +113,7 @@ def update_signals_firebase():
         if today_signals:
             df = pd.DataFrame(today_signals)
             decimal_columns = ["entry_price", "exit_price", "hedge_points", "trade_points"]
-            # append_df_to_sqlite(signal_db_conn, df, strategy_name, decimal_columns)  # Assuming "signals" is your table name
+            append_df_to_sqlite(signal_db_conn, df, strategy_name, decimal_columns)  # Assuming "signals" is your table name
 
         conn.close()
 
