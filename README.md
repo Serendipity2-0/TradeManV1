@@ -125,50 +125,63 @@ TODO for TradeMan V1.1:
 
 Bugs:
 > Delete the previous_trading_key during good morning script instead daily reports
-> Append orders_to_place after assigning the trade_id to the signal_to_log in all the strategies
-
 
 > Tradebook reconsilation with commission table and pnl withdrawal table
+   > Add commissions withdrawal table and Pnl withdrawa; table
 
 
 Performance:
-> Docs and debug statements function wise
-> Break large functions into smaller functions
+> debug statements function wise
+> Strategy mode(Live or paper) based on the mode order should be placed or not
 
 
 > Streamlit redesign
-> user_main_app error (float and str)
-> append error log on the previous log(now its overwriting)
-
 
 Features:
-> Append signal orders after assign trade id to fb under StrategySignals > orders
-> Function for db to excel and vice versa
-
-
 > Trade Executer in stream lit using StrategySignals(TodayOrders)/ Telegram
-> Modify param log(log the date and time when the params were changed)
 
 
 TODO for TradeMan V1.2:
 
-> Weekly Report
-> PyStocks 1.0
+General:
+> Onboarding Algotrain accounts, Santhosh, Sachin
+> Password clean up
+> Organise office accounts
+   > Remove extra Chatgpt account
+   > Notion Clean up
+   > Office Inventory
+   > Github clean up
+> Vim tutorial
+> Warp vs code link
+
+
+Bugs:
+
+Performance:
+> Docs
+> Async Functionality
+> Accept screen sharing request automatically
+
+Features:
+> PyStocks 1.0 with morning SL orders
+> Selenium script for weekly ledger download
+> Insurance Telegram bot
+> Consolidated Reports - Weekly and Daily
+> Order assistant AI - Order Repair based on tradestate ,user and strategy 
+> Streamlit hosting
+
 
 
 Longterm TODO:
 
+> pathlib integration
+> Config files for paper trading
 1. Refactor each strategy and add signal info for each strategy
 2. Emergency notification system
    1. WatchDog the log files and send notifications for any code level errors via telegram
    2. Pingpong between the ISP if any one fails send notification via telegram and log
-3. Insurance Telegram bot
 4. VPOC
-5. Async Functionality
 6. MongoDB Migration
-7. Pystock Sweep orders
-8. pathlib integration
-9. Selenium script for weekly ledger download
 
 Bugs and Known Issues
 
