@@ -21,6 +21,8 @@ logger.add(
     diagnose=True,
 )
 
+ERROR_LOG_CSV_PATH = os.getenv("ERROR_LOG_CSV_PATH")
+
 # Resetting the lists to ensure clean data collection
 timestamps = []
 modules = []
@@ -61,7 +63,11 @@ def read_n_process_err_log():
     error_df_sorted = error_df_with_timestamp.sort_values(by='Timestamp', ascending=False).reset_index(drop=True)
     logger.debug(error_df_sorted)
     
-    error_df_sorted.to_csv(os.path.join(DIR_PATH, "error_log.csv"), index=False)
+    # append the error log to existing csv file # WARN: Add variable in TradeMan.env for csv path
+    with open(os.path.join(DIR_PATH, ERROR_LOG_CSV_PATH), 'a') as f:
+        error_df_sorted.to_csv(f, header=f.tell()==0, index=False)
+    
+    # error_df_sorted.to_csv(os.path.join(DIR_PATH, "error_log.csv"), index=False)
     
     return error_df_sorted
 
