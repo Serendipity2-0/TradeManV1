@@ -10,7 +10,7 @@ DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
-EOD_JSON_DIR = os.path.join(DIR_PATH, "Data/JsonData")
+EOD_JSON_DIR = os.path.join(DIR_PATH, "Data/FBJsonData")
 load_dotenv(ENV_PATH)
 
 cred_filepath = os.getenv("FIREBASE_CRED_PATH")
