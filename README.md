@@ -121,26 +121,38 @@ NOTES
 1. TradeStateImplementation: If the program stops abruptly It should run all the scripts under strategy folder and generate Signals for each strategy. It should check the strategyDB and match with the signals. If there is any mismatch notify us through telegram
 
 
-TODO:
-> Good evening cron jobs setup (individual cron scripts)
-> Cronjob for streamlit
-> Remove all previous cron jobs
+TODO for TradeMan V1.1:
 
-> Onboarding all the users including the excel to db migration
-
-> Docs and debug statements function wise
+Bugs:
 > Review tax calculation
-
-> after sending messages and while uploading holdings the orders are getting updated in dict not in list
-> Discord notification for kite orders (order failed for None type)
+> Logic to handle the get_today_orders if 0 orders are placed
 > Add EOD db login script to this repo and cronjob
+> Check Sweep orders
+> Still getting kite noftication for SL orders
+> Tradebook reconsilation with commission table and pnl withdrawal table
+> Avoid multiple log enteries in .log file (Error log watch)
+> Delete the previous_trading_key during good morning script instead daily reports
 
+Performance:
+> Docs and debug statements function wise
+> Break large functions into smaller functions
+> Streamlit redesign
+
+
+
+Features:
 > Append signal orders after assign trade id to fb under StrategySignals > orders
-> Trade Executer in stream lit using StrategySignals(TodayOrders)
+> Function for db to excel and vice versa
+> Trade Executer in stream lit using StrategySignals(TodayOrders)/ Telegram
+> PyStocks 1.0
+> Modify param log
+
+
 
 
 
 Longterm TODO:
+
 1. Refactor each strategy and add signal info for each strategy
 2. Emergency notification system
    1. WatchDog the log files and send notifications for any code level errors via telegram
@@ -154,7 +166,6 @@ Longterm TODO:
 9. Selenium script for weekly ledger download
 
 Bugs and Known Issues
-1. Avoid multiple log enteries in .log file
 
 
 

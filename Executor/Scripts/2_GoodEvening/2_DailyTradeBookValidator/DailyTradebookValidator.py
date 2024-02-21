@@ -43,7 +43,6 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
 def get_todays_date():
     return datetime.now().strftime("%Y-%m-%d")
 
-
 def create_user_transaction_db_entry(trade, broker):
     avg_price_key = BrokerCenterUtils.get_avg_prc_broker_key(broker)
     order_id_key = BrokerCenterUtils.get_order_id_broker_key(broker)
@@ -81,21 +80,22 @@ def get_update_path(order_id, strategies):
                 logger.error(f"Error while finding update path: {e}")
                 continue
 
-
+#TODO: Break down this function into smaller functions
 def daily_tradebook_validator():
     active_users = BrokerCenterUtils.fetch_active_users_from_firebase()
+    logger.debug(f"Validating tradebook for no of users: {len(active_users)}")
     matched_orders = set()
     unmatched_orders = set()
+    today = get_todays_date()
 
     for user in active_users:
+        logger.debug(f"Validating tradebook for user: {user['Broker']['BrokerUsername']}")
         db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
         conn = get_db_connection(db_path)
         strategies = user.get("Strategies", {})
-        today = get_todays_date()
 
         user_tradebook = BrokerCenterUtils.get_today_orders_for_brokers(user)
         processed_order_ids = set()
-
         order_ids = set()
         for strategy_key, strategy_data in strategies.items():
             trade_state = strategy_data.get("TradeState", {})
@@ -109,7 +109,7 @@ def daily_tradebook_validator():
             )
 
             if not orders_from_firebase:
-                logger.error(f"No orders found for user: {user['Tr_No']} for strategy: {strategy_key}")
+                logger.error(f"No orders found for user: {user['Broker']['BrokerUsername']} for strategy: {strategy_key}")
                 continue
 
             for order in orders_from_firebase:
@@ -159,6 +159,7 @@ def daily_tradebook_validator():
 def clear_extra_orders_firebase():
     active_users = BrokerCenterUtils.fetch_active_users_from_firebase()
     for user in active_users:
+        logger.debug(f"Clearing extra orders for user: {user['Broker']['BrokerUsername']}")
         strategies = user.get("Strategies", {})
         for strategy_key, strategy_data in strategies.items():
                 trade_state = strategy_data.get("TradeState", {})

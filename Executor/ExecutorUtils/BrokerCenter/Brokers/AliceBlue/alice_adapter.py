@@ -35,18 +35,22 @@ from Executor.Strategies.StrategiesUtil import (
 
 # This function fetches the available free cash balance for a user from the Aliceblue trading platform.
 def alice_fetch_free_cash(user_details):
-
+    logger.debug(f"Fetching free cash for {user_details['BrokerUsername']}")
     alice = Aliceblue(
         user_details["BrokerUsername"],
         user_details["ApiKey"],
         session_id=user_details["SessionId"],
     )
-    balance_details = alice.get_balance()  
-
-    for item in balance_details:
-        if isinstance(item, dict) and "cashmarginavailable" in item:
-            cash_margin_available = item.get("cashmarginavailable", 0)
-            return float(cash_margin_available)
+    try:
+        cash_margin_available = alice.get_balance()
+        for item in cash_margin_available:
+            if isinstance(item, dict) and "cashmarginavailable" in item:
+                cash_margin_available = item.get("cashmarginavailable", 0)
+    except Exception as e:
+        logger.error(f"Error fetching free cash: {e}")
+        return 0.0
+    logger.info(f"Free cash for {user_details['BrokerUsername']}: {cash_margin_available}")
+    return float(cash_margin_available)
 
 
 def merge_ins_csv_files():
@@ -93,6 +97,7 @@ def merge_ins_csv_files():
 
 # This function downloads the instrument csv files from Aliceblue trading platform
 def get_ins_csv_alice(user_details):
+    logger.debug(f"Fetching instruments for ALICE using {user_details['Broker']['BrokerUsername']}")
     alice = Aliceblue(
         user_id=user_details["Broker"]["BrokerUsername"],
         api_key=user_details["Broker"]["ApiKey"],

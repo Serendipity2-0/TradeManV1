@@ -41,25 +41,28 @@ def create_kite_obj(user_details=None, api_key=None, access_token=None):
 
 
 def zerodha_fetch_free_cash(user_details):
+    logger.debug(f"Fetching free cash for {user_details['BrokerUsername']}")
     kite = KiteConnect(api_key=user_details["ApiKey"])
     kite.set_access_token(user_details["SessionId"])
     # Fetch the account balance details
-    balance_details = kite.margins(segment="equity")
-
-    # Extract the 'cash' value
-    cash_balance = balance_details.get("cash", 0)
-
-    # If 'cash' key is not at the top level, we need to find where it is
-    if cash_balance == 0 and "cash" not in balance_details:
-        # Look for 'cash' in nested dictionaries
-        for key, value in balance_details.items():
-            if isinstance(value, dict) and "cash" in value:
-                cash_balance = value.get("cash", 0)
-                break
+    try:
+        balance_details = kite.margins(segment="equity")
+        cash_balance = balance_details["cash"]
+        if cash_balance == 0 and "cash" not in balance_details:
+            # Look for 'cash' in nested dictionaries
+            for key, value in balance_details.items():
+                if isinstance(value, dict) and "cash" in value:
+                    cash_balance = value.get("cash", 0)
+                    break
+    except Exception as e:
+        logger.error(f"Error fetching free cash: {e} for {user_details['BrokerUsername']}")
+        return 0
+    logger.info(f"Free cash for {user_details['BrokerUsername']}: {cash_balance}")
     return cash_balance
 
 
 def get_csv_kite(user_details):
+    logger.debug(f"Fetching instruments for KITE using {user_details['Broker']['BrokerUsername']}")
     kite = KiteConnect(api_key=user_details["Broker"]["ApiKey"])
     kite.set_access_token(user_details["Broker"]["SessionId"])
     instrument_dump = kite.instruments()

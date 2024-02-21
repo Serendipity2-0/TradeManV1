@@ -158,6 +158,6 @@ def login_in_aliceblue(user_details):
         user_id=user_details["BrokerUsername"], api_key=user_details["ApiKey"]
     )
     alice_session_id = alice.get_session_id()["sessionID"]
-    logger.info(f"Session id for {user_details['BrokerUsername']}: {alice_session_id}")
+    logger.info(f"Session Id for {user_details['BrokerUsername']}: {alice_session_id}")
 
     return alice_session_id

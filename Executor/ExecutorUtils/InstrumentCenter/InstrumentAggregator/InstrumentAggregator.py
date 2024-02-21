@@ -21,10 +21,7 @@ aliceblue_primary_account = broker_center_utils.fetch_primary_accounts_from_fire
 )
 
 zerodha_ins_df = broker_center_utils.download_csv_for_brokers(zerodha_primary_account)
-aliceblue_ins_df = broker_center_utils.download_csv_for_brokers(
-    aliceblue_primary_account
-)
-
+aliceblue_ins_df = broker_center_utils.download_csv_for_brokers( aliceblue_primary_account)
 
 def merge_ins_df(zerodha_ins_df, aliceblue_ins_df):
     # Columns to keep from instruments.csv

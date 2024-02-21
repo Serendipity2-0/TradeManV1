@@ -61,7 +61,7 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
 
 def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=None):
     for user in strategy_users:
-        # logger.debug(f"Placing orders for user {user['Broker']['BrokerUsername']}")
+        logger.debug(f"Placing orders for user {user['Broker']['BrokerUsername']}")
         all_order_statuses = []  # To store the status of all orders
 
         for order in order_details:
@@ -74,7 +74,6 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                     }
                 )
             elif order_qty_mode == "Holdings":
-                logger.debug(f"Fetching qty for trade_id {order.get('trade_id')}")
                 qty = fetch_qty_for_holdings_sqldb(user['Tr_No'], order.get("trade_id"))
                 logger.debug(f"Qty for trade_id {order.get('trade_id')} is {qty}")
                 order_with_user_and_broker.update(
@@ -103,6 +102,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
             order_qty = order_with_user_and_broker["qty"]
 
             if max_qty:
+                logger.debug(f"Max qty for {order_with_user_and_broker.get('base_symbol')} is {max_qty} so splitting orders.")
                 # Split and place orders if necessary
                 while order_qty > 0:
                     current_qty = min(order_qty, max_qty)
