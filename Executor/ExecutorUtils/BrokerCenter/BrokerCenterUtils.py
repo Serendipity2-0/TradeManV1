@@ -89,12 +89,16 @@ def fetch_active_users_from_firebase():
     Returns:
         list: A list of active user account details.
     """
-    active_users = []
-    account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
-    for account in account_details:
-        if account_details[account]["Active"] == True:
-            active_users.append(account_details[account])
-    return active_users
+    try:
+        active_users = []
+        account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
+        for account in account_details:
+            if account_details[account]["Active"] == True:
+                active_users.append(account_details[account])
+        return active_users
+    except Exception as e:
+        logger.error(f"Error while fetching active users from Firebase: {e}")
+        return []
 
 
 def fetch_list_of_strategies_from_firebase():
@@ -104,13 +108,17 @@ def fetch_list_of_strategies_from_firebase():
     Returns:
         list: A list of strategy names.
     """
-    strategies = []
-    acounts = fetch_active_users_from_firebase()
-    for account in acounts:
-        for strategy in account["Strategies"]:
-            if strategy not in strategies:
-                strategies.append(strategy)
-    return strategies
+    try:
+        strategies = []
+        acounts = fetch_active_users_from_firebase()
+        for account in acounts:
+            for strategy in account["Strategies"]:
+                if strategy not in strategies:
+                    strategies.append(strategy)
+        return strategies
+    except Exception as e:
+        logger.error(f"Error while fetching strategies from Firebase: {e}")
+        return []
 
 
 def fetch_users_for_strategies_from_firebase(strategy_name):
@@ -123,32 +131,42 @@ def fetch_users_for_strategies_from_firebase(strategy_name):
     Returns:
         list: A list of user accounts that have the specified strategy.
     """
-    users = []
     accounts = fetch_active_users_from_firebase()
+    users = []
     for account in accounts:
-        if strategy_name in account["Strategies"]:
-            users.append(account)
+        try:
+            if strategy_name in account["Strategies"]:
+                users.append(account)
+        except Exception as e:
+            logger.error(f"Error while fetching users for strategy {strategy_name}: {e}")
     return users
 
 
 def fetch_primary_accounts_from_firebase(primary_account):
     # fetch the tr_no from .env file and fetch the primary account from firebase
-    account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
-    for account in account_details:
-        if account_details[account]["Tr_No"] == primary_account:
-            return account_details[account]
+    try:
+        account_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
+        for account in account_details:
+            if account_details[account]["Tr_No"] == primary_account:
+                return account_details[account]
+    except Exception as e:
+        logger.error(f"Error while fetching primary account from Firebase: {e}")
 
 
 def fetch_freecash_brokers(active_users):
     """Retrieves the cash margin available for a user based on their broker."""
-    for user in active_users:
-        if user["Broker"]["BrokerName"] == ZERODHA:
-            cash_margin = zerodha_adapter.zerodha_fetch_free_cash(user["Broker"])
-        elif user["Broker"]["BrokerName"] == ALICEBLUE:
-            cash_margin = alice_adapter.alice_fetch_free_cash(user["Broker"])
-        # Ensure cash_margin is a float
-        return float(cash_margin) if cash_margin else 0.0
-    return 0.0  # If user or broker not found
+    try:
+        for user in active_users:
+            logger.debug(f"Fetching free cash for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}")
+            if user["Broker"]["BrokerName"] == ZERODHA:
+                cash_margin = zerodha_adapter.zerodha_fetch_free_cash(user["Broker"])
+            elif user["Broker"]["BrokerName"] == ALICEBLUE:
+                cash_margin = alice_adapter.alice_fetch_free_cash(user["Broker"])
+            # Ensure cash_margin is a float
+            return float(cash_margin) if cash_margin else 0.0
+    except Exception as e:
+        logger.error(f"Error while fetching free cash for brokers: {e}")
+        return 0.0
 
 
 def download_csv_for_brokers(primary_account):
@@ -166,27 +184,35 @@ def fetch_holdings_for_brokers(user):
 
 
 def fetch_user_credentials_firebase(broker_user_name):
-    user_credentials = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
-    for user in user_credentials:
-        if user_credentials[user]["Broker"]["BrokerUsername"] == broker_user_name:
-            return user_credentials[user]["Broker"]
-
+    try:
+        user_credentials = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
+        for user in user_credentials:
+            if user_credentials[user]["Broker"]["BrokerUsername"] == broker_user_name:
+                return user_credentials[user]["Broker"]
+    except Exception as e:
+        logger.error(f"Error while fetching user credentials from Firebase: {e}")
 
 def fetch_strategy_details_for_user(username):
-    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
-    for user in user_details:
-        if user_details[user]["Broker"]["BrokerUsername"] == username:
-            return user_details[user]["Strategies"]
+    try:
+        user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
+        for user in user_details:
+            if user_details[user]["Broker"]["BrokerUsername"] == username:
+                return user_details[user]["Strategies"]
+    except Exception as e:
+        logger.error(f"Error while fetching strategy details for user {username}: {e}")
         
 def fetch_active_strategies_all_users():
-    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
-    strategies = []
-    for user in user_details:
-        if user_details[user]["Active"] == True:
-            for strategy in user_details[user]["Strategies"]:
-                if strategy not in strategies:
-                    strategies.append(strategy)
-    return strategies
+    try:
+        user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
+        strategies = []
+        for user in user_details:
+            if user_details[user]["Active"] == True:
+                for strategy in user_details[user]["Strategies"]:
+                    if strategy not in strategies:
+                        strategies.append(strategy)
+        return strategies
+    except Exception as e:
+        logger.error(f"Error while fetching active strategies for all users: {e}")
 
 
 def get_today_orders_for_brokers(user):
@@ -229,62 +255,71 @@ def get_today_open_orders_for_brokers(user):
 
 def create_counter_order_details(tradebook, user):
     counter_order_details = []
-    for trade in tradebook:
-        if user["Broker"]["BrokerName"] == ZERODHA:
-            if trade["status"] == "TRIGGER PENDING" and trade["product"] == "MIS":
-                zerodha_adapter.kite_create_cancel_order(trade, user)
-                counter_order = zerodha_adapter.kite_create_sl_counter_order(trade, user)
-                counter_order_details.append(counter_order)
-                logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
-        elif user["Broker"]["BrokerName"] == ALICEBLUE:
-            if trade["Status"] == "trigger pending" and trade["Pcode"] == "MIS":
-                alice_adapter.ant_create_cancel_orders(trade, user)
-                counter_order = alice_adapter.ant_create_counter_order(trade, user)
-                counter_order_details.append(counter_order)
-                logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
-    return counter_order_details
+    try:
+        for trade in tradebook:
+            if user["Broker"]["BrokerName"] == ZERODHA:
+                if trade["status"] == "TRIGGER PENDING" and trade["product"] == "MIS":
+                    zerodha_adapter.kite_create_cancel_order(trade, user)
+                    counter_order = zerodha_adapter.kite_create_sl_counter_order(trade, user)
+                    counter_order_details.append(counter_order)
+                    logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
+            elif user["Broker"]["BrokerName"] == ALICEBLUE:
+                if trade["Status"] == "trigger pending" and trade["Pcode"] == "MIS":
+                    alice_adapter.ant_create_cancel_orders(trade, user)
+                    counter_order = alice_adapter.ant_create_counter_order(trade, user)
+                    counter_order_details.append(counter_order)
+                    logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
+        return counter_order_details
+    except Exception as e:
+        logger.error(f"Error while creating counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
+        return []
 
 
 def create_hedge_counter_order_details(tradebook, user, open_orders):
     hedge_counter_order = []
     if user["Broker"]["BrokerName"] == ZERODHA:
-        open_order_tokens = {position['instrument_token'] for position in open_orders['net'] if position['product'] == 'MIS' and position['quantity'] != 0}
-        for trade in tradebook:
-            if trade["tag"] is None:
-                continue
+        try:
+            open_order_tokens = {position['instrument_token'] for position in open_orders['net'] if position['product'] == 'MIS' and position['quantity'] != 0}
+            for trade in tradebook:
+                if trade["tag"] is None:
+                    continue
 
-            if (
-                trade["status"] == "COMPLETE"
-                and trade["product"] == "MIS"
-                and "HO_EN" in trade["tag"]
-                and "HO_EX" not in trade["tag"]
-                and trade["instrument_token"] in open_order_tokens
-            ):
-                counter_order = zerodha_adapter.kite_create_hedge_counter_order(
-                    trade, user
-                )
-                if counter_order not in hedge_counter_order:
-                    hedge_counter_order.append(counter_order)
-                    logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
-
+                if (
+                    trade["status"] == "COMPLETE"
+                    and trade["product"] == "MIS"
+                    and "HO_EN" in trade["tag"]
+                    and "HO_EX" not in trade["tag"]
+                    and trade["instrument_token"] in open_order_tokens
+                ):
+                    counter_order = zerodha_adapter.kite_create_hedge_counter_order(
+                        trade, user
+                    )
+                    if counter_order not in hedge_counter_order:
+                        hedge_counter_order.append(counter_order)
+                        logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
+        except Exception as e:
+            logger.error(f"Error while creating hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
-        open_order_tokens = open_order_tokens = {position['Token']: abs(int(position['Netqty'])) for position in open_orders if position['Pcode'] == 'MIS' and position['Netqty'] != '0.00'}        
-        for trade in tradebook:
-            if trade["remarks"] is None:
-                continue
+        try:
+            open_order_tokens = open_order_tokens = {position['Token']: abs(int(position['Netqty'])) for position in open_orders if position['Pcode'] == 'MIS' and position['Netqty'] != '0.00'}        
+            for trade in tradebook:
+                if trade["remarks"] is None:
+                    continue
 
-            trade_token_str = str(trade["token"])
-            if (
-                trade["Status"] == "complete"
-                and trade["Pcode"] == "MIS"
-                and "HO_EN" in trade["remarks"]
-                and "HO_EX" not in trade["remarks"]
-                and trade_token_str in open_order_tokens
-            ):
-                counter_order = alice_adapter.ant_create_hedge_counter_order(trade, user)
-                if counter_order not in hedge_counter_order:
-                    hedge_counter_order.append(counter_order)
-                    logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
+                trade_token_str = str(trade["token"])
+                if (
+                    trade["Status"] == "complete"
+                    and trade["Pcode"] == "MIS"
+                    and "HO_EN" in trade["remarks"]
+                    and "HO_EX" not in trade["remarks"]
+                    and trade_token_str in open_order_tokens
+                ):
+                    counter_order = alice_adapter.ant_create_hedge_counter_order(trade, user)
+                    if counter_order not in hedge_counter_order:
+                        hedge_counter_order.append(counter_order)
+                        logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
+        except Exception as e:
+            logger.error(f"Error while creating hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
     return hedge_counter_order
 
 def get_avg_prc_broker_key(broker_name):
@@ -386,32 +421,37 @@ def calculate_user_net_values(user, categorized_df):
 
 def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
     # Brokerage
-    if broker == "Zerodha":
-        brokerage = min(20, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20 * no_of_orders
-    elif broker == "AliceBlue":
-        brokerage = min(15, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 15 * no_of_orders
+    try:
+        if broker == "Zerodha":
+            brokerage = min(20, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20 * no_of_orders
+        elif broker == "AliceBlue":
+            brokerage = min(15, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 15 * no_of_orders
 
-    # STT/CTT
-    if trade_type == "regular":  # Assuming "regular" means options
-        stt_ctt = 0.05 / 100 * float(qty) * float(net_exit_prc)
-    else:  # futures
-        stt_ctt = 0.0625 / 100 * float(qty) * float(net_exit_prc)
+        # STT/CTT
+        if trade_type == "regular":  # Assuming "regular" means options
+            stt_ctt = 0.05 / 100 * float(qty) * float(net_exit_prc)
+        else:  # futures
+            stt_ctt = 0.0625 / 100 * float(qty) * float(net_exit_prc)
 
-    # Transaction charges
-    transaction_charges = 0.0019 / 100 * float(qty) * float(net_exit_prc) if trade_type == "futures" else 0.05 / 100 * float(qty) * float(net_exit_prc)
+        # Transaction charges
+        transaction_charges = 0.0019 / 100 * float(qty) * float(net_exit_prc) if trade_type == "futures" else 0.05 / 100 * float(qty) * float(net_exit_prc)
 
-    # SEBI charges
-    sebi_charges = 10 / 10000000 * float(qty) * float(net_exit_prc)
+        # SEBI charges
+        sebi_charges = 10 / 10000000 * float(qty) * float(net_exit_prc)
 
-    # GST
-    gst = 18 / 100 * (brokerage + transaction_charges + sebi_charges)
+        # GST
+        gst = 18 / 100 * (brokerage + transaction_charges + sebi_charges)
 
-    # Stamp charges (simplified/general rate)
-    stamp_charges = 0.003 / 100 * float(qty) * float(net_entry_prc) if trade_type == "regular" else 0.002 / 100 * float(qty) * float(net_entry_prc)
+        # Stamp charges (simplified/general rate)
+        stamp_charges = 0.003 / 100 * float(qty) * float(net_entry_prc) if trade_type == "regular" else 0.002 / 100 * float(qty) * float(net_entry_prc)
 
-    # Total charges
-    total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
-    return total_charges
+        # Total charges
+        total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
+        logger.debug(f"brokerage = {brokerage}, stt_ctt = {stt_ctt}, transaction_charges = {transaction_charges}, gst = {gst}, sebi_charges = {sebi_charges}, stamp_charges = {stamp_charges} and total_charges = {total_charges}")
+        return total_charges
+    except Exception as e:
+        logger.error(f"Error while calculating taxes for {broker}: {e}")
+        return 0
 
 
 def calculate_taxes(entry_orders,exit_orders,hedge_orders,broker):

@@ -87,6 +87,7 @@ def show_profile(client_data):
     
     client_profile = client_data.get("Profile", {})
     client_broker = client_data.get("Broker", {})
+    client_strategies = client_data.get("Strategies", {})
     # get all list of "StrategyName" under client_data.get("Strategies")
 
     # Extract client data from the dictionary
@@ -95,11 +96,16 @@ def show_profile(client_data):
     Phone_Number = client_profile.get("PhoneNumber", "")
     Date_of_Birth = client_profile.get("DOB", "")
     Aadhar_Card_No = client_profile.get("AadharCardNo", "")
-    PAN_Card_No = client_profile.get("PANCard No", "")
+    PAN_Card_No = client_profile.get("PANCardNo", "")
     Bank_Name = client_profile.get("BankName", "")
     Bank_Account_No = client_profile.get("BankAccountNo", "")
     Broker = client_broker.get("BrokerName", "")
-    Strategy_list = client_data.get("Strategies", {}).get("StrategyName", [])
+    
+    # Strategy_list is list of keys from client_strategies
+    
+    Strategy_list = list(client_strategies.keys())
+    logger.debug(f"Strategy_list: {client_strategies}")
+    logger.debug(f"typeof Strategy_list: {type(client_strategies)}")
 
     # Create a DataFrame to display the client data in tabular form
     data = {

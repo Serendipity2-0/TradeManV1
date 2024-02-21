@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import pandas as pd
 import sqlite3
+import csv
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -16,6 +17,8 @@ signal_db_path = os.getenv("SIGNAL_DB_PATH")
 from loguru import logger
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
+
 logger.add(
     ERROR_LOG_PATH,
     level="TRACE",
@@ -24,12 +27,11 @@ logger.add(
     backtrace=True,
     diagnose=True,
 )
-from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase, update_fields_firebase
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase, update_fields_firebase, update_collection
 
 strategies_fb_db = os.getenv("STRATEGIES_FB_COLLECTION")
 market_info_fb_db = os.getenv("MARKET_INFO_FB_COLLECTION")
 
-# CRUD function on market_info.json
 def modify_market_info():
     market_info = fetch_collection_data_firebase(market_info_fb_db)
     st.title("Market Info Manager")
@@ -50,7 +52,9 @@ def modify_market_info():
     
     if submit_button:
         # Assuming you're updating the entire document at once
-        update_fields_firebase("your-collection", "market_info", updated_market_info)
+        update_collection(market_info_fb_db,updated_market_info)
+        # Log changes
+        log_changes(updated_market_info)
         st.success("Market info updated successfully!")
 
 
@@ -74,7 +78,37 @@ def modify_strategy_params():
                         # Your existing logic for handling parameters
                         updated_value = st.text_input(param, value=str(value))
                         updated_params[param] = updated_value
+                        
+                    submit_key = f"submit_{section}"
+                    if st.button("Submit", key=submit_key):
+                        # Assuming you want to update the entire section at once
+                        update_fields_firebase(strategies_fb_db, strategy_name, {section: updated_params})
+                        # Log changes with section_info
+                        log_changes(updated_params, section_info=section)
+                        st.success(f"{section} updated successfully!")
+
 
                     # Your existing logic for submitting updates
                 else:
                     st.write(f"The section '{section}' does not contain editable parameters.")
+                    
+def log_changes(updated_data, section_info=None):
+    logger.error(f"error testing 456")
+    filename = PARAMS_UPDATE_LOG_CSV_PATH
+    headers = ["date", "updated_info", "section_info"]
+    date_str = datetime.now().strftime("%d%b%y %I:%M%p")  # Format: 23Feb24 9:43AM
+
+    with open(filename, mode='a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
+        
+        # Write headers if file is being created for the first time
+        if not os.path.isfile(filename):
+            writer.writeheader()
+
+        log_entry = {
+            "date": date_str,
+            "updated_info": str(updated_data),  # Corrected key to match header
+            "section_info": section_info if section_info else ""
+        }
+        
+        writer.writerow(log_entry)

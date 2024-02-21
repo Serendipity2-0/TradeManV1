@@ -8,6 +8,7 @@ from time import sleep
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+TRADE_MODE = os.getenv("TRADE_MODE")
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
@@ -108,6 +109,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "HedgeEntry",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
     {
         "strategy": strategy_name,
@@ -119,6 +121,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "Main",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
 ]
 
@@ -142,6 +145,7 @@ def signal_to_log_firebase(orders_to_place,predicition):
     for order in orders_to_place:
             if order.get("order_mode") == "MO":
                 main_trade_id = order.get("trade_id")
+                main_trade_id_prefix = main_trade_id.split("_")[0]
     
     trade_signal = "Long" if predicition == "Bullish" else "Short"
 
@@ -149,8 +153,11 @@ def signal_to_log_firebase(orders_to_place,predicition):
             "TradeId": main_trade_id,
             "Signal": trade_signal,
             "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Orders" : orders_to_place,
             "StrategyInfo": {
-                "Direction": predicition,
+                "trade_id": main_trade_id_prefix,
+                "direction": predicition,
+                "percentage":percentage[0]
             }
         }
     update_signal_firebase(strategy_obj.StrategyName, signals_to_log, next_trade_prefix)

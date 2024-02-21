@@ -63,56 +63,72 @@ def zerodha_fetch_free_cash(user_details):
 
 def get_csv_kite(user_details):
     logger.debug(f"Fetching instruments for KITE using {user_details['Broker']['BrokerUsername']}")
-    kite = KiteConnect(api_key=user_details["Broker"]["ApiKey"])
-    kite.set_access_token(user_details["Broker"]["SessionId"])
-    instrument_dump = kite.instruments()
-    instrument_df = pd.DataFrame(instrument_dump)
-    instrument_df["exchange_token"] = instrument_df["exchange_token"].astype(str)
-    return instrument_df
+    try:
+        kite = KiteConnect(api_key=user_details["Broker"]["ApiKey"])
+        kite.set_access_token(user_details["Broker"]["SessionId"])
+        instrument_dump = kite.instruments()
+        instrument_df = pd.DataFrame(instrument_dump)
+        instrument_df["exchange_token"] = instrument_df["exchange_token"].astype(str)
+        return instrument_df
+    except Exception as e:
+        logger.error(f"Error fetching instruments for KITE: {e} for {user_details['Broker']['BrokerUsername']}")
+        return None
 
 
 def fetch_zerodha_holdings(api_key, access_token):
-    kite = KiteConnect(api_key=api_key, access_token=access_token)
-    holdings = kite.holdings()
-    return holdings
-
+    try:
+        kite = KiteConnect(api_key=api_key, access_token=access_token)
+        holdings = kite.holdings()
+        return holdings
+    except Exception as e:
+        logger.error(f"Error fetching holdings for KITE: {e}")
+        return None
 
 def simplify_zerodha_order(detail):
-    trade_symbol = detail["tradingsymbol"]
+    logger.debug(f"Processing order details: {detail['tag']}")
+    try:
+        trade_symbol = detail["tradingsymbol"]
 
-    # Check if the tradingsymbol is of futures type
-    if trade_symbol.endswith("FUT"):
-        strike_price = 0
-        option_type = "FUT"
-    else:
-        strike_price = int(trade_symbol[-7:-2])  # Convert to integer to store as number
-        option_type = trade_symbol[-2:]
+        # Check if the tradingsymbol is of futures type
+        if trade_symbol.endswith("FUT"):
+            strike_price = 0
+            option_type = "FUT"
+        else:
+            strike_price = int(trade_symbol[-7:-2])  # Convert to integer to store as number
+            option_type = trade_symbol[-2:]
 
-    trade_id = detail["tag"]
-    if trade_id.endswith("_entry"):
-        order_type = "entry"
-    elif trade_id.endswith("_exit"):
-        order_type = "exit"
+        trade_id = detail["tag"]
+        if trade_id.endswith("_entry"):
+            order_type = "entry"
+        elif trade_id.endswith("_exit"):
+            order_type = "exit"
 
-    return {
-        "trade_id": trade_id,  # This is the order_id for zerodha
-        "avg_price": detail["average_price"],
-        "qty": detail["quantity"],
-        "time": detail["order_timestamp"].strftime("%d/%m/%Y %H:%M:%S"),
-        "strike_price": strike_price,
-        "option_type": option_type,
-        "trading_symbol": trade_symbol,
-        "trade_type": detail["transaction_type"],
-        "order_type": order_type,
-    }
+        return {
+            "trade_id": trade_id,  # This is the order_id for zerodha
+            "avg_price": detail["average_price"],
+            "qty": detail["quantity"],
+            "time": detail["order_timestamp"].strftime("%d/%m/%Y %H:%M:%S"),
+            "strike_price": strike_price,
+            "option_type": option_type,
+            "trading_symbol": trade_symbol,
+            "trade_type": detail["transaction_type"],
+            "order_type": order_type,
+        }
+    except Exception as e:
+        logger.error(f"Error simplifying order details: {e}")
+        return None
 
 
 def zerodha_todays_tradebook(user):
-    kite = create_kite_obj(api_key=user["ApiKey"], access_token=user["SessionId"])
-    orders = kite.orders()
-    if not orders:
+    try:
+        kite = create_kite_obj(api_key=user["ApiKey"], access_token=user["SessionId"])
+        orders = kite.orders()
+        if not orders:
+            return None
+        return orders
+    except Exception as e:
+        logger.error(f"Error fetching tradebook for KITE: {e}")
         return None
-    return orders
 
 
 def calculate_transaction_type(kite, transaction_type):
@@ -167,25 +183,38 @@ def get_avg_prc(kite, order_id):
     if not order_id:
         raise Exception("Order_id not found")
 
-    order_history = kite.order_history(order_id=order_id)
-    for order in order_history:
-        if order.get("status") == "COMPLETE":
-            avg_prc = order.get("average_price", 0.0)
-            break
-    return avg_prc
+    try:
+        order_history = kite.order_history(order_id=order_id)
+        for order in order_history:
+            if order.get("status") == "COMPLETE":
+                avg_prc = order.get("average_price", 0.0)
+                break
+        return avg_prc
+    except Exception as e:
+        logger.error(f"Error fetching avg_prc for order_id {order_id}: {e}")
+        return 0.0
 
 def get_order_status(kite, order_id):
-    order_history = kite.order_history(order_id=order_id)
-    for order in order_history:
-        if order.get("status") == "REJECTED":
-            return order.get('status_message')
-        elif order.get("status") == "COMPLETE" or order.get("status") == "TRIGGER PENDING":
-            return "PASS"
+    try:
+        order_history = kite.order_history(order_id=order_id)
+        for order in order_history:
+            if order.get("status") == "REJECTED":
+                return order.get('status_message')
+            elif order.get("status") == "COMPLETE" or order.get("status") == "TRIGGER PENDING":
+                return "PASS"
+        return "FAIL"
+    except Exception as e:
+        logger.error(f"Error fetching order status for order_id {order_id}: {e}")
+        return "FAIL"
 
 def get_order_details(user):
-    kite = create_kite_obj(api_key=user["api_key"], access_token=user["access_token"])
-    orders = kite.orders()
-    return orders
+    try:
+        kite = create_kite_obj(api_key=user["api_key"], access_token=user["access_token"])
+        orders = kite.orders()
+        return orders
+    except Exception as e:
+        logger.error(f"Error fetching orders for KITE: {e}")
+        return None
 
 def kite_place_orders_for_users(orders_to_place, users_credentials):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
@@ -243,7 +272,8 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         if trigger_price < 0:
             trigger_price = 1.5
 
-    try:
+    if orders_to_place.get("trade_mode") == "PAPER":
+        logger.debug("Placing paper trade order")
         logger.debug(f"transaction_type: {transaction_type}")
         logger.debug(f"order_type: {order_type}")
         logger.debug(f"product_type: {product_type}")
@@ -254,6 +284,27 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         logger.debug(f"trigger_price: {trigger_price}")
         logger.debug(f"instrument: {trading_symbol}")
         logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
+        results = {
+                "exchange_token": int(exchange_token),
+                "order_id": 123456789,
+                "qty": qty,
+                "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "trade_id": orders_to_place.get("trade_id", "")
+            }
+        return results
+
+
+    try:
+        # logger.debug(f"transaction_type: {transaction_type}")
+        # logger.debug(f"order_type: {order_type}")
+        # logger.debug(f"product_type: {product_type}")
+        # logger.debug(f"segment: {segment_type}")
+        # logger.debug(f"exchange_token: {exchange_token}")
+        # logger.debug(f"qty: {qty}")
+        # logger.debug(f"limit_prc: {limit_prc}")
+        # logger.debug(f"trigger_price: {trigger_price}")
+        # logger.debug(f"instrument: {trading_symbol}")
+        # logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
         order_id = kite.place_order(
             variety=kite.VARIETY_REGULAR,
             exchange=segment_type,
@@ -323,50 +374,61 @@ def kite_modify_orders_for_users(order_details, users_credentials):
 def kite_create_sl_counter_order(trade, user):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
-    strategy_name = get_strategy_name_from_trade_id(trade["tag"])
-    exchange_token = Instrument().get_exchange_token_by_token(trade["instrument_token"])
-    counter_order = {
-        "strategy": strategy_name,
-        "signal": get_signal_from_trade_id(trade["tag"]),
-        "base_symbol": "NIFTY",  # WARNING: dummy base symbol
-        "exchange_token": exchange_token,
-        "transaction_type": trade["transaction_type"],
-        "order_type": "MARKET",
-        "product_type": trade["product"],
-        "trade_id": trade["tag"],
-        "order_mode": "Counter",
-        "qty": trade["quantity"],
-    }
-    return counter_order
-
+    try:
+        strategy_name = get_strategy_name_from_trade_id(trade["tag"])
+        exchange_token = Instrument().get_exchange_token_by_token(trade["instrument_token"])
+        counter_order = {
+            "strategy": strategy_name,
+            "signal": get_signal_from_trade_id(trade["tag"]),
+            "base_symbol": "NIFTY",  # WARNING: dummy base symbol
+            "exchange_token": exchange_token,
+            "transaction_type": trade["transaction_type"],
+            "order_type": "MARKET",
+            "product_type": trade["product"],
+            "trade_id": trade["tag"],
+            "order_mode": "Counter",
+            "qty": trade["quantity"],
+        }
+        return counter_order
+    except Exception as e:
+        logger.error(f"Error creating counter order: {e}")
+        return None
 
 def kite_create_cancel_order(trade, user):
-    kite = create_kite_obj(user_details=user["Broker"])
-    kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade["order_id"])
+    try:
+        kite = create_kite_obj(user_details=user["Broker"])
+        kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade["order_id"])
+    except Exception as e:
+        logger.error(f"Error cancelling order: {e}")
+        return None
 
 
 def kite_create_hedge_counter_order(trade, user):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
-    strategy_name = get_strategy_name_from_trade_id(trade["tag"])
-    exchange_token = Instrument().get_exchange_token_by_token(trade["instrument_token"])
-    # i want to replace EN to EX in the trade['tag']
-    trade_id = trade['tag'].replace('EN', 'EX')
+    try:
+        strategy_name = get_strategy_name_from_trade_id(trade["tag"])
+        exchange_token = Instrument().get_exchange_token_by_token(trade["instrument_token"])
+        # i want to replace EN to EX in the trade['tag']
+        trade_id = trade['tag'].replace('EN', 'EX')
 
 
-    counter_order = {
-        "strategy": strategy_name,
-        "signal": get_signal_from_trade_id(trade["tag"]),
-        "base_symbol": "NIFTY",  # WARNING: dummy base symbol
-        "exchange_token": exchange_token,
-        "transaction_type": calculate_transaction_type_sl(trade["transaction_type"]),
-        "order_type": "MARKET",
-        "product_type": trade["product"],
-        "trade_id": trade_id,
-        "order_mode": "Hedge",
-        "qty": trade["quantity"],
-    }
-    return counter_order
+        counter_order = {
+            "strategy": strategy_name,
+            "signal": get_signal_from_trade_id(trade["tag"]),
+            "base_symbol": "NIFTY",  # WARNING: dummy base symbol
+            "exchange_token": exchange_token,
+            "transaction_type": calculate_transaction_type_sl(trade["transaction_type"]),
+            "order_type": "MARKET",
+            "product_type": trade["product"],
+            "trade_id": trade_id,
+            "order_mode": "Hedge",
+            "qty": trade["quantity"],
+        }
+        return counter_order
+    except Exception as e:
+        logger.error(f"Error creating counter order: {e}")
+        return None
 
 
 def process_kite_ledger(csv_file_path):
@@ -441,7 +503,11 @@ def calculate_kite_net_values(categorized_dfs):
     return net_values
 
 def fetch_open_orders(user_details):
-    kite = create_kite_obj(user_details['Broker'])
-    positions = kite.positions()
-    return positions
+    try:
+        kite = create_kite_obj(user_details['Broker'])
+        positions = kite.positions()
+        return positions
+    except Exception as e:
+        logger.error(f"Error fetching open orders for KITE: {e}")
+        return None
     

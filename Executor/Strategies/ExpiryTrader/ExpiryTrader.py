@@ -12,6 +12,7 @@ load_dotenv(ENV_PATH)
 
 from loguru import logger
 
+TRADE_MODE = os.getenv("TRADE_MODE")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 logger.add(
     ERROR_LOG_PATH,
@@ -138,6 +139,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "HedgeEntry",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
     {
         "strategy": strategy_name,
@@ -149,6 +151,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "Main",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
     {
         "strategy": strategy_name,
@@ -162,6 +165,7 @@ orders_to_place = [
         "trigger_prc": trigger_prc,
         "order_mode": "SL",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
 ]
 
@@ -194,13 +198,19 @@ def main():
         for order in orders_to_place:
             if order.get("order_mode") == "MO":
                 main_trade_id = order.get("trade_id")
+                main_trade_id_prefix = main_trade_id.split("_")[0]
 
         signals_to_log = {
             "TradeId": main_trade_id,
             "Signal": "Short",
             "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Orders" : orders_to_place,
             "StrategyInfo": {
-                "Direction": prediction,
+                "direction": prediction,
+                "sl_multipler": stoploss_multiplier,
+                "strike_multipler": strike_prc_multiplier,
+                "hedge_multipler": hedge_multiplier,
+                "trade_id": main_trade_id_prefix,
             },
             "Status": "Open",
         }

@@ -11,6 +11,7 @@ load_dotenv(ENV_PATH)
 from loguru import logger
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+TRADE_MODE = os.getenv("TRADE_MODE")
 logger.add(
     ERROR_LOG_PATH,
     level="TRACE",
@@ -86,14 +87,22 @@ def signal_to_log_firebase(orders_to_place,signal):
     for order in orders_to_place:
             if order.get("order_mode") == "MO":
                 main_trade_id = order.get("trade_id")
+                main_trade_id_prefix = main_trade_id.split("_")[0]
     
     if signal == "ShortSignal" or signal == "LongSignal":
         signals_to_log = {
                 "TradeId": main_trade_id,
                 "Signal": signal,
                 "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "Orders" : orders_to_place,
                 "StrategyInfo": {
-                    "Direction": signal,
+                    "trade_id": main_trade_id_prefix,
+                    "signal": signal,
+                    "hedge_multiplier": strategy_obj.ExtraInformation.HedgeDistance,
+                    "ema_period": strategy_obj.EntryParams.EMAPeriod,
+                    "heikin_ashi_period": strategy_obj.EntryParams.HeikinAshiMAPeriod,
+                    "super_trend_multiplier": strategy_obj.EntryParams.SupertrendMultiplier,
+                    "super_trend_period": strategy_obj.EntryParams.SupertrendPeriod,
                 }
             }
         update_signal_firebase(strategy_obj.StrategyName, signals_to_log, next_trade_prefix)
@@ -183,6 +192,7 @@ def place_orders(strike_prc, signal):
                 "order_type": order_type,
                 "product_type": product_type,
                 "trade_id": trade_id,
+                "trade_mode": TRADE_MODE
             }
         )
 

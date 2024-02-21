@@ -16,14 +16,18 @@ load_dotenv(ENV_PATH)
 
 cred_filepath = os.getenv("FIREBASE_CRED_PATH")
 firebase_db_url = os.getenv("FIREBASE_DATABASE_URL")
+FIREBASE_USER_COLLECTION = os.getenv("FIREBASE_USER_COLLECTION")
 
 cred = credentials.Certificate(cred_filepath)
 firebase_admin.initialize_app(cred, {"databaseURL": firebase_db_url})
 
 
 def upload_client_data_to_firebase(user_dict):
-    ref = db.reference("trademan_clients")
-    ref.push(user_dict)
+    ref = db.reference(FIREBASE_USER_COLLECTION)
+    # Use the new_tr_no as a key for the new entry
+    new_ref = ref.child("Tr13") # TODO: get the new_tr_no from the admin fb db
+    new_ref.set(user_dict)
+    # ref.push(user_dict)
     return "Data uploaded successfully"
 
 
@@ -51,9 +55,23 @@ def register_page():
         key="broker_input",
     )
     
-
-    # Define the risk profile options once at the start
-    risk_profile_options = ["Low", "Medium", "High"]
+    # Risk Profile Section
+    st.markdown("## Risk Profile")
+    area_of_investment = st.multiselect(
+        "Area of Investment:", ["Debt", "Equity", "FnO"], key="area_of_investment"
+    )
+    commission = st.selectbox(
+        "Commission:", ["50-50", "75-25"], key="commission"
+    )
+    drawdown_tolerance = st.slider(
+        "Drawdown Tolerance (%):", min_value=1, max_value=100, key="drawdown_tolerance"
+    )
+    expected_horizon = st.number_input(
+        "Expected Horizon (months):", min_value=1, key="expected_horizon"
+    )
+    withdrawal_frequency = st.selectbox(
+        "Withdrawal Frequency:", ["OnRequest", "Weekly"], key="withdrawal_frequency"
+    )
  
 
     # Add a submit button
@@ -61,6 +79,7 @@ def register_page():
 
     # Check if the submit button is clicked
     if submit:
+        st.balloons()
         # Check if all the fields are filled before submitting
         if (
             name
@@ -97,7 +116,14 @@ def register_page():
                 "PAN Card No": pan,
                 "Bank Name": bank_name,
                 "Bank Account No": bank_account,
-                "Broker": broker
+                "Broker": broker,
+                "RiskProfile": {
+                    "AreaOfInvestment": area_of_investment,
+                    "Commission": commission,
+                    "DrawdownTolerance": str(drawdown_tolerance),
+                    "Duration": str(expected_horizon),
+                    "WithdrawalFrequency": withdrawal_frequency
+                }
                 
             }
             

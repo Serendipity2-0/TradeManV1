@@ -86,13 +86,17 @@ def merge_ins_csv_files():
     nse_df_filtered = nse_df[columns_to_keep]
     bfo_df_filtered = bfo_df[columns_to_keep]
 
-    # Merge the DataFrames
-    merged_df = pd.concat(
-        [nfo_df_filtered, nse_df_filtered, bfo_df_filtered], ignore_index=True
-    )
-    merged_df["Token"] = merged_df["Token"].astype(str)
-    merged_df.to_csv("merged_alice_ins.csv", index=False)
-    return merged_df
+    try:
+        # Merge the DataFrames
+        merged_df = pd.concat(
+            [nfo_df_filtered, nse_df_filtered, bfo_df_filtered], ignore_index=True
+        )
+        merged_df["Token"] = merged_df["Token"].astype(str)
+        merged_df.to_csv("merged_alice_ins.csv", index=False)
+        return merged_df
+    except Exception as e:
+        logger.error(f"Error merging instrument files: {e}")
+        return None
 
 
 # This function downloads the instrument csv files from Aliceblue trading platform
@@ -103,46 +107,57 @@ def get_ins_csv_alice(user_details):
         api_key=user_details["Broker"]["ApiKey"],
         session_id=user_details["Broker"]["SessionId"],
     )
-    alice.get_contract_master("NFO")
-    alice.get_contract_master("BFO")
-    alice.get_contract_master("NSE")
-    alice_instrument_merged = merge_ins_csv_files()
-    return alice_instrument_merged
-
+    try:
+        alice.get_contract_master("NFO")
+        alice.get_contract_master("BFO")
+        alice.get_contract_master("NSE")
+        alice_instrument_merged = merge_ins_csv_files()
+        return alice_instrument_merged
+    except Exception as e:
+        logger.error(f"Error fetching instruments: {e}")
+        return None
 
 # This function fetches the holdings in the user account
 def fetch_aliceblue_holdings(username, api_key, session_id):
-    alice = Aliceblue(username, api_key, session_id)
-    holdings = alice.get_holding_positions()
-    return holdings
+    try:
+        alice = Aliceblue(username, api_key, session_id)
+        holdings = alice.get_holding_positions()
+        return holdings
+    except Exception as e:
+        logger.error(f"Error fetching holdings: {e}")
+        return None
 
 
 def simplify_aliceblue_order(detail):
-    if detail["optionType"] == "XX":
-        strike_price = 0
-        option_type = "FUT"
-    else:
-        strike_price = int(detail["strikePrice"])
-        option_type = detail["optionType"]
+    try:
+        if detail["optionType"] == "XX":
+            strike_price = 0
+            option_type = "FUT"
+        else:
+            strike_price = int(detail["strikePrice"])
+            option_type = detail["optionType"]
 
-    trade_id = detail["remarks"]
+        trade_id = detail["remarks"]
 
-    if trade_id.endswith("_entry"):
-        order_type = "entry"
-    elif trade_id.endswith("_exit"):
-        order_type = "exit"
+        if trade_id.endswith("_entry"):
+            order_type = "entry"
+        elif trade_id.endswith("_exit"):
+            order_type = "exit"
 
-    return {
-        "trade_id": trade_id,
-        "avg_price": float(detail["Avgprc"]),
-        "qty": int(detail["Qty"]),
-        "time": detail["OrderedTime"],
-        "strike_price": strike_price,
-        "option_type": option_type,
-        "trading_symbol": detail["Trsym"],
-        "trade_type": "BUY" if detail["Trantype"] == "B" else "SELL",
-        "order_type": order_type,
-    }
+        return {
+            "trade_id": trade_id,
+            "avg_price": float(detail["Avgprc"]),
+            "qty": int(detail["Qty"]),
+            "time": detail["OrderedTime"],
+            "strike_price": strike_price,
+            "option_type": option_type,
+            "trading_symbol": detail["Trsym"],
+            "trade_type": "BUY" if detail["Trantype"] == "B" else "SELL",
+            "order_type": order_type,
+        }
+    except Exception as e:
+        logger.error(f"Error simplifying order details: {e}")
+        return None
 
 
 def create_alice_obj(user_details):
@@ -154,11 +169,16 @@ def create_alice_obj(user_details):
 
 
 def aliceblue_todays_tradebook(user):
-    alice = create_alice_obj(user)
-    orders = alice.get_order_history("")
-    if orders.get("stat") == "Not_Ok":
+    try:
+        alice = create_alice_obj(user)
+        orders = alice.get_order_history("")
+        if isinstance(orders, dict):
+            if orders.get("stat") == "Not_Ok":
+                return None
+        return orders
+    except Exception as e:
+        logger.error(f"Error fetching tradebook: {e}")
         return None
-    return orders
 
 
 def calculate_transaction_type(transaction_type):
@@ -196,8 +216,13 @@ def calculate_product_type(product_type):
 
 
 def get_order_status(alice, order_id):
-    order_status = alice.get_order_history(order_id)
-    if order_status["Status"] == "rejected":
+    try:
+        order_status = alice.get_order_history(order_id)
+        if order_status["Status"] == "rejected":
+            return "FAIL"
+        return "SUCCESS"
+    except Exception as e:
+        logger.error(f"Error fetching order status: {e}")
         return "FAIL"
 
 
@@ -247,6 +272,27 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         trigger_price = round(float(trigger_price), 2)
         if trigger_price < 0:
             trigger_price = 1.5
+
+    if orders_to_place.get("trade_mode") == "PAPER":
+        logger.debug("Placing paper trade order")
+        logger.debug(f"transaction_type: {transaction_type}")
+        logger.debug(f"order_type: {order_type}")
+        logger.debug(f"product_type: {product_type}")
+        logger.debug(f"segment: {segment}")
+        logger.debug(f"exchange_token: {exchange_token}")
+        logger.debug(f"qty: {qty}")
+        logger.debug(f"limit_prc: {limit_prc}")
+        logger.debug(f"trigger_price: {trigger_price}")
+        logger.debug(f"instrument: {alice.get_instrument_by_token(segment, int(exchange_token))}")
+        logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
+        results = {
+            "exchange_token": int(exchange_token),
+            "order_id": 123456789,
+            "qty": qty,
+            "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "trade_id": orders_to_place.get("trade_id", "")
+        }
+        return results
 
     try:
         # logger.debug(f"transaction_type: {transaction_type}")
@@ -333,42 +379,54 @@ def ant_modify_orders_for_users(order_details, user_credentials):
 
 
 def ant_create_counter_order(trade, user):
-    strategy_name = get_strategy_name_from_trade_id(trade["remarks"])
-    counter_order = {
-        "strategy": strategy_name,
-        "signal": get_signal_from_trade_id(trade["remarks"]),
-        "base_symbol": "NIFTY",  # WARNING: dummy base symbol
-        "exchange_token": trade["token"],
-        "transaction_type": "BUY" if trade["Trantype"] == "B" else "SELL",
-        "order_type": "MARKET",
-        "product_type": trade["Pcode"],
-        "trade_id": trade["remarks"],
-        "order_mode": "Counter",
-        "qty": trade["Qty"],
-    }
-    return counter_order
+    try:
+        strategy_name = get_strategy_name_from_trade_id(trade["remarks"])
+        counter_order = {
+            "strategy": strategy_name,
+            "signal": get_signal_from_trade_id(trade["remarks"]),
+            "base_symbol": "NIFTY",  # WARNING: dummy base symbol
+            "exchange_token": trade["token"],
+            "transaction_type": "BUY" if trade["Trantype"] == "B" else "SELL",
+            "order_type": "MARKET",
+            "product_type": trade["Pcode"],
+            "trade_id": trade["remarks"],
+            "order_mode": "Counter",
+            "qty": trade["Qty"],
+        }
+        return counter_order
+    except Exception as e:
+        logger.error(f"Error creating counter order: {e}")
+        return None
 
 
 def ant_create_hedge_counter_order(trade, user):
-    trade_id = trade["remarks"].replace("EN", "EX")
-    counter_order = {
-        "strategy": get_strategy_name_from_trade_id(trade["remarks"]),
-        "signal": get_signal_from_trade_id(trade["remarks"]),
-        "base_symbol": "NIFTY",  # WARNING: dummy base symbol
-        "exchange_token": int(trade["token"]),
-        "transaction_type": calculate_transaction_type_sl(trade["Trantype"]),
-        "order_type": "MARKET",
-        "product_type": trade["Pcode"],
-        "trade_id": trade_id,
-        "order_mode": "Hedge",
-        "qty": trade["Qty"],
-    }
-    return counter_order
+    try:
+        trade_id = trade["remarks"].replace("EN", "EX")
+        counter_order = {
+            "strategy": get_strategy_name_from_trade_id(trade["remarks"]),
+            "signal": get_signal_from_trade_id(trade["remarks"]),
+            "base_symbol": "NIFTY",  # WARNING: dummy base symbol
+            "exchange_token": int(trade["token"]),
+            "transaction_type": calculate_transaction_type_sl(trade["Trantype"]),
+            "order_type": "MARKET",
+            "product_type": trade["Pcode"],
+            "trade_id": trade_id,
+            "order_mode": "Hedge",
+            "qty": trade["Qty"],
+        }
+        return counter_order
+    except Exception as e:
+        logger.error(f"Error creating hedge counter order: {e}")
+        return None
 
 
 def ant_create_cancel_orders(trade, user):
-    alice = create_alice_obj(user_details=user["Broker"])
-    alice.cancel_order(trade["Nstordno"])
+    try:
+        alice = create_alice_obj(user_details=user["Broker"])
+        alice.cancel_order(trade["Nstordno"])
+    except Exception as e:
+        logger.error(f"Error cancelling order: {e}")
+        return None
 
 
 def process_alice_ledger(excel_file_path):
@@ -466,7 +524,11 @@ def calculate_alice_net_values(categorized_dfs):
     return net_values
 
 def fetch_open_orders(user):
-    alice = create_alice_obj(user['Broker'])
-    Net_position = alice.get_netwise_positions()
-    open_position= Alice_Wrapper.open_net_position(Net_position)
-    return open_position
+    try:
+        alice = create_alice_obj(user['Broker'])
+        Net_position = alice.get_netwise_positions()
+        open_position= Alice_Wrapper.open_net_position(Net_position)
+        return open_position
+    except Exception as e:
+        logger.error(f"Error fetching open orders: {e}")
+        return None

@@ -111,7 +111,7 @@ class TodayOrder(BaseModel):
     ExitPrc: Optional[float] = None
     ExitTime: Optional[time] = None
     Signal: Optional[str] = None
-    StrategyInfo: Optional[Dict[str, str]] = None
+    StrategyInfo: Optional[Dict[str, Union[str,float]]] = None
     TradeId: Optional[str] = None
 
     class Config:
@@ -431,7 +431,7 @@ def update_signal_firebase(strategy_name, signal, trade_id=None):
 
     trade = trade_no + "_" + trade_prefix
 
-    update_fields_firebase("strategies", strategy_name, {trade: signal}, "TodayOrders")
+    update_fields_firebase(STRATEGIES_DB, strategy_name, {trade: signal}, "TodayOrders")
 
     if trade_id:
         update_next_trade_id_firebase(strategy_name, trade_id)
@@ -448,7 +448,7 @@ def update_next_trade_id_firebase(strategy_name, trade_id):
         # Replace the numeric digits in trade_id with the incremented value
         trade_id = trade_id.replace(numeric_digits[0], next_trade_id)
 
-    update_fields_firebase("strategies", strategy_name, {"NextTradeId": trade_id})
+    update_fields_firebase(STRATEGIES_DB, strategy_name, {"NextTradeId": trade_id})
 
 
 def place_order_strategy_users(strategy_name, orders_to_place, order_qty_mode=None):
@@ -541,7 +541,7 @@ def base_symbol_token(base_symbol):
 def get_strategy_name_from_trade_id(trade_id):
     # trade_id = MP123
     strategy_prefix = trade_id[:2]
-    strategies = fetch_collection_data_firebase("strategies")
+    strategies = fetch_collection_data_firebase(STRATEGIES_DB)
     # iterate over the strategies dict and find the strategy name for the strategy prefix
     for strategy, strategy_details in strategies.items():
         if strategy_details["StrategyPrefix"] == strategy_prefix:

@@ -8,6 +8,7 @@ sys.path.append(DIR_PATH)
 
 from loguru import logger
 
+TRADE_MODE = os.getenv("TRADE_MODE")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 logger.add(
     ERROR_LOG_PATH,
@@ -73,16 +74,19 @@ def signal_log_firebase(orders_to_place,cross_type,trade_prefix):
     for order in orders_to_place:
         if order.get("order_mode") == "MO":
             main_trade_id = order.get("trade_id")
+            main_trade_id_prefix = main_trade_id.split("_")[0]
 
     signal_to_log_firebase = {
         "Signal": "Long",
         "TradeId": main_trade_id,
         "Time": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Orders": orders_to_place,
         "StrategyInfo": {
-            "TradeView": strategy_obj.MarketInfoParams.TradeView,
-            "Direction": cross_type,
+            "trade_id" : main_trade_id_prefix,
+            "trade_view": strategy_obj.MarketInfoParams.TradeView,
+            "direction": cross_type,
             # "IBLevel": strategy_obj.EntryParams.InstrumentToday[self.get_index_name(order["exchange_token"])]["IBLevel"],
-            "PriceRef": str(order["price_ref"])
+            "price_ref": str(order["price_ref"])
             # "TriggerPoints": strategy_obj.EntryParams.InstrumentToday[self.get_index_name(order["exchange_token"])]["TriggerPoints"],
         },
     }
@@ -209,6 +213,7 @@ class OrderMonitor:
                 "price_ref": price_ref,
                 "order_mode": "Main",
                 "trade_id": next_trade_prefix,
+                "trade_mode": TRADE_MODE
             },
             {
                 "strategy": strategy_obj.StrategyName,
@@ -224,6 +229,7 @@ class OrderMonitor:
                 "limit_prc": limit_prc,
                 "trigger_prc": trigger_prc,
                 "target": target,
+                "trade_mode": TRADE_MODE
             },
         ]
         orders_to_place = assign_trade_id(orders_to_place)
