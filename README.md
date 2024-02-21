@@ -121,18 +121,15 @@ NOTES
 1. TradeStateImplementation: If the program stops abruptly It should run all the scripts under strategy folder and generate Signals for each strategy. It should check the strategyDB and match with the signals. If there is any mismatch notify us through telegram
 
 
-TODO for TradeMan V1.1:
+TODO for TradeMan V1.1.1:
 
 Bugs:
 > Tradebook reconsilation with commission table and pnl withdrawal table
    > Add commissions withdrawal table and Pnl withdrawa; table
 
-
-Performance:
-> Streamlit redesign
-
 Features:
 > Trade Executer in stream lit using StrategySignals(TodayOrders)/ Telegram
+> Streamlit hosting
 
 
 TODO for TradeMan V1.2:
@@ -152,8 +149,6 @@ General:
 Bugs:
 
 Performance:
-> Docs
-> Async Functionality
 > Accept screen sharing request automatically
 
 Features:
@@ -161,13 +156,14 @@ Features:
 > Selenium script for weekly ledger download
 > Insurance Telegram bot
 > Consolidated Reports - Weekly and Daily
-> Order assistant AI - Order Repair based on tradestate ,user and strategy 
-> Streamlit hosting
 
 
 
 Longterm TODO:
 
+> Async Functionality
+> Order assistant AI - Order Repair based on tradestate ,user and strategy 
+> Docs
 > pathlib integration
 > Config files for paper trading
 1. Refactor each strategy and add signal info for each strategy
