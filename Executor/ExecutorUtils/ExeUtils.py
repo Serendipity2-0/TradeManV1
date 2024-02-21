@@ -59,3 +59,9 @@ def get_previous_trading_day(today: dt.date, prefix=None) -> dt.date:
             previous_day = f"{previous_day}{prefix}"
 
     return previous_day
+
+def get_second_previous_trading_day(today: dt.date):
+    previous_day = get_previous_trading_day(today)
+    previous_day = dt.datetime.strptime(previous_day, "%d%b%y").date()
+    second_previous_day = get_previous_trading_day(previous_day)
+    return second_previous_day

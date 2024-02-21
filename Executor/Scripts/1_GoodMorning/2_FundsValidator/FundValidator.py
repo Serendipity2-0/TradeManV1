@@ -10,7 +10,7 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
+from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day,get_second_previous_trading_day
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     update_fields_firebase,
@@ -69,7 +69,9 @@ def delete_old_free_cash(active_users):
     for user in active_users:
         for key in user['Accounts']:
             if '_FreeCash' in key or '_Holdings' in key or '_AccountValue' in key:
-                if dt.datetime.strptime(key.split('_')[0], '%d%b%y') < dt.datetime.now() - dt.timedelta(days=2):
+                second = get_second_previous_trading_day(dt.date.today())
+                second = dt.datetime.strptime(second, "%d%b%y")
+                if dt.datetime.strptime(key.split('_')[0], "%d%b%y") <= second:
                     logger.info(f"Deleting old key {key} for user {user['Tr_No']}")
                     delete_fields_firebase(CLIENTS_USER_FB_DB, user['Tr_No'], f"Accounts/{key}")
 

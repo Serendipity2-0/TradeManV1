@@ -172,8 +172,9 @@ def aliceblue_todays_tradebook(user):
     try:
         alice = create_alice_obj(user)
         orders = alice.get_order_history("")
-        if orders.get("stat") == "Not_Ok":
-            return None
+        if isinstance(orders, dict):
+            if orders.get("stat") == "Not_Ok":
+                return None
         return orders
     except Exception as e:
         logger.error(f"Error fetching tradebook: {e}")
