@@ -385,7 +385,6 @@ def calculate_user_net_values(user, categorized_df):
         return alice_adapter.calculate_alice_net_values(user, categorized_df)
 
 def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
-    logger.debug(f"broker = {broker}, trade_type = {trade_type}, qty = {qty}, net_entry_prc = {net_entry_prc}, net_exit_prc = {net_exit_prc}, no_of_orders = {no_of_orders}")
     # Brokerage
     if broker == "Zerodha":
         brokerage = min(20, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20 * no_of_orders
@@ -412,7 +411,6 @@ def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc,
 
     # Total charges
     total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
-    logger.debug(f"brokerage = {brokerage}, stt_ctt = {stt_ctt}, transaction_charges = {transaction_charges}, gst = {gst}, sebi_charges = {sebi_charges}, stamp_charges = {stamp_charges} and total_charges = {total_charges}")
     return total_charges
 
 

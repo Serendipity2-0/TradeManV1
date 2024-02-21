@@ -139,91 +139,94 @@ def main():
     active_stratgies = fetch_active_strategies_all_users()
 
     for user in active_users:
-        user_db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
-        user_db_conn = get_db_connection(user_db_path)
+        try:
+            user_db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
+            user_db_conn = get_db_connection(user_db_path)
 
+            
+            user_tables = []
+            # get all the tables in the user db with table name as key and table df as value
+            for table in user_db_conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table';"
+            ).fetchall():
+                user_table = {}
+                # create user table_df without the index column from sql table and append it to user_tables as a dict with table name as key and table df as value
+                user_table[table[0]] = pd.read_sql_query(
+                    f"SELECT * FROM {table[0]}", user_db_conn
+                )
+                user_tables.append(user_table)
 
-        user_tables = []
-        # get all the tables in the user db with table name as key and table df as value
-        for table in user_db_conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table';"
-        ).fetchall():
-            user_table = {}
-            # create user table_df without the index column from sql table and append it to user_tables as a dict with table name as key and table df as value
-            user_table[table[0]] = pd.read_sql_query(
-                f"SELECT * FROM {table[0]}", user_db_conn
+            phone_number = user["Profile"]["PhoneNumber"]
+
+            # Placeholder values, replace with actual queries and Firebase fetches
+            today_trades = get_today_trades(user_tables,active_stratgies)
+            gross_pnl = sum(float(trade["pnl"]) for trade in today_trades)
+            expected_tax = sum(float(trade["tax"]) for trade in today_trades)
+
+            today_fb_format = datetime.now().strftime("%d%b%y")
+
+            previous_trading_day_fb_format = get_previous_trading_day(date.today())
+
+            previous_free_cash = user["Accounts"][
+                f"{previous_trading_day_fb_format}_FreeCash"
+            ]
+            previous_holdings = user["Accounts"][
+                f"{previous_trading_day_fb_format}_Holdings"
+            ]
+            previous_account = user["Accounts"][
+                f"{previous_trading_day_fb_format}_AccountValue"
+            ]
+
+            # Assuming no additions/withdrawals for simplicity, replace with actual logic to calculate
+            # additions_withdrawals = get_additions_withdrawals(user_tables)
+            additions_withdrawals = 0   #TODO : get the actual additions_withdrawals
+
+            new_free_cash = round(previous_free_cash + gross_pnl - expected_tax)
+            # Placeholder for calculating new holdings, assuming it's equal to previous for this example
+            new_holdings = get_new_holdings(user_tables)
+            new_account = round(
+                previous_account + gross_pnl - expected_tax + additions_withdrawals
             )
-            user_tables.append(user_table)
 
-        phone_number = user["Profile"]["PhoneNumber"]
+            net_change = new_account - previous_account
+            net_change_percentage = (
+                (net_change / previous_account) * 100 if previous_account else 0
+            )
+            # Placeholder for drawdown calculation
+            drawdown = user["Accounts"]["NetPnL"] - user["Accounts"]["PnLWithdrawals"]
+            drawdown_percentage = drawdown / new_account * 100
 
-        # Placeholder values, replace with actual queries and Firebase fetches
-        today_trades = get_today_trades(user_tables,active_stratgies)
-        gross_pnl = sum(float(trade["pnl"]) for trade in today_trades)
-        expected_tax = sum(float(trade["tax"]) for trade in today_trades)
+            update_account_keys_fb(user['Tr_No'], today_fb_format, new_account, new_free_cash, new_holdings,previous_trading_day_fb_format)
 
-        today_fb_format = datetime.now().strftime("%d%b%y")
+            # Format the message
+            user_name = user["Profile"]["Name"]
+            message = f"Hello {user_name}, We hope you're enjoying a wonderful day.\n\n"
+            message += "Here are your PNLs for today:\n\n"
+            message += "Today's Trades:\n"
+            for trade in today_trades:
+                message += f"{trade['trade_id']}: {format_currency(trade['pnl'],'INR', locale='en_IN')}\n"
+            message += f"\nGross PnL: {format_currency(gross_pnl, 'INR', locale='en_IN')}\n"
+            message += (
+                f"Expected Tax: {format_currency(expected_tax,'INR',locale='en_IN')}\n"
+            )
+            message += f"{previous_trading_day_fb_format} Free Cash: {format_currency(previous_free_cash,'INR', locale='en_IN')}\n"
+            message += f"{today_fb_format} Free Cash: {format_currency(new_free_cash,'INR', locale='en_IN')}\n\n"
+            message += "Holdings:\n"
+            message += f"{previous_trading_day_fb_format} Holdings: {format_currency(previous_holdings,'INR', locale='en_IN')}\n"
+            message += f"{today_fb_format} Holdings: {format_currency(new_holdings,'INR', locale='en_IN')}\n\n"
+            message += "Account:\n"
+            message += f"{previous_trading_day_fb_format} Account: {format_currency(previous_account,'INR', locale='en_IN')}\n"
+            message += f"Additions/Withdrawals: {format_currency(additions_withdrawals,'INR', locale='en_IN')}\n"
+            message += f"{today_fb_format} Account: {format_currency(new_account,'INR', locale='en_IN')}\n"
+            message += f"NetChange: {format_currency(net_change,'INR', locale='en_IN')} ({net_change_percentage:.2f}%)\n"
+            message += f"Drawdown: {format_currency(drawdown,'INR', locale='en_IN')}({drawdown_percentage:.2f}%)\n\n"
+            message += "Best Regards,\nTradeMan"
 
-        previous_trading_day_fb_format = get_previous_trading_day(date.today())
-
-        previous_free_cash = user["Accounts"][
-            f"{previous_trading_day_fb_format}_FreeCash"
-        ]
-        previous_holdings = user["Accounts"][
-            f"{previous_trading_day_fb_format}_Holdings"
-        ]
-        previous_account = user["Accounts"][
-            f"{previous_trading_day_fb_format}_AccountValue"
-        ]
-
-        # Assuming no additions/withdrawals for simplicity, replace with actual logic to calculate
-        # additions_withdrawals = get_additions_withdrawals(user_tables)
-        additions_withdrawals = 0   #TODO : get the actual additions_withdrawals
-
-        new_free_cash = round(previous_free_cash + gross_pnl - expected_tax)
-        # Placeholder for calculating new holdings, assuming it's equal to previous for this example
-        new_holdings = get_new_holdings(user_tables)
-        new_account = round(
-            previous_account + gross_pnl - expected_tax + additions_withdrawals
-        )
-
-        net_change = new_account - previous_account
-        net_change_percentage = (
-            (net_change / previous_account) * 100 if previous_account else 0
-        )
-        # Placeholder for drawdown calculation
-        drawdown = user["Accounts"]["NetPnL"] - user["Accounts"]["PnLWithdrawals"]
-        drawdown_percentage = drawdown / new_account * 100
-
-        update_account_keys_fb(user['Tr_No'], today_fb_format, new_account, new_free_cash, new_holdings,previous_trading_day_fb_format)
-
-        # Format the message
-        user_name = user["Profile"]["Name"]
-        message = f"Hello {user_name}, We hope you're enjoying a wonderful day.\n\n"
-        message += "Here are your PNLs for today:\n\n"
-        message += "Today's Trades:\n"
-        for trade in today_trades:
-            message += f"{trade['trade_id']}: {format_currency(trade['pnl'],'INR', locale='en_IN')}\n"
-        message += f"\nGross PnL: {format_currency(gross_pnl, 'INR', locale='en_IN')}\n"
-        message += (
-            f"Expected Tax: {format_currency(expected_tax,'INR',locale='en_IN')}\n"
-        )
-        message += f"{previous_trading_day_fb_format} Free Cash: {format_currency(previous_free_cash,'INR', locale='en_IN')}\n"
-        message += f"{today_fb_format} Free Cash: {format_currency(new_free_cash,'INR', locale='en_IN')}\n\n"
-        message += "Holdings:\n"
-        message += f"{previous_trading_day_fb_format} Holdings: {format_currency(previous_holdings,'INR', locale='en_IN')}\n"
-        message += f"{today_fb_format} Holdings: {format_currency(new_holdings,'INR', locale='en_IN')}\n\n"
-        message += "Account:\n"
-        message += f"{previous_trading_day_fb_format} Account: {format_currency(previous_account,'INR', locale='en_IN')}\n"
-        message += f"Additions/Withdrawals: {format_currency(additions_withdrawals,'INR', locale='en_IN')}\n"
-        message += f"{today_fb_format} Account: {format_currency(new_account,'INR', locale='en_IN')}\n"
-        message += f"NetChange: {format_currency(net_change,'INR', locale='en_IN')} ({net_change_percentage:.2f}%)\n"
-        message += f"Drawdown: {format_currency(drawdown,'INR', locale='en_IN')}({drawdown_percentage:.2f}%)\n\n"
-        message += "Best Regards,\nTradeMan"
-
-        # Send the report to Discord
-        print(message)
-        send_telegram_message(phone_number, message)
+            # Send the report to Discord
+            print(message)
+            send_telegram_message(phone_number, message)
+        except Exception as e:
+            logger.error(f"Error in sending EOD Report for user {user['Tr_No']}: {e}")
 
 
 if __name__ == "__main__":

@@ -391,9 +391,13 @@ def process_n_log_trade():
 def main():
     download_json(CLIENTS_USER_FB_DB, "before_eod_db_log")
     process_n_log_trade()
+    sleep(5)
     fetch_and_prepare_holdings_data()
+    sleep(5)
     update_signals_firebase()
+    sleep(5)
     clear_today_orders_firebase()
+    sleep(5)
 
 if __name__ == "__main__":
     main()

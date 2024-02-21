@@ -318,8 +318,12 @@ def get_single_ltp(token=None, exchange_token=None, segment=None):
 
 
 def get_ins_df():
-    conn = exesql_adapter.get_db_connection(ins_db_path)
-    data = pd.read_sql_query("select * from instrument_master", conn)
-    # data to dataframe
-    ins_df = pd.DataFrame(data)
-    return ins_df
+    try:
+        conn = exesql_adapter.get_db_connection(ins_db_path)
+        data = pd.read_sql_query("select * from instrument_master", conn)
+        # data to dataframe
+        ins_df = pd.DataFrame(data)
+        return ins_df
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        return None

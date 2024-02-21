@@ -67,12 +67,18 @@ def create_user_transaction_db_entry(trade, broker):
 
 
 def get_update_path(order_id, strategies):
+    logger.debug(f"Finding update path for order_id: {order_id}")
     for strategy_key, strategy_data in strategies.items():
         trade_state = strategy_data.get("TradeState", {})
         orders_from_firebase = trade_state.get("orders", [])
         for i, order in enumerate(orders_from_firebase):
-            if str(order["order_id"]) == order_id:
-                return f"Strategies/{strategy_key}/TradeState/orders/{i}"
+            try:
+                logger.debug(f"Checking order: {order}")
+                if str(order["order_id"]) == order_id:
+                    return f"Strategies/{strategy_key}/TradeState/orders/{i}"
+            except Exception as e:
+                logger.error(f"Error while finding update path: {e}")
+                continue
 
 #TODO: Break down this function into smaller functions
 def daily_tradebook_validator():
@@ -161,10 +167,7 @@ def clear_extra_orders_firebase():
                 # i want to delete all the dicts which do not have avg_price field in them
                 orders_to_delete = []
                 for i, order in enumerate(orders_from_firebase):
-                    if order is None:
-                        continue
-                    avg_price = order.get("avg_prc", None)
-                    if float(avg_price) == 0.0:
+                    if order is not None and float(order.get("avg_prc", 0.0)) == 0.0:
                         orders_to_delete.append(i)
                 for i in orders_to_delete:
                     order_path = f"Strategies/{strategy_key}/TradeState/orders/{i}"

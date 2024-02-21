@@ -297,6 +297,7 @@ class OrderMonitor:
             print("Index name not found for token:", instrument)
 
     def process_modify_orders(self, order_details, message=None):
+        logger.debug(f"Starting Modifying orders")
         # Update the limit_prc and the trigger_prc in the order_details and pass it to create_modify_order_details and then to modify_orders
         price_ref = order_details["price_ref"]
         order_details["limit_prc"] += (
@@ -309,6 +310,7 @@ class OrderMonitor:
         update_stoploss_orders(strategy_obj.StrategyName, order_to_modify)
 
         order_details["target"] += price_ref / 2  # Adjust target by half of price_ref
+        logger.debug(f"Order details after modifying")
         return (
             order_details["target"],
             order_details["limit_prc"],
@@ -326,6 +328,7 @@ class OrderMonitor:
 
         elif data["type"] == "target":
             if order_details:
+                logger.debug("entering modify orders block at line 331")
                 new_target, new_limit_prc, new_trigger_prc = self.process_modify_orders(
                     order_details=order_details
                 )
