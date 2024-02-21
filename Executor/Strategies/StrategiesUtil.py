@@ -111,7 +111,7 @@ class TodayOrder(BaseModel):
     ExitPrc: Optional[float] = None
     ExitTime: Optional[time] = None
     Signal: Optional[str] = None
-    StrategyInfo: Optional[Dict[str, str]] = None
+    StrategyInfo: Optional[Dict[str, Union[str,float]]] = None
     TradeId: Optional[str] = None
 
     class Config:

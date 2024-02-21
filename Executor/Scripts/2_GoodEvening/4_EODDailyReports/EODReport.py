@@ -133,17 +133,6 @@ def update_account_keys_fb(
             },
             "Accounts",
         )
-
-        # i want to delete all the keys which have previous_trading_day_string in them
-        delete_fields_firebase(
-            CLIENTS_USER_FB_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_AccountValue"
-        )
-        delete_fields_firebase(
-            CLIENTS_USER_FB_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_FreeCash"
-        )
-        delete_fields_firebase(
-            CLIENTS_USER_FB_DB, tr_no, f"Accounts/{previous_trading_day_fb_format}_Holdings"
-        )
     except Exception as e:
         logger.error(f"Error in update_account_keys_fb: {e}")
 

@@ -20,8 +20,11 @@ aliceblue_primary_account = broker_center_utils.fetch_primary_accounts_from_fire
     os.getenv("ALICEBLUE_PRIMARY_ACCOUNT")
 )
 
-zerodha_ins_df = broker_center_utils.download_csv_for_brokers(zerodha_primary_account)
-aliceblue_ins_df = broker_center_utils.download_csv_for_brokers( aliceblue_primary_account)
+try:
+    zerodha_ins_df = broker_center_utils.download_csv_for_brokers(zerodha_primary_account)
+    aliceblue_ins_df = broker_center_utils.download_csv_for_brokers( aliceblue_primary_account)
+except Exception as e:
+    print(f"Error in downloading instruments: {e}")
 
 def merge_ins_df(zerodha_ins_df, aliceblue_ins_df):
     # Columns to keep from instruments.csv
@@ -57,10 +60,13 @@ def merge_ins_df(zerodha_ins_df, aliceblue_ins_df):
 
 
 def aggregate_ins():
-    merged_ins_df = merge_ins_df(zerodha_ins_df, aliceblue_ins_df)
-    conn = sql_utils.get_db_connection(os.getenv("SQLITE_INS_PATH"))
-    # print number of rows in the table
-    decimal_cols = []
-    sql_utils.dump_df_to_sqlite(
-        conn, merged_ins_df, "instrument_master", decimal_cols
-    )  
+    try:
+        merged_ins_df = merge_ins_df(zerodha_ins_df, aliceblue_ins_df)
+        conn = sql_utils.get_db_connection(os.getenv("SQLITE_INS_PATH"))
+        # print number of rows in the table
+        decimal_cols = []
+        sql_utils.dump_df_to_sqlite(
+            conn, merged_ins_df, "instrument_master", decimal_cols
+        )  
+    except Exception as e:
+        print(f"Error in aggregating instruments: {e}")
