@@ -8,6 +8,7 @@ from time import sleep
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
+TRADE_MODE = os.getenv("TRADE_MODE")
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
@@ -108,6 +109,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "HedgeEntry",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
     {
         "strategy": strategy_name,
@@ -119,6 +121,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "Main",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
 ]
 

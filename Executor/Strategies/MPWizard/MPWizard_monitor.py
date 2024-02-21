@@ -8,6 +8,7 @@ sys.path.append(DIR_PATH)
 
 from loguru import logger
 
+TRADE_MODE = os.getenv("TRADE_MODE")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 logger.add(
     ERROR_LOG_PATH,
@@ -212,6 +213,7 @@ class OrderMonitor:
                 "price_ref": price_ref,
                 "order_mode": "Main",
                 "trade_id": next_trade_prefix,
+                "trade_mode": TRADE_MODE
             },
             {
                 "strategy": strategy_obj.StrategyName,
@@ -227,6 +229,7 @@ class OrderMonitor:
                 "limit_prc": limit_prc,
                 "trigger_prc": trigger_prc,
                 "target": target,
+                "trade_mode": TRADE_MODE
             },
         ]
         orders_to_place = assign_trade_id(orders_to_place)

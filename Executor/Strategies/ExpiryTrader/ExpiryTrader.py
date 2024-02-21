@@ -12,6 +12,7 @@ load_dotenv(ENV_PATH)
 
 from loguru import logger
 
+TRADE_MODE = os.getenv("TRADE_MODE")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 logger.add(
     ERROR_LOG_PATH,
@@ -138,6 +139,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "HedgeEntry",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
     {
         "strategy": strategy_name,
@@ -149,6 +151,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "Main",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
     {
         "strategy": strategy_name,
@@ -162,6 +165,7 @@ orders_to_place = [
         "trigger_prc": trigger_prc,
         "order_mode": "SL",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
 ]
 

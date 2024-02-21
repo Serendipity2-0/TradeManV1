@@ -124,17 +124,11 @@ NOTES
 TODO for TradeMan V1.1:
 
 Bugs:
-> Delete the previous_trading_key during good morning script instead daily reports
-
 > Tradebook reconsilation with commission table and pnl withdrawal table
    > Add commissions withdrawal table and Pnl withdrawa; table
 
 
 Performance:
-> debug statements function wise
-> Strategy mode(Live or paper) based on the mode order should be placed or not
-
-
 > Streamlit redesign
 
 Features:

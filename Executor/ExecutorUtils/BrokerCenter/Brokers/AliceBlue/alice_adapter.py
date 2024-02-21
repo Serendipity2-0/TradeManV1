@@ -273,6 +273,27 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         if trigger_price < 0:
             trigger_price = 1.5
 
+    if orders_to_place.get("trade_mode") == "PAPER":
+        logger.debug("Placing paper trade order")
+        logger.debug(f"transaction_type: {transaction_type}")
+        logger.debug(f"order_type: {order_type}")
+        logger.debug(f"product_type: {product_type}")
+        logger.debug(f"segment: {segment}")
+        logger.debug(f"exchange_token: {exchange_token}")
+        logger.debug(f"qty: {qty}")
+        logger.debug(f"limit_prc: {limit_prc}")
+        logger.debug(f"trigger_price: {trigger_price}")
+        logger.debug(f"instrument: {alice.get_instrument_by_token(segment, int(exchange_token))}")
+        logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
+        results = {
+            "exchange_token": int(exchange_token),
+            "order_id": 123456789,
+            "qty": qty,
+            "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "trade_id": orders_to_place.get("trade_id", "")
+        }
+        return results
+
     try:
         # logger.debug(f"transaction_type: {transaction_type}")
         # logger.debug(f"order_type: {order_type}")

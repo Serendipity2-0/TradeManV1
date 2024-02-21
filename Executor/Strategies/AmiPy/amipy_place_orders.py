@@ -11,6 +11,7 @@ load_dotenv(ENV_PATH)
 from loguru import logger
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+TRADE_MODE = os.getenv("TRADE_MODE")
 logger.add(
     ERROR_LOG_PATH,
     level="TRACE",
@@ -191,6 +192,7 @@ def place_orders(strike_prc, signal):
                 "order_type": order_type,
                 "product_type": product_type,
                 "trade_id": trade_id,
+                "trade_mode": TRADE_MODE
             }
         )
 

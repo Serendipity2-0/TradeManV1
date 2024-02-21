@@ -11,6 +11,7 @@ load_dotenv(ENV_PATH)
 
 from loguru import logger
 
+TRADE_MODE = os.getenv("TRADE_MODE")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 logger.add(
     ERROR_LOG_PATH,
@@ -116,6 +117,7 @@ def create_order_details(exchange_token, base_symbol):
             "product_type": goldencoin_strategy_obj.get_general_params().ProductType,
             "order_mode": "Main",
             "trade_id": next_trade_prefix,
+            "trade_mode": TRADE_MODE
         },
         {
             "strategy": goldencoin_strategy_obj.StrategyName,
@@ -129,6 +131,7 @@ def create_order_details(exchange_token, base_symbol):
             "trigger_prc": 1.0,
             "order_mode": "SL",
             "trade_id": next_trade_prefix,
+            "trade_mode": TRADE_MODE
         },
     ]
     return order_details
