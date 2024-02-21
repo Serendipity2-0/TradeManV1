@@ -35,6 +35,7 @@ logger.add(
 
 class PortfolioStats:
     def __init__(self, dtd_data, account_value):
+        logger.debug(f"dtd_data: {dtd_data.head()}")
         # Ensure dtd_data is a DataFrame
         if not isinstance(dtd_data, pd.DataFrame):
             raise ValueError("dtd_data must be a pandas DataFrame")
