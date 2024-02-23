@@ -74,7 +74,7 @@ def determine_strike_and_option():
     strike_price_multiplier = goldencoin_strategy_obj.EntryParams.StrikeMultiplier
     strategy_type = goldencoin_strategy_obj.GeneralParams.StrategyType
     base_symbol, _ = goldencoin_strategy_obj.determine_expiry_index()
-    option_type = "CE" if flip_coin() == "Heads" else "PE"
+    option_type = "CE" if prediction == "Bullish" else "PE"
     strike_prc = goldencoin_strategy_obj.calculate_current_atm_strike_prc(
         base_symbol=base_symbol,
         prediction=prediction,
@@ -179,8 +179,8 @@ def main():
 
     base_symbol, strike_prc, option_type = determine_strike_and_option()
     exchange_token = fetch_exchange_token(base_symbol, strike_prc, option_type)
-    update_qty(base_symbol, strike_prc, option_type)
-    send_signal_msg(base_symbol, strike_prc, option_type)
+    # update_qty(base_symbol, strike_prc, option_type)
+    # send_signal_msg(base_symbol, strike_prc, option_type)
     orders_to_place = create_order_details(exchange_token, base_symbol)
     orders_to_place = assign_trade_id(orders_to_place)
     logger.info(orders_to_place)
@@ -204,10 +204,10 @@ def main():
         },
     }
 
-    update_signal_firebase(
-        goldencoin_strategy_obj.StrategyName, signals_to_log, next_trade_prefix
-    )
-    place_order_strategy_users(goldencoin_strategy_obj.StrategyName, orders_to_place)
+    # update_signal_firebase(
+    #     goldencoin_strategy_obj.StrategyName, signals_to_log, next_trade_prefix
+    # )
+    # place_order_strategy_users(goldencoin_strategy_obj.StrategyName, orders_to_place)
 
 if __name__ == "__main__":
     main()
