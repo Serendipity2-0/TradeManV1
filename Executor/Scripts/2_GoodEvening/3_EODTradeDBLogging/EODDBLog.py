@@ -371,7 +371,10 @@ def fetch_and_prepare_holdings_data():
                     trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")))
                     entry_price = float(order["avg_prc"])
                     qty = order.get("qty", 0)
-                    margin_utilized = entry_price * qty
+                    if "FUT" in trading_symbol:
+                        margin_utilized = entry_price * qty * instru().get_margin_multiplier(trading_symbol)
+                    else:
+                        margin_utilized = entry_price * qty 
                     
                     holding = {
                         "trade_id": order.get("trade_id"),

@@ -1,6 +1,8 @@
 import os, sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,date
 from dotenv import load_dotenv
+import pandas as pd
+
 
 # Load environment variables
 DIR_PATH = os.getcwd()
@@ -25,6 +27,19 @@ logger.add(
 )
 
 
+from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
+        get_db_connection
+    )
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+        fetch_active_users_from_firebase,
+        fetch_active_strategies_all_users,
+        fetch_freecash_for_user,
+        fetch_holdings_value_for_user
+
+    )
+from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
+from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import send_telegram_message
+
 # Function to find the start date of the current complete week
 def get_current_week_range():
     """Finds and returns the start date of the current complete week."""
@@ -32,6 +47,59 @@ def get_current_week_range():
     start_date = today - timedelta(days=today.weekday())
     end_date = start_date + timedelta(days=4)
     return start_date, end_date
+
+def check_table_exists(conn, table_name):
+    query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?;"
+    cur = conn.cursor()
+    cur.execute(query, (table_name,))
+    return cur.fetchone() is not None
+
+def get_current_week_trades(user, active_strategies, start_date, end_date):
+    trades = {}
+    db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
+    conn = get_db_connection(db_path)
+    if conn is not None:
+        for strategy in active_strategies:
+            if not check_table_exists(conn, strategy):
+                continue
+            query = f"SELECT * FROM {strategy} WHERE exit_time BETWEEN '{start_date}' AND '{end_date}'"
+            result = pd.read_sql_query(query, conn)
+            net_pnl_sum = result['net_pnl'].sum()
+            trades[strategy] = round(net_pnl_sum,2)
+        logger.debug(f"Trades: {trades}")
+        conn.close()
+    else:
+        logger.error("Failed to establish a database connection.")
+    return trades
+
+def get_current_week_fb_values(user):  
+    fb_values = {}
+    previous_trading_day_fb_format = get_previous_trading_day(date.today())
+    fb_values['FreeCash'] = round(user['Accounts'][f"{previous_trading_day_fb_format}_FreeCash"],2)
+    fb_values['Holdings'] = round(user['Accounts'][f"{previous_trading_day_fb_format}_Holdings"],2)
+    fb_values['AccountValue'] = round(user['Accounts'][f"{previous_trading_day_fb_format}_AccountValue"],2)
+    fb_values['Drawdown'] = user['Accounts']["Drawdown"]   
+    # fb_values['Drawdown'] = 0.0 
+    return fb_values
+
+def send_telegram_message_to_user(user, user_details,start_date,end_date):
+    start_date = start_date.strftime("%d-%m-%Y")
+    end_date = end_date.strftime("%d-%m-%Y")
+    user_name = user["Profile"]["Name"]
+    message = f"Weekly Summary for {user_name} ({start_date} to {end_date})\n\n"
+    for strategy, pnl in user_details['trades'].items():
+        message += f"{strategy}: ₹{pnl}\n"
+    message += f"\nNet PnL: ₹{round((sum(user_details['trades'].values())),2)}\n\n"
+    message += f"Free Cash: ₹{user_details['fb_values']['FreeCash']}\n"
+    message += f"TradeMan Holdings: ₹{user_details['fb_values']['Holdings']}\n"
+    message += f"TradeMan Account Value: ₹{user_details['fb_values']['AccountValue']}\n"
+    message += f"Broker Account Value: ₹{user_details['account_value']}\n"
+    message += f"Difference: ₹{user_details['difference']}\n"
+    message += f"Drawdown: ₹{user_details['drawdown']}\n\n"
+    message += "Best regards,\nTradeMan"
+
+    logger.debug(f"Message: {message}")
+    send_telegram_message(user["Profile"]["Phone"], message)
 
 
 # Function to read base capital from basecapital.txt
@@ -111,8 +179,7 @@ def update_user_db(user, categorized_df):
         append_df_to_sqlite(conn,value,key,decimal_columns)
 
 
-# Main function to execute the script for generating weekly reports
-def main():
+def calculate_ledger_values_and_update_fb():
     # Get ledger for all activer users
     # Call broker center utils to process broker ledgers
     # Update the processed dfs to the respective users.db under the transactions_charges, transactions_deposits, transactions_withdrawals, transactions_other, transactions_trades
@@ -126,7 +193,6 @@ def main():
     )
     from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import process_kite_ledger, calculate_kite_net_values
     from Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter import process_alice_ledger,calculate_alice_net_values
-
     # Get the active users from the firebase
     # active_users = fetch_active_users_from_firebase()
 
@@ -161,6 +227,36 @@ def main():
     # print(alice_net_values)
 
 
+
+# Main function to execute the script for generating weekly reports
+def main():
+    start_date, end_date = get_current_week_range()
+    active_users = fetch_active_users_from_firebase()
+    active_strategies = fetch_active_strategies_all_users()
+
+    for user in active_users:
+        try:
+            logger.debug(f"broker_holdings: {fetch_holdings_value_for_user(user)}")
+            user_details = {}
+            user_details['trades'] = get_current_week_trades(user, active_strategies, start_date, end_date)
+            user_details['fb_values'] = get_current_week_fb_values(user)
+            user_details['broker_freecash'] = fetch_freecash_for_user(user)
+            user_details['broker_holdings'] = fetch_holdings_value_for_user(user)
+            user_details['account_value'] = round((user_details['broker_freecash'] + user_details['broker_holdings']),2)
+            user_details['difference'] = round((user_details['account_value'] - user_details['fb_values']['AccountValue']),2)
+            user_details['drawdown'] = user_details['fb_values']['Drawdown']
+            logger.debug(f"User Details: {user_details}")
+            send_telegram_message_to_user(user, user_details, start_date, end_date)
+
+        except Exception as e:
+            logger.error(f"Error fetching trades for {user['Tr_No']}: {e}")
+            continue
+
+
+    #TODO: Get the ledger and update the FB
+    # calculate_ledger_values_and_update_fb()
+    
+    
 
 if __name__ == "__main__":
     main()

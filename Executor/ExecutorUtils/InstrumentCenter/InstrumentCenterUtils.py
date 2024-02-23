@@ -294,6 +294,11 @@ class Instrument:
         }
         # Return the token for the given base symbol, or a default message if not found
         return symbol_to_token.get(base_symbol, "No token found for given symbol")
+    
+    def get_margin_multiplier(self, trading_symbol):
+        #TODO: Remove this hardcoding and fetch from API
+        return 800
+        
 
 def get_single_ltp(token=None, exchange_token=None, segment=None):
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")

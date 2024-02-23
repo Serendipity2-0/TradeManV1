@@ -117,15 +117,23 @@ def get_ins_csv_alice(user_details):
         logger.error(f"Error fetching instruments: {e}")
         return None
 
-# This function fetches the holdings in the user account
-def fetch_aliceblue_holdings(username, api_key, session_id):
+def fetch_aliceblue_holdings_value(user):
     try:
-        alice = Aliceblue(username, api_key, session_id)
+        alice = Aliceblue(user["Broker"]["BrokerUsername"], user["Broker"]["ApiKey"], session_id=user["Broker"]["SessionId"])
         holdings = alice.get_holding_positions()
-        return holdings
+
+        invested_value = 0
+        if holdings.get("stat") == "Not_Ok":
+            invested_value = 0
+        else:
+            for stock in holdings['HoldingVal']:
+                average_price = float(stock['Price'])
+                quantity = float(stock['HUqty'])
+                invested_value += average_price * quantity
+        return invested_value
     except Exception as e:
-        logger.error(f"Error fetching holdings: {e}")
-        return None
+        logger.error(f"Error fetching holdings for user: {user['Broker']['BrokerUsername']}: {e}")
+        return 0.0
 
 
 def simplify_aliceblue_order(detail):
@@ -220,7 +228,7 @@ def get_order_status(alice, order_id):
         order_status = alice.get_order_history(order_id)
         if order_status["Status"] == "rejected":
             return "FAIL"
-        return "SUCCESS"
+        return "PASS"
     except Exception as e:
         logger.error(f"Error fetching order status: {e}")
         return "FAIL"
@@ -336,7 +344,8 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
             "order_id": order_id["NOrdNo"],
             "qty": qty,
             "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "trade_id": orders_to_place.get("trade_id", "")
+            "trade_id": orders_to_place.get("trade_id", ""),
+            "order_status": order_status
         }
 
     return results

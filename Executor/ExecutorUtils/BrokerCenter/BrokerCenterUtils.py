@@ -153,20 +153,20 @@ def fetch_primary_accounts_from_firebase(primary_account):
         logger.error(f"Error while fetching primary account from Firebase: {e}")
 
 
-def fetch_freecash_brokers(active_users):
+def fetch_freecash_for_user(user):
     """Retrieves the cash margin available for a user based on their broker."""
     try:
-        for user in active_users:
-            logger.debug(f"Fetching free cash for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}")
-            if user["Broker"]["BrokerName"] == ZERODHA:
-                cash_margin = zerodha_adapter.zerodha_fetch_free_cash(user["Broker"])
-            elif user["Broker"]["BrokerName"] == ALICEBLUE:
-                cash_margin = alice_adapter.alice_fetch_free_cash(user["Broker"])
-            # Ensure cash_margin is a float
-            return float(cash_margin) if cash_margin else 0.0
+        logger.debug(f"Fetching free cash for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}")
+        if user["Broker"]["BrokerName"] == ZERODHA:
+            cash_margin = zerodha_adapter.zerodha_fetch_free_cash(user["Broker"])
+        elif user["Broker"]["BrokerName"] == ALICEBLUE:
+            cash_margin = alice_adapter.alice_fetch_free_cash(user["Broker"])
+        # Ensure cash_margin is a float
+        return float(cash_margin)
     except Exception as e:
         logger.error(f"Error while fetching free cash for brokers: {e}")
         return 0.0
+        
 
 
 def download_csv_for_brokers(primary_account):
@@ -176,11 +176,11 @@ def download_csv_for_brokers(primary_account):
         return alice_adapter.get_ins_csv_alice(primary_account)  # Get CSV for this user
 
 
-def fetch_holdings_for_brokers(user):
+def fetch_holdings_value_for_user(user):
     if user["Broker"]["BrokerName"] == ZERODHA:
-        return zerodha_adapter.fetch_zerodha_holdings(user)
+        return zerodha_adapter.fetch_zerodha_holdings_value(user)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
-        return alice_adapter.fetch_aliceblue_holdings(user)
+        return alice_adapter.fetch_aliceblue_holdings_value(user)
 
 
 def fetch_user_credentials_firebase(broker_user_name):

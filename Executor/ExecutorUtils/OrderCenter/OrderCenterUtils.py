@@ -198,5 +198,5 @@ def retrieve_order_id(account_name, strategy, exchange_token: int):
                     if trade is not None and trade["exchange_token"] == exchange_token and trade["trade_id"].endswith("EX"):
                         order_ids[trade["order_id"]] = trade["qty"]
             except Exception as e:
-                logger.error(f"Error retrieving order id: {e}")
+                logger.error(f"Error retrieving order id for user: {account_name} and strategy: {strategy} : {e}")
     return order_ids

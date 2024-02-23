@@ -76,16 +76,15 @@ def get_csv_kite(user_details):
     except Exception as e:
         logger.error(f"Error fetching instruments for KITE: {e} for {user_details['Broker']['BrokerUsername']}")
         return None
-
-
-def fetch_zerodha_holdings(api_key, access_token):
+    
+def fetch_zerodha_holdings_value(user):
     try:
-        kite = KiteConnect(api_key=api_key, access_token=access_token)
+        kite = KiteConnect(api_key=user['Broker']['ApiKey'], access_token=user['Broker']['SessionId'])
         holdings = kite.holdings()
-        return holdings
+        return sum(stock['average_price'] * stock['quantity'] for stock in holdings)
     except Exception as e:
-        logger.error(f"Error fetching holdings for KITE: {e}")
-        return None
+        logger.error(f"Error fetching holdings for user {user['Broker']['BrokerUsername']}: {e}")
+        return 0.0
 
 def simplify_zerodha_order(detail):
     logger.debug(f"Processing order details: {detail['tag']}")
@@ -338,7 +337,8 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
                 "order_id": order_id,
                 "qty": qty,
                 "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "trade_id": orders_to_place.get("trade_id", "")
+                "trade_id": orders_to_place.get("trade_id", ""),
+                "order_status": order_status
             }
     
     return results
