@@ -125,7 +125,7 @@ TODO for TradeMan V1.1.1:
 
 Bugs:
 > Tradebook reconsilation with commission table and pnl withdrawal table
-   > Add commissions withdrawal table and Pnl withdrawa; table
+   > Add commissions withdrawal table and Pnl withdrawal table
 
 Features:
 > Trade Executer in stream lit using StrategySignals(TodayOrders)/ Telegram
@@ -147,9 +147,13 @@ General:
 
 
 Bugs:
+> Send if the order is Pass or Fail with order details to firebase
+
 
 Performance:
 > Accept screen sharing request automatically
+> Teamviewer installation
+
 
 Features:
 > PyStocks 1.0 with morning SL orders
@@ -161,6 +165,7 @@ Features:
 
 Longterm TODO:
 
+> Fetch the margins from https://kite.trade/docs/connect/v3/margins/#basket-margins for overnight holdings
 > Async Functionality
 > Order assistant AI - Order Repair based on tradestate ,user and strategy 
 > Docs
