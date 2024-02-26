@@ -325,35 +325,44 @@ def fetch_strategy_users(strategy_name):
     from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
         fetch_active_users_from_firebase,
     )
-
-    active_users = fetch_active_users_from_firebase()
-    strategy_users = []
-    for user in active_users:
-        if strategy_name in user["Strategies"]:
-            strategy_users.append(user)
-    return strategy_users
+    try:
+        active_users = fetch_active_users_from_firebase()
+        strategy_users = []
+        for user in active_users:
+            if strategy_name in user["Strategies"]:
+                strategy_users.append(user)
+        return strategy_users
+    except Exception as e:
+        logger.error(f"Error fetching strategy users: {e}")
+        return None
 
 
 def fetch_freecash_firebase(strategy_name):
-    accounts = fetch_strategy_users(
-        strategy_name
-    )  # Assuming there is a function to fetch accounts from Firebase
-    freecash_dict = {}
-    freecash_key = dt.datetime.now().strftime("%d%b%y") + "_FreeCash"
-    for account in accounts:
-        freecash_dict[account["Tr_No"]] = account["Accounts"][freecash_key]
-    return freecash_dict
-
+    try:
+        accounts = fetch_strategy_users(
+            strategy_name
+        )  # Assuming there is a function to fetch accounts from Firebase
+        freecash_dict = {}
+        freecash_key = dt.datetime.now().strftime("%d%b%y") + "_FreeCash"
+        for account in accounts:
+            freecash_dict[account["Tr_No"]] = account["Accounts"][freecash_key]
+        return freecash_dict
+    except Exception as e:
+        logger.error(f"Error fetching free cash: {e}")
+        return None
 
 def fetch_risk_per_trade_firebase(strategy_name):
-    users = fetch_strategy_users(strategy_name)
-    risk_per_trade = {}
-    for user in users:
-        risk_per_trade[user["Tr_No"]] = user["Strategies"][strategy_name][
-            "RiskPerTrade"
-        ]
-    return risk_per_trade
-
+    try:
+        users = fetch_strategy_users(strategy_name)
+        risk_per_trade = {}
+        for user in users:
+            risk_per_trade[user["Tr_No"]] = user["Strategies"][strategy_name][
+                "RiskPerTrade"
+            ]
+        return risk_per_trade
+    except Exception as e:
+        logger.error(f"Error fetching risk per trade: {e}")
+        return None
 
 def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (

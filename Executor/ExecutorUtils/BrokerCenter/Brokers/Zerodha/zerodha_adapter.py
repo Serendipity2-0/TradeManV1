@@ -57,7 +57,7 @@ def zerodha_fetch_free_cash(user_details):
                 if isinstance(value, dict) and "cash" in value:
                     cash_balance = value.get("cash", 0)
                     break
-        logger.debug(f"Free cash fetched for {user_details['BrokerUsername']}: {cash_balance}")
+        logger.info(f"Free cash fetched for {user_details['BrokerUsername']}: {cash_balance}")
         return cash_balance
     except Exception as e:
         logger.error(f"Error fetching free cash: {e} for {user_details['BrokerUsername']}")

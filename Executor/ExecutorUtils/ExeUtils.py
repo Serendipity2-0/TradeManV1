@@ -60,6 +60,25 @@ def get_previous_trading_day(today: dt.date, prefix=None) -> dt.date:
 
     return previous_day
 
+def get_previous_freecash(today: dt.date, prefix=None) -> dt.date:
+    if today.weekday() == 0:
+        previous_day = today - dt.timedelta(days=2)
+        previous_day = previous_day.strftime("%d%b%y")
+    elif today.weekday() == 6:
+        previous_day = today - dt.timedelta(days=2)
+        previous_day = previous_day.strftime("%d%b%y")
+    else:
+        previous_day = today - dt.timedelta(days=1)
+        previous_day = previous_day.strftime("%d%b%y")
+    while previous_day in holidays:
+        logger.debug(f"previous_day: {previous_day} is a holiday")
+        previous_day = previous_day - dt.timedelta(days=1)
+        if prefix:
+            previous_day = dt.date.strftime(previous_day, "%d%b%y")
+            previous_day = f"{previous_day}{prefix}"
+
+    return previous_day
+
 def get_second_previous_trading_day(today: dt.date):
     previous_day = get_previous_trading_day(today)
     previous_day = dt.datetime.strptime(previous_day, "%d%b%y").date()

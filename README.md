@@ -147,7 +147,10 @@ General:
 
 
 Bugs:
-> Send if the order is Pass or Fail with order details to firebase
+> Send if the order is Pass or Fail with order details to firebase 
+> Add Try and except block in strategy util for freecash and holding
+> DB free cash and broker freecash considering the tax changes overnight
+
 
 
 Performance:
@@ -160,6 +163,17 @@ Features:
 > Selenium script for weekly ledger download
 > Insurance Telegram bot
 > Consolidated Reports - Weekly and Daily
+> TradeMan GPT
+
+WatchList
+> MARKET
+> Tax
+> Account values
+> DB
+> Consolidated Report
+> Signal info and Signal
+> Error log
+
 
 
 

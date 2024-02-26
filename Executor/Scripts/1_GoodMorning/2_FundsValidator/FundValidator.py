@@ -10,7 +10,7 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day,get_second_previous_trading_day
+from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day,get_second_previous_trading_day,get_previous_freecash
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     update_fields_firebase,
@@ -53,7 +53,7 @@ def fetch_freecash_all_brokers(active_users):
 
 def fetch_freecash_all_db(active_users):  ####pass active_users['Accounts'] as argument
     logger.debug(f"Fetching free cash no of users from Firebase DB: {len(active_users)}") 
-    previous_trading_day_fb_format = get_previous_trading_day(dt.date.today())
+    previous_trading_day_fb_format = get_previous_freecash(dt.date.today())
     previous_day_key = previous_trading_day_fb_format+"_"+'FreeCash'
     for user in active_users:
         try:

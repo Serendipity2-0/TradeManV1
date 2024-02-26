@@ -11,3 +11,4 @@ trademan.env
 trail.py
 *.session
 *.sh
+*.pdf
