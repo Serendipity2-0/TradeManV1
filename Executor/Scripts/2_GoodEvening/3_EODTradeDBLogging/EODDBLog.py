@@ -363,7 +363,9 @@ def fetch_and_prepare_holdings_data():
                 # Calculate the average price of hedge orders
                 if hedge_orders:
                     avg_hedge_order_price = sum(float(order["avg_prc"]) for order in hedge_orders) / len(hedge_orders)
+                    option_margin_utilized = avg_hedge_order_price * sum(order.get("qty", 0) for order in hedge_orders)
                 else:
+                    
                     avg_hedge_order_price = 0  # Default to 0 if no hedge orders
                 
                 # Process main orders
@@ -372,7 +374,8 @@ def fetch_and_prepare_holdings_data():
                     entry_price = float(order["avg_prc"])
                     qty = order.get("qty", 0)
                     if "FUT" in trading_symbol:
-                        margin_utilized = entry_price * qty * instru().get_margin_multiplier(trading_symbol)
+                        future_margin_utilized = qty * instru().get_margin_multiplier(trading_symbol)
+                        margin_utilized = future_margin_utilized + option_margin_utilized    
                     else:
                         margin_utilized = entry_price * qty 
                     

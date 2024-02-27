@@ -142,7 +142,7 @@ def fetch_user_tables(user_db_conn):
         logger.error(f"Error in fetching user tables: {e}")
     return user_tables
 
-def calculate_account_values(user, today_trades):
+def calculate_account_values(user, today_trades, user_tables):
     gross_pnl = sum(float(trade["pnl"]) for trade in today_trades)
     expected_tax = sum(float(trade["tax"]) for trade in today_trades)
 
@@ -158,18 +158,21 @@ def calculate_account_values(user, today_trades):
 
     new_free_cash = previous_free_cash + gross_pnl - expected_tax
     # Placeholder for new holdings calculation; you might need additional info for this
-    new_holdings = previous_holdings  # This is a simplification
+    new_holdings = get_new_holdings(user_tables)
 
-    new_account_value = previous_account_value + gross_pnl - expected_tax + additions_withdrawals
+    new_account_value = round(previous_account_value + gross_pnl - expected_tax + additions_withdrawals)
     net_change = new_account_value - previous_account_value
     net_change_percentage = (net_change / previous_account_value * 100) if previous_account_value else 0
 
+
     # Calculate drawdown, which is a placeholder here; you might need additional data for an accurate calculation
-    drawdown = 0  # Simplification
+    drawdown = min(new_account_value - user['Accounts']['CurrentBaseCapital'] ,0)
     drawdown_percentage = (drawdown / new_account_value * 100) if new_account_value else 0
 
     account_values = {
         "today_fb_format": today_fb_format,
+        "previous_free_cash": previous_free_cash,
+        "previous_holdings": previous_holdings,
         "new_free_cash": new_free_cash,
         "new_holdings": new_holdings,
         "new_account_value": new_account_value,
@@ -188,6 +191,9 @@ def format_and_send_report(user, today_trades, account_values):
 
     # Formatting today's date for the report
     today_fb_format = datetime.now().strftime("%d%b%y")
+    previous_trading_day_fb_format = get_previous_trading_day(datetime.now().date())
+    gross_pnl = sum(float(trade["pnl"]) for trade in today_trades)
+    expected_tax = sum(float(trade["tax"]) for trade in today_trades)
 
     # Constructing the message
     message = f"Hello {user_name}, We hope you're enjoying a wonderful day.\n\n"
@@ -196,14 +202,18 @@ def format_and_send_report(user, today_trades, account_values):
     for trade in today_trades:
         trade_pnl_formatted = format_currency(trade['pnl'], 'INR', locale='en_IN')
         message += f"Trade ID {trade['trade_id']}: {trade_pnl_formatted}\n"
-    message += f"\nGross PnL: {format_currency(account_values['new_free_cash'] - account_values['drawdown'], 'INR', locale='en_IN')}\n"
-    message += f"Expected Tax: {format_currency(account_values['new_account_value'] - account_values['new_free_cash'], 'INR', locale='en_IN')}\n"
+    message += f"\nGross PnL: {format_currency(gross_pnl, 'INR', locale='en_IN')}\n"
+    message += f"Expected Tax: {format_currency(expected_tax, 'INR', locale='en_IN')}\n"
+    message += "\nFree Cash:\n"
+    message += f"{previous_trading_day_fb_format} Free Cash: {format_currency(account_values['previous_free_cash'], 'INR', locale='en_IN')}\n"
     message += f"{today_fb_format} Free Cash: {format_currency(account_values['new_free_cash'], 'INR', locale='en_IN')}\n\n"
     message += "Holdings:\n"
+    message += f"{previous_trading_day_fb_format} Holdings: {format_currency(account_values['previous_holdings'], 'INR', locale='en_IN')}\n"
     message += f"{today_fb_format} Holdings: {format_currency(account_values['new_holdings'], 'INR', locale='en_IN')}\n\n"
     message += "Account:\n"
+    message += f"{previous_trading_day_fb_format} Account: {format_currency(user['Accounts'][f'{previous_trading_day_fb_format}_AccountValue'], 'INR', locale='en_IN')}\n"
     message += f"{today_fb_format} Account: {format_currency(account_values['new_account_value'], 'INR', locale='en_IN')}\n"
-    message += f"Net Change: {format_currency(account_values['net_change'], 'INR', locale='en_IN')} ({account_values['net_change_percentage']:.2f}%)\n"
+    message += f"\nNet Change: {format_currency(account_values['net_change'], 'INR', locale='en_IN')} ({account_values['net_change_percentage']:.2f}%)\n"
     message += f"Drawdown: {format_currency(account_values['drawdown'], 'INR', locale='en_IN')} ({account_values['drawdown_percentage']:.2f}%)\n\n"
     message += "Best Regards,\nYour Trading Team"
 
@@ -240,14 +250,16 @@ def generate_consolidated_report_data(active_users, today_trades):
         base_capital = user['Accounts']['CurrentBaseCapital']
         today_fb_format = datetime.now().strftime("%d%b%y")
         current_capital = user['Accounts'][f'{today_fb_format}_AccountValue']
-        drawdown = min(current_capital-base_capital ,0)
+        drawdown_amount = min(current_capital-base_capital ,0)
+        drawdown_percentage = (drawdown_amount / current_capital * 100) if current_capital else 0
+        #i want drawdown in this format drawdown_amount(drawdown_percentage)
+        drawdown = f"{float(drawdown_amount):.2f} ({float(drawdown_percentage):.2f}%)"
         for trade in today_trades:
             if trade['user_tr_no'] == tr_no:
                 strategy_pnl[trade['trade_id']] = trade['net_pnl']
-
-        net_pnl = sum(float(trade['net_pnl']) for trade in today_trades)
-        current_week_pnl = user['Accounts'].get('current_week_pnl', 0) + net_pnl
-        
+                #i want the sum of net_pnl for each strategy for each user
+                net_pnl = sum(float(trade["net_pnl"]) for trade in today_trades if trade['user_tr_no'] == tr_no)
+        current_week_pnl = user['Accounts'].get('CurrentWeekCapital', 0) + net_pnl
         # Update the user's current_week_pnl in Firebase (not shown, assume similar to update_account_keys_fb)
         update_fields_firebase(CLIENTS_USER_FB_DB, tr_no, {"CurrentWeekCapital": current_week_pnl}, "Accounts")
 
@@ -267,7 +279,10 @@ def convert_df_to_pdf(df, output_file):
             headers = ["Tr_No", "Name", "Base Capital", "Current Capital", "Drawdown", "Current Week PnL", "Net PnL", "Strategy PnL"]
             self.set_font("Arial", "B", 10)  # Bold font for headers
             for header in headers:
-                self.cell(30, 10, header, 1)  # Adjust cell width as needed
+                if header == "Strategy PnL":
+                    self.cell(60, 10, header, 1)
+                else:
+                    self.cell(30, 10, header, 1)  # Adjust cell width as needed
             self.ln(10)
 
         def footer(self):
@@ -277,41 +292,56 @@ def convert_df_to_pdf(df, output_file):
 
         def chapter_title(self, title):
             self.set_font("Arial", "B", 12)
-            self.cell(0, 10, title, 0, 1, "L")
+            self.cell(0, 10, title, 0, 1, "C")
             self.ln(10)
 
         def chapter_body(self, df):
             self.set_font("Arial", "", 10)
-            for index, row in df.iterrows():
-                self.cell(30, 10, str(row["Tr_No"]), 1, 0, "L")
-                self.cell(30, 10, row["Name"], 1, 0, "L")
-                self.cell(30, 10, f"{row['Base Capital']:.2f}", 1, 0, "R")
-                self.cell(30, 10, f"{row['Current Capital']:.2f}", 1, 0, "R")
+            for index, row in df.iterrows():             
+                num_lines = len(row["Strategy PnL"])
+                cell_height = max(10, 10 * num_lines)  # Assume base height of 10, adjust based on number of lines
                 
-                # Change font color to red if Drawdown is less than 0
-                if row["Drawdown"] < 0:
+                # Set the height for all cells in this row to the calculated cell_height
+                self.cell(30, cell_height, str(row["Tr_No"]), 1, 0, "C")
+                self.cell(30, cell_height, row["Name"], 1, 0, "C")
+                self.cell(30, cell_height, f"{row['Base Capital']:.2f}", 1, 0, "C")
+                self.cell(30, cell_height, f"{row['Current Capital']:.2f}", 1, 0, "C")
+                
+                # Drawdown with color coding
+                drawdown_amount = float(row["Drawdown"].split(" ")[0])
+                if drawdown_amount < 0.0:
                     self.set_text_color(255, 0, 0)  # red
                 else:
                     self.set_text_color(0, 0, 0)  # back to black
-                self.cell(30, 10, f"{row['Drawdown']:.2f}", 1, 0, "R")
+                self.cell(30, cell_height, row['Drawdown'], 1, 0, "C")
                 
-                self.set_text_color(0, 0, 0)  # Reset to black before moving to next cell
-                self.cell(30, 10, f"{row['Current Week PnL']:.2f}", 1, 0, "R")
+                # Reset color for Current Week PnL
+                self.set_text_color(0, 0, 0)  # Reset to black
+                self.cell(30, cell_height, f"{row['Current Week PnL']:.2f}", 1, 0, "C")
                 
-                # Change font color for Net PnL: green if > 0, else red
+
+                # Net PnL with color coding
                 if row["Net PnL"] > 0:
                     self.set_text_color(0, 128, 0)  # green
-                else:
+                elif row["Net PnL"] < 0:
                     self.set_text_color(255, 0, 0)  # red
-                self.cell(30, 10, f"{row['Net PnL']:.2f}", 1, 0, "R")
-                
-                # Reset text color to black for the next row
-                self.set_text_color(0, 0, 0)
-                
-                # Assuming Strategy PnL is not a number and just displaying as is
-                self.cell(60, 10, str(row["Strategy PnL"]), 1, 0, "R")
-                self.ln(10)
+                else:
+                    self.set_text_color(0, 0, 0)
 
+                self.cell(30, cell_height, f"{row['Net PnL']:.2f}", 1, 0, "C")
+                self.set_text_color(0, 0, 0)  # Reset to black
+
+                strategy_pnl_text = ""
+                for k, v in row["Strategy PnL"].items():
+                    if float(v) > 0.0:
+                        self.set_text_color(0, 128, 0)  # Green for positive values
+                    elif float(v) < 0.0:
+                        self.set_text_color(255, 0, 0)  # Red for negative values
+                    strategy_pnl_text += f"{k}: {v}\n"
+
+                self.multi_cell(60, 10, strategy_pnl_text, 1, 'C')
+                self.set_text_color(0, 0, 0)  # Reset to black
+                
     pdf = PDF()
     pdf.add_page()
     pdf.chapter_body(df)
@@ -337,7 +367,7 @@ def main():
             user_tables = fetch_user_tables(user_db_conn)
             # Placeholder values, replace with actual queries and Firebase fetches
             today_trades = get_today_trades(user_tables,active_strategies)
-            account_values = calculate_account_values(user, today_trades)
+            account_values = calculate_account_values(user, today_trades, user_tables)
             update_account_keys_fb(user['Tr_No'], account_values)
             format_and_send_report(user, today_trades, account_values)
 

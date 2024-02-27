@@ -297,7 +297,7 @@ class Instrument:
     
     def get_margin_multiplier(self, trading_symbol):
         #TODO: Remove this hardcoding and fetch from API
-        return 800
+        return 420
         
 
 def get_single_ltp(token=None, exchange_token=None, segment=None):
