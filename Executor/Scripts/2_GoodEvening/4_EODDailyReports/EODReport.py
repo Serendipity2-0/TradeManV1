@@ -251,7 +251,7 @@ def generate_consolidated_report_data(active_users, today_trades):
         today_fb_format = datetime.now().strftime("%d%b%y")
         current_capital = user['Accounts'][f'{today_fb_format}_AccountValue']
         drawdown_amount = min(current_capital-base_capital ,0)
-        drawdown_percentage = (drawdown_amount / current_capital * 100) if current_capital else 0
+        drawdown_percentage = (drawdown_amount / base_capital * 100) if base_capital else 0
         #i want drawdown in this format drawdown_amount(drawdown_percentage)
         drawdown = f"{float(drawdown_amount):.2f} ({float(drawdown_percentage):.2f}%)"
         for trade in today_trades:
@@ -279,10 +279,16 @@ def convert_df_to_pdf(df, output_file):
             headers = ["Tr_No", "Name", "Base Capital", "Current Capital", "Drawdown", "Current Week PnL", "Net PnL", "Strategy PnL"]
             self.set_font("Arial", "B", 10)  # Bold font for headers
             for header in headers:
-                if header == "Strategy PnL":
-                    self.cell(60, 10, header, 1)
+                if header == "Tr_No":
+                    self.cell(15, 10, header, 1, align='C')
+                elif header == "Strategy PnL":
+                    self.cell(60, 10, header, 1,align='C')
+                elif header == "Drawdown":
+                    self.cell(40, 10, header, 1, align='C')  # Adjust cell width as needed
+                elif header == "Current Week PnL":
+                    self.cell(40, 10, header, 1, align='C')
                 else:
-                    self.cell(30, 10, header, 1)  # Adjust cell width as needed
+                    self.cell(30, 10, header, 1, align='C')  # Adjust cell width as needed
             self.ln(10)
 
         def footer(self):
@@ -302,7 +308,7 @@ def convert_df_to_pdf(df, output_file):
                 cell_height = max(10, 10 * num_lines)  # Assume base height of 10, adjust based on number of lines
                 
                 # Set the height for all cells in this row to the calculated cell_height
-                self.cell(30, cell_height, str(row["Tr_No"]), 1, 0, "C")
+                self.cell(15, cell_height, str(row["Tr_No"]), 1, 0, "C")
                 self.cell(30, cell_height, row["Name"], 1, 0, "C")
                 self.cell(30, cell_height, f"{row['Base Capital']:.2f}", 1, 0, "C")
                 self.cell(30, cell_height, f"{row['Current Capital']:.2f}", 1, 0, "C")
@@ -313,11 +319,11 @@ def convert_df_to_pdf(df, output_file):
                     self.set_text_color(255, 0, 0)  # red
                 else:
                     self.set_text_color(0, 0, 0)  # back to black
-                self.cell(30, cell_height, row['Drawdown'], 1, 0, "C")
+                self.cell(40, cell_height, row['Drawdown'], 1, 0, "C")
                 
                 # Reset color for Current Week PnL
                 self.set_text_color(0, 0, 0)  # Reset to black
-                self.cell(30, cell_height, f"{row['Current Week PnL']:.2f}", 1, 0, "C")
+                self.cell(40, cell_height, f"{row['Current Week PnL']:.2f}", 1, 0, "C")
                 
 
                 # Net PnL with color coding
@@ -332,12 +338,14 @@ def convert_df_to_pdf(df, output_file):
                 self.set_text_color(0, 0, 0)  # Reset to black
 
                 strategy_pnl_text = ""
-                for k, v in row["Strategy PnL"].items():
-                    if float(v) > 0.0:
+                for trade_id, trade_pnl in row["Strategy PnL"].items():
+                    if float(trade_pnl) > 0.0:
                         self.set_text_color(0, 128, 0)  # Green for positive values
-                    elif float(v) < 0.0:
+                    elif float(trade_pnl) < 0.0:
                         self.set_text_color(255, 0, 0)  # Red for negative values
-                    strategy_pnl_text += f"{k}: {v}\n"
+                    # i want the trade_pnl always to be in 2 decimal places
+                    trade_pnl = f"{float(trade_pnl):.2f}"
+                    strategy_pnl_text += f"{trade_id}: {trade_pnl}\n"
 
                 self.multi_cell(60, 10, strategy_pnl_text, 1, 'C')
                 self.set_text_color(0, 0, 0)  # Reset to black
