@@ -50,3 +50,15 @@ def send_telegram_message(phone_number, message):
         while message:
             chunk, message = message[:4096], message[4096:]
             client.send_message(phone_number, chunk, parse_mode="md")
+
+def send_file_via_telegram(file_path, file_name):
+    phone_number = os.getenv("OMKAR_PHONE_NUMBER")
+    global api_id, api_hash
+    # Define the session file path
+    session_filepath = os.path.join(
+        DIR, "Executor/ExecutorUtils/NotificationCenter/Telegram/+918618221715.session"
+    )
+
+    # Create a Telegram client and send the file
+    with TelegramClient(session_filepath, api_id, api_hash) as client:
+        client.send_file(phone_number, file_path, caption=file_name)
