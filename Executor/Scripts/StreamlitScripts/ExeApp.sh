@@ -19,7 +19,7 @@ while true; do
     source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
     conda activate tradingenv && \
     cd /Users/traderscafe/Desktop/TradeManV1/  && \
-    streamlit run Executor/ExecutorDashBoard/exe_main_app.py --server.address 0.0.0.0 && \
+    streamlit run Executor/ExecutorDashBoard/exe_main_app.py --server.port 8080 && \
     echo "Program started successfully" && break
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit
