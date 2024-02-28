@@ -365,7 +365,7 @@ def fetch_and_prepare_holdings_data():
                     avg_hedge_order_price = sum(float(order["avg_prc"]) for order in hedge_orders) / len(hedge_orders)
                     option_margin_utilized = avg_hedge_order_price * sum(order.get("qty", 0) for order in hedge_orders)
                 else:
-                    
+                    option_margin_utilized = 0
                     avg_hedge_order_price = 0  # Default to 0 if no hedge orders
                 
                 # Process main orders

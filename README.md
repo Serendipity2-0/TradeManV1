@@ -135,7 +135,7 @@ Features:
 TODO for TradeMan V1.2:
 
 General:
-> Onboarding Algotrain accounts, Santhosh, Sachin
+> Onboarding Algotrain accounts
 > Password clean up
 > Organise office accounts
    > Remove extra Chatgpt account
@@ -144,6 +144,9 @@ General:
    > Github clean up
 > Vim tutorial
 > Warp vs code link
+> Change the path of Data folder to one drive storage
+> Chat with RTX
+> Streamlit hosting
 
 
 Bugs:

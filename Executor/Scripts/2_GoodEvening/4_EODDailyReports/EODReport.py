@@ -6,6 +6,7 @@ from babel.numbers import format_currency
 from loguru import logger
 from dotenv import load_dotenv
 from fpdf import FPDF
+from time import sleep
 
 # Define constants and load environment variables
 DIR = os.getcwd()
@@ -149,7 +150,7 @@ def calculate_account_values(user, today_trades, user_tables):
     today_fb_format = datetime.now().strftime("%d%b%y")
     previous_trading_day_fb_format = get_previous_trading_day(datetime.now().date())
 
-    previous_free_cash = user["Accounts"][f"{previous_trading_day_fb_format}_FreeCash"]
+    previous_free_cash = user["Accounts"][f"{today_fb_format}_FreeCash"]
     previous_holdings = user["Accounts"][f"{previous_trading_day_fb_format}_Holdings"]
     previous_account_value = user["Accounts"][f"{previous_trading_day_fb_format}_AccountValue"]
 
@@ -250,18 +251,27 @@ def generate_consolidated_report_data(active_users, today_trades):
         base_capital = user['Accounts']['CurrentBaseCapital']
         today_fb_format = datetime.now().strftime("%d%b%y")
         current_capital = user['Accounts'][f'{today_fb_format}_AccountValue']
+
         drawdown_amount = min(current_capital-base_capital ,0)
         drawdown_percentage = (drawdown_amount / base_capital * 100) if base_capital else 0
-        #i want drawdown in this format drawdown_amount(drawdown_percentage)
         drawdown = f"{float(drawdown_amount):.2f} ({float(drawdown_percentage):.2f}%)"
+
         for trade in today_trades:
             if trade['user_tr_no'] == tr_no:
-                strategy_pnl[trade['trade_id']] = trade['net_pnl']
+                strategy_amount = float(trade["net_pnl"])
+                strategy_percentage = (strategy_amount / base_capital * 100) if base_capital else 0
+                strategy_pnl[trade['trade_id']] = f"{float(strategy_amount):.2f} ({float(strategy_percentage):.2f}%)"
+                # strategy_pnl[trade['trade_id']] = trade['net_pnl']
                 #i want the sum of net_pnl for each strategy for each user
-                net_pnl = sum(float(trade["net_pnl"]) for trade in today_trades if trade['user_tr_no'] == tr_no)
-        current_week_pnl = user['Accounts'].get('CurrentWeekCapital', 0) + net_pnl
+                net_pnl_amount = sum(float(trade["net_pnl"]) for trade in today_trades if trade['user_tr_no'] == tr_no)
+        net_pnl_percentage = (net_pnl_amount / base_capital * 100) if base_capital else 0
+        net_pnl = f"{float(net_pnl_amount):.2f} ({float(net_pnl_percentage):.2f}%)"
+
+        current_week_pnl_amount = user['Accounts'].get('CurrentWeekPnL', 0) + net_pnl_amount
+        current_week_pnl_percentage = (current_week_pnl_amount / base_capital * 100) if base_capital else 0
+        current_week_pnl = f"{float(current_week_pnl_amount):.2f} ({float(current_week_pnl_percentage):.2f}%)"
         # Update the user's current_week_pnl in Firebase (not shown, assume similar to update_account_keys_fb)
-        update_fields_firebase(CLIENTS_USER_FB_DB, tr_no, {"CurrentWeekCapital": current_week_pnl}, "Accounts")
+        # update_fields_firebase(CLIENTS_USER_FB_DB, tr_no, {"CurrentWeekCapital": current_week_pnl_amount}, "Accounts")
 
         consolidated_data.append([tr_no, user_name, base_capital, current_capital, drawdown, current_week_pnl, net_pnl, strategy_pnl])
     return consolidated_data
@@ -287,6 +297,10 @@ def convert_df_to_pdf(df, output_file):
                     self.cell(40, 10, header, 1, align='C')  # Adjust cell width as needed
                 elif header == "Current Week PnL":
                     self.cell(40, 10, header, 1, align='C')
+                elif header == "Net PnL":
+                    self.cell(40, 10, header, 1, align='C')
+                elif header == "Name":
+                    self.cell(25, 10, header, 1, align='C')
                 else:
                     self.cell(30, 10, header, 1, align='C')  # Adjust cell width as needed
             self.ln(10)
@@ -309,43 +323,66 @@ def convert_df_to_pdf(df, output_file):
                 
                 # Set the height for all cells in this row to the calculated cell_height
                 self.cell(15, cell_height, str(row["Tr_No"]), 1, 0, "C")
-                self.cell(30, cell_height, row["Name"], 1, 0, "C")
-                self.cell(30, cell_height, f"{row['Base Capital']:.2f}", 1, 0, "C")
-                self.cell(30, cell_height, f"{row['Current Capital']:.2f}", 1, 0, "C")
+                self.cell(25, cell_height, row["Name"], 1, 0, "C")
+
+                # Base Capital and Current Capital
+                base_capital_formatted = format_currency(row['Base Capital'], 'INR', locale='en_IN')
+                base_capital_without_symbol = base_capital_formatted.replace('₹', 'Rs ').strip()
+                self.cell(30, cell_height, base_capital_without_symbol, 1, 0, "C")
+
+                current_capital_formatted = format_currency(row['Current Capital'], 'INR', locale='en_IN')
+                current_capital_without_symbol = current_capital_formatted.replace('₹', 'Rs ').strip()
+                self.cell(30, cell_height, current_capital_without_symbol, 1, 0, "C")
                 
                 # Drawdown with color coding
                 drawdown_amount = float(row["Drawdown"].split(" ")[0])
+                drawdown_percentage = row["Drawdown"].split(" ")[1]
+                drawdown_amount_formatted = format_currency(drawdown_amount, 'INR', locale='en_IN')
+                drawdown_amount_without_symbol = drawdown_amount_formatted.replace('₹', 'Rs ').strip()
+                drawdown_amount_with_RS =  drawdown_amount_without_symbol + " " + drawdown_percentage
+
                 if drawdown_amount < 0.0:
                     self.set_text_color(255, 0, 0)  # red
                 else:
                     self.set_text_color(0, 0, 0)  # back to black
-                self.cell(40, cell_height, row['Drawdown'], 1, 0, "C")
+                self.cell(40, cell_height, drawdown_amount_with_RS, 1, 0, "C")
                 
                 # Reset color for Current Week PnL
                 self.set_text_color(0, 0, 0)  # Reset to black
-                self.cell(40, cell_height, f"{row['Current Week PnL']:.2f}", 1, 0, "C")
+                current_week_pnl_amount = float(row["Current Week PnL"].split(" ")[0])
+                current_week_pnl_percentage = row["Current Week PnL"].split(" ")[1]
+                current_week_pnl_amount_formatted = format_currency(current_week_pnl_amount, 'INR', locale='en_IN')
+                current_week_pnl_amount_without_symbol = current_week_pnl_amount_formatted.replace('₹', 'Rs ').strip()
+                current_week_pnl_amount_with_RS =  current_week_pnl_amount_without_symbol + " " + current_week_pnl_percentage
+                self.cell(40, cell_height, current_week_pnl_amount_with_RS, 1, 0, "C")
+
                 
 
                 # Net PnL with color coding
-                if row["Net PnL"] > 0:
+                net_pnl_amount = float(row["Net PnL"].split(" ")[0])
+                net_pnl_percentage = row["Net PnL"].split(" ")[1]
+                net_pnl_amount_formatted = format_currency(net_pnl_amount, 'INR', locale='en_IN')
+                net_pnl_amount_without_symbol = net_pnl_amount_formatted.replace('₹', 'Rs ').strip()
+                net_pnl_amount_with_RS =  net_pnl_amount_without_symbol + " " + net_pnl_percentage
+                if net_pnl_amount > 0:
                     self.set_text_color(0, 128, 0)  # green
-                elif row["Net PnL"] < 0:
+                elif net_pnl_amount < 0:
                     self.set_text_color(255, 0, 0)  # red
                 else:
                     self.set_text_color(0, 0, 0)
 
-                self.cell(30, cell_height, f"{row['Net PnL']:.2f}", 1, 0, "C")
+                self.cell(40, cell_height, net_pnl_amount_with_RS, 1, 0, "C")
                 self.set_text_color(0, 0, 0)  # Reset to black
 
+                # Strategy PnL
                 strategy_pnl_text = ""
-                for trade_id, trade_pnl in row["Strategy PnL"].items():
-                    if float(trade_pnl) > 0.0:
-                        self.set_text_color(0, 128, 0)  # Green for positive values
-                    elif float(trade_pnl) < 0.0:
-                        self.set_text_color(255, 0, 0)  # Red for negative values
-                    # i want the trade_pnl always to be in 2 decimal places
-                    trade_pnl = f"{float(trade_pnl):.2f}"
-                    strategy_pnl_text += f"{trade_id}: {trade_pnl}\n"
+                for trade_id, pnl in row["Strategy PnL"].items():
+                    pnl_amount = float(pnl.split(" ")[0])
+                    pnl_percentage = pnl.split(" ")[1]
+                    pnl_amount_formatted = format_currency(pnl_amount, 'INR', locale='en_IN')
+                    pnl_amount_without_symbol = pnl_amount_formatted.replace('₹', 'Rs ').strip()
+                    pnl_amount_with_RS =  pnl_amount_without_symbol + " " + pnl_percentage
+                    strategy_pnl_text += f"{trade_id}: {pnl_amount_with_RS}\n"
 
                 self.multi_cell(60, 10, strategy_pnl_text, 1, 'C')
                 self.set_text_color(0, 0, 0)  # Reset to black
@@ -382,6 +419,8 @@ def main():
         except Exception as e:
             logger.error(f"Error in sending User Report telegram message: {e}")
 
+    sleep(10)
+    
     try:
         today_trades = get_today_trades_for_all_users(active_users, active_strategies)
         consolidated_data = generate_consolidated_report_data(active_users, today_trades)
