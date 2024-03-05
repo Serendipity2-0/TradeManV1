@@ -6,22 +6,13 @@ DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
-
 load_dotenv(ENV_PATH)
-from loguru import logger
+
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 TRADE_MODE = os.getenv("TRADE_MODE")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
 
-
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.Strategies.StrategiesUtil import (
     StrategyBase,
     assign_trade_id,
@@ -36,6 +27,7 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
 )
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 
+logger = LoggerSetup()
 strategy_obj = StrategyBase.load_from_db("AmiPy")
 instrument_obj = Instrument()
 

@@ -11,17 +11,9 @@ sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 def sweep_orders():
     logger.info("Sweeping orders for all active users in TradeMan system")

@@ -17,19 +17,9 @@ from Executor.Strategies.StrategiesUtil import (
     update_signal_firebase,
     place_order_strategy_users,
 )
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
-
-
+logger = LoggerSetup()
 pystocks_obj = StrategyBase.load_from_db("PyStocks")
 
 #1. Read the /Users/amolkittur/Desktop/TradeManV1/shortterm_best5.csv file

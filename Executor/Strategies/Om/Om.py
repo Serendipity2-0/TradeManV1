@@ -9,17 +9,9 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
@@ -70,7 +62,7 @@ def determine_strike_and_option():
     strike_price_multiplier = om_strategy_obj.EntryParams.StrikeMultiplier
     strategy_type = om_strategy_obj.GeneralParams.StrategyType
     base_symbol, _ = om_strategy_obj.determine_expiry_index()
-    option_type = "CE" if flip_coin() == "Heads" else "PE"
+    option_type = "CE" if prediction == "Heads" else "PE"
     strike_prc = om_strategy_obj.calculate_current_atm_strike_prc(
         base_symbol=base_symbol,
         prediction=prediction,

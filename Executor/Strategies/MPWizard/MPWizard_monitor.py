@@ -6,18 +6,11 @@ import MPWizard_calc as MPWizard_calc
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-from loguru import logger
-
 TRADE_MODE = os.getenv("TRADE_MODE")
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentMonitor.instrument_monitor import (
     monitor,

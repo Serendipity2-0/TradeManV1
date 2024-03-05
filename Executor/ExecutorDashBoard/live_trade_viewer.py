@@ -12,17 +12,9 @@ load_dotenv(ENV_PATH)
 
 user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase

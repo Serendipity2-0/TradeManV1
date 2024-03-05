@@ -9,7 +9,9 @@ import streamlit as st
 from dotenv import load_dotenv
 from firebase_admin import credentials, db, storage
 from PIL import Image
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 
 DIR = r"/Users/omkar/Desktop/TradeManV1/"  # TODO: Change this to your local path

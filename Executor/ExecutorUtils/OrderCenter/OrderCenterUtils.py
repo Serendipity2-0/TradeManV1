@@ -3,7 +3,6 @@ import math
 import os
 import sys
 import time
-from loguru import logger
 from dotenv import load_dotenv
 
 DIR = os.getcwd()
@@ -12,15 +11,9 @@ sys.path.append(DIR)
 load_dotenv(os.path.join(DIR, "trademan.env"))
 db_dir = os.getenv("DB_DIR")
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (

@@ -13,17 +13,9 @@ load_dotenv(ENV_PATH)
 
 signal_db_path = os.getenv("SIGNAL_DB_PATH")
 
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 
 # Function to get a list of all tables in the database

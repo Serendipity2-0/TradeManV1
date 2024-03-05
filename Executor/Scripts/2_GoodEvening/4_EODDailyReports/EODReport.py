@@ -3,7 +3,6 @@ from datetime import datetime, timedelta,date
 from dotenv import load_dotenv
 import pandas as pd
 from babel.numbers import format_currency
-from loguru import logger
 from dotenv import load_dotenv
 from fpdf import FPDF
 from time import sleep
@@ -17,14 +16,10 @@ load_dotenv(ENV_PATH)
 
 CONSOLIDATED_REPORT_PATH = os.getenv("CONSOLIDATED_REPORT_PATH")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
     download_json

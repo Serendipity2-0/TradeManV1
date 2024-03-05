@@ -14,17 +14,9 @@ load_dotenv(ENV_PATH)
 db_dir = os.getenv("DB_DIR")
 user_collection_firebase = os.getenv("FIREBASE_USER_COLLECTION")
 
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (

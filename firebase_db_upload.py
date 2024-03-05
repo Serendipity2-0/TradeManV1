@@ -18,6 +18,7 @@ with open('/Users/amolkittur/Desktop/TradeManV1/clients.json', 'r') as file:
 # Set the reference for the data upload
 # ref = db.reference('temp_strategies')  # Replace with your desired reference path
 ref = db.reference('temp_clients')  # Replace with your desired reference path
+# ref = db.reference('trademan_clients')  # Replace with your desired reference path
 
 #upload the data
 ref.set(data)

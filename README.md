@@ -153,6 +153,13 @@ Bugs:
 > Send if the order is Pass or Fail with order details to firebase 
 > Add Try and except block in strategy util for freecash and holding
 > DB free cash and broker freecash considering the tax changes overnight
+> Morning msg after logged in 
+   no of active users
+   respective trade number : Broker free cash : difference between broker and db
+> Trademan dasboard errors(singleton)
+> counter for errors
+> conslidated Report
+
 
 
 

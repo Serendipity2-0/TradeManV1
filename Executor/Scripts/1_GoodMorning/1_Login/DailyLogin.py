@@ -2,8 +2,6 @@ import datetime as dt
 import os, sys
 import pendulum
 from dotenv import load_dotenv
-from loguru import logger
-
 
 DIR = os.getcwd()
 sys.path.append(DIR)  # Add the current directory to the system path
@@ -13,20 +11,13 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_admin_bot
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
-
+logger = LoggerSetup()
 
 logger.info("Shree Ganeshaya Namaha")
 logger.info("Jai Hanuman")

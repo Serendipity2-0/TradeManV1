@@ -10,19 +10,7 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from loguru import logger
-
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
-
-
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
@@ -32,6 +20,7 @@ from Executor.Strategies.StrategiesUtil import (
     calculate_transaction_type_sl,
 )
 
+logger = LoggerSetup()
 
 # This function fetches the available free cash balance for a user from the Aliceblue trading platform.
 def alice_fetch_free_cash(user_details):

@@ -26,17 +26,9 @@ ACTIVE_STRATEGIES = os.getenv("ACTIVE_STRATEGIES")
 USR_TRADELOG_DB_FOLDER = os.getenv("USR_TRADELOG_DB_FOLDER")
 user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 
 def display_profile_picture(client_data, style=None):
