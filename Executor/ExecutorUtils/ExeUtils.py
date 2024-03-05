@@ -1,6 +1,5 @@
 import datetime as dt
 import os,sys
-from loguru import logger
 from dotenv import load_dotenv
 
 # Define constants and load environment variables
@@ -10,16 +9,8 @@ sys.path.append(DIR)  # Add the current directory to the system path
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
-
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+logger = LoggerSetup()
 
 #Expiry Dates Calculation
 holidays = [dt.date(2024, i, j) for i, j in [
@@ -65,7 +56,7 @@ def get_previous_freecash(today: dt.date, prefix=None) -> dt.date:
         previous_day = today - dt.timedelta(days=2)
         previous_day = previous_day.strftime("%d%b%y")
     elif today.weekday() == 6:
-        previous_day = today - dt.timedelta(days=2)
+        previous_day = today - dt.timedelta(days=1)
         previous_day = previous_day.strftime("%d%b%y")
     else:
         previous_day = today - dt.timedelta(days=1)

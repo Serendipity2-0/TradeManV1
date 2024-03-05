@@ -12,17 +12,9 @@ load_dotenv(ENV_PATH)
 
 user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_users_from_firebase
@@ -54,7 +46,7 @@ def trade_state_viewer():
             orders = trade_state.get('orders', [])
             if orders:
                 for order in orders:
-                    st.write(f"Order ID: {order.get('order_id')}, Qty: {order.get('qty')}, Time Stamp: {order.get('time_stamp')}")
+                    st.write(f"Order ID: {order.get('order_id')}, Qty: {order.get('qty')}, Time Stamp: {order.get('time_stamp')}, Order Status: {order.get('order_status')}")
             else:
                 st.write("No orders found for the selected strategy.")
                 

@@ -9,18 +9,11 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from loguru import logger
+TRADE_MODE = os.getenv("TRADE_MODE")
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
+logger = LoggerSetup()
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
 from Executor.Strategies.StrategiesUtil import (
@@ -63,6 +56,9 @@ def flip_coin():
     result = random.choice(["Heads", "Tails"])
     return result
 
+
+# Flipping the coin and printing the result
+
 prediction = "Bullish" if flip_coin() == "Heads" else "Bearish"
 
 def determine_strike_and_option():
@@ -70,7 +66,7 @@ def determine_strike_and_option():
     strike_price_multiplier = om_strategy_obj.EntryParams.StrikeMultiplier
     strategy_type = om_strategy_obj.GeneralParams.StrategyType
     base_symbol, _ = om_strategy_obj.determine_expiry_index()
-    option_type = "CE" if flip_coin() == "Heads" else "PE"
+    option_type = "CE" if prediction == "Heads" else "PE"
     strike_prc = om_strategy_obj.calculate_current_atm_strike_prc(
         base_symbol=base_symbol,
         prediction=prediction,
@@ -113,6 +109,7 @@ def create_order_details(exchange_token, base_symbol):
             "product_type": om_strategy_obj.get_general_params().ProductType,
             "order_mode": "Main",
             "trade_id": next_trade_prefix,
+            "trade_mode": TRADE_MODE
         },
         {
             "strategy": om_strategy_obj.StrategyName,
@@ -122,10 +119,11 @@ def create_order_details(exchange_token, base_symbol):
             "transaction_type": stoploss_transaction_type,
             "order_type": "Stoploss",
             "product_type": om_strategy_obj.get_general_params().ProductType,
-            "limit_prc": 0.5,
-            "trigger_prc": 1.0,
+            "limit_prc": 0.1,
+            "trigger_prc": 0.2,
             "order_mode": "SL",
             "trade_id": next_trade_prefix,
+            "trade_mode": TRADE_MODE
         },
     ]
     return order_details
@@ -144,6 +142,7 @@ def send_signal_msg(base_symbol, strike_prc, option_type):
     discord_bot(message, om_strategy_obj.StrategyName)
 
 def main():
+    global start_hour, start_minute, window
     hour = int(start_hour)
     minute = int(start_minute)
     window = int(window)

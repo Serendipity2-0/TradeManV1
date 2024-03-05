@@ -13,21 +13,13 @@ ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
 signal_db_path = os.getenv("SIGNAL_DB_PATH")
-
-from loguru import logger
-
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
 
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase, update_fields_firebase, update_collection
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 strategies_fb_db = os.getenv("STRATEGIES_FB_COLLECTION")
 market_info_fb_db = os.getenv("MARKET_INFO_FB_COLLECTION")

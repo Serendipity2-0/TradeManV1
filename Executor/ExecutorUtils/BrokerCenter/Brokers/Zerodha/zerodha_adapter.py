@@ -13,18 +13,9 @@ from Executor.Strategies.StrategiesUtil import (
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-from loguru import logger
-
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 
 def create_kite_obj(user_details=None, api_key=None, access_token=None):

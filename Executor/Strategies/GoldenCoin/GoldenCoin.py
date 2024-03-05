@@ -9,19 +9,11 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from loguru import logger
-
 TRADE_MODE = os.getenv("TRADE_MODE")
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
 
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
 from Executor.Strategies.StrategiesUtil import (
@@ -127,8 +119,8 @@ def create_order_details(exchange_token, base_symbol):
             "transaction_type": stoploss_transaction_type,
             "order_type": "Stoploss",
             "product_type": goldencoin_strategy_obj.get_general_params().ProductType,
-            "limit_prc": 0.5,
-            "trigger_prc": 1.0,
+            "limit_prc": 0.1,
+            "trigger_prc": 0.2,
             "order_mode": "SL",
             "trade_id": next_trade_prefix,
             "trade_mode": TRADE_MODE
@@ -175,7 +167,6 @@ def main():
         total_wait_seconds = max(seconds_until_11_30_am, 0) + random_seconds
         print(f"Waiting for {total_wait_seconds} seconds.")
         time.sleep(total_wait_seconds)
-
 
     base_symbol, strike_prc, option_type = determine_strike_and_option()
     exchange_token = fetch_exchange_token(base_symbol, strike_prc, option_type)

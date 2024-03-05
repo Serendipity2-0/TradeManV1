@@ -10,19 +10,11 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from loguru import logger
-
 TRADE_MODE = os.getenv("TRADE_MODE")
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
 
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
 from Executor.Strategies.StrategiesUtil import (
@@ -53,7 +45,6 @@ class ExpiryTrader(StrategyBase):
 
     def get_raw_field(self, field_name: str):
         return super().get_raw_field(field_name)
-
 
 expiry_trader_obj = ExpiryTrader.load_from_db("ExpiryTrader")
 instrument_obj = InstrumentCenterUtils.Instrument()
@@ -120,7 +111,6 @@ hedge_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(
     hedge_exchange_token
 )
 
-
 stoploss_transaction_type = calculate_transaction_type_sl(main_transaction_type)
 limit_prc = calculate_stoploss(
     ltp, main_transaction_type, stoploss_multiplier=stoploss_multiplier
@@ -171,7 +161,6 @@ orders_to_place = [
 
 orders_to_place = assign_trade_id(orders_to_place)
 logger.debug(f"orders_to_place for {strategy_name}: {orders_to_place}")
-
 
 def main():
     global strategy_name, prediction

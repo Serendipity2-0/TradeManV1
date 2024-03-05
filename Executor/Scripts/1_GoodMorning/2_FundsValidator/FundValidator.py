@@ -1,7 +1,6 @@
 import os, sys
 from dotenv import load_dotenv
 import datetime as dt
-from loguru import logger
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -15,19 +14,11 @@ import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_ut
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     update_fields_firebase,
     delete_fields_firebase)
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
-
 
 active_users = broker_center_utils.fetch_active_users_from_firebase()
 
@@ -79,14 +70,19 @@ def compare_freecash(broker_free_cash, db_free_cash):
     from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_admin_bot
     
     tolerable_difference = os.getenv("ACC_DIFF_TOLERANCE")
-    
+
+    discord_admin_bot(f"Today's number of users = {len(broker_free_cash)}")
+
     for user in broker_free_cash:
         logger.info(f"Comparing free cash for {user}")
         # check if the difference is more than 1%
         try:
+            message = f"Trader Number - {user} : Broker Freecash - {broker_free_cash[user]} : Difference - {broker_free_cash[user] - db_free_cash[user]}"
+            discord_admin_bot(message)
+
             if abs(broker_free_cash[user] - db_free_cash[user]) > float(tolerable_difference) * db_free_cash[user]:
                 logger.error(f"Free cash for {user} is not matching")
-                discord_admin_bot(f"Free cash for {user} is not matching, Broker: {broker_free_cash[user]}, DB: {db_free_cash[user]}")            
+                discord_admin_bot(f"Free cash for {user} is not matching, BrokerFreeCash - {broker_free_cash[user]}, DBFreeCash - {db_free_cash[user]}")            
             else:
                 logger.info(f"Free cash for {user} is matching")
             update_fields_firebase(CLIENTS_USER_FB_DB, user, {dt.datetime.now().strftime("%d%b%y") + "_FreeCash": broker_free_cash[user]},"Accounts")

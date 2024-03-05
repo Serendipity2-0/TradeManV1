@@ -18,17 +18,9 @@ load_dotenv(ENV_PATH)
 
 clients_fb_db = os.getenv("FIREBASE_USER_COLLECTION")
 
-from loguru import logger
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+logger = LoggerSetup()
 
 #######################
 # Page configuration

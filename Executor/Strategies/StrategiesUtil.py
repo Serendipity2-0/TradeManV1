@@ -18,19 +18,7 @@ fno_info_path = os.getenv("FNO_INFO_PATH")
 user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
-from loguru import logger
-
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
-
-
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
     push_orders_firebase,
@@ -38,6 +26,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 )
 from Executor.ExecutorUtils.ExeUtils import holidays
 
+logger = LoggerSetup()
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):

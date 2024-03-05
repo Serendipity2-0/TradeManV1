@@ -1,35 +1,22 @@
 import pandas as pd
 import os, sys
 from dotenv import load_dotenv
+from datetime import datetime
+from calendar import monthrange
+from datetime import timedelta  # Importing the missing timedelta
+from kiteconnect import KiteConnect
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-ins_db_path = os.getenv("SQLITE_INS_PATH")
-
-from loguru import logger
-
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
-
-
-from datetime import datetime
-from calendar import monthrange
-
-from datetime import timedelta  # Importing the missing timedelta
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
-from kiteconnect import KiteConnect
 import Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter as exesql_adapter
 
+ins_db_path = os.getenv("SQLITE_INS_PATH")
+logger = LoggerSetup()
 
 class Instrument:
     def __init__(self):

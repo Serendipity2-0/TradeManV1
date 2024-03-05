@@ -3,7 +3,6 @@ from datetime import datetime, timedelta,date
 from dotenv import load_dotenv
 import pandas as pd
 from babel.numbers import format_currency
-from loguru import logger
 from dotenv import load_dotenv
 from fpdf import FPDF
 from time import sleep
@@ -17,14 +16,10 @@ load_dotenv(ENV_PATH)
 
 CONSOLIDATED_REPORT_PATH = os.getenv("CONSOLIDATED_REPORT_PATH")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-logger.add(
-    ERROR_LOG_PATH,
-    level="TRACE",
-    rotation="00:00",
-    enqueue=True,
-    backtrace=True,
-    diagnose=True,
-)
+
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
     download_json
@@ -399,12 +394,7 @@ def send_consolidated_report_pdf_to_telegram():
     #send the pdf to the telegram channel
     send_file_via_telegram(pdf_file_path, f"{today_string}_consolidated_report.pdf")
 
-# Main function to generate and send the report
-def main():
-    download_json(CLIENTS_USER_FB_DB, "before_eod_report")
-    active_users = fetch_active_users_from_firebase()
-    active_strategies = fetch_active_strategies_all_users()
-
+def create_eod_report(active_users, active_strategies):
     for user in active_users:
         try:
             user_db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
@@ -419,8 +409,7 @@ def main():
         except Exception as e:
             logger.error(f"Error in sending User Report telegram message: {e}")
 
-    sleep(10)
-    
+def create_consolidated_report(active_users, active_strategies):
     try:
         today_trades = get_today_trades_for_all_users(active_users, active_strategies)
         consolidated_data = generate_consolidated_report_data(active_users, today_trades)
@@ -434,5 +423,16 @@ def main():
     except Exception as e:
         logger.error(f"Error in generating consolidated report data: {e}")
 
+
+# Main function to generate and send the report
+def main():
+    download_json(CLIENTS_USER_FB_DB, "before_eod_report")
+    active_users = fetch_active_users_from_firebase()
+    active_strategies = fetch_active_strategies_all_users()
+
+    create_eod_report(active_users, active_strategies)
+    sleep(10)
+    create_consolidated_report(active_users, active_strategies)
+    
 if __name__ == "__main__":
     main()
