@@ -10,10 +10,11 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
+TRADE_MODE = os.getenv("TRADE_MODE")
+
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
-
 
 from Executor.Strategies.StrategiesUtil import StrategyBase
 from Executor.Strategies.StrategiesUtil import (
@@ -45,7 +46,6 @@ class Namaha(StrategyBase):
     def get_raw_field(self, field_name: str):
         return super().get_raw_field(field_name)
 
-
 namaha_obj = Namaha.load_from_db("Namaha")
 instrument_obj = InstrumentCenterUtils.Instrument()
 
@@ -75,6 +75,8 @@ hedge_multiplier = namaha_obj.EntryParams.HedgeMultiplier
 stoploss_multiplier = namaha_obj.EntryParams.SLMultiplier
 desired_start_time_str = namaha_obj.get_entry_params().EntryTime
 strategy_type = namaha_obj.GeneralParams.StrategyType
+
+logger.debug(f"Values from Firebase for {strategy_name}: {base_symbol}, {today_expiry_token}, {prediction}, {order_type}, {product_type}, {strike_prc_multiplier}, {hedge_multiplier}, {stoploss_multiplier}, {desired_start_time_str}, {strategy_type}")
 
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
 
@@ -113,6 +115,7 @@ stoploss_transaction_type = calculate_transaction_type_sl(main_transaction_type)
 limit_prc = calculate_stoploss(
     ltp, main_transaction_type, stoploss_multiplier=stoploss_multiplier
 )
+logger.debug(f"stoploss_transaction_type: {stoploss_transaction_type}, limit_prc: {limit_prc}")
 trigger_prc = calculate_trigger_price(stoploss_transaction_type, limit_prc)
 
 orders_to_place = [
@@ -126,6 +129,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "HedgeEntry",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
     {
         "strategy": strategy_name,
@@ -137,6 +141,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "Main",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
     {
         "strategy": strategy_name,
@@ -150,11 +155,12 @@ orders_to_place = [
         "trigger_prc": trigger_prc,
         "order_mode": "SL",
         "trade_id": next_trade_prefix,
+        "trade_mode": TRADE_MODE
     },
 ]
 
 orders_to_place = assign_trade_id(orders_to_place)
-
+logger.debug(f"orders_to_place for {strategy_name}: {orders_to_place}")
 
 def main():
     global strategy_name, prediction
@@ -194,7 +200,6 @@ def main():
                 "strike_multipler": strike_prc_multiplier,
                 "hedge_multipler": hedge_multiplier,
                 "trade_id": main_trade_id_prefix,
-
             },
             "Status": "Open",
         }

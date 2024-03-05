@@ -46,7 +46,7 @@ def trade_state_viewer():
             orders = trade_state.get('orders', [])
             if orders:
                 for order in orders:
-                    st.write(f"Order ID: {order.get('order_id')}, Qty: {order.get('qty')}, Time Stamp: {order.get('time_stamp')}")
+                    st.write(f"Order ID: {order.get('order_id')}, Qty: {order.get('qty')}, Time Stamp: {order.get('time_stamp')}, Order Status: {order.get('order_status')}")
             else:
                 st.write("No orders found for the selected strategy.")
                 

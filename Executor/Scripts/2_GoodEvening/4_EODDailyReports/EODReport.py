@@ -266,7 +266,7 @@ def generate_consolidated_report_data(active_users, today_trades):
         current_week_pnl_percentage = (current_week_pnl_amount / base_capital * 100) if base_capital else 0
         current_week_pnl = f"{float(current_week_pnl_amount):.2f} ({float(current_week_pnl_percentage):.2f}%)"
         # Update the user's current_week_pnl in Firebase (not shown, assume similar to update_account_keys_fb)
-        # update_fields_firebase(CLIENTS_USER_FB_DB, tr_no, {"CurrentWeekCapital": current_week_pnl_amount}, "Accounts")
+        update_fields_firebase(CLIENTS_USER_FB_DB, tr_no, {"CurrentWeekCapital": current_week_pnl_amount}, "Accounts")
 
         consolidated_data.append([tr_no, user_name, base_capital, current_capital, drawdown, current_week_pnl, net_pnl, strategy_pnl])
     return consolidated_data
@@ -394,12 +394,7 @@ def send_consolidated_report_pdf_to_telegram():
     #send the pdf to the telegram channel
     send_file_via_telegram(pdf_file_path, f"{today_string}_consolidated_report.pdf")
 
-# Main function to generate and send the report
-def main():
-    download_json(CLIENTS_USER_FB_DB, "before_eod_report")
-    active_users = fetch_active_users_from_firebase()
-    active_strategies = fetch_active_strategies_all_users()
-
+def create_eod_report(active_users, active_strategies):
     for user in active_users:
         try:
             user_db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
@@ -414,8 +409,7 @@ def main():
         except Exception as e:
             logger.error(f"Error in sending User Report telegram message: {e}")
 
-    sleep(10)
-    
+def create_consolidated_report(active_users, active_strategies):
     try:
         today_trades = get_today_trades_for_all_users(active_users, active_strategies)
         consolidated_data = generate_consolidated_report_data(active_users, today_trades)
@@ -429,5 +423,16 @@ def main():
     except Exception as e:
         logger.error(f"Error in generating consolidated report data: {e}")
 
+
+# Main function to generate and send the report
+def main():
+    download_json(CLIENTS_USER_FB_DB, "before_eod_report")
+    active_users = fetch_active_users_from_firebase()
+    active_strategies = fetch_active_strategies_all_users()
+
+    create_eod_report(active_users, active_strategies)
+    sleep(10)
+    create_consolidated_report(active_users, active_strategies)
+    
 if __name__ == "__main__":
     main()
