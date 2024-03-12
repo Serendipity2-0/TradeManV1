@@ -207,7 +207,7 @@ Bugs and Known Issues
 
 TODO V1.3
 1. Check the numbers in DB and broker also validate the TAX
-2. Create separate channel for good morning script
+
 3. Order Executor:
    First part is order repair
       1. list of strategies
@@ -227,4 +227,7 @@ TODO V1.3
       1. Individual signal with extra info 
       2. Only signals
    3. Users with strategy
+
+
+2. Create separate channel for good morning script
 5. github webhook
