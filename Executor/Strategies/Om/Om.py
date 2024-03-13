@@ -66,7 +66,7 @@ def determine_strike_and_option():
     strike_price_multiplier = om_strategy_obj.EntryParams.StrikeMultiplier
     strategy_type = om_strategy_obj.GeneralParams.StrategyType
     base_symbol, _ = om_strategy_obj.determine_expiry_index()
-    option_type = "CE" if prediction == "Heads" else "PE"
+    option_type = "CE" if prediction == "Bullish" else "PE"
     strike_prc = om_strategy_obj.calculate_current_atm_strike_prc(
         base_symbol=base_symbol,
         prediction=prediction,

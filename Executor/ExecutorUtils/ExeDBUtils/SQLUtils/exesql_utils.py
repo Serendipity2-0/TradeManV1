@@ -31,8 +31,8 @@ def db_to_excel(db_folder_path, output_folder):
         print(f"Exported {db_file} to {excel_file}")
 
 # Paths to your folders
-db_folder_path = '/Users/amolkittur/Desktop/TradeManV1/Data/UserSQLDB'  # Replace with the path to your folder containing .db files
-excel_folder = '/Users/amolkittur/Desktop/TradeManV1/Data/UserExcel'  # Replace with the path to your desired output folder
+db_folder_path = '/Users/traderscafe/Desktop/TradeManV1/Data/UserSQLDB'  # Replace with the path to your folder containing .db files
+excel_folder = '/Users/traderscafe/Desktop/TradeManV1/Data/UserSQLExcel'  # Replace with the path to your desired output folder
 
 # Run the function
 # db_to_excel(db_folder_path, excel_folder)

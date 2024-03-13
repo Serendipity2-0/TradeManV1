@@ -431,8 +431,12 @@ def main():
     active_strategies = fetch_active_strategies_all_users()
 
     create_eod_report(active_users, active_strategies)
+    logger.debug("Sleeping for 10 seconds before creating consolidated report")
     sleep(10)
-    create_consolidated_report(active_users, active_strategies)
+    logger.debug("Creating consolidated report")
+    latest_active_users = fetch_active_users_from_firebase()
+    latest_active_strategies = fetch_active_strategies_all_users()
+    create_consolidated_report(latest_active_users, latest_active_strategies)
     
 if __name__ == "__main__":
     main()
