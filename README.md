@@ -205,4 +205,29 @@ Longterm TODO:
 Bugs and Known Issues
 
 
+TODO V1.3
+1. Check the numbers in DB and broker also validate the TAX
 
+3. Order Executor:
+   First part is order repair
+      1. list of strategies
+      2. list of user with failed orders
+
+   Second part is placing new orders
+      1. list of strategies
+      2. Create a new order details
+4. Format Consolidated report
+   1. Market info (with percentage)
+      1. index movement(5 index)
+      2. day to day
+      3. week to day
+      4. month to day
+      5. year to day
+   2. Strategy info 
+      1. Individual signal with extra info 
+      2. Only signals
+   3. Users with strategy
+
+
+2. Create separate channel for good morning script
+5. github webhook

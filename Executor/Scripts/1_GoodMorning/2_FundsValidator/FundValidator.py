@@ -1,6 +1,7 @@
 import os, sys
 from dotenv import load_dotenv
 import datetime as dt
+from time import sleep
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -74,12 +75,18 @@ def compare_freecash(broker_free_cash, db_free_cash):
     discord_admin_bot(f"Today's number of users = {len(broker_free_cash)}")
 
     for user in broker_free_cash:
-        logger.info(f"Comparing free cash for {user}")
-        # check if the difference is more than 1%
         try:
             message = f"Trader Number - {user} : Broker Freecash - {broker_free_cash[user]} : Difference - {broker_free_cash[user] - db_free_cash[user]}"
             discord_admin_bot(message)
+            sleep(0.3)            
+        except KeyError:
+            logger.error(f"Trader Number - {user} : Free cash not found in DB")
+            discord_admin_bot(f"Trader Number - {user} : Free cash not found in DB")
 
+    for user in broker_free_cash:
+        logger.info(f"Comparing free cash for {user}")
+        # check if the difference is more than 1%
+        try:
             if abs(broker_free_cash[user] - db_free_cash[user]) > float(tolerable_difference) * db_free_cash[user]:
                 logger.error(f"Free cash for {user} is not matching")
                 discord_admin_bot(f"Free cash for {user} is not matching, BrokerFreeCash - {broker_free_cash[user]}, DBFreeCash - {db_free_cash[user]}")            

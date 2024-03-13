@@ -157,7 +157,7 @@ def signal_to_log_firebase(orders_to_place,predicition):
             "StrategyInfo": {
                 "trade_id": main_trade_id_prefix,
                 "direction": predicition,
-                "percentage": float(percentage[0])
+                "percentage":float(percentage[0])
             }
         }
     update_signal_firebase(strategy_obj.StrategyName, signals_to_log, next_trade_prefix)

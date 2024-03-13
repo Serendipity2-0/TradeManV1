@@ -35,9 +35,9 @@ def sweep_sl_order():
     )
 
     active_users = fetch_active_users_from_firebase()
+    logger.debug(f"Sweeping SL orders for {len(active_users)} users.")
 
     for user in active_users:
-        logger.debug(f"Sweeping SL orders for {len(active_users)} users.")
         try:
             tradebook = get_today_orders_for_brokers(user)
             counter_order_detail = create_counter_order_details(tradebook, user)
