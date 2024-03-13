@@ -161,6 +161,7 @@ def main():
         base_symbols.extend(base_symbol)
 
     logger.info(base_symbols)
+    discord_bot(f"Fetching data for {base_symbols}...","db")
 
     if today.date() in holidays:
         logger.info("Today is a holiday")

@@ -26,13 +26,13 @@ while true; do
     # Source conda, activate the environment and run the script
     source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
     conda activate tradingenv && \
-    cd /Users/traderscafe/Desktop/Main/  && \
-    /Users/traderscafe/miniconda3/envs/tradingenv/bin/python MarketUtils/Main/weeklyreport.py && \
+    cd /Users/traderscafe/Desktop/TradeManV1/ && \
+    /Users/traderscafe/miniconda3/envs/tradingenv/bin/python Executor/Scripts/WeeklyReports/WeeklyReport.py && \
     echo "Program started successfully" && break
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit
     if ((attempt==max_attempts)); then
-        echo "The script AmiPy has some errors. Please Check !!!"
+        echo "The script Weekly Report has some errors. Please Check !!!"
         
         # Send a message on Telegram
         curl -s -X POST https://api.telegram.org/bot$telegram_bot_token/sendMessage -d chat_id=$chat_id -d text="Weekly report errors. Please Check !!!"

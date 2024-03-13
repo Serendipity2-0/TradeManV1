@@ -356,6 +356,7 @@ def kite_modify_orders_for_users(order_details, users_credentials):
                 order_id=order_id,
                 price=new_stoploss,
                 trigger_price=trigger_price,
+                quantity=qty,
             )
             logger.info("zerodha order modified", modify_order)
     except Exception as e:

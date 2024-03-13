@@ -2,7 +2,7 @@ import os, sys
 from datetime import datetime, timedelta,date
 from dotenv import load_dotenv
 import pandas as pd
-
+from babel.numbers import format_currency
 
 # Load environment variables
 DIR_PATH = os.getcwd()
@@ -80,19 +80,18 @@ def send_telegram_message_to_user(user, user_details,start_date,end_date):
     user_name = user["Profile"]["Name"]
     message = f"Weekly Summary for {user_name} ({start_date} to {end_date})\n\n"
     for strategy, pnl in user_details['trades'].items():
-        message += f"{strategy}: ₹{pnl}\n"
-    message += f"\nNet PnL: ₹{round((sum(user_details['trades'].values())),2)}\n\n"
-    message += f"Free Cash: ₹{user_details['fb_values']['FreeCash']}\n"
-    message += f"TradeMan Holdings: ₹{user_details['fb_values']['Holdings']}\n"
-    message += f"TradeMan Account Value: ₹{user_details['fb_values']['AccountValue']}\n"
-    message += f"Broker Account Value: ₹{user_details['account_value']}\n"
-    message += f"Difference: ₹{user_details['difference']}\n"
-    message += f"Drawdown: ₹{user_details['drawdown']}\n\n"
+        message += f"{strategy}: {format_currency(pnl,'INR', locale='en_IN')}\n"
+    message += f"\nNet PnL: {format_currency(round((sum(user_details['trades'].values())),2),'INR', locale='en_IN')}\n\n"
+    message += f"Free Cash: {format_currency(user_details['fb_values']['FreeCash'],'INR', locale='en_IN')}\n"
+    message += f"TradeMan Holdings: {format_currency(user_details['fb_values']['Holdings'],'INR', locale='en_IN')}\n"
+    message += f"TradeMan Account Value: {format_currency(user_details['fb_values']['AccountValue'],'INR', locale='en_IN')}\n"
+    message += f"Broker Account Value: {format_currency(user_details['account_value'],'INR', locale='en_IN')}\n"
+    message += f"Difference: {format_currency(user_details['difference'],'INR', locale='en_IN')}\n"
+    message += f"Drawdown: {format_currency(user_details['drawdown'],'INR', locale='en_IN')}\n\n"
     message += "Best regards,\nTradeMan"
 
     logger.debug(f"Message: {message}")
-    send_telegram_message(user["Profile"]["Phone"], message)
-
+    send_telegram_message(user["Profile"]["PhoneNumber"], message)
 
 # Function to read base capital from basecapital.txt
 def read_base_capital(file_path):
