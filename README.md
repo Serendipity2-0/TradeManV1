@@ -231,3 +231,10 @@ TODO V1.3
 
 2. Create separate channel for good morning script
 5. github webhook
+
+
+TODO
+1. Streamlit hosting on static IP
+2. Clean the routers
+3. connect via lan 
+4. 

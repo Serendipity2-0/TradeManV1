@@ -474,3 +474,14 @@ def calculate_taxes(entry_orders,exit_orders,hedge_orders,broker):
                 tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", float(entry_order["qty"]), float(entry_order["avg_prc"]), float(exit_order["avg_prc"]), 2)
                 taxes += tax
     return taxes         
+
+def get_primary_account_obj():
+    zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
+    primary_account_session_id = fetch_primary_accounts_from_firebase(
+        zerodha_primary
+    )
+    obj = zerodha_adapter.create_kite_obj(
+        api_key=primary_account_session_id["Broker"]["ApiKey"],
+        access_token=primary_account_session_id["Broker"]["SessionId"],
+    )
+    return obj

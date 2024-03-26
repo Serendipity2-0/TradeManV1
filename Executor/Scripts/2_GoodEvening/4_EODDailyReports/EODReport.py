@@ -34,6 +34,11 @@ from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import 
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
+from Executor.ExecutorUtils.ReportUtils.MarketMovementData import main as fetch_market_movement_data
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, PageBreak
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape
+
 
 CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
@@ -272,6 +277,8 @@ def generate_consolidated_report_data(active_users, today_trades):
     return consolidated_data
 
 def convert_df_to_pdf(df, output_file):
+    print("converting df to pdf")
+    print(df)
     class PDF(FPDF):
         def __init__(self, orientation='L', unit='mm', format='A4'):
             super().__init__(orientation, unit, format)
@@ -404,19 +411,78 @@ def create_eod_report(active_users, active_strategies):
             today_trades = get_today_trades(user_tables,active_strategies)
             account_values = calculate_account_values(user, today_trades, user_tables)
             update_account_keys_fb(user['Tr_No'], account_values)
-            format_and_send_report(user, today_trades, account_values)
+            # format_and_send_report(user, today_trades, account_values)
 
         except Exception as e:
             logger.error(f"Error in sending User Report telegram message: {e}")
 
+def df_to_table(df, column_widths=None):
+    data = [df.columns.tolist()] + df.values.tolist()
+    table = Table(data, colWidths=column_widths)  # Apply custom column widths if provided
+
+    # Define and apply a basic table style
+    style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.gray),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BOX', (0, 0), (-1, -1), 2, colors.black),
+    ])
+    table.setStyle(style)
+    return table
+
+
+def convert_dfs_to_pdf(trade_df, movement_df, output_path):
+    pdf = SimpleDocTemplate(output_path, pagesize=landscape(letter))
+    elements = []
+
+    # Convert the movement DataFrame to a ReportLab Table and add it to elements
+    if not movement_df.empty:
+        movement_table = df_to_table(movement_df)
+        elements.append(movement_table)
+        elements.append(PageBreak())  # Adds a new page break for the blank page
+    else:
+        elements.append(Spacer(1, 50))  # Add a spacer if there's no movement data, for consistency
+        elements.append(PageBreak())  # Still add a page break even if no movement data
+    
+    # Assuming a blank page is desired between the movement and trade data
+    elements.append(Spacer(1, 50))  # This spacer is just to simulate content on the blank page
+    elements.append(PageBreak())  # Add another page break to start trade data on a new page
+
+    # Convert the trade DataFrame to a ReportLab Table and add it to elements
+    if not trade_df.empty:
+        trade_table = df_to_table(trade_df)
+        elements.append(trade_table)
+
+    # Build the PDF with all elements (movement data, blank page, trade data)
+    pdf.build(elements)
+
+def format_strategy_pnl(df):
+    print(df)
+    # Check if 'StrategyPnL' column exists to prevent errors
+    if 'StrategyPnL' in df.columns:
+        print("here")
+        # Apply formatting to each cell in the 'StrategyPnL' column
+        df['StrategyPnL'] = df['StrategyPnL'].apply(lambda x: '\n'.join([f"{k}: {v}" for k, v in x.items()]) if isinstance(x, dict) else x)
+    return df
+
 def create_consolidated_report(active_users, active_strategies):
     try:
+        #Page 1 data
+        df_movements = fetch_market_movement_data()
+
+
+        #Page 3 data
         today_trades = get_today_trades_for_all_users(active_users, active_strategies)
         consolidated_data = generate_consolidated_report_data(active_users, today_trades)
-        #convert the consolidated_data to a dataframe and then into a pdf
         consolidated_df = pd.DataFrame(consolidated_data, columns=["Tr_No", "Name", "Base Capital", "Current Capital", "Drawdown", "Current Week PnL", "Net PnL", "Strategy PnL"])
-        convert_df_to_pdf(consolidated_df, f"{today_string}_consolidated_report.pdf")
-        send_consolidated_report_pdf_to_telegram()
+        consolidated_df = format_strategy_pnl(consolidated_df)
+        # convert_df_to_pdf(consolidated_df, f"{today_string}_consolidated_report.pdf")
+        convert_dfs_to_pdf(consolidated_df,df_movements,f"{today_string}_consolidated_report.pdf")
+        # send_consolidated_report_pdf_to_telegram()
 
 
         logger.info(f"consolidated_data: {consolidated_data}")
