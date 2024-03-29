@@ -142,11 +142,25 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
 
         # Update Firebase with order status
             update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
-        for data in all_order_statuses:
-            try:
-                push_orders_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], data, update_path)
-            except Exception as e:
-                logger.error(f"Error updating firebase with order status: {e}")
+            logger.debug(f"update_path: {update_path}")
+
+            if order_qty_mode == "Sweep":
+                for data in all_order_statuses:
+                    try:
+                        print("data", data)
+                        push_orders_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], data, update_path)
+                    except Exception as e:
+                        logger.error(f"Error updating firebase with order status: {e}")
+                all_order_statuses.clear() 
+
+        if order_qty_mode != "Sweep":
+            for data in all_order_statuses:
+                try:
+                    print("data", data)
+                    push_orders_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], data, update_path)
+                except Exception as e:
+                    logger.error(f"Error updating firebase with order status: {e}")
+            
 
         # Send notification if any orders failed # TODO: check for Zerodha exact fail msgs and send notifications accordingly
         for status in all_order_statuses:

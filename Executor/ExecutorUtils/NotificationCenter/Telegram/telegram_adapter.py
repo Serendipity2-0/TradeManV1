@@ -54,3 +54,13 @@ def send_file_via_telegram(file_path, file_name):
     # Create a Telegram client and send the file
     with TelegramClient(session_filepath, api_id, api_hash) as client:
         client.send_file(phone_number, file_path, caption=file_name)
+
+def send_consoildated_report_via_telegram_to_group(file_path,file_name):
+    global api_id, api_hash
+    # Define the session file path
+    session_filepath = os.path.join(
+        DIR, "Executor/ExecutorUtils/NotificationCenter/Telegram/+918618221715.session"
+    )
+    consolidated_group_id = os.getenv("telegram_consolidated_report_channel_id")
+    with TelegramClient(session_filepath, api_id, api_hash) as client:
+        client.send_file(consolidated_group_id, file_path, caption=file_name)

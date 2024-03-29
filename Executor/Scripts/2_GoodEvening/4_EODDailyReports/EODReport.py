@@ -30,7 +30,7 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     )
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
     send_telegram_message,
-    send_file_via_telegram
+    send_consoildated_report_via_telegram_to_group
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
@@ -254,9 +254,12 @@ def generate_consolidated_report_data(active_users, today_trades):
         user_name = user['Profile']['Name']
         tr_no = user['Tr_No']
         base_capital = user['Accounts']['CurrentBaseCapital']
+        base_capital_str = f"{base_capital:.2f}"
         today_fb_format = datetime.now().strftime("%d%b%y")
         current_capital = user['Accounts'].get(f'{today_fb_format}_AccountValue', 0)  # Use get for safety
+        current_capital_str = f"{current_capital:.2f}"
         drawdown_amount = min(current_capital-base_capital, 0)
+        drawdown_amount_str = f"{drawdown_amount:.2f}"
         drawdown_percentage = (drawdown_amount / base_capital * 100) if base_capital else 0
         drawdown = f"{float(drawdown_amount):.2f} ({float(drawdown_percentage):.2f}%)"
 
@@ -281,7 +284,7 @@ def generate_consolidated_report_data(active_users, today_trades):
         # Update the user's current_week_pnl in Firebase (not shown, assume similar to update_account_keys_fb)
         update_fields_firebase(CLIENTS_USER_FB_DB, tr_no, {"CurrentWeekCapital": current_week_pnl_amount}, "Accounts")
 
-        consolidated_data.append([tr_no, user_name, base_capital, current_capital, drawdown, current_week_pnl, net_pnl, strategy_pnl])
+        consolidated_data.append([tr_no, user_name, base_capital_str, current_capital_str, drawdown_amount_str, current_week_pnl, net_pnl, strategy_pnl])
 
     return consolidated_data
 
@@ -289,7 +292,7 @@ def send_consolidated_report_pdf_to_telegram():
     #create the file path of the pdf file
     pdf_file_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
     #send the pdf to the telegram channel
-    send_file_via_telegram(pdf_file_path, f"{today_string}_consolidated_report.pdf")
+    send_consoildated_report_via_telegram_to_group(pdf_file_path, f"{today_string}_consolidated_report.pdf")
 
 def create_eod_report(active_users, active_strategies):
     for user in active_users:
@@ -321,6 +324,23 @@ def df_to_table(df, column_widths=None):
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('BOX', (0, 0), (-1, -1), 2, colors.black),
     ])
+
+    # Column indices for "Current Week PnL", "Net PnL", and "Strategy PnL"
+    indices = [df.columns.get_loc(col) for col in ["Current Week PnL", "Net PnL", "Strategy PnL", "Today", "Week", "Month", "Year", "Drawdown"] if col in df.columns]
+
+    # Apply text color based on value (positive in green, negative in red)
+    for row_index, row in enumerate(data[1:], 1):  # Skip header row, hence data[1:]
+        for col_index in indices:
+            value = row[col_index]
+           
+            # Check if the cell contains negative values
+            if isinstance(value, str) and ('-' in value):
+                style.add('TEXTCOLOR', (col_index, row_index), (col_index, row_index), colors.red)
+            elif isinstance(value, str) and value[:4] == '0.00':
+                style.add('TEXTCOLOR', (col_index, row_index), (col_index, row_index), colors.black)
+            else:
+                style.add('TEXTCOLOR', (col_index, row_index), (col_index, row_index), colors.green)
+
     table.setStyle(style)
     return table
 

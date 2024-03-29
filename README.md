@@ -234,7 +234,11 @@ TODO V1.3
 
 
 TODO
-1. Streamlit hosting on static IP
-2. Clean the routers
-3. connect via lan 
-4. 
+1. Correct the cronjobs
+2. Migrate the DB to cloud and the logs to the new folder
+4. Round to 2 decimal places for the values in the report
+2. Colour the text in the report based on the values(Movement Range)
+
+6. Send Consolidated report to the group
+3. Merge the main to the dev branch
+5. Correct the Holdings value in the db
