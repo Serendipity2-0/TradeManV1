@@ -35,6 +35,7 @@ from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import 
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 from Executor.ExecutorUtils.ReportUtils.MarketMovementData import main as fetch_market_movement_data
+from Executor.ExecutorUtils.ReportUtils.SignalMovementData import main as fetch_signal_movement_data
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
@@ -292,7 +293,7 @@ def send_consolidated_report_pdf_to_telegram():
     #create the file path of the pdf file
     pdf_file_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
     #send the pdf to the telegram channel
-    send_consoildated_report_via_telegram_to_group(pdf_file_path, f"{today_string}_consolidated_report.pdf")
+    send_consoildated_report_via_telegram_to_group(pdf_file_path)
 
 def create_eod_report(active_users, active_strategies):
     for user in active_users:
@@ -336,6 +337,10 @@ def df_to_table(df, column_widths=None):
             # Check if the cell contains negative values
             if isinstance(value, str) and ('-' in value):
                 style.add('TEXTCOLOR', (col_index, row_index), (col_index, row_index), colors.red)
+            elif isinstance(value, float) and value < 0:
+                style.add('TEXTCOLOR', (col_index, row_index), (col_index, row_index), colors.red)
+            elif isinstance(value, float) and value == 0.00:
+                style.add('TEXTCOLOR', (col_index, row_index), (col_index, row_index), colors.black)
             elif isinstance(value, str) and value[:4] == '0.00':
                 style.add('TEXTCOLOR', (col_index, row_index), (col_index, row_index), colors.black)
             else:
@@ -344,7 +349,7 @@ def df_to_table(df, column_widths=None):
     table.setStyle(style)
     return table
 
-def convert_dfs_to_pdf(trade_df, movement_df, output_path):
+def convert_dfs_to_pdf(trade_df, movement_df, signal_df, output_path): 
     pdf = SimpleDocTemplate(output_path, pagesize=landscape(letter))
     elements = []
 
@@ -357,6 +362,13 @@ def convert_dfs_to_pdf(trade_df, movement_df, output_path):
         elements.append(Spacer(1, 50))  # Add a spacer if there's no movement data, for consistency
         elements.append(PageBreak())  # Still add a page break even if no movement data
     
+    # Convert the signal DataFrame to a ReportLab Table and add it to elements
+    if not signal_df.empty:
+        signal_table = df_to_table(signal_df)
+        elements.append(signal_table)
+    else:
+        elements.append(Spacer(1, 50))  # Add a spacer if there's no signal data
+
     # Assuming a blank page is desired between the movement and trade data
     elements.append(Spacer(1, 50))  # This spacer is just to simulate content on the blank page
     elements.append(PageBreak())  # Add another page break to start trade data on a new page
@@ -381,12 +393,15 @@ def create_consolidated_report(active_users, active_strategies):
         #Page 1 data
         df_movements = fetch_market_movement_data()
 
+        #Page 2 data
+        df_signals = fetch_signal_movement_data()
+
         #Page 3 data
         today_trades = get_today_trades_for_all_users(active_users, active_strategies)
         consolidated_data = generate_consolidated_report_data(active_users, today_trades)
         consolidated_df = pd.DataFrame(consolidated_data, columns=["Tr_No", "Name", "Base Capital", "Current Capital", "Drawdown", "Current Week PnL", "Net PnL", "Strategy PnL"])
         consolidated_df = format_strategy_pnl(consolidated_df)
-        convert_dfs_to_pdf(consolidated_df,df_movements,f"{today_string}_consolidated_report.pdf")
+        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, f"{today_string}_consolidated_report.pdf")
         send_consolidated_report_pdf_to_telegram()
 
 
