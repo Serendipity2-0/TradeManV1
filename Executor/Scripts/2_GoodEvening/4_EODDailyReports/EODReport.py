@@ -401,7 +401,8 @@ def create_consolidated_report(active_users, active_strategies):
         consolidated_data = generate_consolidated_report_data(active_users, today_trades)
         consolidated_df = pd.DataFrame(consolidated_data, columns=["Tr_No", "Name", "Base Capital", "Current Capital", "Drawdown", "Current Week PnL", "Net PnL", "Strategy PnL"])
         consolidated_df = format_strategy_pnl(consolidated_df)
-        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, f"{today_string}_consolidated_report.pdf")
+        output_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
+        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, output_path)
         send_consolidated_report_pdf_to_telegram()
 
 
