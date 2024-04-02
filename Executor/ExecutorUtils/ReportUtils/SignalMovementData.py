@@ -64,5 +64,3 @@ def main():
     df = df[['Strategy', 'Today', 'Week', 'Month', 'Year']]
 
     return df
-
-print(main())

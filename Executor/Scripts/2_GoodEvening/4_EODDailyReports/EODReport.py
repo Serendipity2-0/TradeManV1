@@ -6,6 +6,9 @@ from babel.numbers import format_currency
 from dotenv import load_dotenv
 from fpdf import FPDF
 from time import sleep
+import re
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph
 
 # Define constants and load environment variables
 DIR = os.getcwd()
@@ -311,6 +314,23 @@ def create_eod_report(active_users, active_strategies):
             logger.error(f"Error in sending User Report telegram message: {e}")
 
 def df_to_table(df, column_widths=None):
+    if column_widths is None:
+        # Assign default width for each column
+        column_widths = [95] * len(df.columns)
+        
+        if "Tr_No" in df.columns:
+            # Find the index of the "Tr_No" column
+            tr_no_index = df.columns.get_loc("Tr_No")
+            # Increase the width of the "Tr_No" column
+            column_widths[tr_no_index] = 40  # Adjust the width as needed
+
+        # Increase the width of the "Strategy PnL" column if it exists in the DataFrame
+        if "Strategy PnL" in df.columns:
+            # Find the index of the "Strategy PnL" column
+            strategy_pnl_index = df.columns.get_loc("Strategy PnL")
+            # Increase the width of the "Strategy PnL" column
+            column_widths[strategy_pnl_index] = 150  # Adjust the width as needed
+
     data = [df.columns.tolist()] + df.values.tolist()
     table = Table(data, colWidths=column_widths)  # Apply custom column widths if provided
 
@@ -321,6 +341,8 @@ def df_to_table(df, column_widths=None):
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6), 
+        ('TOPPADDING', (0, 1), (-1, -1), 6), 
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('BOX', (0, 0), (-1, -1), 2, colors.black),
@@ -382,10 +404,38 @@ def convert_dfs_to_pdf(trade_df, movement_df, signal_df, output_path):
     pdf.build(elements)
 
 def format_strategy_pnl(df):
-    # Check if 'StrategyPnL' column exists to prevent errors
+    styles = getSampleStyleSheet()
+
+    # Regular expression to find numbers in a string
+    number_finder = re.compile(r"[-+]?\d*\.\d+|[-+]?\d+")
+
+    # Check if 'Strategy PnL' column exists to prevent errors
     if 'Strategy PnL' in df.columns:
-        # Apply formatting to each cell in the 'StrategyPnL' column
-        df['Strategy PnL'] = df['Strategy PnL'].apply(lambda x: '\n'.join([f"{k}: {v}" for k, v in x.items()]) if isinstance(x, dict) else x)
+        for i, row in df.iterrows():
+            if isinstance(row['Strategy PnL'], dict):
+                formatted_text = ""
+                for k, v in row['Strategy PnL'].items():
+                    # Find numbers in the string
+                    numbers = number_finder.findall(v)
+                    if numbers:
+                        # Assume first number is the relevant one for coloring
+                        value = float(numbers[0])
+                        color = "green" if value >= 0 else "red"
+                    else:
+                        # Default color if no number found
+                        color = "black"
+                    formatted_text += f'<font color="{color}">{k}: {v}</font><br/>'
+                df.at[i, 'Strategy PnL'] = Paragraph(formatted_text, styles["Normal"])
+            else:
+                # Non-dict values handling; attempting to find a number
+                numbers = number_finder.findall(str(row['Strategy PnL']))
+                if numbers:
+                    value = float(numbers[0])
+                    color = "green" if value >= 0 else "red"
+                    df.at[i, 'Strategy PnL'] = Paragraph(f'<font color="{color}">{row["Strategy PnL"]}</font>', styles["Normal"])
+                else:
+                    # Handling strings with no numbers
+                    df.at[i, 'Strategy PnL'] = Paragraph(str(row['Strategy PnL']), styles["Normal"])
     return df
 
 def create_consolidated_report(active_users, active_strategies):
@@ -404,7 +454,6 @@ def create_consolidated_report(active_users, active_strategies):
         output_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
         convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, output_path)
         send_consolidated_report_pdf_to_telegram()
-
 
         logger.info(f"consolidated_data: {consolidated_data}")
     except Exception as e:
