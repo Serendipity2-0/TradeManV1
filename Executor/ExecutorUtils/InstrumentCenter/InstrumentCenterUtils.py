@@ -18,6 +18,17 @@ import Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter as exesql_adapt
 ins_db_path = os.getenv("SQLITE_INS_PATH")
 logger = LoggerSetup()
 
+def get_ins_df():
+    try:
+        conn = exesql_adapter.get_db_connection(ins_db_path)
+        data = pd.read_sql_query("select * from instrument_master", conn)
+        # data to dataframe
+        ins_df = pd.DataFrame(data)
+        return ins_df
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        return None
+
 class Instrument:
     def __init__(self):
         self._dataframe = get_ins_df()
@@ -285,7 +296,6 @@ class Instrument:
     def get_margin_multiplier(self, trading_symbol):
         #TODO: Remove this hardcoding and fetch from API
         return 420
-        
 
 def get_single_ltp(token=None, exchange_token=None, segment=None):
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
@@ -307,15 +317,3 @@ def get_single_ltp(token=None, exchange_token=None, segment=None):
     else:
         ltp = kite.ltp(token)
         return ltp[str(token)]["last_price"]
-
-
-def get_ins_df():
-    try:
-        conn = exesql_adapter.get_db_connection(ins_db_path)
-        data = pd.read_sql_query("select * from instrument_master", conn)
-        # data to dataframe
-        ins_df = pd.DataFrame(data)
-        return ins_df
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        return None

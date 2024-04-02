@@ -224,9 +224,7 @@ def get_order_status(alice, order_id):
 
 
 def ant_place_orders_for_users(orders_to_place, users_credentials):
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
-        Instrument as Instru,
-    )
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
 
     results = {
         "exchange_token": None,
@@ -237,12 +235,10 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         "message": None,
     }
 
-    alice = create_alice_obj(
-        users_credentials
-    )  # Create an Aliceblue instance with user's broker credentials
+    alice = create_alice_obj(users_credentials)  
     strategy = orders_to_place["strategy"]
     exchange_token = orders_to_place["exchange_token"]
-    qty = orders_to_place.get("qty", 1)  # Default quantity to 1 if not specified
+    qty = orders_to_place.get("qty", 1) 
     product = orders_to_place.get("product_type")
     transaction_type = calculate_transaction_type(
         orders_to_place.get("transaction_type")
@@ -253,7 +249,7 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
     if product == "CNC":
         segment = "NSE"
     else:
-        segment = Instru().get_segment_by_exchange_token(str(exchange_token))
+        segment = Instrument().get_segment_by_exchange_token(str(exchange_token))
 
     limit_prc = orders_to_place.get("limit_prc", None)
     trigger_price = orders_to_place.get("trigger_prc", None)
@@ -262,6 +258,10 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         limit_prc = round(float(limit_prc), 2)
         if limit_prc < 0:
             limit_prc = 1.0
+    elif segment == "BFO":
+        if orders_to_place.get("order_type") == "Market":
+            order_type = OrderType.Limit
+            limit_prc = get_single_ltp(exchange_token=exchange_token, segment="BFO-OPT")
     else:
         limit_prc = 0.0
 

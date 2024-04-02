@@ -103,6 +103,7 @@ Databases
 4. Templates
    4.1 Discord Templates
    4.2 Telegram Templates
+
 5. Dict
    5.1 order_details_dict
 
@@ -234,12 +235,5 @@ TODO V1.3
 
 
 TODO
-1. Correct the cronjobs
-2. Migrate the DB to cloud and the logs to the new folder
-4. Round to 2 decimal places for the values in the report
-2. Colour the text in the report based on the values(Movement Range)
-3. Merge the main to the dev branch
-5. Correct the Holdings value in the db
-7. Correct the Account Value in the Firebase db
-
-6. Send Consolidated report to the group
+1. Correct the segments for SENSEX orders for aliceblue
+2. Correct the tax calculation
