@@ -33,7 +33,7 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     )
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
     send_telegram_message,
-    send_consoildated_report_via_telegram_to_group
+    send_file_via_telegram
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
@@ -295,8 +295,9 @@ def generate_consolidated_report_data(active_users, today_trades):
 def send_consolidated_report_pdf_to_telegram():
     #create the file path of the pdf file
     pdf_file_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
+    group_id = os.getenv("TELEGRAM_REPORT_GROUP_ID")
     #send the pdf to the telegram channel
-    send_consoildated_report_via_telegram_to_group(pdf_file_path)
+    send_file_via_telegram(group_id, pdf_file_path, f"{today_string}_consolidated_report.pdf", is_group=True)
 
 def create_eod_report(active_users, active_strategies):
     for user in active_users:
