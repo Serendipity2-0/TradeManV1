@@ -237,3 +237,4 @@ TODO V1.3
 TODO
 1. Correct the segments for SENSEX orders for aliceblue
 2. Correct the tax calculation
+3. Signal values in reports
