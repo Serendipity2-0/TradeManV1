@@ -295,7 +295,7 @@ class Instrument:
     
     def get_margin_multiplier(self, trading_symbol):
         #TODO: Remove this hardcoding and fetch from API
-        return 420
+        return 546
 
 def get_single_ltp(token=None, exchange_token=None, segment=None):
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
