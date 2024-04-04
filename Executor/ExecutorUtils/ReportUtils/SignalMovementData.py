@@ -48,7 +48,6 @@ tables_query = "SELECT name FROM sqlite_master WHERE type='table';"
 tables = pd.read_sql_query(tables_query, conn)['name'].tolist()
 #Remove Error table from the list
 tables.remove('Error')
-print(tables)
 
 # Calculate metrics for each table and collect them in a list
 data_dict = [calculate_sum_trade_points(table, conn) for table in tables]

@@ -39,6 +39,7 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_con
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 from Executor.ExecutorUtils.ReportUtils.MarketMovementData import main as fetch_market_movement_data
 from Executor.ExecutorUtils.ReportUtils.SignalMovementData import main as fetch_signal_movement_data
+from Executor.ExecutorUtils.ReportUtils.UserPnLMovementData import user_pnl_movement_data
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
@@ -246,7 +247,7 @@ def get_today_trades_for_all_users(active_users, active_strategies):
             logger.error(f"Error processing trades for user {user['Tr_No']}: {e}")
     return all_today_trades
 
-def generate_consolidated_report_data(active_users, today_trades):
+def today_trades_data(active_users, today_trades):
     from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
         update_fields_firebase,
     )
@@ -372,7 +373,7 @@ def df_to_table(df, column_widths=None):
     table.setStyle(style)
     return table
 
-def convert_dfs_to_pdf(trade_df, movement_df, signal_df, output_path): 
+def convert_dfs_to_pdf(trade_df, movement_df, signal_df, user_pnl, output_path): 
     pdf = SimpleDocTemplate(output_path, pagesize=landscape(letter))
     elements = []
 
@@ -393,6 +394,16 @@ def convert_dfs_to_pdf(trade_df, movement_df, signal_df, output_path):
         elements.append(Spacer(1, 50))  # Add a spacer if there's no signal data
 
     # Assuming a blank page is desired between the movement and trade data
+    elements.append(Spacer(1, 50))  # This spacer is just to simulate content on the blank page
+    elements.append(PageBreak())  # Add another page break to start trade data on a new page
+
+    # Convert the user PnL DataFrame to a ReportLab Table and add it to elements
+    if not user_pnl.empty:
+        user_pnl_table = df_to_table(user_pnl)
+        elements.append(user_pnl_table)
+    else:
+        elements.append(Spacer(1, 50))  # Add a spacer if there's no user PnL data
+
     elements.append(Spacer(1, 50))  # This spacer is just to simulate content on the blank page
     elements.append(PageBreak())  # Add another page break to start trade data on a new page
 
@@ -448,12 +459,16 @@ def create_consolidated_report(active_users, active_strategies):
         df_signals = fetch_signal_movement_data()
 
         #Page 3 data
+        df_user_pnl = user_pnl_movement_data()
+
+        #Page 4 data
         today_trades = get_today_trades_for_all_users(active_users, active_strategies)
-        consolidated_data = generate_consolidated_report_data(active_users, today_trades)
+        consolidated_data = today_trades_data(active_users, today_trades)
+
         consolidated_df = pd.DataFrame(consolidated_data, columns=["Tr_No", "Name", "Base Capital", "Current Capital", "Drawdown", "Current Week PnL", "Net PnL", "Strategy PnL"])
         consolidated_df = format_strategy_pnl(consolidated_df)
         output_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
-        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, output_path)
+        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, df_user_pnl, output_path)
         send_consolidated_report_pdf_to_telegram()
 
         logger.info(f"consolidated_data: {consolidated_data}")
