@@ -1,14 +1,18 @@
 import os, sys
-from datetime import datetime, timedelta,date
+from datetime import datetime
 from dotenv import load_dotenv
 import pandas as pd
 from babel.numbers import format_currency
 from dotenv import load_dotenv
-from fpdf import FPDF
 from time import sleep
 import re
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, PageBreak
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape, A4
+from reportlab.lib import colors
+from reportlab.lib.units import inch
 
 # Define constants and load environment variables
 DIR = os.getcwd()
@@ -40,9 +44,12 @@ from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 from Executor.ExecutorUtils.ReportUtils.MarketMovementData import main as fetch_market_movement_data
 from Executor.ExecutorUtils.ReportUtils.SignalMovementData import main as fetch_signal_movement_data
 from Executor.ExecutorUtils.ReportUtils.UserPnLMovementData import user_pnl_movement_data
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, PageBreak
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter, landscape
+
+# Define constants for the document layout
+standard_margin = 0.5 * inch  # Standard margin around the content
+header_height = 20  # Estimated height of the header
+space_below_header = 0.25 * inch  # Space between the header and the content
+top_margin = standard_margin + header_height + space_below_header   # Calculate the top margin to include space for the header
 
 
 CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
@@ -298,7 +305,7 @@ def send_consolidated_report_pdf_to_telegram():
     pdf_file_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
     group_id = os.getenv("TELEGRAM_REPORT_GROUP_ID")
     #send the pdf to the telegram channel
-    send_file_via_telegram(group_id, pdf_file_path, f"{today_string}_consolidated_report.pdf", is_group=True)
+    send_file_via_telegram(int(group_id), pdf_file_path, f"{today_string}_consolidated_report.pdf", is_group=True)
 
 def create_eod_report(active_users, active_strategies):
     for user in active_users:
@@ -317,24 +324,15 @@ def create_eod_report(active_users, active_strategies):
 
 def df_to_table(df, column_widths=None):
     if column_widths is None:
-        # Assign default width for each column
-        column_widths = [95] * len(df.columns)
-        
-        if "Tr_No" in df.columns:
-            # Find the index of the "Tr_No" column
-            tr_no_index = df.columns.get_loc("Tr_No")
-            # Increase the width of the "Tr_No" column
-            column_widths[tr_no_index] = 40  # Adjust the width as needed
-
-        # Increase the width of the "Strategy PnL" column if it exists in the DataFrame
-        if "Strategy PnL" in df.columns:
-            # Find the index of the "Strategy PnL" column
-            strategy_pnl_index = df.columns.get_loc("Strategy PnL")
-            # Increase the width of the "Strategy PnL" column
-            column_widths[strategy_pnl_index] = 150  # Adjust the width as needed
+        # Set the width of each column to proportionally fill the page width
+        page_width = landscape(A4)[0]
+        standard_margin = 0.5 * inch  # Standard margin for readability
+        usable_width = page_width - 2 * standard_margin  # Subtract margins from both sides
+        column_width = usable_width / len(df.columns)  # Divide by number of columns
+        column_widths = [column_width] * len(df.columns)
 
     data = [df.columns.tolist()] + df.values.tolist()
-    table = Table(data, colWidths=column_widths)  # Apply custom column widths if provided
+    table = Table(data, colWidths=column_widths)
 
     # Define and apply a basic table style
     style = TableStyle([
@@ -374,9 +372,10 @@ def df_to_table(df, column_widths=None):
     return table
 
 def convert_dfs_to_pdf(trade_df, movement_df, signal_df, user_pnl, output_path): 
-    pdf = SimpleDocTemplate(output_path, pagesize=landscape(letter))
+    # Setup document with appropriate margins
+    standard_margin = 0.5 * inch
+    pdf = SimpleDocTemplate(output_path, pagesize=landscape(A4), leftMargin=standard_margin,rightMargin=standard_margin, topMargin=top_margin, bottomMargin=standard_margin)
     elements = []
-
     # Convert the movement DataFrame to a ReportLab Table and add it to elements
     if not movement_df.empty:
         movement_table = df_to_table(movement_df)
@@ -413,7 +412,44 @@ def convert_dfs_to_pdf(trade_df, movement_df, signal_df, user_pnl, output_path):
         elements.append(trade_table)
 
     # Build the PDF with all elements (movement data, blank page, trade data)
-    pdf.build(elements)
+    pdf.build(elements, onFirstPage=header_footer, onLaterPages=header_footer)
+
+def header_footer(canvas, doc):
+    canvas.saveState()
+
+    # Define constants
+    standard_margin = 0.5 * inch  # Set standard margin
+    header_height = 30  # Set header height
+
+    # Header text based on the page number
+    header_text = "MARKET INFO" if doc.page == 1 else "SIGNAL INFO" if doc.page == 2 \
+                  else "USER INFO" if doc.page == 3 else "Additional Data"
+    
+    # Set the font for the header text
+    canvas.setFont('Helvetica-Bold', 14)
+    text_width = canvas.stringWidth(header_text, 'Helvetica-Bold', 14)
+    
+    # Calculate page and content dimensions
+    page_width, page_height = landscape(A4)
+    content_width = page_width - (2 * standard_margin)  # Content width matches header width
+
+    # Calculate the text's x position (centered within the header)
+    text_x = (page_width - text_width) / 2
+    
+    # Calculate the text's y position
+    text_y = page_height - standard_margin - header_height / 2 - 7  # Center text vertically in the header
+
+    # Draw the dark gray rectangle for the header background
+    canvas.setFillColor(colors.darkgray)
+    canvas.setStrokeColor(colors.black)
+    canvas.rect(standard_margin, page_height - standard_margin - header_height,
+                content_width, header_height, stroke=1, fill=1)
+
+    # Draw the header text
+    canvas.setFillColor(colors.black)
+    canvas.drawString(text_x, text_y, header_text)
+
+    canvas.restoreState()
 
 def format_strategy_pnl(df):
     styles = getSampleStyleSheet()
