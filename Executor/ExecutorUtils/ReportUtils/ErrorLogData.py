@@ -1,7 +1,15 @@
 import pandas as pd
+import os, sys
+from dotenv import load_dotenv
+
+DIR_PATH = os.getcwd()
+sys.path.append(DIR_PATH)
+
+ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
+load_dotenv(ENV_PATH)
 
 # Load the log file
-log_file_path = '/Users/amolkittur/Desktop/TradeManV1/TradeManError.log'  # Update this to your log file's path
+log_file_path = os.getenv("ERROR_LOG_PATH")
 
 # Function to extract and process errors
 def process_errors(log_file_path):

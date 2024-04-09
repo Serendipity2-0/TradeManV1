@@ -307,7 +307,7 @@ def send_consolidated_report_pdf_to_telegram():
     pdf_file_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
     group_id = os.getenv("TELEGRAM_REPORT_GROUP_ID")
     #send the pdf to the telegram channel
-    send_file_via_telegram(int(group_id), pdf_file_path, f"{today_string}_consolidated_report.pdf", is_group=True)
+    # send_file_via_telegram(int(group_id), pdf_file_path, f"{today_string}_consolidated_report.pdf", is_group=True)
 
 def create_eod_report(active_users, active_strategies):
     for user in active_users:
@@ -334,10 +334,10 @@ def df_to_table(df, column_widths=None):
         column_widths = [column_width] * len(df.columns)
         #if the column name is Tr_No the width should be 12 and if the column name is Strategy PnL the width should be 30
         if 'Tr_No' in df.columns:
-            column_widths[0] = 30
+            column_widths[0] = 35
 
         if 'Strategy PnL' in df.columns:
-            column_widths[7] = 161
+            column_widths[7] = 156
 
     data = [df.columns.tolist()] + df.values.tolist()
     table = Table(data, colWidths=column_widths)
@@ -438,9 +438,6 @@ def header_footer(canvas, doc):
     header_height = 30  # Set header height
 
     # Header text based on the page number
-
-    # header_text = "MARKET INFO" if doc.page == 1 else "SIGNAL INFO" if doc.page == 2 \
-    #               else "USER INFO" if doc.page == 3 else "Additional Data"
     if doc.page == 1:
         header_text = "MARKET INFO"
     elif doc.page == 2:
@@ -480,7 +477,7 @@ def header_footer(canvas, doc):
 
     canvas.restoreState()
 
-def format_strategy_pnl(df):
+def format_df_data(df):
     styles = getSampleStyleSheet()
 
     # Regular expression to find numbers in a string
@@ -514,20 +511,13 @@ def format_strategy_pnl(df):
                     # Handling strings with no numbers
                     df.at[i, 'Strategy PnL'] = Paragraph(str(row['Strategy PnL']), styles["Normal"])
     
-    if 'Location' in df.columns:
-        print("type of location", type(df['Location']))
-        for i, row in df.iterrows():
-            if isinstance(row['Location'], str):
-                formatted_text = df['Location'][i]
-                #center align the text
-                # formatted_text = textwrap.fill(formatted_text, width=column_widths[0], break_long_words=False, break_on_hyphens=False, wrapstring='\n')
-                df.at[i, 'Location'] = Paragraph(formatted_text, styles["Normal"])
+    for column_name in ['Location', 'Message']:
+        if column_name in df.columns:
+            for i, row in df.iterrows():
+                if isinstance(row[column_name], str):
+                    formatted_text = f'<para align="center">{row[column_name]}</para>'
+                    df.at[i, column_name] = Paragraph(formatted_text, styles["Normal"])
 
-    if 'Message' in df.columns:
-        for i, row in df.iterrows():
-            if isinstance(row['Message'], str):
-                formatted_text = df['Message'][i]
-                df.at[i, 'Message'] = Paragraph(formatted_text, styles["Normal"])
 
     return df
 
@@ -547,13 +537,12 @@ def create_consolidated_report(active_users, active_strategies):
         consolidated_data = today_trades_data(active_users, today_trades)
 
         consolidated_df = pd.DataFrame(consolidated_data, columns=["Tr_No", "Name", "Base Capital", "Current Capital", "Drawdown", "Current Week PnL", "Net PnL", "Strategy PnL"])
-        consolidated_df = format_strategy_pnl(consolidated_df)
+        consolidated_df = format_df_data(consolidated_df)
         output_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
 
         #Page 5 data
         errorlog_df = fetch_errorlog_data()
-        
-        formatted_errorlog_df = format_strategy_pnl(errorlog_df)
+        formatted_errorlog_df = format_df_data(errorlog_df)
 
         convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, df_user_pnl, formatted_errorlog_df,output_path)
         send_consolidated_report_pdf_to_telegram()
@@ -568,9 +557,9 @@ def main():
     active_users = fetch_active_users_from_firebase()
     active_strategies = fetch_active_strategies_all_users()
 
-    create_eod_report(active_users, active_strategies)
+    # create_eod_report(active_users, active_strategies)
     logger.debug("Sleeping for 10 seconds before creating consolidated report")
-    sleep(10)
+    # sleep(10)
     logger.debug("Creating consolidated report")
     latest_active_users = fetch_active_users_from_firebase()
     latest_active_strategies = fetch_active_strategies_all_users()
