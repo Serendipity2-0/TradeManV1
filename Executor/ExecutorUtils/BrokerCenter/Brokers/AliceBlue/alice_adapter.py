@@ -262,6 +262,7 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         if orders_to_place.get("order_type") == "Market":
             order_type = OrderType.Limit
             limit_prc = get_single_ltp(exchange_token=exchange_token, segment="BFO-OPT")
+            limit_prc = round(float(limit_prc), 2)
     else:
         limit_prc = 0.0
 

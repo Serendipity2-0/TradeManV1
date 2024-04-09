@@ -13,6 +13,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape, A4
 from reportlab.lib import colors
 from reportlab.lib.units import inch
+import textwrap
 
 # Define constants and load environment variables
 DIR = os.getcwd()
@@ -43,7 +44,8 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_con
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 from Executor.ExecutorUtils.ReportUtils.MarketMovementData import main as fetch_market_movement_data
 from Executor.ExecutorUtils.ReportUtils.SignalMovementData import main as fetch_signal_movement_data
-from Executor.ExecutorUtils.ReportUtils.UserPnLMovementData import user_pnl_movement_data
+from Executor.ExecutorUtils.ReportUtils.UserPnLMovementData import main as user_pnl_movement_data
+from Executor.ExecutorUtils.ReportUtils.ErrorLogData import main as fetch_errorlog_data
 
 # Define constants for the document layout
 standard_margin = 0.5 * inch  # Standard margin around the content
@@ -330,6 +332,12 @@ def df_to_table(df, column_widths=None):
         usable_width = page_width - 2 * standard_margin  # Subtract margins from both sides
         column_width = usable_width / len(df.columns)  # Divide by number of columns
         column_widths = [column_width] * len(df.columns)
+        #if the column name is Tr_No the width should be 12 and if the column name is Strategy PnL the width should be 30
+        if 'Tr_No' in df.columns:
+            column_widths[0] = 30
+
+        if 'Strategy PnL' in df.columns:
+            column_widths[7] = 161
 
     data = [df.columns.tolist()] + df.values.tolist()
     table = Table(data, colWidths=column_widths)
@@ -371,7 +379,7 @@ def df_to_table(df, column_widths=None):
     table.setStyle(style)
     return table
 
-def convert_dfs_to_pdf(trade_df, movement_df, signal_df, user_pnl, output_path): 
+def convert_dfs_to_pdf(trade_df, movement_df, signal_df, user_pnl, errorlog_df, output_path): 
     # Setup document with appropriate margins
     standard_margin = 0.5 * inch
     pdf = SimpleDocTemplate(output_path, pagesize=landscape(A4), leftMargin=standard_margin,rightMargin=standard_margin, topMargin=top_margin, bottomMargin=standard_margin)
@@ -410,6 +418,14 @@ def convert_dfs_to_pdf(trade_df, movement_df, signal_df, user_pnl, output_path):
     if not trade_df.empty:
         trade_table = df_to_table(trade_df)
         elements.append(trade_table)
+    
+    elements.append(Spacer(1, 50))  # This spacer is just to simulate content on the blank page
+    elements.append(PageBreak())  # Add another page break to start trade data on a new page
+
+    # Convert the error log DataFrame to a ReportLab Table and add it to elements
+    if not errorlog_df.empty:
+        errorlog_table = df_to_table(errorlog_df)
+        elements.append(errorlog_table)
 
     # Build the PDF with all elements (movement data, blank page, trade data)
     pdf.build(elements, onFirstPage=header_footer, onLaterPages=header_footer)
@@ -422,9 +438,22 @@ def header_footer(canvas, doc):
     header_height = 30  # Set header height
 
     # Header text based on the page number
-    header_text = "MARKET INFO" if doc.page == 1 else "SIGNAL INFO" if doc.page == 2 \
-                  else "USER INFO" if doc.page == 3 else "Additional Data"
-    
+
+    # header_text = "MARKET INFO" if doc.page == 1 else "SIGNAL INFO" if doc.page == 2 \
+    #               else "USER INFO" if doc.page == 3 else "Additional Data"
+    if doc.page == 1:
+        header_text = "MARKET INFO"
+    elif doc.page == 2:
+        header_text = "SIGNAL INFO"
+    elif doc.page == 3:
+        header_text = "USER INFO"
+    elif doc.page == 4:
+        header_text = "USER STRATEGY DATA"
+    elif doc.page == 5:
+        header_text = "ERROR LOG DATA"
+    else:
+        header_text = "Additional Data"
+
     # Set the font for the header text
     canvas.setFont('Helvetica-Bold', 14)
     text_width = canvas.stringWidth(header_text, 'Helvetica-Bold', 14)
@@ -484,6 +513,22 @@ def format_strategy_pnl(df):
                 else:
                     # Handling strings with no numbers
                     df.at[i, 'Strategy PnL'] = Paragraph(str(row['Strategy PnL']), styles["Normal"])
+    
+    if 'Location' in df.columns:
+        print("type of location", type(df['Location']))
+        for i, row in df.iterrows():
+            if isinstance(row['Location'], str):
+                formatted_text = df['Location'][i]
+                #center align the text
+                # formatted_text = textwrap.fill(formatted_text, width=column_widths[0], break_long_words=False, break_on_hyphens=False, wrapstring='\n')
+                df.at[i, 'Location'] = Paragraph(formatted_text, styles["Normal"])
+
+    if 'Message' in df.columns:
+        for i, row in df.iterrows():
+            if isinstance(row['Message'], str):
+                formatted_text = df['Message'][i]
+                df.at[i, 'Message'] = Paragraph(formatted_text, styles["Normal"])
+
     return df
 
 def create_consolidated_report(active_users, active_strategies):
@@ -504,7 +549,13 @@ def create_consolidated_report(active_users, active_strategies):
         consolidated_df = pd.DataFrame(consolidated_data, columns=["Tr_No", "Name", "Base Capital", "Current Capital", "Drawdown", "Current Week PnL", "Net PnL", "Strategy PnL"])
         consolidated_df = format_strategy_pnl(consolidated_df)
         output_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
-        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, df_user_pnl, output_path)
+
+        #Page 5 data
+        errorlog_df = fetch_errorlog_data()
+        
+        formatted_errorlog_df = format_strategy_pnl(errorlog_df)
+
+        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, df_user_pnl, formatted_errorlog_df,output_path)
         send_consolidated_report_pdf_to_telegram()
 
         logger.info(f"consolidated_data: {consolidated_data}")
