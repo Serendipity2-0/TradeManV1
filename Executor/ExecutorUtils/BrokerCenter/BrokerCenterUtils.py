@@ -10,6 +10,7 @@ load_dotenv(ENV_PATH)
 
 ZERODHA = os.getenv("ZERODHA_BROKER")
 ALICEBLUE = os.getenv("ALICEBLUE_BROKER")
+FIRSTOCK = os.getenv("FIRSTOCK_BROKER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
@@ -20,6 +21,7 @@ logger = LoggerSetup()
 import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
 import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
+import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_adapter as firstock_adapter
 
 
 def place_order_for_brokers(order_details, user_credentials):
@@ -28,7 +30,13 @@ def place_order_for_brokers(order_details, user_credentials):
             order_details, user_credentials
         )
     elif order_details["broker"] == ALICEBLUE:
-        return alice_adapter.ant_place_orders_for_users(order_details, user_credentials)
+        return alice_adapter.ant_place_orders_for_users(
+            order_details, user_credentials
+        )
+    elif order_details["broker"] == FIRSTOCK:
+        return firstock_adapter.firstock_place_orders_for_users(
+            order_details, user_credentials
+        )
 
 
 def modify_order_for_brokers(order_details, user_credentials):
@@ -40,11 +48,16 @@ def modify_order_for_brokers(order_details, user_credentials):
         return alice_adapter.ant_modify_orders_for_users(
             order_details, user_credentials
         )
+    elif order_details["broker"] == FIRSTOCK:
+        return firstock_adapter.firstock_modify_orders_for_users(
+            order_details, user_credentials
+        )
 
 
 def all_broker_login(active_users):
     import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
     import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
+    import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_login as firstock
     
     for user in active_users:
         if user["Broker"]["BrokerName"] == ZERODHA:
@@ -65,6 +78,16 @@ def all_broker_login(active_users):
                 )
             except Exception as e:
                 logger.error(f"Error while logging in for AliceBlue: {e} for user: {user['Broker']['BrokerUsername']}")
+        elif user["Broker"]["BrokerName"] == FIRSTOCK:
+            logger.debug(f"Logging in for Firstock for user: {user['Broker']['BrokerUsername']}")
+            try:
+                session_id = firstock.login_in_firstock(user["Broker"])
+                print("session_id", session_id)
+                firebase_utils.update_fields_firebase(
+                    CLIENTS_USER_FB_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
+                )
+            except Exception as e:
+                logger.error(f"Error while logging in for Firstock: {e} for user: {user['Broker']['BrokerUsername']}")
         else:
             logger.error(f"Broker not supported for user: {user['Broker']['BrokerUsername']}")
     return active_users
@@ -149,6 +172,8 @@ def fetch_freecash_for_user(user):
             cash_margin = zerodha_adapter.zerodha_fetch_free_cash(user["Broker"])
         elif user["Broker"]["BrokerName"] == ALICEBLUE:
             cash_margin = alice_adapter.alice_fetch_free_cash(user["Broker"])
+        elif user["Broker"]["BrokerName"] == FIRSTOCK:
+            cash_margin = firstock_adapter.firstock_fetch_free_cash(user["Broker"])
         # Ensure cash_margin is a float
         return float(cash_margin)
     except Exception as e:
@@ -162,6 +187,8 @@ def download_csv_for_brokers(primary_account):
         return zerodha_adapter.get_csv_kite(primary_account)  # Get CSV for this user
     elif primary_account["Broker"]["BrokerName"] == ALICEBLUE:
         return alice_adapter.get_ins_csv_alice(primary_account)  # Get CSV for this user
+    # elif primary_account["Broker"]["BrokerName"] == FIRSTOCK:
+    #     return firstock_adapter.get_csv_firstock(primary_account)  # Get CSV for this user
 
 
 def fetch_holdings_value_for_user(user):
@@ -169,6 +196,8 @@ def fetch_holdings_value_for_user(user):
         return zerodha_adapter.fetch_zerodha_holdings_value(user)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         return alice_adapter.fetch_aliceblue_holdings_value(user)
+    elif user["Broker"]["BrokerName"] == FIRSTOCK:
+        return firstock_adapter.fetch_firstock_holdings_value(user)
 
 
 def fetch_user_credentials_firebase(broker_user_name):
@@ -232,6 +261,20 @@ def get_today_orders_for_brokers(user):
             logger.error(f"Error while fetching today's tradebook for {user['Broker']['BrokerUsername']}: {e}")
             alice_data = []
         return alice_data
+    elif user["Broker"]["BrokerName"] == FIRSTOCK:
+        try:
+            logger.debug(f"Fetching today's tradebook for {user['Broker']['BrokerUsername']}")
+            firstock_data = firstock_adapter.firstock_todays_tradebook(user["Broker"])
+            if firstock_data:
+                firstock_data = [
+                    trade
+                    for trade in firstock_data
+                    if trade["status"] != "REJECTED" or trade["status"] != "CANCELLED"
+                ]
+        except Exception as e:
+            logger.error(f"Error while fetching today's tradebook for {user['Broker']['BrokerUsername']}: {e}")
+            firstock_data = []
+        return firstock_data
 
 def get_today_open_orders_for_brokers(user):
     if user["Broker"]["BrokerName"] == ZERODHA:
@@ -240,6 +283,9 @@ def get_today_open_orders_for_brokers(user):
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         alice_data = alice_adapter.fetch_open_orders(user)
         return alice_data
+    elif user["Broker"]["BrokerName"] == FIRSTOCK:
+        firstock_data = firstock_adapter.fetch_open_orders(user)
+        return firstock_data
 
 def create_counter_order_details(tradebook, user):
     counter_order_details = []
@@ -257,6 +303,12 @@ def create_counter_order_details(tradebook, user):
                     counter_order = alice_adapter.ant_create_counter_order(trade, user)
                     counter_order_details.append(counter_order)
                     logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
+            elif user["Broker"]["BrokerName"] == FIRSTOCK:
+                if trade["status"] == "TRIGGER PENDING" and trade["product"] == "MIS":
+                    firstock_adapter.firstock_create_cancel_order(trade, user)
+                    counter_order = firstock_adapter.firstock_create_sl_counter_order(trade, user)
+                    counter_order_details.append(counter_order)
+                    logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
         return counter_order_details
     except Exception as e:
         logger.error(f"Error while creating counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
@@ -308,6 +360,28 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
                         logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
         except Exception as e:
             logger.error(f"Error while creating hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
+    elif user["Broker"]["BrokerName"] == FIRSTOCK:
+        try:
+            open_order_tokens = {position['token'] for position in open_orders if position['product'] == 'I' and position['quantity'] != 0}
+            for trade in tradebook:
+                if trade["remarks"] is None:
+                    continue
+
+                if (
+                    trade["status"] == "COMPLETE"
+                    and trade["product"] == "I"
+                    and "HO_EN" in trade["remarks"]
+                    and "HO_EX" not in trade["remarks"]
+                    and trade["token"] in open_order_tokens
+                ):
+                    counter_order = firstock_adapter.firstock_create_hedge_counter_order(
+                        trade, user
+                    )
+                    if counter_order not in hedge_counter_order:
+                        hedge_counter_order.append(counter_order)
+                        logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
+        except Exception as e:
+            logger.error(f"Error while creating hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
     return hedge_counter_order
 
 def get_avg_prc_broker_key(broker_name):
@@ -315,6 +389,8 @@ def get_avg_prc_broker_key(broker_name):
         return "average_price"
     elif broker_name == ALICEBLUE:
         return "Avgprc"
+    elif broker_name == FIRSTOCK:
+        return "averagePrice"
 
 
 def get_order_id_broker_key(broker_name):
@@ -322,6 +398,8 @@ def get_order_id_broker_key(broker_name):
         return "order_id"
     elif broker_name == ALICEBLUE:
         return "Nstordno"
+    elif broker_name == FIRSTOCK:
+        return "orderNumber"
 
 
 def get_trading_symbol_broker_key(broker_name):
@@ -329,6 +407,8 @@ def get_trading_symbol_broker_key(broker_name):
         return "tradingsymbol"
     elif broker_name == ALICEBLUE:
         return "Trsym"
+    elif broker_name == FIRSTOCK:
+        return "tradingSymbol"
 
 
 def get_qty_broker_key(broker_name):
@@ -336,6 +416,8 @@ def get_qty_broker_key(broker_name):
         return "quantity"
     elif broker_name == ALICEBLUE:
         return "Qty"
+    elif broker_name == FIRSTOCK:
+        return "quantity"
 
 
 def get_time_stamp_broker_key(broker_name):
@@ -343,12 +425,16 @@ def get_time_stamp_broker_key(broker_name):
         return "order_timestamp"
     elif broker_name == ALICEBLUE:
         return "OrderedTime"
+    elif broker_name == FIRSTOCK:
+        return "orderTime"
 
 
 def get_trade_id_broker_key(broker_name):
     if broker_name == ZERODHA:
         return "tag"
     elif broker_name == ALICEBLUE:
+        return "remarks"
+    elif broker_name == FIRSTOCK:
         return "remarks"
 
 
@@ -392,6 +478,8 @@ def get_ledger_for_user(user):
         return zerodha_adapter.zerodha_get_ledger(user)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         return alice_adapter.alice_get_ledger(user)
+    elif user["Broker"]["BrokerName"] == FIRSTOCK:
+        return firstock_adapter.firstock_get_ledger(user)
 
 
 def process_user_ledger(user, ledger):
@@ -399,6 +487,8 @@ def process_user_ledger(user, ledger):
         return zerodha_adapter.process_kite_ledger(ledger, user)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         return alice_adapter.process_alice_ledger(ledger, user)
+    elif user["Broker"]["BrokerName"] == FIRSTOCK:  
+        return firstock_adapter.process_firstock_ledger(ledger, user)
 
 
 def calculate_user_net_values(user, categorized_df):
@@ -406,13 +496,15 @@ def calculate_user_net_values(user, categorized_df):
         return zerodha_adapter.calculate_kite_net_values(user, categorized_df)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         return alice_adapter.calculate_alice_net_values(user, categorized_df)
+    elif user["Broker"]["BrokerName"] == FIRSTOCK:
+        return firstock_adapter.calculate_firstock_net_values(user, categorized_df)
 
 def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
     # Brokerage
     try:
-        if broker == "Zerodha":
+        if broker == ZERODHA:
             brokerage = min(20, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20 * no_of_orders
-        elif broker == "AliceBlue":
+        elif broker == ALICEBLUE or broker == FIRSTOCK:
             brokerage = min(15, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 15 * no_of_orders
 
         # STT/CTT
