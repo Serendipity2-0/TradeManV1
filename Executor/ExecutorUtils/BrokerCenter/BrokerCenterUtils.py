@@ -303,11 +303,11 @@ def create_counter_order_details(tradebook, user):
                     counter_order_details.append(counter_order)
                     logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
             elif user["Broker"]["BrokerName"] == FIRSTOCK:
-                if trade["status"] == "TRIGGER PENDING" and trade["product"] == "MIS":
+                if trade["status"] == "TRIGGER_PENDING" and trade["product"] == "I":
                     firstock_adapter.firstock_create_cancel_order(trade, user)
                     counter_order = firstock_adapter.firstock_create_sl_counter_order(trade, user)
                     counter_order_details.append(counter_order)
-                    logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
+                    logger.info(f"Created counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
         return counter_order_details
     except Exception as e:
         logger.error(f"Error while creating counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
@@ -361,7 +361,7 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
             logger.error(f"Error while creating hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
     elif user["Broker"]["BrokerName"] == FIRSTOCK:
         try:
-            open_order_tokens = {position['token'] for position in open_orders if position['product'] == 'I' and position['quantity'] != 0}
+            open_order_tokens = {position['token'] for position in open_orders if position['product'] == 'I' and position['netQuantity'] != 0}
             for trade in tradebook:
                 if trade["remarks"] is None:
                     continue
@@ -378,7 +378,7 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
                     )
                     if counter_order not in hedge_counter_order:
                         hedge_counter_order.append(counter_order)
-                        logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['tag']}")
+                        logger.info(f"Created hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']} for trade_id {trade['remarks']}")
         except Exception as e:
             logger.error(f"Error while creating hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
     return hedge_counter_order

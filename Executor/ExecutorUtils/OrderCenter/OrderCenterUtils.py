@@ -108,7 +108,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                     user["Broker"]["BrokerUsername"]
                 )
 
-                order_qty = order_with_user_and_broker["qty"]
+                order_qty = int(order_with_user_and_broker["qty"])
             except Exception as e:
                 logger.error(f"Error fetching max qty for base symbol: {e}")
                 continue

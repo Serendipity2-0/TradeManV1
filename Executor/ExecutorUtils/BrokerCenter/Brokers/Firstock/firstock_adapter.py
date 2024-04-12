@@ -39,7 +39,7 @@ def fetch_firstock_holdings_value(user):
 
 def firstock_todays_tradebook(user_details):
     try:
-        tradeBook = thefirstock.firstock_TradeBook(
+        tradeBook = thefirstock.firstock_orderBook(
             userId=user_details['BrokerUsername']
         )
         orders = tradeBook.get("data")
@@ -47,7 +47,7 @@ def firstock_todays_tradebook(user_details):
             return None
         return orders
     except Exception as e:
-        logger.error(f"Error fetching tradebook for user: {user_details['Broker']['BrokerUsername']}: {e}")
+        logger.error(f"Error fetching tradebook for user: {user_details['BrokerUsername']}: {e}")
         return None
 
 def fetch_open_orders(user):
@@ -59,9 +59,9 @@ def fetch_open_orders(user):
         logger.error(f"Error fetching open orders for user: {user['Broker']['BrokerUsername']}: {e}")
 
 def calculate_transaction_type(transaction_type):
-    if transaction_type == "BUY":
+    if transaction_type == "BUY" or transaction_type == "B":
         transaction_type = "B"
-    elif transaction_type == "SELL":
+    elif transaction_type == "SELL" or transaction_type == "S":
         transaction_type = "S"
     else:
         raise ValueError("Invalid transaction_type in order_details")
@@ -79,11 +79,11 @@ def calculate_order_type(order_type):
     return order_type
 
 def calculate_product_type(product_type):
-    if product_type == "NRML":
+    if product_type == "NRML" or product_type == "M":
         product_type = "M"
-    elif product_type == "MIS":
+    elif product_type == "MIS" or product_type == "I":
         product_type = "I"
-    elif product_type == "CNC":
+    elif product_type == "CNC" or product_type == "C":
         product_type = "C"
     else:
         raise ValueError("Invalid product_type in order_details")
@@ -273,12 +273,13 @@ def firstock_create_sl_counter_order(trade, user):
 
     try:
         strategy_name = get_strategy_name_from_trade_id(trade["remarks"])
-        exchange_token = Instrument().get_exchange_token_by_token(trade["token"])
+        # exchange_token = Instrument().get_exchange_token_by_token(trade["token"])
+        # print("exchange_token", exchange_token)
         counter_order = {
             "strategy": strategy_name,
             "signal": get_signal_from_trade_id(trade["remarks"]),
             "base_symbol": "NIFTY",  # WARNING: dummy base symbol
-            "exchange_token": exchange_token,
+            "exchange_token": trade['token'],
             "transaction_type": trade["transactionType"],
             "order_type": "MARKET",
             "product_type": trade["product"],
@@ -305,7 +306,6 @@ def firstock_create_hedge_counter_order(trade, user):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
     try:
         strategy_name = get_strategy_name_from_trade_id(trade["remarks"])
-        exchange_token = Instrument().get_exchange_token_by_token(trade["token"])
         # i want to replace EN to EX in the trade['tag']
         trade_id = trade['remarks'].replace('EN', 'EX')
 
@@ -314,7 +314,7 @@ def firstock_create_hedge_counter_order(trade, user):
             "strategy": strategy_name,
             "signal": get_signal_from_trade_id(trade["remarks"]),
             "base_symbol": "NIFTY",  # WARNING: dummy base symbol
-            "exchange_token": exchange_token,
+            "exchange_token": trade['token'],
             "transaction_type": calculate_transaction_type_sl(trade["transactionType"]),
             "order_type": "MARKET",
             "product_type": trade["product"],
