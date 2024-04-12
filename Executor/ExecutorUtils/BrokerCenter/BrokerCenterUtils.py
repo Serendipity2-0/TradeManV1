@@ -82,7 +82,6 @@ def all_broker_login(active_users):
             logger.debug(f"Logging in for Firstock for user: {user['Broker']['BrokerUsername']}")
             try:
                 session_id = firstock.login_in_firstock(user["Broker"])
-                print("session_id", session_id)
                 firebase_utils.update_fields_firebase(
                     CLIENTS_USER_FB_DB, user["Tr_No"], {"SessionId": session_id}, "Broker"
                 )

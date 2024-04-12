@@ -114,7 +114,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                 continue
 
             if max_qty:
-                logger.debug(f"Max qty for {order_with_user_and_broker.get('base_symbol')} is {max_qty} so splitting orders.")
+                # logger.debug(f"Max qty for {order_with_user_and_broker.get('base_symbol')} is {max_qty} so splitting orders.")
                 # Split and place orders if necessary
                 try:
                     while order_qty > 0:
@@ -147,7 +147,6 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
             if order_qty_mode == "Sweep":
                 for data in all_order_statuses:
                     try:
-                        print("data", data)
                         push_orders_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], data, update_path)
                     except Exception as e:
                         logger.error(f"Error updating firebase with order status: {e}")
@@ -156,7 +155,6 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
         if order_qty_mode != "Sweep":
             for data in all_order_statuses:
                 try:
-                    print("data", data)
                     push_orders_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], data, update_path)
                 except Exception as e:
                     logger.error(f"Error updating firebase with order status: {e}")

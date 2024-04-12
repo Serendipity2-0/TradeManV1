@@ -40,7 +40,7 @@ def fetch_firstock_holdings_value(user):
 def firstock_todays_tradebook(user_details):
     try:
         tradeBook = thefirstock.firstock_TradeBook(
-            userId=user_details['Broker']['BrokerUsername']
+            userId=user_details['BrokerUsername']
         )
         orders = tradeBook.get("data")
         if not orders:
@@ -89,14 +89,14 @@ def calculate_product_type(product_type):
         raise ValueError("Invalid product_type in order_details")
     return product_type
 
-def get_order_status(firstock, order_id):
+def get_order_status(user_id, order_id):
     if not order_id:
         raise Exception("Order_id not found")
     
     try:
         singleOrderHistory = thefirstock.firstock_SingleOrderHistory(
-                userId="{{userId}}",
-                orderNumber="23111100000112"
+                userId = user_id,
+                orderNumber= str(order_id)
                 )
         for order in singleOrderHistory.get("data"):
             if order.get('status') == 'REJECTED':
@@ -121,9 +121,6 @@ def firstock_place_orders_for_users(orders_to_place, users_credentials):
         "message": None,
     }
 
-    # kite = create_kite_obj(
-    #     user_details=users_credentials
-    # )  # Create a KiteConnect instance with user's broker credentials
     order_id = None
 
     strategy = orders_to_place["strategy"]
@@ -135,7 +132,7 @@ def firstock_place_orders_for_users(orders_to_place, users_credentials):
     order_type = calculate_order_type(orders_to_place.get("order_type"))
     product_type = calculate_product_type(product)
     if product == "CNC":
-        segment_type = "C"
+        product_type = "C"
         trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
             exchange_token, "NSE"
         )
@@ -185,21 +182,31 @@ def firstock_place_orders_for_users(orders_to_place, users_credentials):
 
 
     try:
+        logger.debug("Placing paper trade order")
+        logger.debug(f"transaction_type: {transaction_type}")
+        logger.debug(f"order_type: {order_type}")
+        logger.debug(f"product_type: {product_type}")
+        logger.debug(f"segment: {segment_type}")
+        logger.debug(f"exchange_token: {exchange_token}")
+        logger.debug(f"qty: {qty}")
+        logger.debug(f"limit_prc: {limit_prc}")
+        logger.debug(f"trigger_price: {trigger_price}")
+        logger.debug(f"instrument: {trading_symbol}")
+        logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
         order_id = thefirstock.firstock_placeOrder(
                     userId = users_credentials['BrokerUsername'],
-                    exchange = exchange_token,
+                    exchange = segment_type,
                     tradingSymbol=trading_symbol,
-                    quantity=qty,
-                    price=limit_prc,
+                    quantity=str(qty),
+                    price=str(limit_prc),
                     product=product_type,
                     transactionType=transaction_type,
                     priceType=order_type,
                     retention="DAY",
-                    triggerPrice=trigger_price,
+                    triggerPrice=str(trigger_price),
                     remarks=orders_to_place.get("trade_id", None)
                 )
-        
-        logger.success(f"Order placed. ID is: {order_id.get("data", {}).get('orderNumber')}")
+        logger.success(f"Order placed. ID is: {order_id.get('data', {}).get('orderNumber', {})}")
         # #TODO: Fetch the order status of the order_id and check if it is complete
         order_status = get_order_status(users_credentials['BrokerUsername'], order_id)
         if order_status != "PASS":
@@ -213,9 +220,9 @@ def firstock_place_orders_for_users(orders_to_place, users_credentials):
         
     results = {
                 "exchange_token": int(exchange_token),
-                "order_id": order_id,
+                "order_id": order_id.get('data', {}).get('orderNumber', {}),
                 "qty": qty,
-                "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "time_stamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "trade_id": orders_to_place.get("trade_id", ""),
                 "order_status": order_status
             }
@@ -286,7 +293,6 @@ def firstock_create_sl_counter_order(trade, user):
     
 def firstock_create_cancel_order(trade, user):
     try:
-        # kite = create_kite_obj(user_details=user["Broker"])
         cancelOrder = thefirstock.firstock_cancelOrder(
                         userId=user["Broker"]["BrokerUsername"],
                         orderNumber=trade['orderNumber']
@@ -297,7 +303,6 @@ def firstock_create_cancel_order(trade, user):
     
 def firstock_create_hedge_counter_order(trade, user):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-
     try:
         strategy_name = get_strategy_name_from_trade_id(trade["remarks"])
         exchange_token = Instrument().get_exchange_token_by_token(trade["token"])
