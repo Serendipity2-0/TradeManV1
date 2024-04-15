@@ -133,12 +133,12 @@ def firstock_place_orders_for_users(orders_to_place, users_credentials):
     product_type = calculate_product_type(product)
     if product == "CNC":
         product_type = "C"
-        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+        trading_symbol = Instrument().get_full_format_trading_symbol_by_exchange_token(
             exchange_token, "NSE"
         )
     else:
         segment_type = Instrument().get_segment_by_exchange_token(str(exchange_token))
-        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+        trading_symbol = Instrument().get_full_format_trading_symbol_by_exchange_token(
             str(exchange_token)
         )
 
@@ -269,12 +269,9 @@ def firstock_modify_orders_for_users(order_details, users_credentials):
         return None
 
 def firstock_create_sl_counter_order(trade, user):
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
     try:
         strategy_name = get_strategy_name_from_trade_id(trade["remarks"])
-        # exchange_token = Instrument().get_exchange_token_by_token(trade["token"])
-        # print("exchange_token", exchange_token)
         counter_order = {
             "strategy": strategy_name,
             "signal": get_signal_from_trade_id(trade["remarks"]),
@@ -303,7 +300,6 @@ def firstock_create_cancel_order(trade, user):
         return None
     
 def firstock_create_hedge_counter_order(trade, user):
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
     try:
         strategy_name = get_strategy_name_from_trade_id(trade["remarks"])
         # i want to replace EN to EX in the trade['tag']

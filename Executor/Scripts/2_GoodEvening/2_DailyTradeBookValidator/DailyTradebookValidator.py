@@ -42,7 +42,12 @@ def create_user_transaction_db_entry(trade, broker):
     qty_key = BrokerCenterUtils.get_qty_broker_key(broker)
     time_stamp_key = BrokerCenterUtils.get_time_stamp_broker_key(broker)
     trade_id_key = BrokerCenterUtils.get_trade_id_broker_key(broker)
-    trade_id = trade[trade_id_key] or 0
+
+    trade_id = 0
+    try:
+        trade_id = trade[trade_id_key] or 0
+    except Exception as e:
+        logger.error(f"Error in creating user transaction db entry: {e}")
 
     try:
         time_stamp = BrokerCenterUtils.convert_to_standard_format(trade[time_stamp_key])
@@ -133,8 +138,14 @@ def daily_tradebook_validator():
                     unmatched_details = create_user_transaction_db_entry(
                         trade, user["Broker"]["BrokerName"]
                     )
-
-                    if not float(unmatched_details["avg_prc"]):
+                    
+                    try:
+                        if unmatched_details["avg_prc"] is None or not unmatched_details["avg_prc"]:
+                            unmatched_details["avg_prc"] = 0.0
+                        else:
+                            unmatched_details["avg_prc"] = float(unmatched_details["avg_prc"])
+                    except ValueError:
+                        unmatched_details["avg_prc"] = 0.0
                         continue
 
                     unmatched_details = pd.DataFrame([unmatched_details])

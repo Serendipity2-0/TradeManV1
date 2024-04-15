@@ -192,6 +192,17 @@ class Instrument:
             return filtered_data.iloc[0]["tradingsymbol"]
         else:
             return None
+        
+    def get_full_format_trading_symbol_by_exchange_token(self, exchange_token: str, segment=None):
+        if segment:
+            filtered_data = self._filter_data_by_exchange_token(exchange_token)
+            filtered_data = filtered_data[filtered_data["segment"] == segment]
+            return filtered_data.iloc[0]["Trading Symbol"]
+        filtered_data = self._filter_data_by_exchange_token(exchange_token)
+        if not filtered_data.empty:
+            return filtered_data.iloc[0]["Trading Symbol"]
+        else:
+            return None
 
     def get_base_symbol_by_exchange_token(self, exchange_token):
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
