@@ -40,6 +40,11 @@ def fetch_freecash_all_brokers(active_users):
                 user["Broker"]
             )
             broker_free_cash[user["Tr_No"]] = cash_margin
+        elif user["Broker"]["BrokerName"] == broker_center_utils.FIRSTOCK:
+            cash_margin = broker_center_utils.firstock_adapter.firstock_fetch_free_cash(
+                user["Broker"]
+            )
+            broker_free_cash[user["Tr_No"]] = cash_margin
     return broker_free_cash
 
 

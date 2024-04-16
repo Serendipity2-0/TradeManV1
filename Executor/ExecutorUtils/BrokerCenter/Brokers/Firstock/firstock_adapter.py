@@ -25,7 +25,9 @@ logger = LoggerSetup()
 
 def firstock_fetch_free_cash(user_details):
     logger.debug(f"Fetching free cash for {user_details['BrokerUsername']}")
-    return "100"
+    limits = thefirstock.firstock_Limits(userId="AL0295")
+    free_cash = limits.get("data", {}).get("cash", 0)
+    return float(free_cash)
 
 def fetch_firstock_holdings_value(user):
     try:
