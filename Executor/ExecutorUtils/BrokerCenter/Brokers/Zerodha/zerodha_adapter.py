@@ -505,4 +505,13 @@ def fetch_open_orders(user_details):
     except Exception as e:
         logger.error(f"Error fetching open orders for KITE: {e}")
         return None
-    
+
+def get_zerodha_pnl(user):
+    try:
+        kite = create_kite_obj(user["Broker"])
+        positions = kite.positions()['net']
+        total_pnl = sum(position['pnl'] for position in positions)
+        return total_pnl
+    except Exception as e:
+        logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
+        return None

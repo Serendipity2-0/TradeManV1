@@ -576,3 +576,16 @@ def get_primary_account_obj():
         access_token=primary_account_session_id["Broker"]["SessionId"],
     )
     return obj
+
+def get_broker_pnl(user):
+    try:
+        broker = user["Broker"]["BrokerName"]
+        if broker == ZERODHA:
+            return zerodha_adapter.get_zerodha_pnl(user)
+        elif broker == ALICEBLUE:
+            return alice_adapter.get_alice_pnl(user)
+        elif broker == FIRSTOCK:
+            return firstock_adapter.get_firstock_pnl(user)
+    except Exception as e:
+        logger.error(f"Error fetching broker pnl for user: {user['Broker']['BrokerUsername']}: {e}")
+        return None

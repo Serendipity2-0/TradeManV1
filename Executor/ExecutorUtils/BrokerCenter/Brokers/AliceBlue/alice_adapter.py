@@ -531,3 +531,13 @@ def fetch_open_orders(user):
     except Exception as e:
         logger.error(f"Error fetching open orders: {e}")
         return None
+
+def get_alice_pnl(user):
+    try:
+        alice = create_alice_obj(user['Broker'])
+        positions = alice.get_netwise_positions()
+        total_pnl = sum(float(position['MtoM']) for position in positions)
+        return total_pnl
+    except Exception as e:
+        logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
+        return None

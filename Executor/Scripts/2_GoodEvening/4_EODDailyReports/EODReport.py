@@ -34,11 +34,13 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils impo
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
-    fetch_active_strategies_all_users
+    fetch_active_strategies_all_users,
+    get_broker_pnl
     )
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
     send_telegram_message,
-    send_file_via_telegram
+    send_file_via_telegram,
+    send_message_to_group
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
@@ -158,8 +160,16 @@ def fetch_user_tables(user_db_conn):
     return user_tables
 
 def calculate_account_values(user, today_trades, user_tables):
+    broker_pnl = get_broker_pnl(user)
     gross_pnl = sum(float(trade["pnl"]) for trade in today_trades)
     expected_tax = sum(float(trade["tax"]) for trade in today_trades)
+
+    #if there is a difference of 3% between broker pnl and gross pnl, then send a message to the admin telegram channel
+    if abs(broker_pnl - gross_pnl) > 0.03 * gross_pnl:
+        logger.error(f"Broker PnL is different from Gross PnL. Broker PnL: {broker_pnl}, Gross PnL: {gross_pnl}")
+        group_id = os.getenv("TELEGRAM_REPORT_GROUP_ID")
+        message = f"Broker PnL is different from Gross PnL. Broker PnL: {broker_pnl}, Gross PnL: {gross_pnl} for user: {user['Broker']['BrokerUsername']}"
+        send_message_to_group(int(group_id), message)
 
     today_fb_format = datetime.now().strftime("%d%b%y")
     previous_trading_day_fb_format = get_previous_trading_day(datetime.now().date())
@@ -307,7 +317,7 @@ def send_consolidated_report_pdf_to_telegram():
     pdf_file_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
     group_id = os.getenv("TELEGRAM_REPORT_GROUP_ID")
     #send the pdf to the telegram channel
-    # send_file_via_telegram(int(group_id), pdf_file_path, f"{today_string}_consolidated_report.pdf", is_group=True)
+    send_file_via_telegram(int(group_id), pdf_file_path, f"{today_string}_consolidated_report.pdf", is_group=True)
 
 def create_eod_report(active_users, active_strategies):
     for user in active_users:
@@ -557,10 +567,9 @@ def main():
     active_users = fetch_active_users_from_firebase()
     active_strategies = fetch_active_strategies_all_users()
 
-    # create_eod_report(active_users, active_strategies)
+    create_eod_report(active_users, active_strategies)
     logger.debug("Sleeping for 10 seconds before creating consolidated report")
-    # sleep(10)
-    logger.debug("Creating consolidated report")
+    sleep(10)
     latest_active_users = fetch_active_users_from_firebase()
     latest_active_strategies = fetch_active_strategies_all_users()
     create_consolidated_report(latest_active_users, latest_active_strategies)

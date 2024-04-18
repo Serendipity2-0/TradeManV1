@@ -333,3 +333,13 @@ def process_firstock_ledger(ledger, user):
 
 def calculate_firstock_net_values(user, categorized_dfs):
     logger.info("This needs to be implemented")
+
+def get_firstock_pnl(user):
+    try:
+        pb= thefirstock.firstock_PositionBook(userId=user['Broker']['BrokerUsername'])
+        positions = pb.get('data',{})
+        total_pnl = sum(float(position['unrealizedMTOM']) for position in positions)
+        return total_pnl
+    except Exception as e:
+        logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
+        return None
