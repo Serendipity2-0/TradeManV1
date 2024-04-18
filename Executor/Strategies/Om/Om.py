@@ -28,6 +28,7 @@ import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as Instrume
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
+from Executor.ExecutorUtils.ExeUtils import holidays
 
 
 class Om(StrategyBase):
@@ -158,6 +159,13 @@ def main():
 
     # Generate a random number of seconds to wait within this 5-minute window
     random_seconds = random.randint(0, seconds_in_window)
+
+    # Check if today is the day after a holiday
+    now = dt.datetime.now()
+
+    if now.date() in holidays:
+        print("Skipping execution as today is a holiday.")
+        return
 
     # If it's already past 11:35 AM, no need to wait
     if seconds_until_11_30_am < 0:

@@ -66,19 +66,18 @@ orders_to_place = [
 ]
 
 
-def is_yesterday_holiday(today):
-    """Check if yesterday was a holiday."""
-    yesterday = today - dt.timedelta(days=1)
-    return yesterday in holidays
+def is_today_holiday(today):
+    """Check if today is a holiday."""
+    return today in holidays
 
 
 def main():
     global orders_to_place
+    # Check if today is the day after a holiday
     now = dt.datetime.now()
 
-    # Check if today is the day after a holiday
-    if is_yesterday_holiday(now.date()):
-        print("Skipping execution as yesterday was a holiday.")
+    if now.date() in holidays:
+        print("Skipping execution as today is a holiday.")
         return
 
     desired_end_time_str = strategy_obj.ExitParams.SquareOffTime
