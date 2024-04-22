@@ -69,6 +69,7 @@ def calculate_pnl_summary():
             for strategy, table in table_dict.items():
                 if not table.empty:
                     table['exit_time'] = pd.to_datetime(table['exit_time']).dt.date
+                    table['net_pnl'] = pd.to_numeric(table['net_pnl'], errors='coerce')
 
                     day_sum = table[table['exit_time'] == today]['net_pnl'].sum()
                     week_sum = table[table['exit_time'] >= start_of_week]['net_pnl'].sum()

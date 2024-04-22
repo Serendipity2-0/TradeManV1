@@ -25,7 +25,7 @@ logger = LoggerSetup()
 
 def firstock_fetch_free_cash(user_details):
     logger.debug(f"Fetching free cash for {user_details['BrokerUsername']}")
-    limits = thefirstock.firstock_Limits(userId="AL0295")
+    limits = thefirstock.firstock_Limits(userId=user_details['BrokerUsername'])
     free_cash = limits.get("data", {}).get("cash", 0)
     return float(free_cash)
 
@@ -97,8 +97,8 @@ def get_order_status(user_id, order_id):
     
     try:
         singleOrderHistory = thefirstock.firstock_SingleOrderHistory(
-                userId = user_id,
-                orderNumber= str(order_id)
+                orderNumber= str(order_id.get('data', {}).get('orderNumber', {})),
+                userId = user_id
                 )
         for order in singleOrderHistory.get("data"):
             if order.get('status') == 'REJECTED':
@@ -235,9 +235,6 @@ def firstock_modify_orders_for_users(order_details, users_credentials):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
-    # kite = create_kite_obj(
-    #     user_details=users_credentials
-    # )  # Create a KiteConnect instance with user's broker credentials
     order_id_dict = retrieve_order_id(
         order_details.get("username"),
         order_details.get("strategy"),
@@ -254,14 +251,14 @@ def firstock_modify_orders_for_users(order_details, users_credentials):
     try:
         for order_id, qty in order_id_dict.items():
             modifyOrder = thefirstock.firstock_ModifyOrder(
-                userId=users_credentials['BrokerUsername'],
-                orderNumber=order_id,
-                quantity=qty,
-                price=new_stoploss,
-                triggerPrice=trigger_price,
-                exchange=segement,
-                tradingSymbol=trading_symbol,
-                priceType= price_type
+                userId = users_credentials['BrokerUsername'],
+                orderNumber = str(order_id),
+                quantity = str(qty),
+                price = str(new_stoploss),
+                triggerPrice = str(trigger_price),
+                exchange = segement,
+                tradingSymbol = trading_symbol,
+                priceType = price_type
             )
             logger.info("firstock order modified", modifyOrder)
     except Exception as e:
@@ -336,7 +333,7 @@ def calculate_firstock_net_values(user, categorized_dfs):
 
 def get_firstock_pnl(user):
     try:
-        pb= thefirstock.firstock_PositionBook(userId=user['Broker']['BrokerUsername'])
+        pb = thefirstock.firstock_PositionBook(userId=user['Broker']['BrokerUsername'])
         positions = pb.get('data',{})
         total_pnl = sum(float(position['unrealizedMTOM']) for position in positions)
         return total_pnl
