@@ -160,9 +160,6 @@ def main():
         )  # get the segment from the csv file
         base_symbols.extend(base_symbol)
 
-    logger.info(base_symbols)
-    discord_bot(f"Fetching data for {base_symbols}...","db")
-
     if today.date() in holidays:
         logger.info("Today is a holiday")
         return
@@ -180,3 +177,7 @@ def main():
             conn.close()
         except Exception as e:
             logger.error(f"Error while fetching data for {base_symbol}: {e}")
+            discord_bot(f"Error while fetching data for {base_symbol}: {e}","db")
+
+    logger.info(base_symbols)
+    discord_bot(f"Fetching data for {base_symbols}...","db")
