@@ -308,7 +308,7 @@ class Instrument:
         #TODO: Remove this hardcoding and fetch from API
         return 546
 
-def get_single_ltp(token=None, exchange_token=None, segment=None):
+def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
     primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(
         zerodha_primary
@@ -326,5 +326,5 @@ def get_single_ltp(token=None, exchange_token=None, segment=None):
         ltp = kite.ltp(kite_token)
         return ltp[str(kite_token)]["last_price"]
     else:
-        ltp = kite.ltp(token)
-        return ltp[str(token)]["last_price"]
+        ltp = kite.ltp(kite_token)
+        return ltp[str(kite_token)]["last_price"]

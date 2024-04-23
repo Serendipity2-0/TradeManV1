@@ -363,7 +363,8 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
         try:
             open_order_tokens = {position['token'] for position in open_orders if position['product'] == 'I' and position['netQuantity'] != 0}
             for trade in tradebook:
-                if trade["remarks"] is None:
+                remarks = trade.get("remarks", "")
+                if not remarks:
                     continue
 
                 if (

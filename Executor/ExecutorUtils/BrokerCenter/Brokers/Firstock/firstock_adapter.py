@@ -103,7 +103,7 @@ def get_order_status(user_id, order_id):
         for order in singleOrderHistory.get("data"):
             if order.get('status') == 'REJECTED':
                 return "FAIL"
-            elif order.get('status') == "COMPLETE" or order.get("status") == "TRIGGER PENDING":
+            elif order.get('status') == "COMPLETE" or order.get("status") == "TRIGGER_PENDING":
                 return "PASS"
         return "FAIL"
     except Exception as e:
@@ -335,7 +335,9 @@ def get_firstock_pnl(user):
     try:
         pb = thefirstock.firstock_PositionBook(userId=user['Broker']['BrokerUsername'])
         positions = pb.get('data',{})
-        total_pnl = sum(float(position['unrealizedMTOM']) for position in positions)
+        unrealized_total_pnl = sum(float(position['unrealizedMTOM']) for position in positions)
+        realized_total_pnl = sum(float(position['RealizedPNL']) for position in positions)
+        total_pnl = unrealized_total_pnl + realized_total_pnl
         return total_pnl
     except Exception as e:
         logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")

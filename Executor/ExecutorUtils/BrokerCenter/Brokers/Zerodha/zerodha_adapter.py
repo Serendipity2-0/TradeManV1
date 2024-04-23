@@ -2,8 +2,10 @@ import datetime
 
 import pandas as pd
 from kiteconnect import KiteConnect
-import os
+import os,sys
 
+DIR = os.getcwd()
+sys.path.append(DIR)
 
 from Executor.Strategies.StrategiesUtil import (
     get_strategy_name_from_trade_id,
