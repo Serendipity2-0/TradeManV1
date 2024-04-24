@@ -302,6 +302,16 @@ def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
 
         pnl = trade_points * qty
 
+        print("entry_price", entry_price)
+        print("exit_price", exit_price)
+        print("hedge_entry_price", hedge_entry_price)
+        print("hedge_exit_price", hedge_exit_price)
+        print("short_trade", short_trade)
+
+        print("trade_points", trade_points)
+        print("qty", qty)
+        print("pnl", pnl)
+
         tax = calculate_taxes(entry_orders,exit_orders,hedge_orders,user["Broker"]["BrokerName"])
 
         net_pnl = pnl - tax

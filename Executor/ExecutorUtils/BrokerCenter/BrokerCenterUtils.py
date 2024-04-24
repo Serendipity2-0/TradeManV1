@@ -361,7 +361,7 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
             logger.error(f"Error while creating hedge counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}")
     elif user["Broker"]["BrokerName"] == FIRSTOCK:
         try:
-            open_order_tokens = {position['token'] for position in open_orders if position['product'] == 'I' and position['netQuantity'] != 0}
+            open_order_tokens = {position['token'] for position in open_orders if position['product'] == 'I' and position['netQuantity'] != '0'}
             for trade in tradebook:
                 remarks = trade.get("remarks", "")
                 if not remarks:
