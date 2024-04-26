@@ -177,7 +177,7 @@ def firstock_place_orders_for_users(orders_to_place, users_credentials):
                 "exchange_token": int(exchange_token),
                 "order_id": 123456789,
                 "qty": qty,
-                "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "time_stamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "trade_id": orders_to_place.get("trade_id", "")
             }
         return results
@@ -242,8 +242,8 @@ def firstock_modify_orders_for_users(order_details, users_credentials):
     )
     new_stoploss = order_details.get("limit_prc", 0.0)
     trigger_price = order_details.get("trigger_prc", None)
-    segement = Instrument().get_segement_by_exchange_token(order_details.get("exchange_token"))
-    trading_symbol = Instrument().get_trading_symbol_by_exchange_token(order_details.get("exchange_token"))
+    segement = Instrument().get_segment_by_exchange_token(str(order_details.get("exchange_token")))
+    trading_symbol = Instrument().get_trading_symbol_by_exchange_token(str(order_details.get("exchange_token")))
     price_type = order_details.get("order_type")
     if price_type == "stoploss":
         price_type = "SL-LMT"    

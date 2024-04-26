@@ -81,3 +81,10 @@ def fetch_qty_for_holdings_sqldb(Tr_No, trade_id):
     else:
         qty = 0
     return qty
+
+def fetch_sql_table_from_db(Tr_no,table_name):
+    db_path = os.path.join(os.getenv("DB_DIR"), f"{Tr_no}.db")
+    conn = get_db_connection(db_path)
+    query = f"SELECT * FROM {table_name}"
+    df = pd.read_sql(query, conn)
+    return df
