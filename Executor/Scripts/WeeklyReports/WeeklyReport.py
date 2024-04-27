@@ -57,6 +57,7 @@ def get_current_week_trades(user, active_strategies, start_date, end_date):
                 continue
             query = f"SELECT * FROM {strategy} WHERE exit_time BETWEEN '{start_date}' AND '{end_date}'"
             result = pd.read_sql_query(query, conn)
+            result['net_pnl'] = result['net_pnl'].astype(float)
             net_pnl_sum = result['net_pnl'].sum()
             trades[strategy] = round(net_pnl_sum,2)
         logger.debug(f"Trades: {trades}")
@@ -130,39 +131,26 @@ def update_financials_in_firebase(user_id, account_value, freecash, holdings):
 # Main function to execute the script for generating weekly reports
 def main():
     # Check if today is Saturday to update account values
-    if datetime.now().weekday() == 5:  # 5 corresponds to Saturday
-        active_users = fetch_active_users_from_firebase()
-        for user in active_users:
-            user_id = user['Tr_No']
-            try:
-                # Fetch holdings and free cash values
-                holdings_value = fetch_holdings_value_for_user_sqldb(user)
-                broker_freecash = fetch_freecash_for_user(user)
-                
-                # Calculate the new account value
-                new_account_value = round(holdings_value + broker_freecash, 2)
-                
-                # Update financials in Firebase
-                update_financials_in_firebase(user_id, new_account_value, broker_freecash, holdings_value)
-            except Exception as e:
-                logger.error(f"Error updating financials for user {user_id} in Firebase: {e}")
-    else:
-        logger.info("Today is not Saturday. No updates will be made.")
-    
-    # Log user details regardless of the day
-    try:
-        start_date, end_date = get_current_week_range()
-        active_users = fetch_active_users_from_firebase()
-        active_strategies = fetch_active_strategies_all_users()
-        
-
-        for user in active_users:
-            user_id = user['Tr_No']
+    active_users = fetch_active_users_from_firebase()
+    start_date, end_date = get_current_week_range()
+    active_strategies = fetch_active_strategies_all_users()
+    for user in active_users:
+        user_id = user['Tr_No']
+        try:
+            # Fetch holdings and free cash values
+            holdings_value = fetch_holdings_value_for_user_sqldb(user)
+            broker_freecash = fetch_freecash_for_user(user)
+            
+            # Calculate the new account value
+            new_account_value = round(holdings_value + broker_freecash, 2)
+            
+            # Update financials in Firebase
+            update_financials_in_firebase(user_id, new_account_value, broker_freecash, holdings_value)
             user_details = {
-                'trades': get_current_week_trades(user, active_strategies, start_date, end_date),
-                'fb_values': get_current_week_fb_values(user),
-                'broker_freecash': fetch_freecash_for_user(user),
-                'broker_holdings': fetch_holdings_value_for_user_sqldb(user),
+            'trades': get_current_week_trades(user, active_strategies, start_date, end_date),
+            'fb_values': get_current_week_fb_values(user),
+            'broker_freecash': fetch_freecash_for_user(user),
+            'broker_holdings': fetch_holdings_value_for_user_sqldb(user),
             }
             commission,drawdown = calculate_commission_and_drawdown(user,user_details['fb_values']['AccountValue'])
             user_details['account_value'] = round(user_details['broker_freecash'] + user_details['broker_holdings'], 2)
@@ -175,8 +163,8 @@ def main():
                 user_details['drawdown'] = None
 
             send_telegram_message_to_user(user, user_details, start_date, end_date)
-    except Exception as e:
-        print(f"Error during user details logging: {e}")
+        except Exception as e:
+            logger.error(f"Error updating financials for user {user_id} in Firebase: {e}")
     
 if __name__ == "__main__":
     main()
