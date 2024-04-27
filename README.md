@@ -238,3 +238,57 @@ TODO
 1. Correct the segments for SENSEX orders for aliceblue
 2. Correct the tax calculation
 3. Signal values in reports
+
+
+
+
+
+1. Coding related in github
+2. Separate page in notion for dhoom studios, trademan and serendipity(Accounting)
+3. Profile page in notion for each page
+4. Passwords and accounting details in notion (Separate for trademan and serendipity)
+5. Possible contracts
+   1. Roopesh
+   2. Nataraj
+   3. Preetham
+6. Customer support
+7. Reconciliation and orgainze
+8. Paper Work for contracts
+9. Open Twiiter, LinkedIn, Instagram and Facebook accounts
+10. Devamma coding agency - Varshita
+11. Contact shrijan
+   1. Concurrency
+12. Channels for communication
+   1. Trading related - Discord
+   2. Office Related - Telegram Channel
+   3. Daily Tasks - Telegram Channel
+   4. Admin related - Whatsapp Group
+13. Clear Onedrive folder structure
+14. List of salary and subscriptions for all 3 entities
+15. List of assests and invenotry
+16. List of features and enhancements 
+    1. Website for home automation
+17. List of feature leads and cost
+    1.Contract for home automation
+
+
+
+Trademan Website
+1. Education
+   1. Blogs
+   2. Youtube Podcasts
+2. PMS
+3. Saas(Highlighted part)
+
+
+V1
+1. Website
+2. Broucher
+   1. Why select AlgoTrade?
+   2. differentiate between algo and traditional trading
+   3. Freedom by chosing algo trading
+   4. Logging
+   5. Notifications
+   6. Backtesting(charts and graphs)
+   7. Customization
+   8. Transfer your ideas to algo  

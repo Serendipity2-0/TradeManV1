@@ -88,3 +88,14 @@ def fetch_sql_table_from_db(Tr_no,table_name):
     query = f"SELECT * FROM {table_name}"
     df = pd.read_sql(query, conn)
     return df
+
+def fetch_holdings_value_for_user_sqldb(user):
+    db_path = os.path.join(os.getenv("DB_DIR"), f"{user['Tr_No']}.db")
+    conn = get_db_connection(db_path) 
+    """Fetch the quantity from the Holdings table from database which match the first part of the trade_id."""
+    query = f"SELECT * FROM Holdings"
+    df = pd.read_sql(query, conn)
+    #the margin_utilized is str type convert it to float
+    df['margin_utilized'] = df['margin_utilized'].astype(float)
+    holdings_value = df['margin_utilized'].sum()
+    return holdings_value
