@@ -243,9 +243,9 @@ def firstock_modify_orders_for_users(order_details, users_credentials):
     new_stoploss = order_details.get("limit_prc", 0.0)
     trigger_price = order_details.get("trigger_prc", None)
     segement = Instrument().get_segment_by_exchange_token(str(order_details.get("exchange_token")))
-    trading_symbol = Instrument().get_trading_symbol_by_exchange_token(str(order_details.get("exchange_token")))
+    trading_symbol = Instrument().get_full_format_trading_symbol_by_exchange_token(str(order_details.get("exchange_token")))
     price_type = order_details.get("order_type")
-    if price_type == "stoploss":
+    if price_type.lower() == "stoploss":
         price_type = "SL-LMT"    
 
     try:
@@ -260,7 +260,7 @@ def firstock_modify_orders_for_users(order_details, users_credentials):
                 tradingSymbol = trading_symbol,
                 priceType = price_type
             )
-            logger.info("firstock order modified", modifyOrder)
+            logger.info(f"firstock order modified: {modifyOrder}")
     except Exception as e:
         message = f"Order placement failed: {e} for {order_details['username']}"
         logger.error(message)
