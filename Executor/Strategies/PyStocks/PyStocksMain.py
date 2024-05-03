@@ -84,7 +84,7 @@ def main():
                 order_to_place = assign_trade_id(order_details)
                 signals_to_fb(order_to_place, new_base.NextTradeId)
                 logger.debug(f"Orders to place: {order_to_place}")
-                place_order_strategy_users(strategy_name, order_to_place)
+                # place_order_strategy_users(strategy_name, order_to_place)
                 i=i+1
                 if i == 5:
                     break

@@ -123,6 +123,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                         order_to_place["qty"] = current_qty
 
                         # logger.debug(f"Placing order for {order_to_place}")
+                    
                         order_status = place_order_for_brokers(order_to_place, user_credentials)
                         all_order_statuses.append(order_status)
 
