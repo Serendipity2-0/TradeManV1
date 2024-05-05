@@ -361,17 +361,20 @@ def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size):
     strategy_users = fetch_strategy_users(strategy_name)
     free_cash_dict = fetch_freecash_firebase(strategy_name)
     risk_per_trade = fetch_risk_per_trade_firebase(strategy_name)
-    for user in strategy_users:
-        if user["Tr_No"] in risk_per_trade:
-            risk = risk_per_trade[user["Tr_No"]]
-        if user["Tr_No"] in free_cash_dict:
-            capital = free_cash_dict[user["Tr_No"]]
-        qty = calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size)
-        user["Strategies"][strategy_name]["Qty"] = qty
+    try:
+        for user in strategy_users:
+            if user["Tr_No"] in risk_per_trade:
+                risk = risk_per_trade[user["Tr_No"]]
+            if user["Tr_No"] in free_cash_dict:
+                capital = free_cash_dict[user["Tr_No"]]
+            qty = calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size)
+            user["Strategies"][strategy_name]["Qty"] = qty
 
-        update_fields_firebase(
-            user_db_collection, user["Tr_No"], {"Qty": qty}, f"Strategies/{strategy_name}"
-        )
+            update_fields_firebase(
+                user_db_collection, user["Tr_No"], {"Qty": qty}, f"Strategies/{strategy_name}"
+            )
+    except Exception as e:
+        logger.error(f"Error updating qty for user: {e}")
 
 
 def assign_trade_id(orders_to_place):

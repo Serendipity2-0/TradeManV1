@@ -224,6 +224,12 @@ def delete_orders_from_firebase(orders, strategy_name, user):
 
     logger.success("Deletion process completed.")
 
+def calculate_tax_from_firebasedb(entry_orders, exit_orders, hedge_orders):
+    tax = sum(order['tax'] for order in entry_orders)
+    tax += sum(order['tax'] for order in exit_orders)
+    tax += sum(order['tax'] for order in hedge_orders)
+    return tax
+
 def seggregate_orders_by_type(orders):
     try:
         entry_orders = [o for o in orders if "trade_id" in o and "EN" in o["trade_id"] and "HO" not in o["trade_id"]]
@@ -312,7 +318,7 @@ def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
         print("qty", qty)
         print("pnl", pnl)
 
-        tax = calculate_taxes(entry_orders,exit_orders,hedge_orders,user["Broker"]["BrokerName"])
+        tax = calculate_tax_from_firebasedb(entry_orders,exit_orders,hedge_orders)
 
         net_pnl = pnl - tax
 

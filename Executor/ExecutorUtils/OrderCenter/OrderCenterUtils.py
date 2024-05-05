@@ -28,7 +28,8 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     place_order_for_brokers,
     modify_order_for_brokers,
     fetch_strategy_details_for_user,
-    CLIENTS_USER_FB_DB
+    CLIENTS_USER_FB_DB,
+    get_orders_margins
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     fetch_qty_for_holdings_sqldb,
@@ -123,7 +124,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                         order_to_place["qty"] = current_qty
 
                         # logger.debug(f"Placing order for {order_to_place}")
-                    
+                        order_to_place["tax"] = get_orders_margins(order_to_place, user_credentials)
                         order_status = place_order_for_brokers(order_to_place, user_credentials)
                         all_order_statuses.append(order_status)
 
@@ -136,6 +137,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                 # Place the order
                 # logger.debug(f"Placing order for {order_with_user_and_broker}")
                 try:
+                    order_with_user_and_broker["tax"] = get_orders_margins(order_to_place, user_credentials)
                     order_status = place_order_for_brokers(order_with_user_and_broker, user_credentials)
                     all_order_statuses.append(order_status)
                 except Exception as e:

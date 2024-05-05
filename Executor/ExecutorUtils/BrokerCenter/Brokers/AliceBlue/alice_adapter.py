@@ -335,7 +335,8 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
             "qty": qty,
             "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
             "trade_id": orders_to_place.get("trade_id", ""),
-            "order_status": order_status
+            "order_status": order_status,
+            "tax":orders_to_place.get("tax", 0)
         }
 
     return results

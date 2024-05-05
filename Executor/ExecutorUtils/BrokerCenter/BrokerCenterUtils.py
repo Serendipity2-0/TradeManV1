@@ -590,3 +590,16 @@ def get_broker_pnl(user):
     except Exception as e:
         logger.error(f"Error fetching broker pnl for user: {user['Broker']['BrokerUsername']}: {e}")
         return None
+    
+def get_orders_margins(orders_to_place,user_credentials):
+    #TODO As of now passing all the brokers to zerodha adapter
+    if user_credentials['BrokerName'] == ZERODHA:
+        return zerodha_adapter.get_order_margin(orders_to_place,user_credentials,user_credentials['BrokerName'])
+    elif user_credentials['BrokerName'] == ALICEBLUE:
+        return zerodha_adapter.get_order_margin(orders_to_place,user_credentials,user_credentials['BrokerName'])
+    elif user_credentials['BrokerName'] == FIRSTOCK:
+        return zerodha_adapter.get_order_margin(orders_to_place,user_credentials,user_credentials['BrokerName'])
+    else:
+        return None
+    
+

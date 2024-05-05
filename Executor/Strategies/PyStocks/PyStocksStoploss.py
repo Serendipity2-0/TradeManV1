@@ -10,7 +10,6 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 
-#TODO add fetch_table to exesql_adapter
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_users_for_strategies_from_firebase as fetch_active_users
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import fetch_sql_table_from_db as fetch_table_from_db
@@ -18,7 +17,6 @@ from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_si
 
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 from Executor.Strategies.StrategiesUtil import StrategyBase,assign_trade_id,place_order_strategy_users
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as instrument_obj
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
@@ -55,22 +53,17 @@ if True:
     for user in users:
         holdings = fetch_table_from_db(user['Tr_No'], "Holdings")
         py_holdings = holdings[holdings['trade_id'].str.startswith('PS')]  #TODO Remove hardcoded PS
-        logger.debug(py_holdings)
         for index, row in py_holdings.iterrows():
             symbol = row['trading_symbol']
-            exchange_token = instrument_obj().get_exchange_token_by_name(symbol,"NSE")
-            stock_token = Instrument().get_token_by_name(name=symbol)
-            ltp = get_single_ltp(token = stock_token, segment = "NSE")
+            exchange_token = Instrument().get_exchange_token_by_name(symbol,"NSE")
+            ltp = get_single_ltp(exchange_token = exchange_token, segment = "NSE")
             buy_price = float(row['entry_price'])
             per_change = (ltp - buy_price) / buy_price * 100
             sl = buy_price - (buy_price * stoploss_multiplier/100)
 
             trade_id = row['trade_id']
-            #trade_id = PS4_LG_MO_EN split and get the values before the _
             trade_id =  trade_id.split('_')
             trade_id = trade_id[0]
-
-            """100 is a Sample Value instead of 100 Read the SL from the Database"""
 
             if per_change // stoploss_multiplier > 0 and per_change//stoploss_multiplier != 1:
                 for j in range(int(per_change // stoploss_multiplier)):

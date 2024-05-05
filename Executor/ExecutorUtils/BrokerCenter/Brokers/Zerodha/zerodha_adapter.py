@@ -331,7 +331,8 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
                 "qty": qty,
                 "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "trade_id": orders_to_place.get("trade_id", ""),
-                "order_status": order_status
+                "order_status": order_status,
+                "tax":orders_to_place.get("tax", 0)
             }
     
     return results
@@ -517,3 +518,70 @@ def get_zerodha_pnl(user):
     except Exception as e:
         logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
         return None
+
+def get_order_margin(order,user_credentials,broker):
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_primary_accounts_from_firebase
+    zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
+    basket_order = []
+    primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
+
+    kite = create_kite_obj(
+    api_key=primary_account_session_id["Broker"]["ApiKey"],
+    access_token=primary_account_session_id["Broker"]["SessionId"],
+    )
+    strategy = order["strategy"]
+    exchange_token = order["exchange_token"]
+    product = order.get("product_type")
+
+    transaction_type = calculate_transaction_type(
+        kite, order.get("transaction_type")
+    )
+    order_type = calculate_order_type(kite, order.get("order_type"))
+    product_type = calculate_product_type(kite, product)
+    if product == "CNC":
+        segment_type = kite.EXCHANGE_NSE
+        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+            exchange_token, "NSE"
+        )
+    else:
+        segment_type = Instrument().get_segment_by_exchange_token(str(exchange_token))
+        trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+            str(exchange_token)
+        )
+
+    limit_prc = order.get("limit_prc", None)
+    trigger_price = order.get("trigger_prc", None)
+
+    if limit_prc is not None:
+        limit_prc = round(float(limit_prc), 2)
+        if limit_prc < 0:
+            limit_prc = 1.0
+    elif product == "CNC":
+        limit_prc = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+    else:
+        limit_prc = 0.0
+
+    if trigger_price is not None:
+        trigger_price = round(float(trigger_price), 2)
+        if trigger_price < 0:
+            trigger_price = 1.5
+
+    margin_order = {
+                        "variety":kite.VARIETY_REGULAR,
+                        "exchange":segment_type,
+                        "price":limit_prc,
+                        "tradingsymbol":trading_symbol,
+                        "transaction_type":transaction_type,
+                        "quantity":order["qty"],
+                        "trigger_price":trigger_price,
+                        "product":product_type,
+                        "order_type":order_type}
+    basket_order.append(margin_order)
+    margin_details = kite.basket_order_margins(basket_order,mode="compact")
+    tax = margin_details["orders"][0]['charges']['total']
+    tax = round(tax,2)
+    if broker.lower() == "aliceblue" or broker.lower() == "firstock":
+        tax = float(tax)  - 5
+    return tax
