@@ -1,7 +1,7 @@
 import os
 import sys
 from dotenv import load_dotenv
-import datetime
+import datetime 
 
 # Load holdings data
 DIR = os.getcwd()
@@ -9,8 +9,7 @@ sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
-
-
+import Executor.ExecutorUtils.ExeUtils as ExeUtils
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_users_for_strategies_from_firebase as fetch_active_users
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import fetch_sql_table_from_db as fetch_table_from_db
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
@@ -49,7 +48,12 @@ to_date = datetime.date.today()
 # Calculate previous day's date
 from_date = to_date - datetime.timedelta(days=1)
 
-if True:
+def main():
+    now = datetime.datetime.now()
+    if now.date() in ExeUtils.holidays:
+        logger.info("Skipping execution as today is a holiday.")
+        return
+
     for user in users:
         holdings = fetch_table_from_db(user['Tr_No'], "Holdings")
         py_holdings = holdings[holdings['trade_id'].str.startswith('PS')]  #TODO Remove hardcoded PS
@@ -88,3 +92,6 @@ if True:
                 order_to_place = assign_trade_id(order_details)
                 logger.debug(f"Orders to place: {order_to_place}")
                 place_order_strategy_users(strategy_name, order_to_place)
+
+if __name__ == "__main__":
+    main()

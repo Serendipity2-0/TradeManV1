@@ -1,17 +1,19 @@
-00 7 * * 1-6 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StreamlitScripts/ExeApp.sh>> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/ExeApp.log 2>&1
-01 7 * * 1-6 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StreamlitScripts/UserApp.sh>> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/UserApp.log 2>&1
-30 8 * * 1-6 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/1_GoodMorning/0830_GoodMorning.sh>> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/1_GoodMorning.log 2>&1
-11 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0911_Amipy_NF.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/Amipy_NF.log 2>&1
-16 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0916_ExpiryTrader.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/ExpiryTrader.log 2>&1
-19 9 * * 2-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0919_OvernightExit.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/OvernightExit.log 2>&1
-42 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0942_GoldenCoin.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/GoldenCoin.log 2>&1
-00 10 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/1000_MPWizard.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/MPWizard.log 2>&1
-13 15 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/1_SweepOrders/1513_SweepOrders.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/SweepOrders.log 2>&1
-16 15 * * 1-4 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/1516_OvernightEntry.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/OvernightEntry.log 2>&1
-35 15 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/2_DailyTradeBookValidator/TradeBookValidator.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/TradeBookValidator.log 2>&1
-45 15 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/3_EODTradeDBLogging/TradeDBLogging.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/TradeDBLogging.log 2>&1
-00 16 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/5_TickerDB/TickerDB.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/TickerDB.log 2>&1
-20 16 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/4_EODDailyReports/EODReports.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/NewLogs/EODreport.log 2>&1
+00 7 * * 1-6 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StreamlitScripts/ExeApp.sh>> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/ExeApp.log 2>&1
+01 7 * * 1-6 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StreamlitScripts/UserApp.sh>> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/UserApp.log 2>&1
+30 8 * * 1-6 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/1_GoodMorning/0830_GoodMorning.sh>> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/1_GoodMorning.log 2>&1
+11 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0911_Amipy_NF.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/Amipy_NF.log 2>&1
+16 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0916_ExpiryTrader.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/ExpiryTrader.log 2>&1
+19 9 * * 2-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0919_OvernightExit.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/OvernightExit.log 2>&1
+30 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0930_PyStocksEntry.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/PyStocksEntry.log 2>&1
+35 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0935_PyStocksExit.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/PyStocksExit.log 2>&1
+42 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0942_GoldenCoin.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/GoldenCoin.log 2>&1
+00 10 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/1000_MPWizard.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/MPWizard.log 2>&1
+13 15 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/1_SweepOrders/1513_SweepOrders.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/SweepOrders.log 2>&1
+16 15 * * 1-4 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/1516_OvernightEntry.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/OvernightEntry.log 2>&1
+35 15 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/2_DailyTradeBookValidator/TradeBookValidator.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/TradeBookValidator.log 2>&1
+45 15 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/3_EODTradeDBLogging/TradeDBLogging.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/TradeDBLogging.log 2>&1
+00 16 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/5_TickerDB/TickerDB.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/TickerDB.log 2>&1
+20 16 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/4_EODDailyReports/EODReports.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/EODreport.log 2>&1
 50 8 * * 6 /Users/traderscafe/Desktop/Main/Scripts/0850_WeeklyReport.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/Logs/WeeklyReport.log 2>&1
 30 15 * * * pkill -f AmiPyLive.py
 31 15 * * * pkill -f MPWizard.py
