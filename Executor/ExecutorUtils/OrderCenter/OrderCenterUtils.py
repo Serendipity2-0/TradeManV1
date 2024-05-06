@@ -137,7 +137,7 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                 # Place the order
                 # logger.debug(f"Placing order for {order_with_user_and_broker}")
                 try:
-                    order_with_user_and_broker["tax"] = get_orders_margins(order_to_place, user_credentials)
+                    order_with_user_and_broker["tax"] = get_orders_margins(order_with_user_and_broker, user_credentials)
                     order_status = place_order_for_brokers(order_with_user_and_broker, user_credentials)
                     all_order_statuses.append(order_status)
                 except Exception as e:

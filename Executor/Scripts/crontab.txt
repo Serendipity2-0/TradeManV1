@@ -7,6 +7,7 @@
 30 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0930_PyStocksEntry.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/PyStocksEntry.log 2>&1
 35 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0935_PyStocksExit.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/PyStocksExit.log 2>&1
 42 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0942_GoldenCoin.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/GoldenCoin.log 2>&1
+43 9 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/0943_Om.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/Om.log 2>&1
 00 10 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/1000_MPWizard.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/MPWizard.log 2>&1
 13 15 * * 1-5 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/2_GoodEvening/1_SweepOrders/1513_SweepOrders.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/SweepOrders.log 2>&1
 16 15 * * 1-4 /Users/traderscafe/Desktop/TradeManV1/Executor/Scripts/StrategyScripts/1516_OvernightEntry.sh >> /Users/traderscafe/Library/CloudStorage/OneDrive-Personal/V1/Logs/OvernightEntry.log 2>&1

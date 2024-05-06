@@ -11,15 +11,15 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 import Executor.Strategies.PyStocks.PyStocksUtils as pystocksutils
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_users_for_strategies_from_firebase as fetch_active_users
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_users_for_strategies_from_firebase as fetch_active_users,fetch_user_credentials_firebase,fetch_active_users_from_firebase
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import fetch_sql_table_from_db as fetch_table_from_db
-from Executor.Strategies.StrategiesUtil import StrategyBase
+from Executor.Strategies.StrategiesUtil import StrategyBase,fetch_strategy_users
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as instrument_obj, get_single_ltp
 from Executor.Strategies.StrategiesUtil import (
     update_qty_user_firebase,
     assign_trade_id,
     update_signal_firebase,
-    place_order_strategy_users,
+    place_order_single_user,
 )
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
@@ -89,35 +89,35 @@ def main():
         symbol_list = df['Symbol'].tolist()
         logger.debug(f"Symbol list: {symbol_list}")
 
-        users = fetch_active_users("PyStocks")
-        for user in users:
-            holdings = fetch_table_from_db(user['Tr_No'], "Holdings")
-            py_holdings = holdings[holdings['trade_id'].str.startswith('PS')] #TODO Remove hardcoded PS
-            i = len(py_holdings)
-            if len(py_holdings) <5: # Check if the user has less than 5 active PyStocks positions
-                for symbol in symbol_list:
-                    exchange_token = instrument_obj().get_exchange_token_by_name(symbol,"NSE")
-                    ltp = get_single_ltp(exchange_token=exchange_token,segment="NSE")
-                    logger.debug(f"LTP for {symbol}: {ltp}")
-                    ltp = round(ltp * 20) / 20
-                    update_qty_user_firebase(strategy_name, ltp, 1)
-                    new_base = pystocks_obj.reload_strategy(strategy_name)
-                    order_details = [{
-                        "strategy": strategy_name,
-                        "signal": "Long",
-                        "base_symbol": symbol,
-                        "exchange_token": exchange_token,
-                        "transaction_type": "BUY",
-                        "order_type": order_type,
-                        "product_type": product_type,
-                        "order_mode": "MainEntry",
-                        "trade_id": new_base.NextTradeId,
-                        "limit_prc": ltp
-                    }]
-                    order_to_place = assign_trade_id(order_details)
+        users = fetch_strategy_users("PyStocks")
+        for symbol in symbol_list:
+            exchange_token = instrument_obj().get_exchange_token_by_name(symbol,"NSE")
+            ltp = get_single_ltp(exchange_token=exchange_token,segment="NSE")
+            logger.debug(f"LTP for {symbol}: {ltp}")
+            ltp = round(ltp * 20) / 20
+            update_qty_user_firebase(strategy_name, ltp, 1)
+            new_base = pystocks_obj.reload_strategy(strategy_name)
+            order_details = [{
+                "strategy": strategy_name,
+                "signal": "Long",
+                "base_symbol": symbol,
+                "exchange_token": exchange_token,
+                "transaction_type": "BUY",
+                "order_type": order_type,
+                "product_type": product_type,
+                "order_mode": "MainEntry",
+                "trade_id": new_base.NextTradeId,
+                "limit_prc": ltp
+            }]
+            order_to_place = assign_trade_id(order_details)
+            for user in users:
+                holdings = fetch_table_from_db(user['Tr_No'], "Holdings")
+                py_holdings = holdings[holdings['trade_id'].str.startswith('PS')] #TODO Remove hardcoded PS
+                i = len(py_holdings)
+                if len(py_holdings) <5: # Check if the user has less than 5 active PyStocks positions
                     signals_to_fb(order_to_place, new_base.NextTradeId)
                     logger.debug(f"Orders to place: {order_to_place}")
-                    place_order_strategy_users(strategy_name, order_to_place)
+                    place_order_single_user(user, order_to_place)
                     i=i+1
                     if i == 5:
                         break
