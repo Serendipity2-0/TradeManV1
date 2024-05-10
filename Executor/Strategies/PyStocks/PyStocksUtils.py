@@ -344,7 +344,7 @@ def get_stockpicks_csv():
         #i += 1
 
     print("Fetched stock data for all symbols.")
-    shortterm_top5 = shortTerm_pick(stock_data_dict)[1:6]
+    shortterm_top5 = shortTerm_pick(stock_data_dict)[1:11]
     print("Shortterm Done")
     midterm_top5 = midTerm_pick(stock_data_dict)[1:6]
     print("Midterm Done")

@@ -117,7 +117,8 @@ def main():
                 if len(py_holdings) <5: # Check if the user has less than 5 active PyStocks positions
                     signals_to_fb(order_to_place, new_base.NextTradeId)
                     logger.debug(f"Orders to place: {order_to_place}")
-                    place_order_single_user(user, order_to_place)
+                    #The user has to be sent as a list
+                    place_order_single_user([user], order_to_place)
                     i=i+1
                     if i == 5:
                         break

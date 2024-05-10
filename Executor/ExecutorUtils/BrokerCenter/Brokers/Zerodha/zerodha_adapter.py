@@ -534,11 +534,21 @@ def get_order_margin(order,user_credentials,broker):
     strategy = order["strategy"]
     exchange_token = order["exchange_token"]
     product = order.get("product_type")
+    transaction_type = order.get("transaction_type")
+    if transaction_type == "B":
+        transaction_type = "BUY"
+    elif transaction_type == "S":
+        transaction_type = "SELL"
 
     transaction_type = calculate_transaction_type(
-        kite, order.get("transaction_type")
+        kite, transaction_type
     )
     order_type = calculate_order_type(kite, order.get("order_type"))
+    #TODO: This is a temporary fix for firstock untill firstock starts providing the tax
+    if product == "I":
+        product = "MIS"
+    elif product == "C":
+        product = "CNC"
     product_type = calculate_product_type(kite, product)
     if product == "CNC":
         segment_type = kite.EXCHANGE_NSE

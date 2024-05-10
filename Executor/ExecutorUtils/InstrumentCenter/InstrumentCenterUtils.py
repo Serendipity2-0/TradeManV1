@@ -328,3 +328,24 @@ def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
     else:
         ltp = kite.ltp(kite_token)
         return ltp[str(kite_token)]["last_price"]
+
+def get_single_quote(kite_token=None, exchange_token=None, segment=None):
+    zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
+    primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(
+        zerodha_primary
+    )
+    kite = KiteConnect(api_key=primary_account_session_id["Broker"]["ApiKey"])
+    kite.set_access_token(
+        access_token=primary_account_session_id["Broker"]["SessionId"]
+    )
+    
+    if exchange_token:
+        if segment:
+            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token,segment)
+        else:
+            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
+        quote = kite.quote(kite_token)
+        return quote[str(kite_token)]["last_price"]
+    else:
+        quote = kite.quote(kite_token)
+        return quote[str(kite_token)]["last_price"]
