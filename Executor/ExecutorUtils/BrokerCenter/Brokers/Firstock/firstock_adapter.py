@@ -177,7 +177,7 @@ def firstock_place_orders_for_users(orders_to_place, users_credentials):
                 "exchange_token": int(exchange_token),
                 "order_id": 123456789,
                 "qty": qty,
-                "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "time_stamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "trade_id": orders_to_place.get("trade_id", "")
             }
         return results
