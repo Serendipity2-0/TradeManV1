@@ -195,7 +195,7 @@ def get_order_status(kite, order_id):
         for order in order_history:
             if order.get("status") == "REJECTED":
                 return order.get('status_message')
-            elif order.get("status") == "COMPLETE" or order.get("status") == "TRIGGER PENDING":
+            elif order.get("status") == "COMPLETE" or order.get("status") == "TRIGGER PENDING" or order.get("status") == "OPEN":
                 return "PASS"
         return "FAIL"
     except Exception as e:

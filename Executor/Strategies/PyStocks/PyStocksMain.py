@@ -84,46 +84,63 @@ def main():
             logger.info(f"Waiting for {wait_time} before starting the bot")
             sleep(wait_time.total_seconds())
 
-        #TODO: This is just done for short term
+        # Initialize a dictionary to hold trade IDs for each symbol
+        trade_id_mapping = {}
+
         df = pd.read_csv(os.getenv("best5_shortterm_path"))
         symbol_list = df['Symbol'].tolist()
         logger.debug(f"Symbol list: {symbol_list}")
 
         users = fetch_strategy_users("PyStocks")
-        for symbol in symbol_list:
-            exchange_token = instrument_obj().get_exchange_token_by_name(symbol,"NSE")
-            ltp = get_single_ltp(exchange_token=exchange_token,segment="NSE")
-            logger.debug(f"LTP for {symbol}: {ltp}")
-            ltp = round(ltp * 20) / 20
-            update_qty_user_firebase(strategy_name, ltp, 1)
-            new_base = pystocks_obj.reload_strategy(strategy_name)
-            order_details = [{
-                "strategy": strategy_name,
-                "signal": "Long",
-                "base_symbol": symbol,
-                "exchange_token": exchange_token,
-                "transaction_type": "BUY",
-                "order_type": order_type,
-                "product_type": product_type,
-                "order_mode": "MainEntry",
-                "trade_id": new_base.NextTradeId,
-                "limit_prc": ltp
-            }]
-            order_to_place = assign_trade_id(order_details)
-            for user in users:
-                holdings = fetch_table_from_db(user['Tr_No'], "Holdings")
-                py_holdings = holdings[holdings['trade_id'].str.startswith('PS')] #TODO Remove hardcoded PS
-                i = len(py_holdings)
-                if len(py_holdings) <5: # Check if the user has less than 5 active PyStocks positions
-                    signals_to_fb(order_to_place, new_base.NextTradeId)
-                    logger.debug(f"Orders to place: {order_to_place}")
-                    #The user has to be sent as a list
-                    place_order_single_user([user], order_to_place)
-                    i=i+1
-                    if i == 5:
-                        break
-        
+        for user in users:
+            holdings = fetch_table_from_db(user['Tr_No'], "Holdings")
+            py_holdings = holdings[holdings['trade_id'].str.startswith('PS')]
+            current_holdings_count = len(py_holdings)
+            logger.debug(f"Current holdings for user {user['Tr_No']}: {current_holdings_count}")
 
+            if current_holdings_count < 5:
+                needed_orders = 5 - current_holdings_count
+                for index, symbol in enumerate(symbol_list):
+                    if needed_orders == 0:
+                        break  # Stop processing if no more orders are needed
+
+                    new_base = pystocks_obj.reload_strategy(pystocks_obj.StrategyName)
+                    if symbol not in trade_id_mapping:
+                        trade_id_mapping[symbol] = new_base.NextTradeId
+
+                    trade_id = trade_id_mapping[symbol]
+
+                    exchange_token = instrument_obj().get_exchange_token_by_name(symbol, "NSE")
+                    ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+                    ltp = round(ltp * 20) / 20
+                    order_details = [{
+                        "strategy": strategy_name,
+                        "signal": "Long",
+                        "base_symbol": symbol,
+                        "exchange_token": exchange_token,
+                        "transaction_type": "BUY",
+                        "order_type": order_type,
+                        "product_type": product_type,
+                        "order_mode": "MainEntry",
+                        "trade_id": trade_id,
+                        "limit_prc": ltp
+                    }]
+                    order_to_place = assign_trade_id(order_details)
+                    signals_to_fb(order_to_place, trade_id)
+                    order_status = place_order_single_user([user], order_to_place)
+                    logger.debug(f"Orders placed for {symbol}: {order_to_place}")
+
+                    # Check if order failed for user 'Tr00'
+                    if user['Tr_No'] == 'Tr00' and any(order['order_status'] == 'FAIL' for order in order_status):
+                        # Reassign the trade ID to the next symbol if there is one
+                        if index + 1 < len(symbol_list):
+                            next_symbol = symbol_list[index + 1]
+                            trade_id_mapping[next_symbol] = trade_id
+                            logger.debug(f"Trade ID {trade_id} reassigned from {symbol} to {next_symbol}")
+
+                    needed_orders -= 1
+
+                logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 5")
 
 if __name__ == "__main__":
     create_csv()

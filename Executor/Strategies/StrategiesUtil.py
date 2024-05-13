@@ -465,7 +465,7 @@ def place_order_single_user(user_details,orders_to_place,order_qty_mode=None):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
         place_order_for_strategy,
     )
-    place_order_for_strategy(user_details,orders_to_place,order_qty_mode)
+    return place_order_for_strategy(user_details,orders_to_place,order_qty_mode)
 
 def update_stoploss_orders(strategy_name, orders_to_modify):
     # I fetch the users for the strategy and then pass the users and orders to modify to the modify_orders_for_strategy function
