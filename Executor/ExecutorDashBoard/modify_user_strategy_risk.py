@@ -25,6 +25,11 @@ user_fb_collection = os.getenv("FIREBASE_USER_COLLECTION")
 strategy_fb_collection = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 def modify_user_strategy_params():
+    """
+    The function `modify_user_strategy_params` allows users to select a trader number, trading strategy,
+    and risk percentage, and submit the form to update the risk percentage in Firebase for the selected
+    user and strategy.
+    """
     try:
         if 'active_users' not in st.session_state:
             st.session_state.active_users = fetch_active_users_from_firebase()

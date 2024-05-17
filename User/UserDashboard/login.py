@@ -2,21 +2,15 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
-import pandas as pd
-from PIL import Image
-import io
 import os
-import base64
-import datetime
-from User.UserDashBoard.profile_page import show_profile
 from dotenv import load_dotenv
 from streamlit_calendar import calendar
 from firebase_admin import storage
 from streamlit_option_menu import option_menu
-from User.UserDashBoard.profile_page import (
-    display_performance_dashboard,
+from profile_page import (
     table_style,
     display_profile_picture,
+    show_profile
 )
 
 

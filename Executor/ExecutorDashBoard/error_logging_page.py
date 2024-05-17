@@ -24,6 +24,17 @@ errors = []
 
 # Adjust the function to extract the timestamp as well
 def extract_error_details_with_timestamp(line):
+    """
+    The function `extract_error_details_with_timestamp` extracts timestamp, module, and error message
+    from a log line with a specific format.
+    
+    :param line: The function `extract_error_details_with_timestamp` takes a log line as input and
+    extracts the timestamp, module name, and error message from it. The log line should be in the format
+    specified by the regular expression pattern in the function
+    :return: The function `extract_error_details_with_timestamp` returns a tuple containing the
+    timestamp, module, and error message extracted from the input line if the pattern matches. If there
+    is no match, it returns a tuple of None values.
+    """
     pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) \| ERROR    \| (.+?):(.+?) - (.+)$"
     match = re.search(pattern, line)
     if match:
@@ -36,6 +47,15 @@ def extract_error_details_with_timestamp(line):
 
 
 def read_n_process_err_log():
+    """
+    The function reads and processes an error log file, extracts error details, counts occurrences of
+    each error message, aggregates unique errors with their latest timestamp, module, and count,
+    converts the data to a DataFrame, and appends the processed data to a CSV file.
+    :return: The function `read_n_process_err_log` returns a DataFrame containing unique error messages
+    along with their latest timestamp, module, occurrence count, and sorted by timestamp in descending
+    order. This DataFrame is also logged using the `logger.debug` function and appended to an existing
+    CSV file specified by `ERROR_LOG_CSV_PATH`.
+    """
     timestamps, modules, errors = [], [], []
     
     # Re-process the log file with the corrected function

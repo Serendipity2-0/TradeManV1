@@ -22,6 +22,10 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_u
 user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 
 def trade_state_viewer():
+    """
+    The `trade_state_viewer` function in Python fetches user trade data from Firebase, allows the user
+    to select a user and strategy, and displays the trade state information including order details.
+    """
     # Initialize the Streamlit app
     st.title('User Trade State Viewer')
 
@@ -49,15 +53,29 @@ def trade_state_viewer():
                 st.write("No orders found for the selected strategy.")
                 
 def format_in_indian_lakhs_crores(number):
+    """
+    The function `format_in_indian_lakhs_crores` formats a given number in Indian currency with commas,
+    and displays the amount in Lakhs or Crores based on the magnitude of the number.
+    
+    :param number: The `format_in_indian_lakhs_crores` function takes a number as input and formats it
+    in Indian currency style, either in Lakhs or Crores based on the magnitude of the number
+    :return: The function `format_in_indian_lakhs_crores` takes a number as input and returns a
+    formatted string representing the number in Indian currency format. If the number is less than 1
+    lakh, it returns the number with 2 decimal places prefixed with the Indian Rupee symbol (₹). If the
+    number is between 1 lakh and 1 crore, it returns the number divided
+    """
     if number < 1e5:
         return f"₹{number:,.2f}"
     elif number < 1e7:
         return f"₹{number/1e5:.2f} Lacs"
     else:
         return f"₹{number/1e7:.2f} Crores"
-# Example usage with your metrics
                 
 def calculate_trademan_stats():
+    """
+    The function `calculate_trademan_stats` fetches active user data, calculates total AUM, net PnL, and
+    displays metrics and detailed user data in a DataFrame.
+    """
     from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 
     users_data = fetch_active_users_from_firebase()

@@ -24,6 +24,11 @@ strategies_fb_db = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 market_info_fb_db = os.getenv("MARKET_INFO_FB_COLLECTION")
 
 def modify_market_info():
+    """
+    The `modify_market_info` function fetches market information from a Firebase database, displays a
+    form for updating the information using Streamlit, and updates the database with the new information
+    upon submission.
+    """
     market_info = fetch_collection_data_firebase(market_info_fb_db)
     st.title("Market Info Manager")
 
@@ -50,6 +55,10 @@ def modify_market_info():
 
 
 def modify_strategy_params():
+    """
+    This Python function modifies strategy parameters by allowing users to select a strategy, edit its
+    parameters in different sections, and submit updates to a Firebase database.
+    """
     strategies = fetch_collection_data_firebase(strategies_fb_db)
     # Your strategies data structure}
     # Streamlit UI components
@@ -83,7 +92,17 @@ def modify_strategy_params():
                     st.write(f"The section '{section}' does not contain editable parameters.")
                     
 def log_changes(updated_data, section_info=None):
-    logger.error(f"error testing 456")
+    """
+    The function `log_changes` logs updated data along with section information to a CSV file with date
+    and time stamp.
+    
+    :param updated_data: The `updated_data` parameter is the data that has been updated and will be
+    logged in the CSV file. It should be provided as an argument when calling the `log_changes` function
+    :param section_info: Section_info is an optional parameter that can be passed to the log_changes
+    function. It is used to provide additional information about the section being updated in the log
+    entry. If section_info is provided, it will be included in the log entry under the "section_info"
+    column in the CSV log file
+    """
     filename = PARAMS_UPDATE_LOG_CSV_PATH
     headers = ["date", "updated_info", "section_info"]
     date_str = datetime.now().strftime("%d%b%y %I:%M%p")  # Format: 23Feb24 9:43AM

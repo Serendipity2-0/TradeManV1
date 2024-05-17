@@ -26,6 +26,14 @@ admin_collection = os.getenv("ADMIN_COLLECTION")
 
 logger.info(firebase_credentials_path)
 
+class SessionState:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
+# Create a session state variable
+session_state = SessionState(logged_in=False, client_data=None)
+
 # Initialize Firebase app
 if not firebase_admin._apps:
     cred = credentials.Certificate(firebase_credentials_path)
@@ -34,6 +42,10 @@ if not firebase_admin._apps:
     )
 
 def exe_login_page():
+    """
+    The function `exe_login_page` handles user login functionality by verifying credentials from a
+    Firebase Realtime Database and displaying appropriate messages based on the outcome.
+    """
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
     # If the user is not logged in, show the login form
@@ -64,8 +76,8 @@ def exe_login_page():
                         and client_data.get("Password") == password
                     ):
                         # If credentials match, show a success message and break the loop
-                        st.session_state.logged_in = True
-                        st.session_state.client_data = client_data
+                        session_state.logged_in = True
+                        session_state.client_data = client_data
                         st.experimental_rerun()
                         break
                 else:

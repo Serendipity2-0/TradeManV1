@@ -14,6 +14,15 @@ logger = LoggerSetup()
 
 
 def login_in_zerodha(user_details):
+    """
+    The function `login_in_zerodha` logs in a user to Zerodha trading platform using their API key, API
+    secret, username, password, and TOTP key.
+    
+    :param user_details: user_details:
+    :return: The function `login_in_zerodha` returns the `kite_access_token`, which is the access token
+    generated after successfully logging in and authorizing the user with the Zerodha API using the
+    provided user details.
+    """
     global kite
     api_key = user_details["ApiKey"]
     api_secret = user_details["ApiSecret"]
