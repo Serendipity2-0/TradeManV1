@@ -308,16 +308,6 @@ def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
 
         pnl = trade_points * qty
 
-        print("entry_price", entry_price)
-        print("exit_price", exit_price)
-        print("hedge_entry_price", hedge_entry_price)
-        print("hedge_exit_price", hedge_exit_price)
-        print("short_trade", short_trade)
-
-        print("trade_points", trade_points)
-        print("qty", qty)
-        print("pnl", pnl)
-
         tax = calculate_tax_from_firebasedb(entry_orders,exit_orders,hedge_orders)
 
         net_pnl = pnl - tax
@@ -328,15 +318,15 @@ def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
                         "signal": signal,
                         "entry_time": datetime.strptime(entry_time, "%Y-%m-%d %H:%M"),
                         "exit_time": datetime.strptime(exit_time, "%Y-%m-%d %H:%M"),
-                        "entry_price": entry_price,
-                        "exit_price": exit_price,
-                        "hedge_entry_price": hedge_entry_price,
-                        "hedge_exit_price": hedge_exit_price,
-                        "trade_points": trade_points,
+                        "entry_price": float(entry_price),
+                        "exit_price": float(exit_price),
+                        "hedge_entry_price": float(hedge_entry_price),
+                        "hedge_exit_price": float(hedge_exit_price),
+                        "trade_points": float(trade_points),
                         "qty": qty,
-                        "pnl": pnl,
-                        "tax": tax,
-                        "net_pnl": net_pnl,
+                        "pnl": float(pnl),
+                        "tax": float(tax),
+                        "net_pnl": float(net_pnl)
         }
         return trade_details
     except Exception as e:

@@ -592,6 +592,6 @@ def get_order_margin(order,user_credentials,broker):
     margin_details = kite.basket_order_margins(basket_order,mode="compact")
     tax = margin_details["orders"][0]['charges']['total']
     tax = round(tax,2)
-    if broker.lower() == "aliceblue" or broker.lower() == "firstock":
+    if broker.lower() == "aliceblue":
         tax = float(tax)  - 5
     return tax

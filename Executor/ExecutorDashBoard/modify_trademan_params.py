@@ -3,7 +3,6 @@ import streamlit as st
 from dotenv import load_dotenv
 from datetime import datetime
 import pandas as pd
-import sqlite3
 import csv
 
 DIR_PATH = os.getcwd()
@@ -21,7 +20,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-strategies_fb_db = os.getenv("STRATEGIES_FB_COLLECTION")
+strategies_fb_db = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 market_info_fb_db = os.getenv("MARKET_INFO_FB_COLLECTION")
 
 def modify_market_info():
@@ -78,7 +77,6 @@ def modify_strategy_params():
                         # Log changes with section_info
                         log_changes(updated_params, section_info=section)
                         st.success(f"{section} updated successfully!")
-
 
                     # Your existing logic for submitting updates
                 else:

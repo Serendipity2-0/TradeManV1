@@ -339,7 +339,7 @@ def get_firstock_pnl(user):
         unrealized_total_pnl = sum(float(position['unrealizedMTOM']) for position in positions)
         realized_total_pnl = sum(float(position['RealizedPNL']) for position in positions)
         total_pnl = unrealized_total_pnl + realized_total_pnl
-        return total_pnl
+        return float(total_pnl)
     except Exception as e:
         logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
         return None

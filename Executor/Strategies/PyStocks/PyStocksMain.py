@@ -11,7 +11,7 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 import Executor.Strategies.PyStocks.PyStocksUtils as pystocksutils
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_users_for_strategies_from_firebase as fetch_active_users,fetch_user_credentials_firebase,fetch_active_users_from_firebase
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_users_for_strategies_from_firebase 
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import fetch_sql_table_from_db as fetch_table_from_db
 from Executor.Strategies.StrategiesUtil import StrategyBase,fetch_strategy_users
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as instrument_obj, get_single_ltp
@@ -58,7 +58,7 @@ def signals_to_fb(order_to_place, next_trade_prefix):
         update_signal_firebase(strategy_name, signals_to_log, next_trade_prefix)
     return signals_to_log
 
-def create_csv():
+def create_top_stocks_csv():
     try:
         pystocksutils.get_stockpicks_csv()
     except Exception as e:
@@ -126,11 +126,12 @@ def main():
                         "limit_prc": ltp
                     }]
                     order_to_place = assign_trade_id(order_details)
+                    update_qty_user_firebase(strategy_name, ltp, 1)
                     signals_to_fb(order_to_place, trade_id)
                     order_status = place_order_single_user([user], order_to_place)
                     logger.debug(f"Orders placed for {symbol}: {order_to_place}")
 
-                    # Check if order failed for user 'Tr00'
+                    # Should come up with a better way to check for failed orders
                     if user['Tr_No'] == 'Tr00' and any(order['order_status'] == 'FAIL' for order in order_status):
                         # Reassign the trade ID to the next symbol if there is one
                         if index + 1 < len(symbol_list):
@@ -143,5 +144,5 @@ def main():
                 logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 5")
 
 if __name__ == "__main__":
-    create_csv()
+    create_top_stocks_csv()
     main()

@@ -322,14 +322,10 @@ def longTerm_pick(stock_data_dict):
 # Initialize an empty dictionary to store the data
 
 def get_stockpicks_csv():
-    #i=0
 
     stock_symbols = get_stock_codes()
     stock_data_dict = {}
     for stock in stock_symbols:
-
-        #if i > 200:
-            #break
 
         # Assuming get_stock_data() function fetches data for the given stock symbol
         stock_data_daily = get_stock_data(stock, period="1y", duration="1d")
@@ -343,11 +339,11 @@ def get_stockpicks_csv():
 
         #i += 1
 
-    print("Fetched stock data for all symbols.")
+
     shortterm_top5 = shortTerm_pick(stock_data_dict)[1:11]
-    print("Shortterm Done")
+
     midterm_top5 = midTerm_pick(stock_data_dict)[1:6]
-    print("Midterm Done")
+
     longterm_top5 = longTerm_pick(stock_data_dict)[1:6]
 
     df_shortterm_selected_stocks = pd.DataFrame(

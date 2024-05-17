@@ -54,7 +54,7 @@ def display_formatted_statistics(formatted_stats):
             pass  # Keep default color for non-numeric values
         return f"color: {color};"
 
-    st.write(stats_df.style.map(color_value))
+    st.write(stats_df.style.apply(color_value))
 
 
 ##################################################################

@@ -13,17 +13,16 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-
-DIR = r"/Users/omkar/Desktop/TradeManV1/"  # TODO: Change this to your local path
+DIR = os.getcwd()
 sys.path.append(DIR)
 
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
-
 firebase_credentials_path = os.getenv("FIREBASE_CRED_PATH")
 database_url = os.getenv("FIREBASE_DATABASE_URL")
 storage_bucket = os.getenv("STORAGE_BUCKET")
+admin_collection = os.getenv("ADMIN_COLLECTION")
 
 logger.info(firebase_credentials_path)
 
@@ -34,10 +33,9 @@ if not firebase_admin._apps:
         cred, {"databaseURL": database_url, "storageBucket": storage_bucket}
     )
 
-
-
-
 def exe_login_page():
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
     # If the user is not logged in, show the login form
     if not st.session_state.logged_in:
         # Take inputs for login information
@@ -54,7 +52,7 @@ def exe_login_page():
             # Fetch data from Firebase Realtime Database to verify the credentials
             try:
                 # Get a reference to the 'clients' node in the database
-                ref = db.reference("admin")
+                ref = db.reference(admin_collection)
 
                 # Fetch all clients data
                 clients = ref.get()
@@ -66,8 +64,8 @@ def exe_login_page():
                         and client_data.get("Password") == password
                     ):
                         # If credentials match, show a success message and break the loop
-                        session_state.logged_in = True
-                        session_state.client_data = client_data
+                        st.session_state.logged_in = True
+                        st.session_state.client_data = client_data
                         st.experimental_rerun()
                         break
                 else:

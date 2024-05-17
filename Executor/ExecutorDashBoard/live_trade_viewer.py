@@ -24,9 +24,7 @@ user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 def trade_state_viewer():
     # Initialize the Streamlit app
     st.title('User Trade State Viewer')
-    # Fetch data from Firebase
-    # users_data = fetch_active_users_from_firebase()
-    
+
     # Fetch data from Firebase
     users_data = fetch_collection_data_firebase(user_db_collection)
 
@@ -76,7 +74,6 @@ def calculate_trademan_stats():
     
     no_of_users = len(users_data)
     
-    
     for user in users_data:
         aum += user['Accounts'][previous_day_key]
         net_pnl += user['Accounts']['NetPnL']
@@ -92,8 +89,6 @@ def calculate_trademan_stats():
     col2.metric("Active Users", f"{no_of_users}", delta=None)
     col3.metric("Net PnL", format_in_indian_lakhs_crores(net_pnl), delta=None)
 
-    
-        
     logger.debug(f"Total AUM for today: {aum}")
     
     users_data_list = fetch_active_users_from_firebase()  # Assuming this returns the list of user data
@@ -109,8 +104,6 @@ def calculate_trademan_stats():
         "PnLWithdrawals": user['Accounts']['PnLWithdrawals'],
     } for user in users_data_list])
     
-    
-
     # Display the DataFrame
     st.write("Detailed Users Data")
     st.dataframe(users_df,hide_index=True,use_container_width=True)
