@@ -3,9 +3,150 @@ import datetime
 import pandas as pd
 from kiteconnect import KiteConnect
 import os,sys
+import logging
+from six.moves.urllib.parse import urljoin
+import aiohttp
+import json
+import kiteconnect.exceptions as ex
+
 
 DIR = os.getcwd()
 sys.path.append(DIR)
+log = logging.getLogger(__name__)
+
+class aysnc_KiteCOnnect(KiteConnect):
+    async def place_order(self,
+                    variety,
+                    exchange,
+                    tradingsymbol,
+                    transaction_type,
+                    quantity,
+                    product,
+                    order_type,
+                    price=None,
+                    validity=None,
+                    validity_ttl=None,
+                    disclosed_quantity=None,
+                    trigger_price=None,
+                    iceberg_legs=None,
+                    iceberg_quantity=None,
+                    auction_number=None,
+                    tag=None):
+        """Place an order."""
+        params = locals()
+        del (params["self"])
+
+        for k in list(params.keys()):
+            if params[k] is None:
+                del (params[k])
+
+        return await self._post("order.place",
+                            url_args={"variety": variety},
+                            params=params)["order_id"]
+    
+    async def _post(self, route, url_args=None, params=None, is_json=False, query_params=None):
+        """Alias for sending a POST request."""
+        return await self._request(route, "POST", url_args=url_args, params=params, is_json=is_json, query_params=query_params)
+    
+    async def async_post(url , json , data,params,headers,verify,allow_redirects,timeout,proxies):
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url,
+                                    json=json,
+                                    data=data,
+                                    params=params,
+                                    headers=headers,
+                                    verify=verify,
+                                    allow_redirects=allow_redirects,
+                                    timeout=timeout,
+                                    proxies=proxies
+                                    ) as response:
+                return response.status, await response.read(), response.headers
+    async def _request(self, route, method, url_args=None, params=None, is_json=False, query_params=None):
+        """Make an HTTP request."""
+        # Form a restful URL
+        if url_args:
+            uri = self._routes[route].format(**url_args)
+        else:
+            uri = self._routes[route]
+
+        url = urljoin(self.root, uri)
+
+        # Custom headers        
+        headers = {
+            "X-Kite-Version": self.kite_header_version,
+            "User-Agent": self._user_agent()
+        }
+
+        if self.api_key and self.access_token:
+            # set authorization header
+            auth_header = self.api_key + ":" + self.access_token
+            headers["Authorization"] = "token {}".format(auth_header)
+
+        if self.debug:
+            log.debug("Request: {method} {url} {params} {headers}".format(method=method, url=url, params=params, headers=headers))
+
+        # prepare url query params
+        if method in ["GET", "DELETE"]:
+            query_params = params
+
+        try:
+            # r = self.reqsession.request(method,
+            #                             url,
+            #                             json=params if (method in ["POST", "PUT"] and is_json) else None,
+            #                             data=params if (method in ["POST", "PUT"] and not is_json) else None,
+            #                             params=query_params,
+            #                             headers=headers,
+            #                             verify=not self.disable_ssl,
+            #                             allow_redirects=True,
+            #                             timeout=self.timeout,
+            #                             proxies=self.proxies)/
+
+            
+            status_code , content , headers = self.async_post(url,
+                            json=params if (method in ["POST", "PUT"] and is_json) else None,
+                            data=params if (method in ["POST", "PUT"] and not is_json) else None,
+                            params=query_params,
+                            headers=headers,
+                            verify=not self.disable_ssl,
+                            allow_redirects=True,
+                            timeout=self.timeout,
+                            proxies=self.proxies
+                            )
+        # Any requests lib related exceptions are raised here - https://requests.readthedocs.io/en/latest/api/#exceptions
+        except Exception as e:
+            raise e
+
+        if self.debug:
+            log.debug("Response: {code} {content}".format(code=status_code, content=content))
+
+        # Validate the content type.
+        if "json" in r.headers["content-type"]:
+            try:
+                data = json.loads(content.decode('utf-8'))
+            except ValueError:
+                raise ex.DataException("Couldn't parse the JSON response received from the server: {content}".format(
+                    content=content))
+
+            # api error
+            if data.get("status") == "error" or data.get("error_type"):
+                # Call session hook if its registered and TokenException is raised
+                if self.session_expiry_hook and r.status_code == 403 and data["error_type"] == "TokenException":
+                    self.session_expiry_hook()
+
+                # native Kite errors
+                exp = getattr(ex, data.get("error_type"), ex.GeneralException)
+                raise exp(data["message"], code=r.status_code)
+
+            return data["data"]
+        elif "csv" in headers["content-type"]:
+            return content
+        else:
+            raise ex.DataException("Unknown Content-Type ({content_type}) with response: ({content})".format(
+                content_type=headers["content-type"],
+                content=content))
+
+    
+
 
 from Executor.Strategies.StrategiesUtil import (
     get_strategy_name_from_trade_id,
@@ -211,7 +352,7 @@ def get_order_details(user):
         logger.error(f"Error fetching orders for KITE: {e}")
         return None
 
-def kite_place_orders_for_users(orders_to_place, users_credentials):
+async def kite_place_orders_for_users(orders_to_place, users_credentials):
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
 
     results = {
@@ -300,7 +441,7 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         # logger.debug(f"trigger_price: {trigger_price}")
         # logger.debug(f"instrument: {trading_symbol}")
         # logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
-        order_id = kite.place_order(
+        order_id = await kite.place_order(
             variety=kite.VARIETY_REGULAR,
             exchange=segment_type,
             price=limit_prc,
