@@ -384,7 +384,7 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
     if product == "CNC":
         segment = "NSE"
     else:
-        segment = Instrument().get_segment_by_exchange_token(str(exchange_token))
+        segment = Instrument().get_exchange_by_exchange_token(str(exchange_token))
 
     limit_prc = orders_to_place.get("limit_prc", None)
     trigger_price = orders_to_place.get("trigger_prc", None)

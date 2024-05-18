@@ -240,7 +240,7 @@ class OrderMonitor:
                 "trigger_prc": order_details["trigger_prc"],
                 "order_type": "Stoploss",
                 "product_type": order_details["product_type"],
-                "segment": Instrument().get_segment_by_exchange_token(order_details["exchange_token"]),
+                "segment": Instrument().get_exchange_by_exchange_token(order_details["exchange_token"]),
                 "strategy_mode": "MultipleInstruments",
             }
         ]

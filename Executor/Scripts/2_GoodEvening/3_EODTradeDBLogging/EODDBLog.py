@@ -367,12 +367,21 @@ def fetch_and_prepare_holdings_data():
 
                 # Calculate the margin utilized using the new function
                 all_orders = main_orders + hedge_orders if hedge_orders else main_orders
+
+                today = datetime.now().date()
+                #check if the order.get("time_stamp") is date is today
+                if not any(datetime.strptime(order['time_stamp'], "%Y-%m-%d %H:%M").date() == today for order in all_orders):
+                    logger.info(f"No orders for {strategy_name} on {today}")
+                    continue
+
                 if len(all_orders) > 0:
                     margin_utilized = get_order_margin(all_orders, user['Broker'])
                 
                 # Process main orders
                 for order in main_orders:
-                    trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")))
+                    exchange = instru().get_exchange_by_exchange_token(str(order.get("exchange_token")))
+                    trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")),exchange)
+
                     entry_price = float(order["avg_prc"])
                     qty = order.get("qty", 0)
                     

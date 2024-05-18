@@ -182,10 +182,10 @@ class Instrument:
         else:
             return None
 
-    def get_trading_symbol_by_exchange_token(self, exchange_token: str, segment=None):
-        if segment:
+    def get_trading_symbol_by_exchange_token(self, exchange_token: str, exchange=None):
+        if exchange:
             filtered_data = self._filter_data_by_exchange_token(exchange_token)
-            filtered_data = filtered_data[filtered_data["segment"] == segment]
+            filtered_data = filtered_data[filtered_data["exchange"] == exchange]
             return filtered_data.iloc[0]["tradingsymbol"]
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
         if not filtered_data.empty:
@@ -211,8 +211,10 @@ class Instrument:
         else:
             return None
 
-    def get_segment_by_exchange_token(self, exchange_token):
+    def get_exchange_by_exchange_token(self, exchange_token):
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
+        #Remove CDS from the list of segments
+        filtered_data = filtered_data[filtered_data['exchange'] != 'CDS']
         if not filtered_data.empty:
             return filtered_data.iloc[0]["exchange"]
         else:

@@ -442,7 +442,7 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
             exchange_token, "NSE"
         )
     else:
-        segment_type = Instrument().get_segment_by_exchange_token(str(exchange_token))
+        segment_type = Instrument().get_exchange_by_exchange_token(str(exchange_token))
         trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
             str(exchange_token)
         )
@@ -858,7 +858,7 @@ def get_order_tax(order,user_credentials,broker):
             exchange_token, "NSE"
         )
     else:
-        segment_type = Instrument().get_segment_by_exchange_token(str(exchange_token))
+        segment_type = Instrument().get_exchange_by_exchange_token(str(exchange_token))
         trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
             str(exchange_token)
         )
@@ -946,7 +946,7 @@ def get_order_margin(orders,user_credentials,broker):
                 exchange_token, "NSE"
             )
         else:
-            segment_type = Instrument().get_segment_by_exchange_token(str(exchange_token))
+            segment_type = Instrument().get_exchange_by_exchange_token(str(exchange_token))
             trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
                 str(exchange_token)
             )

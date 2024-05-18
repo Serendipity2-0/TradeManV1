@@ -243,7 +243,7 @@ def firstock_place_orders_for_users(orders_to_place, users_credentials):
             exchange_token, "NSE"
         )
     else:
-        segment_type = Instrument().get_segment_by_exchange_token(str(exchange_token))
+        segment_type = Instrument().get_exchange_by_exchange_token(str(exchange_token))
         trading_symbol = Instrument().get_full_format_trading_symbol_by_exchange_token(
             str(exchange_token)
         )
@@ -350,7 +350,7 @@ def firstock_modify_orders_for_users(order_details, users_credentials):
     )
     new_stoploss = order_details.get("limit_prc", 0.0)
     trigger_price = order_details.get("trigger_prc", None)
-    segement = Instrument().get_segment_by_exchange_token(str(order_details.get("exchange_token")))
+    segement = Instrument().get_exchange_by_exchange_token(str(order_details.get("exchange_token")))
     trading_symbol = Instrument().get_full_format_trading_symbol_by_exchange_token(str(order_details.get("exchange_token")))
     price_type = order_details.get("order_type")
     if price_type.lower() == "stoploss":

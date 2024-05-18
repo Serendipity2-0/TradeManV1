@@ -168,7 +168,7 @@ def calculate_account_values(user, today_trades, user_tables):
     if abs(broker_pnl - gross_pnl) > 0.03 * gross_pnl:
         logger.error(f"Broker PnL is different from Gross PnL. Broker PnL: {broker_pnl}, Gross PnL: {gross_pnl}")
         group_id = os.getenv("TELEGRAM_REPORT_GROUP_ID")
-        message = f"Broker PnL is different from Gross PnL. Broker PnL: {broker_pnl}, Gross PnL: {gross_pnl} for user: {user['Broker']['BrokerUsername']}"
+        message = f"Broker PnL is different from Gross PnL. {round(broker_pnl,2)}, Gross PnL: {round(gross_pnl,2)} for user: {user['Broker']['BrokerUsername']}"
         send_message_to_group(int(group_id), message)
 
     today_fb_format = datetime.now().strftime("%d%b%y")
