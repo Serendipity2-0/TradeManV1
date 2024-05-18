@@ -337,6 +337,7 @@ def fetch_and_prepare_holdings_data():
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
         Instrument as instru,
     )
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import get_order_margin
     active_users = fetch_active_users_from_firebase()
     
     for user in active_users:
@@ -361,21 +362,19 @@ def fetch_and_prepare_holdings_data():
                 # Calculate the average price of hedge orders
                 if hedge_orders:
                     avg_hedge_order_price = sum(float(order["avg_prc"]) for order in hedge_orders) / len(hedge_orders)
-                    option_margin_utilized = avg_hedge_order_price * sum(order.get("qty", 0) for order in hedge_orders)
                 else:
-                    option_margin_utilized = 0
                     avg_hedge_order_price = 0  # Default to 0 if no hedge orders
+
+                # Calculate the margin utilized using the new function
+                all_orders = main_orders + hedge_orders if hedge_orders else main_orders
+                if len(all_orders) > 0:
+                    margin_utilized = get_order_margin(all_orders, user['Broker'])
                 
                 # Process main orders
                 for order in main_orders:
                     trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")))
                     entry_price = float(order["avg_prc"])
                     qty = order.get("qty", 0)
-                    if "FUT" in trading_symbol:
-                        future_margin_utilized = qty * instru().get_margin_multiplier(trading_symbol)
-                        margin_utilized = future_margin_utilized + option_margin_utilized    
-                    else:
-                        margin_utilized = entry_price * qty 
                     
                     holding = {
                         "trade_id": order.get("trade_id"),

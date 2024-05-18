@@ -164,16 +164,16 @@ def main():
     now = dt.datetime.now()
 
     if now.date() in holidays:
-        print("Skipping execution as today is a holiday.")
+        logger.info("Skipping execution as today is a holiday.")
         return
 
     # If it's already past 11:35 AM, no need to wait
     if seconds_until_11_30_am < 0:
-        print("The window has already passed.")
+        logger.warning("The window has already passed.")
     else:
         # Wait until 11:30 AM, then an additional random amount of time within the 5-minute window
         total_wait_seconds = max(seconds_until_11_30_am, 0) + random_seconds
-        print(f"Waiting for {total_wait_seconds} seconds.")
+        logger.info(f"Waiting for {total_wait_seconds} seconds.")
         time.sleep(total_wait_seconds)
 
     base_symbol, strike_prc, option_type = determine_strike_and_option()

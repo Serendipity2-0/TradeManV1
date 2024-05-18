@@ -8,6 +8,9 @@ DIR = os.getcwd()
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 def get_stock_codes():
     url = os.getenv("tickers_url")
@@ -21,7 +24,7 @@ def get_stock_data(stockCode, period, duration):
         )
         return data
     except Exception as e:
-        print(f"Error fetching data for {stockCode}: {e}")
+        logger.error(f"Error fetching data for {stockCode}: {e}")
         return None
 
 def indicator_5EMA(stock_data):
@@ -96,7 +99,6 @@ def strategy_VolumeBreakout(stock_data_dict, volume_change_threshold=3):
 
             # Save sorted stocks to a CSV file
             # df_selected_stocks.to_csv("significant_volume_changes.csv", mode='w', header=False)
-            # print(f"Stock symbol {symbol} has a volume change more than 3x:\n{stock_data}\n")
     return selected_stocks
 
 def strategy_golden_crossover(stock_data_dict):

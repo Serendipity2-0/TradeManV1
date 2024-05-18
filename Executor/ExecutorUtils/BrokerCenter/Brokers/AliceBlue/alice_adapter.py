@@ -12,7 +12,7 @@ load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    discord_bot,discord_admin_bot
 )
 from Executor.Strategies.StrategiesUtil import (
     get_strategy_name_from_trade_id,
@@ -757,3 +757,20 @@ def get_alice_pnl(user):
     except Exception as e:
         logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
         return None
+    
+def get_order_margin(orders,user_credentials,broker):
+    """
+    Calculates the required margin for an order based on the order details and user credentials.
+
+    Args:
+        order (dict): Details of the order for which margin needs to be calculated.
+        user_credentials (dict): Credentials required for accessing the user's trading account.
+        broker (str): Name of the broker to apply specific adjustments if needed.
+
+    Returns:
+        float: The calculated margin for the order.
+
+    Raises:
+        Exception: If there is an error in calculating the margin.
+    """
+    discord_admin_bot("get_order_margin for alice blue has not been implemented yet")

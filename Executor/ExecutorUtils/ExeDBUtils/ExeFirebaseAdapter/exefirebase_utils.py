@@ -30,17 +30,15 @@ except ValueError:
 
 
 
-def file_upload(collection_name):
-    with open('/Users/amolkittur/Desktop/TradeManV1/clients.json', 'r') as file:
+def file_upload(json_path,collection_name):
+    with open(json_path, 'r') as file:
         data = json.load(file)
-        print(data)
 
     # Set the reference for the data upload
     ref = db.reference(collection_name)# Replace with your desired reference path
 
     #upload the data
     ref.set(data)
-    print("Data uploaded successfully")
 
 def update_fields_firebase(collection, document, data, field_key=None):
     if field_key is None:
@@ -64,12 +62,3 @@ def download_json(path, status):
     file_name = f"{date_time}_{status}.json"
     with open(f"{EOD_JSON_DIR}/{file_name}", 'w') as file:
         json.dump(data, file,indent=4)
-
-    print(f"Data downloaded successfully to {file_name}")
-
-def main():
-    # file_upload("trademan_clients")
-    # update_fields_firebase()
-    download_json("new_clients", "orders")
-
-# main()

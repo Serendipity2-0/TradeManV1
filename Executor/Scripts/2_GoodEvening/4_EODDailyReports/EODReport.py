@@ -246,7 +246,7 @@ def format_and_send_report(user, today_trades, account_values):
     message += "Best Regards,\nYour Trading Team"
 
     # Placeholder for sending the message
-    print(message)
+    logger.debug(message)
     send_telegram_message(phone_number, message)
 
 def get_today_trades_for_all_users(active_users, active_strategies):

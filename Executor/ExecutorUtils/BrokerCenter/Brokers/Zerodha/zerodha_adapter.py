@@ -238,9 +238,9 @@ def calculate_order_type(kite, order_type):
     Raises:
     ValueError: If the provided order_type is not recognized.
     """
-    if order_type.lower() == "stoploss":
+    if order_type.lower() == "stoploss" or order_type.lower() == "sl":
         order_type = kite.ORDER_TYPE_SL
-    elif order_type.lower() == "market":
+    elif order_type.lower() == "market" or order_type.lower() == "mis":
         order_type = kite.ORDER_TYPE_MARKET
     elif order_type.lower() == "limit":
         order_type = kite.ORDER_TYPE_LIMIT
@@ -807,20 +807,20 @@ def get_zerodha_pnl(user):
         logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
         return None
 
-def get_order_margin(order,user_credentials,broker):
+def get_order_tax(order,user_credentials,broker):
     """
-    Calculates the required margin for an order based on the order details and user credentials.
+    Calculates the required tax for an order based on the order details and user credentials.
 
     Args:
-        order (dict): Details of the order for which margin needs to be calculated.
+        order (dict): Details of the order for which tax needs to be calculated.
         user_credentials (dict): Credentials required for accessing the user's trading account.
         broker (str): Name of the broker to apply specific adjustments if needed.
 
     Returns:
-        float: The calculated margin for the order.
+        float: The calculated tax for the order.
 
     Raises:
-        Exception: If there is an error in calculating the margin.
+        Exception: If there is an error in calculating the tax.
     """
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
@@ -880,7 +880,7 @@ def get_order_margin(order,user_credentials,broker):
         if trigger_price < 0:
             trigger_price = 1.5
 
-    margin_order = {
+    tax_order = {
                         "variety":kite.VARIETY_REGULAR,
                         "exchange":segment_type,
                         "price":limit_prc,
@@ -890,10 +890,80 @@ def get_order_margin(order,user_credentials,broker):
                         "trigger_price":trigger_price,
                         "product":product_type,
                         "order_type":order_type}
-    basket_order.append(margin_order)
-    margin_details = kite.basket_order_margins(basket_order,mode="compact")
-    tax = margin_details["orders"][0]['charges']['total']
+    basket_order.append(tax_order)
+    tax_details = kite.basket_order_margins(basket_order,mode="compact")
+    tax = tax_details["orders"][0]['charges']['total']
     tax = round(tax,2)
     if broker.lower() == "aliceblue":
         tax = float(tax)  - 5
     return tax
+
+def get_order_margin(orders,user_credentials,broker):
+    """
+    Calculates the required margin for an order based on the order details and user credentials.
+
+    Args:
+        order (dict): Details of the order for which margin needs to be calculated.
+        user_credentials (dict): Credentials required for accessing the user's trading account.
+        broker (str): Name of the broker to apply specific adjustments if needed.
+
+    Returns:
+        float: The calculated margin for the order.
+
+    Raises:
+        Exception: If there is an error in calculating the margin.
+    """
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+
+    kite = create_kite_obj(
+    api_key=user_credentials["ApiKey"],
+    access_token=user_credentials["SessionId"],
+    )
+
+    basket_order = []
+
+    for order in orders:
+        exchange_token = order["exchange_token"]
+        order_details =kite.order_history(order["order_id"])
+        for order in order_details["orders"]:
+            if order["status"] == "COMPLETE":
+                product = order["product"]
+                transaction_type = order["transaction_type"]
+                order_type = order["order_type"]
+                quantity = order["quantity"]
+
+        transaction_type = calculate_transaction_type(
+            kite, transaction_type
+        )
+
+        order_type = calculate_order_type(kite, order_type)
+   
+        product_type = calculate_product_type(kite, product)
+
+        if product == "CNC":
+            segment_type = kite.EXCHANGE_NSE
+            trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+                exchange_token, "NSE"
+            )
+        else:
+            segment_type = Instrument().get_segment_by_exchange_token(str(exchange_token))
+            trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+                str(exchange_token)
+            )
+
+        margin_order = {   
+                        "exchange":segment_type,
+                        "tradingsymbol":trading_symbol,
+                        "transaction_type":transaction_type,
+                        "variety":kite.VARIETY_REGULAR,
+                        "product":product_type,
+                        "order_type":order_type,
+                        "quantity":quantity}
+
+        basket_order.append(margin_order)
+
+    margin_details = kite.basket_order_margins(basket_order,mode="compact")
+    margin = margin_details["final"][0]['charges']['total']
+    margin = round(margin,2)
+
+    return margin

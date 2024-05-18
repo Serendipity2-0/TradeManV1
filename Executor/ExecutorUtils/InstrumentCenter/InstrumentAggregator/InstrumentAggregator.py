@@ -63,7 +63,6 @@ def aggregate_ins():
     try:
         merged_ins_df = merge_ins_df(zerodha_ins_df, aliceblue_ins_df)
         conn = sql_utils.get_db_connection(os.getenv("SQLITE_INS_PATH"))
-        # print number of rows in the table
         decimal_cols = []
         sql_utils.dump_df_to_sqlite(
             conn, merged_ins_df, "instrument_master", decimal_cols

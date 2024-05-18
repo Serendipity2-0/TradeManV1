@@ -139,7 +139,7 @@ class OrderMonitor:
             token = data["Token"]
 
             if token is None:
-                print(f"Warning: Token not found for instrument {name}")
+                logger.warning(f"Warning: Token not found for instrument {name}")
                 continue
 
             trigger_points = data["TriggerPoints"]
@@ -267,7 +267,7 @@ class OrderMonitor:
             lot_size = FNOInfo().get_lot_size_by_base_symbol(name)
 
             if self.orders_placed_today >= self.max_orders_per_day:
-                print(
+                logger.info(
                     "Daily signal limit reached. No more signals will be generated today."
                 )
                 return
@@ -279,7 +279,7 @@ class OrderMonitor:
 
 
             if message:
-                print(message)
+                logger.debug(message)
                 discord_bot(message, strategy_obj.StrategyName)
 
             self.indices_triggered_today.add(name)
@@ -293,7 +293,7 @@ class OrderMonitor:
                     if order["order_mode"] == "SL":
                         self.instrument_monitor.add_token(order_details=order)
         else:
-            print("Index name not found for token:", instrument)
+            logger.error("Index name not found for token:", instrument)
 
     def process_modify_orders(self, order_details, message=None):
         logger.debug(f"Starting Modifying orders")
@@ -335,21 +335,21 @@ class OrderMonitor:
                     order_details["exchange_token"]
                 )
                 message = f"New target for {trading_symbol} set to {new_target} and new limit price set to {new_limit_prc} and new trigger price is {new_trigger_prc}."
-                print(message)
+                logger.debug(message)
                 discord_bot(message, strategy_obj.StrategyName)
             else:
-                print("No order details available to update target and limit prices.")
+                logger.debug("No order details available to update target and limit prices.")
 
         elif data["type"] == "limit":
             trading_symbol = self.get_instrument_by_token(
                 order_details["exchange_token"]
             )
             message = f"Stoploss reached for {trading_symbol}."
-            print(message)
+            logger.debug(message)
             discord_bot(message, strategy_obj.StrategyName)
 
     def monitor_index(self):
-        print("Monitoring started...")
+        logger.debug("Monitoring started...")
         if dt.date.today() != self.today_date:
             self._reset_daily_counters()
             self.message_sent = {

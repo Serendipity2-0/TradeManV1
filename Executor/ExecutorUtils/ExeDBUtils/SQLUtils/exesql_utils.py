@@ -29,14 +29,7 @@ def db_to_excel(db_folder_path, output_folder):
         # Close the connection to the database
         conn.close()
         print(f"Exported {db_file} to {excel_file}")
-
-# Paths to your folders
-db_folder_path = '/Users/traderscafe/Desktop/TradeManV1/Data/UserSQLDB'  # Replace with the path to your folder containing .db files
-excel_folder = '/Users/traderscafe/Desktop/TradeManV1/Data/UserSQLExcel'  # Replace with the path to your desired output folder
-
-# Run the function
-# db_to_excel(db_folder_path, excel_folder)
-
+        
 def excel_to_db(excel_folder_path, output_folder):
     # Find all .xlsx files in the specified folder
     excel_files = glob.glob(os.path.join(excel_folder_path, '*.xlsx'))
@@ -58,4 +51,9 @@ def excel_to_db(excel_folder_path, output_folder):
         conn.close()
         print(f"Converted {excel_file} to {db_file}")
 
+db_folder_path = ''
+excel_folder = ''
+
+# Run the function
+db_to_excel(db_folder_path, excel_folder)
 excel_to_db(excel_folder, db_folder_path)        

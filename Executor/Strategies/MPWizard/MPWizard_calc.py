@@ -22,6 +22,8 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
 from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
     create_kite_obj,
 )
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+logger = LoggerSetup()
 
 strategy_obj = StrategyBase.load_from_db("MPWizard")
 zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
@@ -68,7 +70,7 @@ def get_average_range_and_update_json(days):
         # Fetch the instrument token
         instrument_token = indices_tokens.get(instrument, None)
         if instrument_token is None:
-            print(f"Instrument token for {instrument} not found.")
+            logger.error(f"Instrument token for {instrument} not found.")
             continue
 
         # Fetch historical data for the instrument
@@ -117,12 +119,12 @@ def get_price_ref_for_today(instrument: str, extra_info=None) -> Optional[int]:
         if len(price_ref_list) == 7:
             return price_ref_list[day_of_week]
         else:
-            print(
+            logger.error(
                 f"Invalid number of price references for {instrument}. Expected 7, got {len(price_ref_list)}."
             )
             return None
     else:
-        print(f"No price reference found for instrument {instrument}.")
+        logger.error(f"No price reference found for instrument {instrument}.")
         return None
 
 
@@ -146,7 +148,7 @@ def get_high_low_range_and_update_json():
         # Fetch the instrument token
         instrument_token = indices_tokens.get(instrument, None)
         if instrument_token is None:
-            print(f"Instrument token for {indices_tokens} not found.")
+            logger.error(f"Instrument token for {indices_tokens} not found.")
             continue
 
         data = kite.historical_data(instrument_token, start_time, end_time, "hour")
@@ -183,5 +185,5 @@ def calculate_option_type(ib_level, cross_type, trade_view):
     elif ib_level == "Medium":
         return "PE" if trade_view == "Bearish" else "CE"
     else:
-        print(f"Unknown IB Level: {ib_level}")
+        logger.error(f"Unknown IB Level: {ib_level}")
     return None
