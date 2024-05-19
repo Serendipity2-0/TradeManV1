@@ -2,6 +2,9 @@ import requests
 from telethon.sync import TelegramClient
 import os, sys
 from dotenv import load_dotenv
+import asyncio
+import nest_asyncio
+
 
 DIR = os.getcwd()
 sys.path.append(DIR)  # Add the current directory to the system path
@@ -14,21 +17,17 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-
 # Retrieve API details and contact number from the environment variables
 api_id = os.getenv("TELETHON_API_ID")
 api_hash = os.getenv("TELETHON_API_HASH")
 
+nest_asyncio.apply()  # Patch the asyncio event loop to allow nested usage
 
-def telegram_msg_bot(message, token):
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    data = {"chat_id": "YOUR_CHAT_ID", "text": message}
-    response = requests.post(url, json=data)
-    if response.status_code == 200:
-        logger.info("Message sent successfully!")
-    else:
-        logger.error("Failed to send message.")
-
+async def send_telegram_message_async(phone_number, message, session_filepath, api_id, api_hash):
+    async with TelegramClient(session_filepath, api_id, api_hash) as client:
+        while message:
+            chunk, message = message[:4096], message[4096:]
+            await client.send_message(phone_number, chunk, parse_mode="md")
 
 def send_telegram_message(phone_number, message):
     global api_id, api_hash
@@ -37,11 +36,15 @@ def send_telegram_message(phone_number, message):
         DIR, "Executor/ExecutorUtils/NotificationCenter/Telegram/+918618221715.session"
     )
 
-    # Create a Telegram client and send the message
-    with TelegramClient(session_filepath, api_id, api_hash) as client:
-        while message:
-            chunk, message = message[:4096], message[4096:]
-            client.send_message(phone_number, chunk, parse_mode="md")
+    # Ensure the event loop is ready and run the async function
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        # If the loop is already running, use create_task to schedule the async function
+        task = loop.create_task(send_telegram_message_async(phone_number, message, session_filepath, api_id, api_hash))
+        asyncio.gather(task)
+    else:
+        # If the loop is not running, directly run the async function
+        loop.run_until_complete(send_telegram_message_async(phone_number, message, session_filepath, api_id, api_hash))
 
 def send_file_via_telegram(recipient,file_path, file_name, is_group=False):
     global api_id, api_hash

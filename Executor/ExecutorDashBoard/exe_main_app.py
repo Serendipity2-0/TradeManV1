@@ -33,7 +33,8 @@ def main():
     from Executor.ExecutorDashBoard.signal_log_viewer import signal_log_viewer
     from Executor.ExecutorDashBoard.modify_trademan_params import modify_strategy_params, modify_market_info
     from Executor.ExecutorDashBoard.modify_user_strategy_risk import modify_user_strategy_params
-    tab1, tab2, tab3, tab4,tab5,tab6,tab7, tab8 = st.tabs(["Admin","Order Executor", "Trade State","Error Monitor", "Signal Log","Modify Strategy Params","Modify Market Info","Modify User Strategy Risks"])
+    from Executor.ExecutorDashBoard.send_notice import send_notice
+    tab1, tab2, tab3, tab4,tab5,tab6,tab7, tab8, tab9 = st.tabs(["Admin","Order Executor", "Trade State","Error Monitor", "Signal Log","Modify Strategy Params","Modify Market Info","Modify User Strategy Risks", "Send Notice"])
     
     st.balloons()
 
@@ -67,6 +68,9 @@ def main():
     
     with tab8:
         modify_user_strategy_params()
+
+    with tab9:
+        send_notice()
         
 # Run the app
 if __name__ == "__main__":

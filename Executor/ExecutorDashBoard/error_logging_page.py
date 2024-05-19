@@ -84,7 +84,6 @@ def read_n_process_err_log():
     } for error, details in unique_errors.items()])
 
     error_df_sorted = error_df.sort_values(by='Timestamp', ascending=False).reset_index(drop=True)
-    logger.debug(error_df_sorted)
 
     with open(os.path.join(DIR_PATH, ERROR_LOG_CSV_PATH), 'a') as f:
         error_df_sorted.to_csv(f, header=f.tell()==0, index=False)

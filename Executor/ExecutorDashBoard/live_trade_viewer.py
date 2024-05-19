@@ -81,7 +81,6 @@ def calculate_trademan_stats():
     users_data = fetch_active_users_from_firebase()
     today_fb_format = datetime.now().strftime("%d%b%y")
     today_acc_key = f"{today_fb_format}_AccountValue"
-    logger.debug(f"type users_data: {type(users_data)}")
     
     previous_trading_day_fb_format = get_previous_trading_day(datetime.today())
     previous_day_key = previous_trading_day_fb_format+"_"+'AccountValue'
