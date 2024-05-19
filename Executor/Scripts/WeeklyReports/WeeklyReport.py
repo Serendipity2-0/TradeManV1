@@ -27,7 +27,7 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
         fetch_active_users_from_firebase,
         fetch_active_strategies_all_users,
         fetch_freecash_for_user,
-        fetch_holdings_value_for_user
+        fetch_holdings_value_for_user_broker
 
     )
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
@@ -85,7 +85,7 @@ def send_telegram_message_to_user(user, user_details,start_date,end_date):
     message += f"Free Cash: {format_currency(user_details['broker_freecash'],'INR', locale='en_IN')}\n"
     message += f"TradeMan Holdings: {format_currency(user_details['broker_holdings'],'INR', locale='en_IN')}\n"
     message += f"TradeMan Account Value: {format_currency(user_details['account_value'],'INR', locale='en_IN')}\n"
-    message += f"Broker Account Value: {format_currency(user_details['account_value'],'INR', locale='en_IN')}\n"
+    message += f"Broker Account Value: {format_currency(user_details['broker_account_value'],'INR', locale='en_IN')}\n"
     message += f"Difference: {format_currency(user_details['difference'],'INR', locale='en_IN')}\n"
     if user_details['commission']:
         message += f"Commission: {format_currency(user_details['commission'],'INR', locale='en_IN')}\n\n"
@@ -140,6 +140,7 @@ def main():
             # Fetch holdings and free cash values
             holdings_value = fetch_holdings_value_for_user_sqldb(user)
             broker_freecash = fetch_freecash_for_user(user)
+            broker_holdings = fetch_holdings_value_for_user_broker(user)
             
             # Calculate the new account value
             new_account_value = round(holdings_value + broker_freecash, 2)
@@ -150,11 +151,11 @@ def main():
             'trades': get_current_week_trades(user, active_strategies, start_date, end_date),
             'fb_values': get_current_week_fb_values(user),
             'broker_freecash': broker_freecash,
-            'broker_holdings': holdings_value,
+            'broker_holdings': broker_holdings,
             }
             user_details['account_value'] = new_account_value
             commission,drawdown = calculate_commission_and_drawdown(user,new_account_value)
-            user_details['account_value'] = round(user_details['broker_freecash'] + user_details['broker_holdings'], 2)
+            user_details['broker_account_value'] = round(user_details['broker_freecash'] + user_details['broker_holdings'], 2)
             user_details['difference'] = round(user_details['account_value'] - user_details['fb_values']['AccountValue'], 2)
             if drawdown:
                 user_details['drawdown'] = round(drawdown,2)

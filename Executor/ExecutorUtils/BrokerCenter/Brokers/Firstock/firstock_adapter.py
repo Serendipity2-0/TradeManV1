@@ -550,3 +550,8 @@ def get_order_margin(orders,user_credentials,broker):
     basket_margin = thefirstock.firstock_BasketMargin(basket_order,userId=user_credentials["BrokerUsername"])
     margin = basket_margin["data"]["marginused"]
     return float(margin)
+
+def get_broker_payin(user):
+    limits = thefirstock.firstock_Limits(userId=user["Broker"]["BrokerUsername"])
+    payin = float(limits.get("data", {}).get("payin", 0))
+    return payin

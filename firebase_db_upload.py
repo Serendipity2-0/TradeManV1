@@ -8,7 +8,7 @@ cred = credentials.Certificate('/Users/amolkittur/Desktop/TradeManV1/Executor/Ex
 
 # Initialize the app with a service account, granting admin privileges
 firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://trading-app-caf8e-default-rtdb.firebaseio.com/'
+    'databaseURL': 'https://trademanv1-default-rtdb.asia-southeast1.firebasedatabase.app/'
 })
 
 with open('/Users/amolkittur/Desktop/TradeManV1/clients.json', 'r') as file:

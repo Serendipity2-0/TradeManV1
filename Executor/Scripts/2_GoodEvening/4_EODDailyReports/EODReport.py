@@ -35,7 +35,8 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils impo
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
     fetch_active_strategies_all_users,
-    get_broker_pnl
+    get_broker_pnl,
+    get_broker_payin
     )
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
     send_telegram_message,
@@ -179,16 +180,16 @@ def calculate_account_values(user, today_trades, user_tables):
     previous_account_value = user["Accounts"][f"{previous_trading_day_fb_format}_AccountValue"]
 
     # Assuming no additions or withdrawals for simplicity
-    additions_withdrawals = 0  # This would be calculated or fetched from somewhere
+    broker_payin = get_broker_payin(user)
+    broker_payout = 0  # As of now only zerodha is providing broker payout
 
-    new_free_cash = previous_free_cash + gross_pnl - expected_tax
+    new_free_cash = previous_free_cash + gross_pnl - expected_tax + broker_payin
     # Placeholder for new holdings calculation; you might need additional info for this
     new_holdings = get_new_holdings(user_tables)
 
-    new_account_value = round(previous_account_value + gross_pnl - expected_tax + additions_withdrawals)
+    new_account_value = round(previous_account_value + gross_pnl - expected_tax + broker_payin + broker_payout)
     net_change = new_account_value - previous_account_value
     net_change_percentage = (net_change / previous_account_value * 100) if previous_account_value else 0
-
 
     # Calculate drawdown, which is a placeholder here; you might need additional data for an accurate calculation
     drawdown = min(new_account_value - user['Accounts']['CurrentBaseCapital'] ,0)
@@ -209,6 +210,8 @@ def calculate_account_values(user, today_trades, user_tables):
         "drawdown": drawdown,
         "drawdown_percentage": drawdown_percentage
     }
+    if broker_payin != 0.0:
+        account_values["additions"] = broker_payin
 
     return account_values
 
@@ -232,6 +235,9 @@ def format_and_send_report(user, today_trades, account_values):
         message += f"Trade ID {trade['trade_id']}: {trade_pnl_formatted}\n"
     message += f"\nGross PnL: {format_currency(gross_pnl, 'INR', locale='en_IN')}\n"
     message += f"Expected Tax: {format_currency(expected_tax, 'INR', locale='en_IN')}\n"
+    if "additions" in account_values:
+        additions = account_values["additions"]
+        message += f"\nAdditions: {format_currency(additions, 'INR', locale='en_IN')}\n"
     message += "\nFree Cash:\n"
     message += f"{previous_trading_day_fb_format} Free Cash: {format_currency(account_values['previous_free_cash'], 'INR', locale='en_IN')}\n"
     message += f"{today_fb_format} Free Cash: {format_currency(account_values['new_free_cash'], 'INR', locale='en_IN')}\n\n"

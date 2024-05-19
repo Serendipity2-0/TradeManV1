@@ -967,3 +967,8 @@ def get_order_margin(orders,user_credentials,broker):
     margin = round(margin,2)
 
     return margin
+
+def get_broker_payin(user):
+    kite = create_kite_obj(user_details=user["Broker"])
+    payin = float(kite.margins().get("equity",{}).get("available",{}).get("intraday_payin",0))
+    return payin

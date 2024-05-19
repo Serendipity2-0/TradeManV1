@@ -16,7 +16,7 @@ load_dotenv(ENV_PATH)
 cred_filepath = os.getenv("FIREBASE_CRED_PATH")
 
 # Firebase database URL
-database_url = 'https://trading-app-caf8e-default-rtdb.firebaseio.com/'
+database_url = os.getenv("FIREBASE_DATABASE_URL")
 
 # Fetch the service account key JSON file contents
 cred = credentials.Certificate(cred_filepath)

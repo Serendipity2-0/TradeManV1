@@ -27,9 +27,6 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_list_of_strategies_from_firebase,
     fetch_users_for_strategies_from_firebase
 )
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    calculate_taxes,
-)
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     append_df_to_sqlite,
     get_db_connection,

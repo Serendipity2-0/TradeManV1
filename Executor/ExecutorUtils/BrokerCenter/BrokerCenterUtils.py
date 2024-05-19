@@ -190,7 +190,7 @@ def download_csv_for_brokers(primary_account):
     #     return firstock_adapter.get_csv_firstock(primary_account)  # Get CSV for this user
 
 
-def fetch_holdings_value_for_user(user):
+def fetch_holdings_value_for_user_broker(user):
     if user["Broker"]["BrokerName"] == ZERODHA:
         return zerodha_adapter.fetch_zerodha_holdings_value(user)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
@@ -499,74 +499,6 @@ def calculate_user_net_values(user, categorized_df):
     elif user["Broker"]["BrokerName"] == FIRSTOCK:
         return firstock_adapter.calculate_firstock_net_values(user, categorized_df)
 
-def calculate_broker_taxes(broker, trade_type, qty, net_entry_prc, net_exit_prc, no_of_orders):
-    # Brokerage
-    try:
-        if broker == ZERODHA:
-            brokerage = min(20, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 20 * no_of_orders
-        elif broker == ALICEBLUE or broker == FIRSTOCK:
-            brokerage = min(15, 0.03 / 100 * float(qty) * (float(net_exit_prc) + float(net_entry_prc)) / 2) * no_of_orders if trade_type == "futures" else 15 * no_of_orders
-
-        # STT/CTT
-        if trade_type == "regular":  # Assuming "regular" means options
-            stt_ctt = 0.05 / 100 * float(qty) * float(net_exit_prc)
-        else:  # futures
-            stt_ctt = 0.0625 / 100 * float(qty) * float(net_exit_prc)
-
-        # Transaction charges
-        transaction_charges = 0.0019 / 100 * float(qty) * float(net_exit_prc) if trade_type == "futures" else 0.05 / 100 * float(qty) * float(net_exit_prc)
-
-        # SEBI charges
-        sebi_charges = 10 / 10000000 * float(qty) * float(net_exit_prc)
-
-        # GST
-        gst = 18 / 100 * (brokerage + transaction_charges + sebi_charges)
-
-        # Stamp charges (simplified/general rate)
-        stamp_charges = 0.003 / 100 * float(qty) * float(net_entry_prc) if trade_type == "regular" else 0.002 / 100 * float(qty) * float(net_entry_prc)
-
-        # Total charges
-        total_charges = brokerage + stt_ctt + transaction_charges + gst + sebi_charges + stamp_charges
-        logger.debug(f"brokerage = {brokerage}, stt_ctt = {stt_ctt}, transaction_charges = {transaction_charges}, gst = {gst}, sebi_charges = {sebi_charges}, stamp_charges = {stamp_charges} and total_charges = {total_charges}")
-        return total_charges
-    except Exception as e:
-        logger.error(f"Error while calculating taxes for {broker}: {e}")
-        return 0
-
-
-def calculate_taxes(entry_orders,exit_orders,hedge_orders,broker):
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument as instru
-    
-    taxes = 0
-    for entry_order in entry_orders:
-        for exit_order in exit_orders:
-            if entry_order["exchange_token"] == exit_order["exchange_token"]:
-                is_fut = instru().get_instrument_type_by_exchange_token(str(entry_order["exchange_token"])) == "FUTIDX" or instru().get_instrument_type_by_exchange_token(str(entry_order["exchange_token"])) == "FUT"
-                tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", entry_order["qty"], entry_order["avg_prc"], exit_order["avg_prc"], 2)
-                taxes += tax
-    
-    if hedge_orders:
-        orders_by_token = {}
-        for order in hedge_orders:
-            token = order['exchange_token']
-            if token not in orders_by_token:
-                orders_by_token[token] = {'entry_orders': [], 'exit_orders': []}
-            
-            # Classify the order based on trade_id
-            if 'EN' in order['trade_id']:
-                orders_by_token[token]['entry_orders'].append(order)
-            elif 'EX' in order['trade_id']:
-                orders_by_token[token]['exit_orders'].append(order)
-
-        for token, orders in orders_by_token.items():
-            if orders['entry_orders'] and orders['exit_orders']:  # Ensure there is at least one entry and one exit order
-                entry_order = orders['entry_orders'][0]  # Taking the first entry order as an example
-                exit_order = orders['exit_orders'][0]  # Taking the first exit order as an example
-                is_fut = instru().get_instrument_type_by_exchange_token(token) == "FUTIDX"
-                tax = calculate_broker_taxes(broker, "futures" if is_fut else "regular", float(entry_order["qty"]), float(entry_order["avg_prc"]), float(exit_order["avg_prc"]), 2)
-                taxes += tax
-    return taxes         
-
 def get_primary_account_obj():
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
     primary_account_session_id = fetch_primary_accounts_from_firebase(
@@ -613,4 +545,12 @@ def get_order_margin(orders_to_place,user_credentials):
     else:
         return None
     
-
+def get_broker_payin(user):
+    if user["Broker"]["BrokerName"] == ZERODHA:
+        return zerodha_adapter.get_broker_payin(user)
+    elif user["Broker"]["BrokerName"] == ALICEBLUE:
+        return alice_adapter.get_broker_payin(user)
+    elif user["Broker"]["BrokerName"] == FIRSTOCK:
+        return firstock_adapter.get_broker_payin(user)
+    else:
+        return None

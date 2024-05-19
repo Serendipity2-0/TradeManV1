@@ -34,10 +34,10 @@ holidays = [dt.date(2024, i, j) for i, j in [
 def get_previous_trading_day(today: dt.date, prefix=None) -> dt.date:
     #check if today -1 is in holidays or its is a weekend(sat or sun) it should return me the previous trading day
     if today.weekday() == 0:
-        previous_day = today - dt.timedelta(days=3)
+        previous_day = today - dt.timedelta(days=2)
         previous_day = previous_day.strftime("%d%b%y")
     elif today.weekday() == 6:
-        previous_day = today - dt.timedelta(days=2)
+        previous_day = today - dt.timedelta(days=1)
         previous_day = previous_day.strftime("%d%b%y")
     else:
         previous_day = today - dt.timedelta(days=1)

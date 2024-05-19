@@ -774,3 +774,6 @@ def get_order_margin(orders,user_credentials,broker):
         Exception: If there is an error in calculating the margin.
     """
     discord_admin_bot("get_order_margin for alice blue has not been implemented yet")
+
+def get_broker_payin(user):
+    discord_admin_bot("get_broker_payin for alice blue has not been implemented yet")
