@@ -78,7 +78,7 @@ def exe_login_page():
                         # If credentials match, show a success message and break the loop
                         session_state.logged_in = True
                         session_state.client_data = client_data
-                        st.experimental_rerun()
+                        st.rerun()
                         break
                 else:
                     # If no matching credentials are found, show an error message

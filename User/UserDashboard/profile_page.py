@@ -75,7 +75,7 @@ def show_profile(client_data):
 
     pd.options.display.float_format = "{:,.2f}".format
     # Set the title for the Streamlit app
-    st.markdown("<h3 style='color: darkblue'>Profile</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: white'>Profile</h3>", unsafe_allow_html=True)
     
     client_profile = client_data.get("Profile", {})
     client_broker = client_data.get("Broker", {})
@@ -96,8 +96,6 @@ def show_profile(client_data):
     # Strategy_list is list of keys from client_strategies
     
     Strategy_list = list(client_strategies.keys())
-    logger.debug(f"Strategy_list: {client_strategies}")
-    logger.debug(f"typeof Strategy_list: {type(client_strategies)}")
 
     # Create a DataFrame to display the client data in tabular form
     data = {
@@ -126,7 +124,6 @@ def show_profile(client_data):
             str(Strategy_list),
         ],
     }
-    logger.debug(f"Data: {data}")
     df = pd.DataFrame(data)
     # Display the DataFrame as a table with CSS styling and remove index column
     st.markdown(table_style, unsafe_allow_html=True)
@@ -145,6 +142,7 @@ table.dataframe td {
     border: 1px solid black;
     padding: 8px;
     text-align: left; /* Align text to the left */
+    color: darkblue; /* Change text color to dark blue for better visibility */
 }
 
 /* Header background color */

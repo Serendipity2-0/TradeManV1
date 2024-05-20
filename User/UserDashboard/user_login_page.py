@@ -17,6 +17,7 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 clients_fb_db = os.getenv("FIREBASE_USER_COLLECTION")
+admin_db_collection = os.getenv("FIREBASE_ADMIN_COLLECTION")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -72,7 +73,6 @@ def login():
 
                 # Go through each client and check if the credentials match
                 for client_id, client_data in clients.items():
-                    logger.debug("")
                     
                     if (
                         client_data.get('Profile').get("usr") == username
@@ -83,7 +83,8 @@ def login():
                         st.success("Logged in successfully.")
                         st.session_state.logged_in = True
                         st.session_state.client_data = client_data
-                        st.experimental_rerun()
+                        st.session_state.login_type = "client"
+                        st.rerun()
                         break
                 else:
                     # If no matching credentials are found, show an error message
@@ -97,14 +98,36 @@ def login():
 
 
 def admin_login():
+    from login import session_state
+    if not session_state.logged_in:
+        uesrname = st.text_input("Username:")
+        password = st.text_input("Password:", type="password", key="admin_password_input")
+
+        if st.button("Login"):
+            # Fetch data from Firebase Realtime Database to verify the credentials
+            try:
+                # Get a reference to the 'clients' node in the database
+                ref = db.reference(admin_db_collection)
+
+                # Fetch all clients data
+                clients = ref.get()
+
+                if clients['username'] == uesrname and clients['password'] == password:
+
+                
+                    # If credentials match, show a success message and break the loop
+                    st.success("Logged in successfully.")
+                    st.session_state.logged_in = True
+                    st.session_state.login_type = "admin"
+                    st.rerun()
+            except Exception as e:
+                # Show an error message if there's an exception
+                st.error("Failed to fetch data: " + str(e))
+    else:
+        # If the user is already logged in, show the other contents
+        pass
     pass
 
 
 
 
-def logout():
-    from user_main_app import session_state
-
-    # Reset session state variables
-    session_state.logged_in = False
-    session_state.client_data = None

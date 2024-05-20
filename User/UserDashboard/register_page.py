@@ -2,12 +2,10 @@ import streamlit as st
 from datetime import date
 from PIL import Image
 import io
-import os,sys
+import os,sys, ast
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials,db
-
-
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -17,22 +15,12 @@ load_dotenv(ENV_PATH)
 cred_filepath = os.getenv("FIREBASE_CRED_PATH")
 firebase_db_url = os.getenv("FIREBASE_DATABASE_URL")
 FIREBASE_USER_COLLECTION = os.getenv("FIREBASE_USER_COLLECTION")
+supported_brokers = os.getenv("SUPPORTED_BROKERS")
+supported_brokers = ast.literal_eval(supported_brokers)
 
-cred = credentials.Certificate(cred_filepath)
-firebase_admin.initialize_app(cred, {"databaseURL": firebase_db_url})
-
-
-def upload_client_data_to_firebase(user_dict):
-    ref = db.reference(FIREBASE_USER_COLLECTION)
-    # Use the new_tr_no as a key for the new entry
-    new_ref = ref.child("Tr13") # TODO: get the new_tr_no from the admin fb db
-    new_ref.set(user_dict)
-    # ref.push(user_dict)
-    return "Data uploaded successfully"
-
+from User.UserDashboard.user_dashboard_utils import get_next_trader_number, update_new_client_data_to_db
 
 def register_page():
-
     # Set the title for the Streamlit app
     st.markdown("<h3 style='color: darkblue'>Register</h3>", unsafe_allow_html=True)
 
@@ -51,7 +39,7 @@ def register_page():
     bank_account = st.text_input("Bank Account No:", key="bank_account_input")
     broker = st.selectbox(
         "Brokers",
-        ["Zerodha", "Alice Blue"],
+        supported_brokers,
         key="broker_input",
     )
     
@@ -128,9 +116,8 @@ def register_page():
             }
             
             # Persist the client data to Firebase Realtime Database
-            upload_client_data_to_firebase(client_data_dict)
+            update_new_client_data_to_db(get_next_trader_number(), client_data_dict)
 
-            
         else:
             # If not all fields are filled, show an error message
             unfilled_fields = []
@@ -154,10 +141,6 @@ def register_page():
                 unfilled_fields
             )
             st.error(error_message)
-    # Function to convert percentage string to float
-    def percentage_string_to_float(percentage_str):
-        return float(percentage_str.strip("%")) / 100
-
 
 if __name__ == "__main__":
     register_page()

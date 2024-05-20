@@ -73,7 +73,7 @@ def login_page():
                         # If credentials match, show a success message and break the loop
                         session_state.logged_in = True
                         session_state.client_data = client_data
-                        st.experimental_rerun()
+                        st.rerun()
                         break
                 else:
                     # If no matching credentials are found, show an error message
@@ -111,7 +111,7 @@ def show_app_contents():
         display_for_login(session_state.client_data)
     elif selected == "Logout":
         logout()
-        st.experimental_rerun()
+        st.rerun()
 
 
 def display_for_login(client_data):
@@ -120,7 +120,7 @@ def display_for_login(client_data):
         client_username = client_username[0].lower() + client_username[1:]
         excel_file_name = f"{client_username}.xlsx"
         display_profile_picture(client_data)
-        display_performance_dashboard(client_data, client_username, excel_file_name)
+        # display_performance_dashboard(client_data, client_username, excel_file_name)
 
     else:
         st.warning("No client data available.")

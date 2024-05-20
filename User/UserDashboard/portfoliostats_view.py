@@ -3,10 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import calendar
 import os, sys
-
 from dotenv import load_dotenv
-
-
+from babel.numbers import format_currency
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -27,7 +25,6 @@ logger = LoggerSetup()
 
 class PortfolioStats:
     def __init__(self, dtd_data, account_value):
-        logger.debug(f"dtd_data: {dtd_data.head()}")
         # Ensure dtd_data is a DataFrame
         if not isinstance(dtd_data, pd.DataFrame):
             raise ValueError("dtd_data must be a pandas DataFrame")
@@ -103,6 +100,10 @@ class PortfolioStats:
             "Month",
             "Monthly Absolute Returns (Rs.)",
         ]
+        # Apply currency formatting using Babel
+        monthly_absolute_returns['Monthly Absolute Returns (Rs.)'] = monthly_absolute_returns['Monthly Absolute Returns (Rs.)'].apply(
+            lambda x: format_currency(x, 'INR', locale='en_IN')
+        )
         return monthly_absolute_returns
 
     # def calculate_weekly_returns(self):
@@ -139,21 +140,25 @@ class PortfolioStats:
     #     logger.debug(f"weekly_absolute_returns: {weekly_absolute_returns.head()}")
     #     return weekly_absolute_returns
     
+
     def calculate_weekly_returns(self):
         """Calculate and return weekly absolute returns and cumulative returns."""
+
         # Ensure 'Date' is in datetime format
         self.dtd_data['Date'] = pd.to_datetime(self.dtd_data['exit_time'])
 
-        # Calculate week ending (Saturday) date
-        self.dtd_data["Week_Ending_Date"] = self.dtd_data["Date"] + pd.to_timedelta(
-            (5 - self.dtd_data["Date"].dt.weekday), unit="d"
-        )
+        # Calculate week ending (Saturday) date correctly and remove the time component
+        self.dtd_data["Week_Ending_Date"] = (
+            self.dtd_data["Date"] + pd.to_timedelta((5 - self.dtd_data["Date"].dt.weekday) % 7, unit="d")
+        ).dt.normalize()  # This removes the time part, normalizing to midnight
 
-        # Calculate weekly absolute returns by summing net_pnl for each Week_Ending_Date
-        weekly_absolute_returns = self.dtd_data.groupby("Week_Ending_Date")["net_pnl"].sum().reset_index()
+        # Group by Week_Ending_Date and sum net_pnl for each group
+        weekly_absolute_returns = self.dtd_data.groupby("Week_Ending_Date").agg(
+            Weekly_Absolute_Returns=pd.NamedAgg(column="net_pnl", aggfunc="sum")
+        ).reset_index()
 
         # Calculate cumulative returns
-        weekly_absolute_returns["Cumulative Absolute Returns (Rs.)"] = weekly_absolute_returns["net_pnl"].cumsum()
+        weekly_absolute_returns["Cumulative Absolute Returns (Rs.)"] = weekly_absolute_returns["Weekly_Absolute_Returns"].cumsum()
 
         # Sort by Week_Ending_Date for clarity
         weekly_absolute_returns = weekly_absolute_returns.sort_values(by="Week_Ending_Date")
@@ -162,17 +167,19 @@ class PortfolioStats:
         weekly_absolute_returns["Week_Ending_Date"] = weekly_absolute_returns["Week_Ending_Date"].dt.strftime("%d%b%y")
 
         # Rename columns appropriately
-        weekly_absolute_returns.columns = [
-            "Week_Ending_Date",
-            "Weekly Absolute Returns (Rs.)",
-            "Cumulative Absolute Returns (Rs.)"
-        ]
+        weekly_absolute_returns.rename(columns={"Weekly_Absolute_Returns": "Weekly Absolute Returns (Rs.)"}, inplace=True)
 
-        logger.debug(f"Aggregated weekly_absolute_returns: {weekly_absolute_returns}")
+        # Apply Indian currency formatting to the 'Weekly Absolute Returns (Rs.)'
+        weekly_absolute_returns['Weekly Absolute Returns (Rs.)'] = weekly_absolute_returns['Weekly Absolute Returns (Rs.)'].apply(
+            lambda x: format_currency(x, 'INR', locale='en_IN')
+        )
+
+        # Apply Indian currency formatting to the 'Cumulative Absolute Returns (Rs.)'
+        weekly_absolute_returns['Cumulative Absolute Returns (Rs.)'] = weekly_absolute_returns['Cumulative Absolute Returns (Rs.)'].apply(
+            lambda x: format_currency(x, 'INR', locale='en_IN')
+        )
 
         return weekly_absolute_returns
-
-
 
     def calculate_weekly_withdrawals(self, new_df):
 
@@ -266,127 +273,104 @@ class PortfolioStats:
         return weekly_table
 
     def max_impact_day(self):
-
+        """Identify the days with the maximum profit and maximum loss, and format results in Indian currency."""
+        
+        # Get rows for the day with the maximum loss and maximum profit
         max_loss_day = self.dtd_data.loc[self.dtd_data["net_pnl"].idxmin()]
         max_profit_day = self.dtd_data.loc[self.dtd_data["net_pnl"].idxmax()]
 
+        # Extract dates and pnl values
         max_loss_day_date = max_loss_day["Date"]
         max_loss_day_value = max_loss_day["net_pnl"]
 
         max_profit_day_date = max_profit_day["Date"]
         max_profit_day_value = max_profit_day["net_pnl"]
 
-        max_impact_df = pd.DataFrame(
-            {
-                "Event": ["Max Loss Day", "Max Profit Day"],
-                "Date": [max_loss_day_date, max_profit_day_date],
-                "NetPnL": [max_loss_day_value, max_profit_day_value],
-            }
+        # Prepare data for DataFrame
+        max_impact_data = [
+            {"Event": "Max Loss Day", "Date": max_loss_day_date, "NetPnL": max_loss_day_value},
+            {"Event": "Max Profit Day", "Date": max_profit_day_date, "NetPnL": max_profit_day_value}
+        ]
+
+        # Create DataFrame
+        max_impact_df = pd.DataFrame(max_impact_data)
+
+        # Format Date for readability
+        max_impact_df["Date"] = pd.to_datetime(max_impact_df["Date"]).dt.strftime("%d-%b-%Y")
+
+        # Apply Indian currency formatting to the 'NetPnL' column
+        max_impact_df['NetPnL'] = max_impact_df['NetPnL'].apply(
+            lambda x: format_currency(x, 'INR', locale='en_IN')
         )
 
         return max_impact_df
 
     def portfolio_stats(self):
-        # Recovery Factor: Net Profit / Maximum Drawdown
+        """Calculate various statistics for the portfolio."""
+        # Ensure 'Date' is in datetime format for calculations
+        self.dtd_data['Date'] = pd.to_datetime(self.dtd_data['Date'])
+
+        # Basic financial calculations
         net_profit = self.dtd_data["net_pnl"].sum()
-        max_drawdown = -self.dtd_data[
-            "Drawdown"
-        ].min()  # Drawdown values are negative, so taking the negative of the minimum gives the maximum drawdown
-        recovery_factor = net_profit / max_drawdown if max_drawdown != 0 else np.nan
-
-        # Risk-Return Ratio: Average Annual Return / Standard Deviation of Annual Returns
-        annual_return = self.dtd_data["net_pnl"].sum() / len(
-            self.dtd_data["Year"].unique()
-        )
-        annual_std = self.dtd_data.groupby("Year")["net_pnl"].sum().std()
-        risk_return_ratio = annual_return / annual_std if annual_std != 0 else np.nan
-
-        # Average Loss
+        max_drawdown = -self.dtd_data["Drawdown"].min()
         average_loss = self.dtd_data[self.dtd_data["net_pnl"] < 0]["net_pnl"].mean()
 
-        # Compound Annual Growth Rate (CAGR)
+        # More complex financial metrics
+        recovery_factor = net_profit / max_drawdown if max_drawdown != 0 else float('nan')
+        annual_return = net_profit / len(self.dtd_data["Year"].unique())
+        annual_std = self.dtd_data.groupby("Year")["net_pnl"].sum().std()
+        risk_return_ratio = annual_return / annual_std if annual_std != 0 else float('nan')
+
+        # Time-related financial metrics
         days = (self.dtd_data["Date"].max() - self.dtd_data["Date"].min()).days
-        cagr = (
-            (self.dtd_data["Equity"].iloc[-1] / self.account_value) ** (365 / days) - 1
-        ) * 100
+        cagr = ((self.dtd_data["Equity"].iloc[-1] / self.account_value) ** (365.0 / days) - 1) * 100
 
-        # Win-Loss Ratio: Total Wins / Total Losses
+        # Behavioral finance metrics
         wins = self.dtd_data[self.dtd_data["net_pnl"] > 0]["net_pnl"].sum()
-        losses = -self.dtd_data[self.dtd_data["net_pnl"] < 0][
-            "net_pnl"
-        ].sum()  # Losses are negative, so we take the negative to make it positive
-        win_loss_ratio = wins / losses if losses != 0 else np.nan
+        losses = -self.dtd_data[self.dtd_data["net_pnl"] < 0]["net_pnl"].sum()
+        win_loss_ratio = wins / losses if losses != 0 else float('nan')
+        total_losses = -losses
 
-        # Sharpe Ratio: (Return of Investment - Risk Free Rate) / Standard Deviation of Returns
-        # Assuming a risk-free rate of 0 for simplicity.
+        # Risk management metrics
         daily_return = self.dtd_data["net_pnl"] / self.account_value
-        sharpe_ratio = (
-            daily_return.mean() / daily_return.std()
-            if daily_return.std() != 0
-            else np.nan
-        )
+        sharpe_ratio = daily_return.mean() / daily_return.std() if daily_return.std() != 0 else float('nan')
 
-        # Calculating consecutive losses, consecutive wins, gain to pain ratio, and kelly criterion.
-
-        # Consecutive losses and wins
+        # Calculating consecutive losses, consecutive wins
         self.dtd_data["Win"] = self.dtd_data["net_pnl"] > 0
-        consecutive_losses = (
-            self.dtd_data["Win"]
-            .astype(int)
-            .groupby(self.dtd_data["Win"].ne(self.dtd_data["Win"].shift()).cumsum())
-            .cumcount()
-        )
-        consecutive_wins = (
-            self.dtd_data["Win"]
-            .astype(int)[::-1]
-            .groupby(self.dtd_data["Win"].ne(self.dtd_data["Win"].shift()).cumsum())
-            .cumcount()
-        )
-
-        max_consecutive_losses = consecutive_losses.max()
-        max_consecutive_wins = consecutive_wins.max()
+        consecutive_losses = self.dtd_data[~self.dtd_data["Win"]].groupby((self.dtd_data["Win"] != self.dtd_data["Win"].shift()).cumsum()).size().max()
+        consecutive_wins = self.dtd_data[self.dtd_data["Win"]].groupby((self.dtd_data["Win"] != self.dtd_data["Win"].shift()).cumsum()).size().max()
 
         # Gain to Pain Ratio: Total Returns / Absolute Sum of All Losses
-        total_returns = self.dtd_data["net_pnl"].sum()
-        total_losses = -self.dtd_data[self.dtd_data["net_pnl"] < 0][
-            "net_pnl"
-        ].sum()  # Sum of absolute losses
-        gain_to_pain_ratio = (
-            total_returns / total_losses if total_losses != 0 else np.nan
-        )
+        gain_to_pain_ratio = net_profit / total_losses if total_losses != 0 else float('nan')
 
         # Kelly Criterion: (Winning Probability * Average Win) / Average Loss - (Losing Probability * Average Loss) / Average Win
-        # It's a formula used to determine the optimal size of a series of bets.
-        winning_prob = len(self.dtd_data[self.dtd_data["net_pnl"] > 0]) / len(
-            self.dtd_data
-        )
-        average_win = self.dtd_data[self.dtd_data["net_pnl"] > 0]["net_pnl"].mean()
-        losing_prob = len(self.dtd_data[self.dtd_data["net_pnl"] < 0]) / len(
-            self.dtd_data
-        )
-        kelly_criterion = (
-            (winning_prob * average_win / -average_loss)
-            - (losing_prob * -average_loss / average_win)
-            if average_loss != 0
-            else np.nan
-        )
+        winning_prob = len(self.dtd_data[self.dtd_data["net_pnl"] > 0]) / len(self.dtd_data)
+        average_win = wins / len(self.dtd_data[self.dtd_data["net_pnl"] > 0])
+        losing_prob = 1 - winning_prob
+        kelly_criterion = (winning_prob * average_win / -average_loss) - (losing_prob * -average_loss / average_win) if average_win != 0 and average_loss != 0 else float('nan')
 
+        # Use Babel to format currency for the specified stats
+        formatted_net_profit = format_currency(net_profit, 'INR', locale='en_IN')
+        formatted_max_drawdown = format_currency(max_drawdown, 'INR', locale='en_IN')
+        formatted_average_loss = format_currency(average_loss, 'INR', locale='en_IN')
+
+        # Constructing the results dictionary
         stats_dict = {
-            "Net Profit": net_profit,
-            "Max Drawdown": max_drawdown,
-            "Recovery Factor": recovery_factor,
-            "Risk-Return Ratio": risk_return_ratio,
-            "Average Loss": average_loss,
-            "CAGR": cagr,
-            "Win-Loss Ratio": win_loss_ratio,
-            "Sharpe Ratio": sharpe_ratio,
-            "Max Consecutive Losses": max_consecutive_losses,
-            "Max Consecutive Wins": max_consecutive_wins,
-            "Gain to Pain Ratio": gain_to_pain_ratio,
-            "Kelly Criterion": kelly_criterion,
+            "Net Profit": formatted_net_profit,
+            "Max Drawdown": formatted_max_drawdown,
+            "Recovery Factor": round(recovery_factor,2),
+            "Risk-Return Ratio": round(risk_return_ratio,2),
+            "Average Loss": formatted_average_loss,
+            "CAGR (%)": round(cagr,2),
+            "Win-Loss Ratio": round(win_loss_ratio,2),
+            "Sharpe Ratio": round(sharpe_ratio,2),
+            "Max Consecutive Losses": consecutive_losses,
+            "Max Consecutive Wins": consecutive_wins,
+            "Gain to Pain Ratio": round(gain_to_pain_ratio,2),
+            "Kelly Criterion": round(kelly_criterion,2),
         }
-        
-        stats_df = pd.DataFrame(list(stats_dict.items()), columns=['Statistic', 'Value'])
 
+        # Converting dictionary to DataFrame for better presentation
+        stats_df = pd.DataFrame(list(stats_dict.items()), columns=['Statistic', 'Value'])
 
         return stats_df

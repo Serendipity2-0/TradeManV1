@@ -21,8 +21,6 @@ logger = LoggerSetup()
 api_id = os.getenv("TELETHON_API_ID")
 api_hash = os.getenv("TELETHON_API_HASH")
 
-nest_asyncio.apply()  # Patch the asyncio event loop to allow nested usage
-
 async def send_telegram_message_async(phone_number, message, session_filepath, api_id, api_hash):
     async with TelegramClient(session_filepath, api_id, api_hash) as client:
         while message:
@@ -36,15 +34,16 @@ def send_telegram_message(phone_number, message):
         DIR, "Executor/ExecutorUtils/NotificationCenter/Telegram/+918618221715.session"
     )
 
-    # Ensure the event loop is ready and run the async function
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
-        # If the loop is already running, use create_task to schedule the async function
-        task = loop.create_task(send_telegram_message_async(phone_number, message, session_filepath, api_id, api_hash))
-        asyncio.gather(task)
-    else:
-        # If the loop is not running, directly run the async function
+    # Create a new event loop and set it as the current loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        # Run the asynchronous function
         loop.run_until_complete(send_telegram_message_async(phone_number, message, session_filepath, api_id, api_hash))
+    finally:
+        # Close the loop at the end of the script
+        loop.close()
 
 def send_file_via_telegram(recipient,file_path, file_name, is_group=False):
     global api_id, api_hash

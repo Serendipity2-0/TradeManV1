@@ -2,7 +2,7 @@
 import glob
 import os,sys
 import sqlite3
-
+from babel.numbers import format_currency
 import pandas as pd
 import plotly.graph_objects as go
 import stats as stats
@@ -12,18 +12,15 @@ from profile_page import show_profile
 from dotenv import load_dotenv
 from datetime import datetime
 
-
-
 DIR = os.getcwd()
 sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
+from User.UserDashboard.user_dashboard_utils import ACTIVE_STRATEGIES
 
-ACTIVE_STRATEGIES = os.getenv("ACTIVE_STRATEGIES")
 USR_TRADELOG_DB_FOLDER = os.getenv("USR_TRADELOG_DB_FOLDER")
-user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -37,28 +34,34 @@ if 'client_data' not in st.session_state:
 
 
 def display_formatted_statistics(formatted_stats):
-    # Convert the statistics to a DataFrame for better display
+    # Convert the statistics dictionary to a DataFrame
     stats_df = pd.DataFrame(list(formatted_stats.items()), columns=["Metric", "Value"])
 
-    # Apply conditional formatting
-    def color_value(val):
-        color = "black"  # default
+    # Define the metrics to format as currency
+    currency_metrics = {
+        "Avg. Profit/Loss (Expectancy Rs)", 
+        "Max. Trade Drawdown", 
+        "Max. System Drawdown"
+    }
+
+    # Define a function to format values as currency and apply color based on the value
+    def format_and_color(row):
+        metric, val = row['Metric'], row['Value']
         try:
+            # Convert to float and format as currency if the metric matches
             num = float(val)
-            if num < 0:
-                color = "red"  # bad
-            elif num > 0:
-                color = "green"  # good
-            # Add more conditions for 'okay' or other statuses
+            if metric in currency_metrics:
+                val = format_currency(num, 'INR', locale='en_IN')
+            color = "red" if num < 0 else "green" if num > 0 else "black"
+            return f'<span style="color: {color};">{val}</span>'
         except ValueError:
-            pass  # Keep default color for non-numeric values
-        return f"color: {color};"
+            return val  # Return the value unchanged if it's not a number
 
-    st.write(stats_df.style.apply(color_value))
+    # Apply the formatting and coloring function
+    stats_df['Value'] = stats_df.apply(format_and_color, axis=1)
 
-
-##################################################################
-
+    # Display the DataFrame using Streamlit's HTML rendering to support styling
+    st.write(stats_df.to_html(escape=False, index=False), unsafe_allow_html=True)
 
 # Function to get all SQLite database files in the specified folder
 def get_db_files(folder_path):
@@ -121,18 +124,19 @@ def create_dtd_df(file_path):
     )
     aggregated_data["Day"] = aggregated_data["Date"].dt.day_name()
 
-    # print(aggregated_data)
     return aggregated_data
 
 
 def process_tables(db_path, table_name):
+    strategies = ACTIVE_STRATEGIES + ["Holdings"]
     # Attempt to load the specific table from the SQLite database
-    print("db_path", db_path)
     try:
         # Check if the table_name exists in the database
         conn = sqlite3.connect(db_path)
-        if table_name in ACTIVE_STRATEGIES:
+        if table_name in strategies:
             data = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
+            if table_name == "Holdings":
+                return data
             data["exit_time"] = pd.to_datetime(data["exit_time"])
             return data
         elif table_name == "Deposits" or table_name == "Withdrawals" or table_name == "Charges":
@@ -141,7 +145,6 @@ def process_tables(db_path, table_name):
     except Exception as e:
         st.error(f"Error: {e}")
 
-
 def determine_file_type(file_name):
     # Implement your logic here. For example, you might check the file name pattern
     if "signals" in file_name.lower():
@@ -149,20 +152,27 @@ def determine_file_type(file_name):
     else:
         return "user"
     
-def create_dtd_data(file_path,table_names):
-    logger.debug(f"DTD Table names: {table_names}")
+def create_dtd_data(file_path, table_names):
     dtd_data_list = []  # Use a list to collect DataFrame fragments
     
     conn = sqlite3.connect(file_path)
     for table in table_names:
-        logger.debug(f"Table: {table}")
         data = pd.read_sql_query(f"SELECT * FROM {table}", conn)
-        dtd_data_list.append(data[['exit_time','trade_id', 'net_pnl']])
+        
+        # Check if required columns exist in the table
+        required_columns = ['exit_time', 'trade_id', 'net_pnl']
+        if all(item in data.columns for item in required_columns):
+            dtd_data_list.append(data[required_columns])
+        else:
+            missing_cols = set(required_columns) - set(data.columns)
+            logger.error(f"Missing columns {missing_cols} in table {table}")
     
-    dtd_data = pd.concat(dtd_data_list, ignore_index=True)  # Concatenate all DataFrame fragments
-    logger.debug(f"DTD Data: {dtd_data.head()}")
-    
-    return dtd_data
+    if dtd_data_list:  # Only concatenate if there are data frames in the list
+        dtd_data = pd.concat(dtd_data_list, ignore_index=True)  # Concatenate all DataFrame fragments
+        return dtd_data
+    else:
+        logger.error("No data frames to concatenate. Check table column consistency.")
+        return None
 
 
 # Streamlit app
@@ -171,18 +181,22 @@ def main():
     st.title("Trading Strategy Analyzer")
 
     if not st.session_state.logged_in:
-        logger.debug("User not logged in")
         user_login_page()
 
-    if st.session_state.logged_in:
+    if st.session_state.logged_in and st.session_state.login_type == "client":
+
+        # Logout Button in the sidebar
+        if st.sidebar.button('Logout'):
+            st.session_state.client_data = None
+            st.session_state.logged_in = False 
+            st.sidebar.success("You have been logged out.")
+            st.experimental_rerun()
 
         # Extract username or another unique identifier from the session state
         username = st.session_state.client_data[
             "Tr_No"
         ]  # Adjust based on actual data
         
-        print("username", username)
-
         # Modify the logic to select only the file associated with the logged-in user
         db_files = [f for f in get_db_files(USR_TRADELOG_DB_FOLDER) if username in f]
 
@@ -196,28 +210,11 @@ def main():
         # Get table names (strategies) from the selected file
         table_names = get_table_names(os.path.join(USR_TRADELOG_DB_FOLDER, selected_file))
         
-        logger.debug(f"Active strategies: {ACTIVE_STRATEGIES}")
-
         user_strategy_table_names = [
             table for table in table_names if table in ACTIVE_STRATEGIES
         ]
         
-        
-        dtd_data = create_dtd_data(os.path.join(USR_TRADELOG_DB_FOLDER, selected_file),user_strategy_table_names)
 
-        # holdings_data = process_tables(
-        #     os.path.join(USR_TRADELOG_DB_FOLDER, selected_file), "Holdings"
-        # )
-        today_fb_format = datetime.now().strftime("%d%b%y")
-        today_acc_key = f"{today_fb_format}_AccountValue"
-        logger.debug(f"Today Account Key: {today_acc_key}")
-        previous_trading_day_fb_format = get_previous_trading_day(datetime.today())
-        previous_day_key = previous_trading_day_fb_format+"_"+'AccountValue'
-
-
-        account_value = st.session_state.client_data.get("Accounts").get(previous_day_key)
-        logger.debug(f"Account Value for : {account_value}")
-        port_stats = PortfolioStats(dtd_data, account_value)
 
         # Create tabs for 'Data', 'Stats', and 'Charts'
         tab1, tab2, tab3, tab4, tab5= st.tabs(
@@ -235,7 +232,11 @@ def main():
 
         with tab2:
             st.header("Portfolio View")
-
+            dtd_data = create_dtd_data(os.path.join(USR_TRADELOG_DB_FOLDER, selected_file),user_strategy_table_names)
+            previous_trading_day_fb_format = get_previous_trading_day(datetime.today())
+            previous_day_key = previous_trading_day_fb_format+"_"+'AccountValue'
+            account_value = st.session_state.client_data.get("Accounts").get(previous_day_key)
+            port_stats = PortfolioStats(dtd_data, account_value)
             equity_curve_fig = port_stats.show_equity_curve()
             st.pyplot(equity_curve_fig)
 
@@ -257,9 +258,9 @@ def main():
 
         with tab3:
             st.header("Strategy View")
-            st.session_state.active_tab = "StrategyView"
+            st.session_state.active_tab = "Strategy Data"
 
-            if st.session_state.active_tab == "StrategyView":
+            if st.session_state.active_tab == "Strategy Data":
             
                 # Conditionally render the sidebar within this tab
                 selected_strategy = st.sidebar.radio(
@@ -294,7 +295,8 @@ def main():
 
         with tab4:
             st.header("Holdings")
-            # st.write(holdings_data)
+            holdings_data = process_tables(os.path.join(USR_TRADELOG_DB_FOLDER, selected_file), "Holdings")
+            st.write(holdings_data)
 
        
         with tab5:
