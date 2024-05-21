@@ -136,15 +136,6 @@ def update_strategy_by_name_from_file(strategy_name, file_path):
             return f"Strategy data for {strategy_name} updated successfully from file {file_path}."
     return "Strategy not found to update."
 
-
-def update_maket_info_for_strategies():
-    market_info = fetch_collection_data_firebase("market_info")
-    strategies = fetch_collection_data_firebase("strategies")
-    for strategy_key, strategy_data in strategies.items():
-        strategy_data["market_info"] = market_info
-        update_fields_firebase("strategies", strategy_key, strategy_data)
-    return "Market info updated for all strategies."
-
 def upload_collection(collection, data):
     ref = db.reference(collection)
     ref.push(data)

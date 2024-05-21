@@ -17,6 +17,8 @@ PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase, update_fields_firebase, update_collection
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+from Executor.ExecutorDashBoard.exe_main_app_utils import log_changes
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_admin_bot
 
 logger = LoggerSetup()
 
@@ -51,6 +53,8 @@ def modify_market_info():
         update_collection(market_info_fb_db,updated_market_info)
         # Log changes
         log_changes(updated_market_info)
+        message = f"Market info updated for {updated_market_info}"
+        discord_admin_bot(message)
         st.success("Market info updated successfully!")
 
 
@@ -68,6 +72,7 @@ def modify_strategy_params():
 
     if strategy_name:
         strategy_params = strategies[strategy_name]
+        strategy_params.pop("MarketInfoParams")
 
         for section, params in strategy_params.items():
             with st.expander(f"Edit {section} Parameters"):
@@ -85,39 +90,10 @@ def modify_strategy_params():
                         update_fields_firebase(strategies_fb_db, strategy_name, {section: updated_params})
                         # Log changes with section_info
                         log_changes(updated_params, section_info=section)
+                        message = f"Params {updated_params} changed for {strategy_name} in {section}"
+                        discord_admin_bot(message)
                         st.success(f"{section} updated successfully!")
 
                     # Your existing logic for submitting updates
                 else:
                     st.write(f"The section '{section}' does not contain editable parameters.")
-                    
-def log_changes(updated_data, section_info=None):
-    """
-    The function `log_changes` logs updated data along with section information to a CSV file with date
-    and time stamp.
-    
-    :param updated_data: The `updated_data` parameter is the data that has been updated and will be
-    logged in the CSV file. It should be provided as an argument when calling the `log_changes` function
-    :param section_info: Section_info is an optional parameter that can be passed to the log_changes
-    function. It is used to provide additional information about the section being updated in the log
-    entry. If section_info is provided, it will be included in the log entry under the "section_info"
-    column in the CSV log file
-    """
-    filename = PARAMS_UPDATE_LOG_CSV_PATH
-    headers = ["date", "updated_info", "section_info"]
-    date_str = datetime.now().strftime("%d%b%y %I:%M%p")  # Format: 23Feb24 9:43AM
-
-    with open(filename, mode='a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=headers)
-        
-        # Write headers if file is being created for the first time
-        if not os.path.isfile(filename):
-            writer.writeheader()
-
-        log_entry = {
-            "date": date_str,
-            "updated_info": str(updated_data),  # Corrected key to match header
-            "section_info": section_info if section_info else ""
-        }
-        
-        writer.writerow(log_entry)

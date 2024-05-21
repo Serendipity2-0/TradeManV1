@@ -79,8 +79,9 @@ def main():
     global orders_to_place
     # Check if today is the day after a holiday
     now = dt.datetime.now()
+    yesterday = now - dt.timedelta(days=1)
 
-    if now.date() in holidays:
+    if now.date() in holidays or yesterday.date() in holidays:
         logger.info("Skipping execution as today is a holiday.")
         return
 

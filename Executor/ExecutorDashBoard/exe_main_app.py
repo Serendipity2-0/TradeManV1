@@ -64,12 +64,15 @@ def main():
         modify_strategy_params()
         
     with tab7:
+        st.header("Modify Market Info")
         modify_market_info()
     
     with tab8:
+        st.header("Modify User Strategy Risks")
         modify_user_strategy_params()
 
     with tab9:
+        st.header("Send Notice")
         send_notice()
         
 # Run the app
