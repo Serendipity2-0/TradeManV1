@@ -186,6 +186,7 @@ class Instrument:
         if exchange:
             filtered_data = self._filter_data_by_exchange_token(exchange_token)
             filtered_data = filtered_data[filtered_data["exchange"] == exchange]
+            filtered_data = filtered_data[filtered_data['exchange'] != 'CDS']
             return filtered_data.iloc[0]["tradingsymbol"]
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
         if not filtered_data.empty:

@@ -370,12 +370,14 @@ def fetch_and_prepare_holdings_data():
                 if not any(datetime.strptime(order['time_stamp'], "%Y-%m-%d %H:%M").date() == today for order in all_orders):
                     logger.info(f"No orders for {strategy_name} on {today}")
                     continue
-
-                if len(all_orders) > 0:
-                    margin_utilized = get_order_margin(all_orders, user['Broker'])
                 
                 # Process main orders
                 for order in main_orders:
+                    #THIS IS A TEMPORARY FIX SHOULD BE REMOVED
+                    if len(all_orders) > 0 and order.get("trade_id").startswith("PS"):
+                        margin_utilized = get_order_margin([order], user['Broker'])
+                    else:
+                        margin_utilized = get_order_margin(all_orders, user['Broker'])
                     exchange = instru().get_exchange_by_exchange_token(str(order.get("exchange_token")))
                     trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")),exchange)
 

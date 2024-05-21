@@ -925,8 +925,9 @@ def get_order_margin(orders,user_credentials,broker):
     for order in orders:
         exchange_token = order["exchange_token"]
         order_details =kite.order_history(order["order_id"])
-        for order in order_details["orders"]:
+        for order in order_details:
             if order["status"] == "COMPLETE":
+                price = order["average_price"]
                 product = order["product"]
                 transaction_type = order["transaction_type"]
                 order_type = order["order_type"]
@@ -948,7 +949,7 @@ def get_order_margin(orders,user_credentials,broker):
         else:
             segment_type = Instrument().get_exchange_by_exchange_token(str(exchange_token))
             trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
-                str(exchange_token)
+                str(exchange_token),segment_type
             )
 
         margin_order = {   
@@ -956,6 +957,7 @@ def get_order_margin(orders,user_credentials,broker):
                         "tradingsymbol":trading_symbol,
                         "transaction_type":transaction_type,
                         "variety":kite.VARIETY_REGULAR,
+                        "price":price,
                         "product":product_type,
                         "order_type":order_type,
                         "quantity":quantity}
@@ -963,7 +965,7 @@ def get_order_margin(orders,user_credentials,broker):
         basket_order.append(margin_order)
 
     margin_details = kite.basket_order_margins(basket_order,mode="compact")
-    margin = margin_details["final"][0]['charges']['total']
+    margin = margin_details.get("final", {}).get("total", 0.0)
     margin = round(margin,2)
 
     return margin

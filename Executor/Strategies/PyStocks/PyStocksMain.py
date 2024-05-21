@@ -20,6 +20,8 @@ from Executor.Strategies.StrategiesUtil import (
     assign_trade_id,
     update_signal_firebase,
     place_order_single_user,
+    fetch_qty_amplifier,
+    fetch_strategy_amplifier
 )
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
@@ -43,6 +45,7 @@ pystocks_obj = PyStocks.load_from_db("PyStocks")
 strategy_name = pystocks_obj.StrategyName
 order_type = pystocks_obj.GeneralParams.OrderType
 product_type = pystocks_obj.GeneralParams.ProductType
+strategy_type = pystocks_obj.GeneralParams.StrategyType
 
 def signals_to_fb(order_to_place, next_trade_prefix):
     for order in order_to_place:
@@ -126,7 +129,9 @@ def main():
                         "limit_prc": ltp
                     }]
                     order_to_place = assign_trade_id(order_details)
-                    update_qty_user_firebase(strategy_name, ltp, 1)
+                    qty_amplifier = fetch_qty_amplifier(strategy_name,strategy_type)
+                    strategy_amplifier = fetch_strategy_amplifier(strategy_name)
+                    update_qty_user_firebase(strategy_name, ltp, 1,qty_amplifier,strategy_amplifier)
                     signals_to_fb(order_to_place, trade_id)
                     order_status = place_order_single_user([user], order_to_place)
                     logger.debug(f"Orders placed for {symbol}: {order_to_place}")

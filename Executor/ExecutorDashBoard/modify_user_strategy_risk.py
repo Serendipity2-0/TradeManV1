@@ -33,26 +33,28 @@ def modify_user_strategy_params():
     user and strategy.
     """
     try:
-        # Strategies dropdown
-        active_strategies = fetch_active_strategies_all_users()
-        strategy = st.selectbox("Select Trading Strategy", active_strategies)
-        strategy_active_users = fetch_users_for_strategies_from_firebase(strategy)
-        traders_list = ["Select All"] + [user['Tr_No'] for user in strategy_active_users]
+        with st.form("modify_user_strategy_params"):
+            # Strategies dropdown
+            active_strategies = fetch_active_strategies_all_users()
+            strategy = st.selectbox("Select Trading Strategy", active_strategies)
+            strategy_active_users = fetch_users_for_strategies_from_firebase(strategy)
+            traders_list = ["Select All"] + [user['Tr_No'] for user in strategy_active_users]
 
-        # Trader number dropdown
-        trader_number_selection = st.selectbox("Select Trader Number", traders_list)
-        trader_numbers = [user['Tr_No'] for user in strategy_active_users] if trader_number_selection == "Select All" else [trader_number_selection]
+            # Trader number dropdown
+            trader_number_selection = st.selectbox("Select Trader Number", traders_list)
+            trader_numbers = [user['Tr_No'] for user in strategy_active_users] if trader_number_selection == "Select All" else [trader_number_selection]
 
-        # Risk percentage
-        risk_percentage = round(st.number_input("Enter Risk Percentage", min_value=0.0, max_value=10.0, step=0.1), 2)
+            # Risk percentage
+            risk_percentage = round(st.number_input("Enter Risk Percentage", min_value=0.0, max_value=10.0, step=0.1), 2)
 
-        if strategy =="PyStocks":
-            #SECTOR is hardcoded for now need to change once the csv is ready
-            sector = st.selectbox("Select the Sector", ["GAS", "AUTOMOBILE", "ELECTRIC", "FINANCE", "HOUSEHOLD", "INDUSTRY", "REALTY", "RETAIL", "TRANSPORT", "OTHER"])
-            cap = st.selectbox("Select the Cap", ["SMALL", "MID", "LARGE"])
+            if strategy =="PyStocks":
+                #SECTOR is hardcoded for now need to change once the csv is ready
+                sector = st.selectbox("Select the Sector", ["GAS", "AUTOMOBILE", "ELECTRIC", "FINANCE", "HOUSEHOLD", "INDUSTRY", "REALTY", "RETAIL", "TRANSPORT", "OTHER"])
+                cap = st.selectbox("Select the Cap", ["SMALL", "MID", "LARGE"])
+            submit_button = st.form_submit_button("Submit")
 
         # Form submission
-        if st.button("Submit"):
+        if submit_button:
             st.write("Form submitted!")
             st.write(f"Trader Number: {trader_numbers}")
             st.write(f"Selected Strategy: {strategy}")

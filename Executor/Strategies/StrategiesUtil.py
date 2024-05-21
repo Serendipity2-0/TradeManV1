@@ -353,7 +353,7 @@ def fetch_risk_per_trade_firebase(strategy_name):
         logger.error(f"Error fetching risk per trade: {e}")
         return None
 
-def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size):
+def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifier=None,strategy_amplifier=None):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
         calculate_qty_for_strategies,
     )
@@ -367,7 +367,7 @@ def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size):
                 risk = risk_per_trade[user["Tr_No"]]
             if user["Tr_No"] in free_cash_dict:
                 capital = free_cash_dict[user["Tr_No"]]
-            qty = calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size)
+            qty = calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size,qty_amplifier,strategy_amplifier)
             user["Strategies"][strategy_name]["Qty"] = qty
 
             update_fields_firebase(
@@ -564,3 +564,26 @@ def get_signal_from_trade_id(trade_id):
         return "Long"
     else:
         return None
+
+def fetch_qty_amplifier(strategy_name,strategy_type):
+    try:
+        strategy_data = fetch_collection_data_firebase(STRATEGIES_DB, strategy_name)
+        if strategy_type == "OS":
+            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get("OSQtyAmplifier", 1)
+        elif strategy_type == "OB":
+            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get("OBQtyAmplifier", 1)
+        elif strategy_type == "Equity":
+            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get("EquityQtyAmplifier", 1)
+        return qty_amplifier
+    except Exception as e:
+        logger.error(f"Error fetching qty amplifier for strategy {strategy_name}: {e}")
+        return 1
+
+def fetch_strategy_amplifier(strategy_name):
+    try:
+        strategy_data = fetch_collection_data_firebase(STRATEGIES_DB, strategy_name)
+        amplifier = strategy_data.get("MarketInfoParams", {}).get("StrategyQtyAmplifier", 1)
+        return amplifier
+    except Exception as e:
+        logger.error(f"Error fetching strategy amplifier for strategy {strategy_name}: {e}")
+        return 1

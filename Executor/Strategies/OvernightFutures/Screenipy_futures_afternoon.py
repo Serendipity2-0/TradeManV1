@@ -25,6 +25,8 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 from Executor.Strategies.StrategiesUtil import (
     assign_trade_id,
     place_order_strategy_users,
+    fetch_qty_amplifier,
+    fetch_strategy_amplifier
 )
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
@@ -189,7 +191,10 @@ def main():
     )
     orders_to_place = assign_trade_id(orders_to_place)
     logger.debug(orders_to_place)
-    update_qty_user_firebase(strategy_name, avg_sl_points, lot_size)
+
+    qty_amplifier = fetch_qty_amplifier(strategy_name,"OS")
+    strategy_amplifier = fetch_strategy_amplifier(strategy_name)
+    update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifier,strategy_amplifier)
     signal_to_log_firebase(orders_to_place,prediction)
     place_order_strategy_users(strategy_name, orders_to_place)
 

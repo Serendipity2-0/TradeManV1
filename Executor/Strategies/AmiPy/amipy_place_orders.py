@@ -20,6 +20,8 @@ from Executor.Strategies.StrategiesUtil import (
     update_signal_firebase,
     fetch_previous_trade_id,
     place_order_strategy_users,
+    fetch_qty_amplifier,
+    fetch_strategy_amplifier
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
@@ -190,6 +192,9 @@ def place_orders(strike_prc, signal):
 
     
     orders_to_place = assign_trade_id(orders_to_place)
+    qty_amplifier = fetch_qty_amplifier(strategy_name,"OS")
+    strategy_amplifier = fetch_strategy_amplifier(strategy_name)
+    update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifier,strategy_amplifier)
     update_qty_user_firebase(strategy_name, avg_sl_points, lot_size)
     signal_to_log_firebase(orders_to_place,signal)
     

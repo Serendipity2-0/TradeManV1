@@ -30,6 +30,8 @@ from Executor.Strategies.StrategiesUtil import (
     update_stoploss_orders,
     update_qty_user_firebase,
     update_signal_firebase,
+    fetch_qty_amplifier,
+    fetch_strategy_amplifier
 )
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
@@ -273,7 +275,9 @@ class OrderMonitor:
                 return
             order_to_place, trade_prefix = self.create_order_details(name, cross_type, ltp, price_ref)
             logger.debug(f"Placing orders for {order_to_place}")
-            update_qty_user_firebase(strategy_obj.StrategyName,price_ref,lot_size)
+            qty_amplifier = fetch_qty_amplifier(strategy_obj.StrategyName,strategy_obj.GeneralParams.StrategyType)
+            strategy_amplifier = fetch_strategy_amplifier(strategy_obj.StrategyName)
+            update_qty_user_firebase(strategy_obj.StrategyName, ltp, lot_size,qty_amplifier,strategy_amplifier)
             signal_log_firebase(order_to_place,cross_type,trade_prefix)
             place_order_strategy_users(strategy_obj.StrategyName, order_to_place)
 
