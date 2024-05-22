@@ -11,6 +11,8 @@ sys.path.append(DIR_PATH)
 TRADE_MODE = os.getenv("TRADE_MODE")
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
+CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
+STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 import Executor.Strategies.OvernightFutures.OvernightFutures_calc as OF_calc
 from Executor.Strategies.StrategiesUtil import StrategyBase, base_symbol_token,update_qty_user_firebase,update_signal_firebase
@@ -79,7 +81,7 @@ weekly_expiry = instrument_obj.get_expiry_by_criteria(
     base_symbol, strikeprc, option_type, weekly_expiry_type
 )
 monthly_expiry = instrument_obj.get_expiry_by_criteria(
-    base_symbol, 0, "FUT", monthly_expiry_type
+    base_symbol, 0, futures_option_type, monthly_expiry_type
 )
 
 
@@ -209,7 +211,7 @@ def main():
         "HedgeExchangeToken": hedge_exchange_token,
         "Prediction": prediction,
     }
-    update_fields_firebase("strategies", strategy_name, extra_info, "ExtraInformation")
+    update_fields_firebase(STRATEGY_FB_DB, strategy_name, extra_info, "ExtraInformation")
 
 
 if __name__ == "__main__":

@@ -39,8 +39,8 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size, qty_amp
     logger.info(f"Calculating quantity for strategy with capital: {capital}, risk: {risk}, avg_sl_points: {avg_sl_points}, lot_size: {lot_size}")
     try:
         # Set default multipliers if amplifiers are not provided
-        qty_multiplier = 1 + (qty_amplifier / 100) if qty_amplifier is not None else 1
-        strategy_multiplier = 1 + (strategy_amplifier / 100) if strategy_amplifier is not None else 1
+        qty_multiplier = 1 + (qty_amplifier / 100) if qty_amplifier is not None else 1   #qty_multiplier is fetcched from the marketinfo
+        strategy_multiplier = 1 + (strategy_amplifier / 100) if strategy_amplifier is not None else 1 #strategy_multiplier is fetched from the strategy
 
         if avg_sl_points is not None:
             # Calculate the base raw quantity

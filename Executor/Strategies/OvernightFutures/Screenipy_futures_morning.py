@@ -30,7 +30,7 @@ prediction = strategy_obj.ExtraInformation.Prediction
 hedge_exchange_token = strategy_obj.ExtraInformation.HedgeExchangeToken
 futures_exchange_token = strategy_obj.ExtraInformation.FuturesExchangeToken
 
-hedge_transcation_type = strategy_obj.GeneralParams.HedgeTransactionType
+hedge_transcation_type = strategy_obj.get_raw_field("GeneralParams").get("HedgeSqroffTransactionType")
 
 order_type = strategy_obj.GeneralParams.OrderType
 product_type = strategy_obj.GeneralParams.ProductType
