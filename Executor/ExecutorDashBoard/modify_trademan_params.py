@@ -14,11 +14,13 @@ load_dotenv(ENV_PATH)
 signal_db_path = os.getenv("SIGNAL_DB_PATH")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
+STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase, update_fields_firebase, update_collection
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorDashBoard.exe_main_app_utils import log_changes
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_admin_bot
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_strategies_all_users
 
 logger = LoggerSetup()
 
@@ -56,6 +58,36 @@ def modify_market_info():
         message = f"Market info updated for {updated_market_info}"
         discord_admin_bot(message)
         st.success("Market info updated successfully!")
+    
+    active_strategies = fetch_active_strategies_all_users()
+    active_strategies_names = ["Select All"] + [strategy for strategy in active_strategies]
+
+    strategy_qty_amplifier = 1.0  # Default value
+    selected_strategies = None  # Default selected strategy
+
+    with st.form("strategy_form"):
+        # User selects strategies
+        selected_strategies = st.selectbox("Select Strategies", options=active_strategies_names)
+        
+        # Input for StrategyQtyAmplifier
+        strategy_qty_amplifier = st.number_input("StrategyQtyAmplifier", value=strategy_qty_amplifier)
+        
+        # Submission button for the form
+        submit_button = st.form_submit_button("Submit StrategyQtyAmplifier ")
+
+    if submit_button:
+        if selected_strategies == "Select All":
+            # Apply the amplifier value to all strategies
+            for strategy in active_strategies:
+                update_path = f"{strategy}/MarketInfoParams/"
+                update_fields_firebase(STRATEGIES_DB, update_path, {"StrategyQtyAmplifier": strategy_qty_amplifier})
+            st.success(f"StrategyQtyAmplifier set to {strategy_qty_amplifier} for all strategies.")
+        else:
+            update_path = f"{selected_strategies}/MarketInfoParams/"
+            update_fields_firebase(STRATEGIES_DB, update_path, {"StrategyQtyAmplifier": strategy_qty_amplifier})
+            st.success(f"StrategyQtyAmplifier set to {strategy_qty_amplifier} for {selected_strategies}.")
+
+    
 
 
 def modify_strategy_params():
