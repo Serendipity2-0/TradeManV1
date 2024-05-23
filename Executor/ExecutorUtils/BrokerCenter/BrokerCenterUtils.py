@@ -537,11 +537,11 @@ def get_orders_tax(orders_to_place,user_credentials):
 def get_order_margin(orders_to_place,user_credentials):
     #TODO As of now passing all the brokers to zerodha adapter
     if user_credentials['BrokerName'] == ZERODHA:
-        return zerodha_adapter.get_order_margin(orders_to_place,user_credentials,user_credentials['BrokerName'])
+        return zerodha_adapter.get_margin_utilized(user_credentials)
     elif user_credentials['BrokerName'] == ALICEBLUE:
-        return alice_adapter.get_order_margin(orders_to_place,user_credentials,user_credentials['BrokerName'])
+        return alice_adapter.get_margin_utilized(user_credentials)
     elif user_credentials['BrokerName'] == FIRSTOCK:
-        return firstock_adapter.get_order_margin(orders_to_place,user_credentials,user_credentials['BrokerName'])
+        return firstock_adapter.get_margin_utilized(user_credentials)
     else:
         return None
     

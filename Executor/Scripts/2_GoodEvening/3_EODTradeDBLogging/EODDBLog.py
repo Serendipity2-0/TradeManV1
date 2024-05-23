@@ -361,28 +361,26 @@ def fetch_and_prepare_holdings_data():
                     avg_hedge_order_price = sum(float(order["avg_prc"]) for order in hedge_orders) / len(hedge_orders)
                 else:
                     avg_hedge_order_price = 0  # Default to 0 if no hedge orders
-
-                # Calculate the margin utilized using the new function
-                all_orders = main_orders + hedge_orders if hedge_orders else main_orders
-
-                today = datetime.now().date()
-                #check if the order.get("time_stamp") is date is today
-                if not any(datetime.strptime(order['time_stamp'], "%Y-%m-%d %H:%M").date() == today for order in all_orders):
-                    logger.info(f"No orders for {strategy_name} on {today}")
-                    continue
                 
                 # Process main orders
                 for order in main_orders:
-                    #THIS IS A TEMPORARY FIX SHOULD BE REMOVED
-                    if len(all_orders) > 0 and order.get("trade_id").startswith("PS"):
-                        margin_utilized = get_order_margin([order], user['Broker'])
-                    else:
-                        margin_utilized = get_order_margin(all_orders, user['Broker'])
                     exchange = instru().get_exchange_by_exchange_token(str(order.get("exchange_token")))
                     trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")),exchange)
 
                     entry_price = float(order["avg_prc"])
                     qty = order.get("qty", 0)
+
+                    # Initialize margin_utilized to 0
+                    option_margin_utilized = 0
+
+                    # Check if the trade ID starts with "PS"
+                    if order.get("trade_id", "").startswith("PS"):
+                        # Calculate margin utilized based on entry price and quantity
+                        option_margin_utilized = entry_price * qty
+                        margin_utilized = option_margin_utilized  # For PS, use this directly
+                    else:
+                        # For other trade IDs, fetch the order margin and adjust by subtracting the PS margin
+                        margin_utilized = get_order_margin([order], user['Broker']) - option_margin_utilized
                     
                     holding = {
                         "trade_id": order.get("trade_id"),
@@ -464,15 +462,15 @@ def process_n_log_trade():
             continue
 
 def main():
-    download_json(CLIENTS_USER_FB_DB, "before_eod_db_log")
-    process_n_log_trade()
-    sleep(5)
+    # download_json(CLIENTS_USER_FB_DB, "before_eod_db_log")
+    # process_n_log_trade()
+    # sleep(5)
     fetch_and_prepare_holdings_data()
-    sleep(5)
-    update_signals_firebase()
-    update_signal_info()
-    clear_today_orders_firebase()
-    sleep(5)
+    # sleep(5)
+    # update_signals_firebase()
+    # update_signal_info()
+    # clear_today_orders_firebase()
+    # sleep(5)
 
 if __name__ == "__main__":
     main()

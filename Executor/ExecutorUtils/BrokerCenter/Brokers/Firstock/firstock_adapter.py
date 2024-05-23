@@ -500,56 +500,10 @@ def get_firstock_pnl(user):
         logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
         return None
     
-def get_order_margin(orders,user_credentials,broker):
-    """
-    Calculates the required margin for an order based on the order details and user credentials.
-
-    Args:
-        order (dict): Details of the order for which margin needs to be calculated.
-        user_credentials (dict): Credentials required for accessing the user's trading account.
-        broker (str): Name of the broker to apply specific adjustments if needed.
-
-    Returns:
-        float: The calculated margin for the order.
-
-    Raises:
-        Exception: If there is an error in calculating the margin.
-    """
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
-
-    basket_order = []
-
-    for order in orders:
-        order_details = thefirstock.firstock_SingleOrderHistory(orderNumber=order["order_id"],userId=user_credentials["BrokerUsername"])
-        for order in order_details["data"]:
-            if order["status"] == "COMPLETE" or order["status"] == "TRIGGER PENDING" or order["status"] == "REJECTED":
-                product = order["product"]
-                transaction_type = order["transactionType"]
-                quantity = order["quantity"]
-                exchange = order["exchange"]
-                pricetype = order["priceType"]
-                tradingsymbol = order["tradingSymbol"]
-
-        if pricetype == "MKT":
-            price = "0"
-        elif pricetype == "LMT":
-            price = get_single_ltp(exchange_token=exchange,segment="NSE")
-
-        margin_order = {
-                        "exchange": exchange,
-                        "tradingSymbol": tradingsymbol,
-                        "quantity": quantity,
-                        "transactionType": transaction_type,
-                        "price": price,
-                        "product": product,
-                        "priceType": pricetype
-                    }
-
-        basket_order.append(margin_order)
-    basket_margin = thefirstock.firstock_BasketMargin(basket_order,userId=user_credentials["BrokerUsername"])
-    margin = basket_margin["data"]["marginused"]
-    return float(margin)
+def get_margin_utilized(user_credentials):
+    limits = thefirstock.firstock_Limits(userId=user_credentials["BrokerUsername"])
+    margin_used = (limits.get("data", {}).get("marginused", 0))
+    return float(margin_used)
 
 def get_broker_payin(user):
     limits = thefirstock.firstock_Limits(userId=user["Broker"]["BrokerUsername"])

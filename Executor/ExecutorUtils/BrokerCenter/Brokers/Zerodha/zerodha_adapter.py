@@ -898,77 +898,12 @@ def get_order_tax(order,user_credentials,broker):
         tax = float(tax)  - 5
     return tax
 
-def get_order_margin(orders,user_credentials,broker):
-    """
-    Calculates the required margin for an order based on the order details and user credentials.
-
-    Args:
-        order (dict): Details of the order for which margin needs to be calculated.
-        user_credentials (dict): Credentials required for accessing the user's trading account.
-        broker (str): Name of the broker to apply specific adjustments if needed.
-
-    Returns:
-        float: The calculated margin for the order.
-
-    Raises:
-        Exception: If there is an error in calculating the margin.
-    """
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-
-    kite = create_kite_obj(
-    api_key=user_credentials["ApiKey"],
-    access_token=user_credentials["SessionId"],
-    )
-
-    basket_order = []
-
-    for order in orders:
-        exchange_token = order["exchange_token"]
-        order_details =kite.order_history(order["order_id"])
-        for order in order_details:
-            if order["status"] == "COMPLETE":
-                price = order["average_price"]
-                product = order["product"]
-                transaction_type = order["transaction_type"]
-                order_type = order["order_type"]
-                quantity = order["quantity"]
-
-        transaction_type = calculate_transaction_type(
-            kite, transaction_type
-        )
-
-        order_type = calculate_order_type(kite, order_type)
-   
-        product_type = calculate_product_type(kite, product)
-
-        if product == "CNC":
-            segment_type = kite.EXCHANGE_NSE
-            trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
-                exchange_token, "NSE"
-            )
-        else:
-            segment_type = Instrument().get_exchange_by_exchange_token(str(exchange_token))
-            trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
-                str(exchange_token),segment_type
-            )
-
-        margin_order = {   
-                        "exchange":segment_type,
-                        "tradingsymbol":trading_symbol,
-                        "transaction_type":transaction_type,
-                        "variety":kite.VARIETY_REGULAR,
-                        "price":price,
-                        "product":product_type,
-                        "order_type":order_type,
-                        "quantity":quantity}
-
-        basket_order.append(margin_order)
-
-    margin_details = kite.basket_order_margins(basket_order,mode="compact")
-    margin = margin_details.get("final", {}).get("total", 0.0)
-    margin = round(margin,2)
-
-    return margin
+def get_margin_utilized(user_credentials):
+    kite = create_kite_obj(user_details=user_credentials)
+    live_bal =(kite.margins().get("equity",{}).get("available",{}).get("live_balance"))
+    opening_bal = (kite.margins().get("equity",{}).get("available",{}).get("opening_balance"))
+    funds_utilized = opening_bal - live_bal
+    return funds_utilized
 
 def get_broker_payin(user):
     kite = create_kite_obj(user_details=user["Broker"])

@@ -758,7 +758,7 @@ def get_alice_pnl(user):
         logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
         return None
     
-def get_order_margin(orders,user_credentials,broker):
+def get_margin_utilized(user_credentials):
     """
     Calculates the required margin for an order based on the order details and user credentials.
 
