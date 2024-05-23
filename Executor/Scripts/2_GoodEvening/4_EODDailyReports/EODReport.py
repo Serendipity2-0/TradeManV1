@@ -38,6 +38,7 @@ from Executor.ExecutorUtils.ReportUtils.MarketMovementData import main as fetch_
 from Executor.ExecutorUtils.ReportUtils.SignalMovementData import main as fetch_signal_movement_data
 from Executor.ExecutorUtils.ReportUtils.UserPnLMovementData import main as user_pnl_movement_data
 from Executor.ExecutorUtils.ReportUtils.ErrorLogData import main as fetch_errorlog_data
+from Executor.ExecutorUtils.ReportUtils.MarketInfoData import create_market_info_df
 from Executor.ExecutorUtils.ReportUtils.EodReportUtils import (
     get_today_trades_for_all_users,
     today_trades_data,
@@ -124,9 +125,12 @@ def create_consolidated_report(active_users, active_strategies):
         df_signals = fetch_signal_movement_data()
 
         #Page 3 data
-        df_user_pnl = user_pnl_movement_data()
+        df_market_info = create_market_info_df()
 
         #Page 4 data
+        df_user_pnl = user_pnl_movement_data()
+
+        #Page 5 data
         today_trades = get_today_trades_for_all_users(active_users, active_strategies)
         consolidated_data = today_trades_data(active_users, today_trades)
 
@@ -134,11 +138,11 @@ def create_consolidated_report(active_users, active_strategies):
         consolidated_df = format_df_data(consolidated_df)
         output_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
 
-        #Page 5 data
+        #Page 6 data
         errorlog_df = fetch_errorlog_data()
         formatted_errorlog_df = format_df_data(errorlog_df)
 
-        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, df_user_pnl, formatted_errorlog_df,output_path)
+        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, df_market_info, df_user_pnl, formatted_errorlog_df,output_path)
         send_consolidated_report_pdf_to_telegram()
 
         logger.info(f"consolidated_data: {consolidated_data}")
