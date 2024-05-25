@@ -26,7 +26,10 @@ def upload_client_data_to_firebase(user_dict):
     ref = db.reference(FIREBASE_USER_COLLECTION)
     # Use the new_tr_no as a key for the new entry
     new_ref = ref.child("Tr13") # TODO: get the new_tr_no from the admin fb db
-    new_ref.set(user_dict)
+    new_ref.set(user_dict)4
+    {
+        
+    }
     # ref.push(user_dict)
     return "Data uploaded successfully"
 

@@ -79,6 +79,7 @@ strategy_type = expiry_trader_obj.GeneralParams.StrategyType
 logger.debug(f"Values from Firebase for {strategy_name}: {base_symbol}, {today_expiry_token}, {prediction}, {order_type}, {product_type}, {strike_prc_multiplier}, {hedge_multiplier}, {stoploss_multiplier}, {desired_start_time_str}, {strategy_type}")
 
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
+########################################################
 
 main_strikeprc = expiry_trader_obj.calculate_current_atm_strike_prc(
     base_symbol, today_expiry_token, prediction, strike_prc_multiplier,strategy_type
@@ -92,6 +93,7 @@ hedge_option_type = expiry_trader_obj.get_hedge_option_type(prediction)
 today_expiry = instrument_obj.get_expiry_by_criteria(
     base_symbol, main_strikeprc, main_option_type, "current_week"
 )
+# ############################################################
 hedge_exchange_token = instrument_obj.get_exchange_token_by_criteria(
     base_symbol, hedge_strikeprc, hedge_option_type, today_expiry
 )
@@ -102,7 +104,7 @@ main_exchange_token = instrument_obj.get_exchange_token_by_criteria(
 ltp = InstrumentCenterUtils.get_single_ltp(exchange_token=main_exchange_token)
 lot_size = instrument_obj.get_lot_size_by_exchange_token(main_exchange_token)
 
-update_qty_user_firebase(strategy_name, ltp, lot_size)
+update_qty_user_firebase(strategy_name, ltp, lot_size) # can remove multipe firebase calls 
 
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(
     main_exchange_token

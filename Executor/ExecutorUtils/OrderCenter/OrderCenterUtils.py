@@ -5,6 +5,7 @@ import sys
 import time
 from dotenv import load_dotenv
 from multiprocessing import Pool, cpu_count
+import threading
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -62,7 +63,10 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
         logger.error(f"Error calculating quantity for strategy: {e}")
         return 0
 
-def place_order_for_strategy_for_a_user(args):
+def place_order_for_strategy_for_a_order(args):
+    """
+    Change the loop type from user-> order to order -> user
+    """
     (user, order_details, order_qty_mode) = args
     logger.debug(f"Placing orders for user {user['Broker']['BrokerUsername']}")
     all_order_statuses = []  
@@ -169,14 +173,21 @@ def place_order_for_strategy_for_a_user(args):
 
 
 def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=None):
+    """
     # for user in strategy_users:
     args = [(user ,order_details, order_qty_mode) for user in strategy_users ]
     num_cores = cpu_count()
     num_processes = max(1, num_cores // 2) # can change
     with Pool(num_processes) as p:
         p.map(place_order_for_strategy_for_a_user, args)
-        
-       # To store the status of all orders
+    """
+    args_ = [(user ,order_details, order_qty_mode) for user in strategy_users ]
+    threads = [threading.Thread(target=place_order_for_strategy_for_a_user, args=(arg,)) for arg in args_]
+
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
 
 
         

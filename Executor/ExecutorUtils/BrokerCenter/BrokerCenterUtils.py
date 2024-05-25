@@ -199,14 +199,17 @@ def fetch_holdings_value_for_user(user):
         return firstock_adapter.fetch_firstock_holdings_value(user)
 
 
-def fetch_user_credentials_firebase(broker_user_name):
-    try:
-        user_credentials = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
-        for user in user_credentials:
-            if user_credentials[user]["Broker"]["BrokerUsername"] == broker_user_name:
-                return user_credentials[user]["Broker"]
-    except Exception as e:
-        logger.error(f"Error while fetching user credentials from Firebase: {e}")
+class UserCredentials:
+    user_credentials = None
+    def fetch_user_credentials_firebase(broker_user_name):
+        try:
+            if user_credentials in None:
+                user_credentials = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
+            for user in user_credentials:
+                if user_credentials[user]["Broker"]["BrokerUsername"] == broker_user_name:
+                    return user_credentials[user]["Broker"]
+        except Exception as e:
+            logger.error(f"Error while fetching user credentials from Firebase: {e}")
 
 def fetch_strategy_details_for_user(username):
     try:
