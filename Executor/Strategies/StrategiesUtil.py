@@ -353,25 +353,28 @@ def fetch_risk_per_trade_firebase(strategy_name):
         logger.error(f"Error fetching risk per trade: {e}")
         return None
 
-def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size):
+def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifier=None,strategy_amplifier=None):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
         calculate_qty_for_strategies,
     )
 
     strategy_users = fetch_strategy_users(strategy_name)
-    free_cash_dict = fetch_freecash_firebase(strategy_name) # can reomce fetch_strategy_users inside this function
-    risk_per_trade = fetch_risk_per_trade_firebase(strategy_name) # can reomce fetch_strategy_users inside this function
-    for user in strategy_users:
-        if user["Tr_No"] in risk_per_trade:
-            risk = risk_per_trade[user["Tr_No"]]
-        if user["Tr_No"] in free_cash_dict:
-            capital = free_cash_dict[user["Tr_No"]]
-        qty = calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size)
-        user["Strategies"][strategy_name]["Qty"] = qty
+    free_cash_dict = fetch_freecash_firebase(strategy_name)
+    risk_per_trade = fetch_risk_per_trade_firebase(strategy_name)
+    try:
+        for user in strategy_users:
+            if user["Tr_No"] in risk_per_trade:
+                risk = risk_per_trade[user["Tr_No"]]
+            if user["Tr_No"] in free_cash_dict:
+                capital = free_cash_dict[user["Tr_No"]]
+            qty = calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size,qty_amplifier,strategy_amplifier)
+            user["Strategies"][strategy_name]["Qty"] = qty
 
-        update_fields_firebase(
-            user_db_collection, user["Tr_No"], {"Qty": qty}, f"Strategies/{strategy_name}"
-        )
+            update_fields_firebase(
+                user_db_collection, user["Tr_No"], {"Qty": qty}, f"Strategies/{strategy_name}"
+            )
+    except Exception as e:
+        logger.error(f"Error updating qty for user: {e}")
 
 
 def assign_trade_id(orders_to_place):
@@ -458,6 +461,11 @@ def place_order_strategy_users(strategy_name, orders_to_place, order_qty_mode=No
     place_order_for_strategy(strategy_users, orders_to_place, order_qty_mode)
     pass
 
+def place_order_single_user(user_details,orders_to_place,order_qty_mode=None):
+    from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
+        place_order_for_strategy,
+    )
+    return place_order_for_strategy(user_details,orders_to_place,order_qty_mode)
 
 def update_stoploss_orders(strategy_name, orders_to_modify):
     # I fetch the users for the strategy and then pass the users and orders to modify to the modify_orders_for_strategy function
@@ -556,3 +564,26 @@ def get_signal_from_trade_id(trade_id):
         return "Long"
     else:
         return None
+
+def fetch_qty_amplifier(strategy_name,strategy_type):
+    try:
+        strategy_data = fetch_collection_data_firebase(STRATEGIES_DB, strategy_name)
+        if strategy_type == "OS":
+            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get("OSQtyAmplifier", 1)
+        elif strategy_type == "OB":
+            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get("OBQtyAmplifier", 1)
+        elif strategy_type == "Equity":
+            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get("EquityQtyAmplifier", 1)
+        return qty_amplifier
+    except Exception as e:
+        logger.error(f"Error fetching qty amplifier for strategy {strategy_name}: {e}")
+        return 1
+
+def fetch_strategy_amplifier(strategy_name):
+    try:
+        strategy_data = fetch_collection_data_firebase(STRATEGIES_DB, strategy_name)
+        amplifier = strategy_data.get("MarketInfoParams", {}).get("StrategyQtyAmplifier", 1)
+        return amplifier
+    except Exception as e:
+        logger.error(f"Error fetching strategy amplifier for strategy {strategy_name}: {e}")
+        return 1

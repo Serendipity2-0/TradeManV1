@@ -2,11 +2,15 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import User.UserDashBoard.stats as stats
+
 import os
 import glob
 import calendarview
 from portfoliostats_view import PortfolioStats
+import User.UserDashboard.stats as stats
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 strategy_sheet_names = [
     "AmiPy",
@@ -128,15 +132,15 @@ def process_sheet(file_path, sheet_name):
         elif sheet_name == "Transactions" or sheet_name == "Holdings":
             return pd.read_excel(file_path, sheet_name=sheet_name)
         else:
-            print(f"Sheet '{sheet_name}' does not exist in the file.")
+            logger.error(f"Sheet '{sheet_name}' does not exist in the file.")
             return None  # or handle it as you see fit
 
     except FileNotFoundError:
-        print(f"File not found: {file_path}")
+        logger.error(f"File not found: {file_path}")
         return None  # or handle as needed
     except Exception as e:
         # Handle any other exceptions
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         return None  # or handle as needed
 
 

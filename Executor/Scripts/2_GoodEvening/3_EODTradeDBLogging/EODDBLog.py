@@ -27,9 +27,6 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_list_of_strategies_from_firebase,
     fetch_users_for_strategies_from_firebase
 )
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    calculate_taxes,
-)
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     append_df_to_sqlite,
     get_db_connection,
@@ -224,6 +221,12 @@ def delete_orders_from_firebase(orders, strategy_name, user):
 
     logger.success("Deletion process completed.")
 
+def calculate_tax_from_firebasedb(entry_orders, exit_orders, hedge_orders):
+    tax = sum(order['tax'] for order in entry_orders)
+    tax += sum(order['tax'] for order in exit_orders)
+    tax += sum(order['tax'] for order in hedge_orders)
+    return tax
+
 def seggregate_orders_by_type(orders):
     try:
         entry_orders = [o for o in orders if "trade_id" in o and "EN" in o["trade_id"] and "HO" not in o["trade_id"]]
@@ -302,17 +305,7 @@ def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
 
         pnl = trade_points * qty
 
-        print("entry_price", entry_price)
-        print("exit_price", exit_price)
-        print("hedge_entry_price", hedge_entry_price)
-        print("hedge_exit_price", hedge_exit_price)
-        print("short_trade", short_trade)
-
-        print("trade_points", trade_points)
-        print("qty", qty)
-        print("pnl", pnl)
-
-        tax = calculate_taxes(entry_orders,exit_orders,hedge_orders,user["Broker"]["BrokerName"])
+        tax = calculate_tax_from_firebasedb(entry_orders,exit_orders,hedge_orders)
 
         net_pnl = pnl - tax
 
@@ -322,15 +315,15 @@ def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
                         "signal": signal,
                         "entry_time": datetime.strptime(entry_time, "%Y-%m-%d %H:%M"),
                         "exit_time": datetime.strptime(exit_time, "%Y-%m-%d %H:%M"),
-                        "entry_price": entry_price,
-                        "exit_price": exit_price,
-                        "hedge_entry_price": hedge_entry_price,
-                        "hedge_exit_price": hedge_exit_price,
-                        "trade_points": trade_points,
+                        "entry_price": float(entry_price),
+                        "exit_price": float(exit_price),
+                        "hedge_entry_price": float(hedge_entry_price),
+                        "hedge_exit_price": float(hedge_exit_price),
+                        "trade_points": float(trade_points),
                         "qty": qty,
-                        "pnl": pnl,
-                        "tax": tax,
-                        "net_pnl": net_pnl,
+                        "pnl": float(pnl),
+                        "tax": float(tax),
+                        "net_pnl": float(net_pnl)
         }
         return trade_details
     except Exception as e:
@@ -341,6 +334,7 @@ def fetch_and_prepare_holdings_data():
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
         Instrument as instru,
     )
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import get_order_margin
     active_users = fetch_active_users_from_firebase()
     
     for user in active_users:
@@ -365,21 +359,28 @@ def fetch_and_prepare_holdings_data():
                 # Calculate the average price of hedge orders
                 if hedge_orders:
                     avg_hedge_order_price = sum(float(order["avg_prc"]) for order in hedge_orders) / len(hedge_orders)
-                    option_margin_utilized = avg_hedge_order_price * sum(order.get("qty", 0) for order in hedge_orders)
                 else:
-                    option_margin_utilized = 0
                     avg_hedge_order_price = 0  # Default to 0 if no hedge orders
                 
                 # Process main orders
                 for order in main_orders:
-                    trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")))
+                    exchange = instru().get_exchange_by_exchange_token(str(order.get("exchange_token")))
+                    trading_symbol = instru().get_trading_symbol_by_exchange_token(str(order.get("exchange_token")),exchange)
+
                     entry_price = float(order["avg_prc"])
                     qty = order.get("qty", 0)
-                    if "FUT" in trading_symbol:
-                        future_margin_utilized = qty * instru().get_margin_multiplier(trading_symbol)
-                        margin_utilized = future_margin_utilized + option_margin_utilized    
+
+                    # Initialize margin_utilized to 0
+                    option_margin_utilized = 0
+
+                    # Check if the trade ID starts with "PS"
+                    if order.get("trade_id", "").startswith("PS"):
+                        # Calculate margin utilized based on entry price and quantity
+                        option_margin_utilized = entry_price * qty
+                        margin_utilized = option_margin_utilized  # For PS, use this directly
                     else:
-                        margin_utilized = entry_price * qty 
+                        # For other trade IDs, fetch the order margin and adjust by subtracting the PS margin
+                        margin_utilized = get_order_margin([order], user['Broker']) - option_margin_utilized
                     
                     holding = {
                         "trade_id": order.get("trade_id"),
@@ -461,15 +462,15 @@ def process_n_log_trade():
             continue
 
 def main():
-    download_json(CLIENTS_USER_FB_DB, "before_eod_db_log")
-    process_n_log_trade()
-    sleep(5)
+    # download_json(CLIENTS_USER_FB_DB, "before_eod_db_log")
+    # process_n_log_trade()
+    # sleep(5)
     fetch_and_prepare_holdings_data()
-    sleep(5)
-    update_signals_firebase()
-    update_signal_info()
-    clear_today_orders_firebase()
-    sleep(5)
+    # sleep(5)
+    # update_signals_firebase()
+    # update_signal_info()
+    # clear_today_orders_firebase()
+    # sleep(5)
 
 if __name__ == "__main__":
     main()

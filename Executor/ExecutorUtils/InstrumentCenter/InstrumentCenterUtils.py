@@ -182,10 +182,11 @@ class Instrument:
         else:
             return None
 
-    def get_trading_symbol_by_exchange_token(self, exchange_token: str, segment=None):
-        if segment:
+    def get_trading_symbol_by_exchange_token(self, exchange_token: str, exchange=None):
+        if exchange:
             filtered_data = self._filter_data_by_exchange_token(exchange_token)
-            filtered_data = filtered_data[filtered_data["segment"] == segment]
+            filtered_data = filtered_data[filtered_data["exchange"] == exchange]
+            filtered_data = filtered_data[filtered_data['exchange'] != 'CDS']
             return filtered_data.iloc[0]["tradingsymbol"]
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
         if not filtered_data.empty:
@@ -211,8 +212,10 @@ class Instrument:
         else:
             return None
 
-    def get_segment_by_exchange_token(self, exchange_token):
+    def get_exchange_by_exchange_token(self, exchange_token):
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
+        #Remove CDS from the list of segments
+        filtered_data = filtered_data[filtered_data['exchange'] != 'CDS']
         if not filtered_data.empty:
             return filtered_data.iloc[0]["exchange"]
         else:
@@ -328,3 +331,24 @@ def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
     else:
         ltp = kite.ltp(kite_token)
         return ltp[str(kite_token)]["last_price"]
+
+def get_single_quote(kite_token=None, exchange_token=None, segment=None):
+    zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
+    primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(
+        zerodha_primary
+    )
+    kite = KiteConnect(api_key=primary_account_session_id["Broker"]["ApiKey"])
+    kite.set_access_token(
+        access_token=primary_account_session_id["Broker"]["SessionId"]
+    )
+    
+    if exchange_token:
+        if segment:
+            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token,segment)
+        else:
+            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
+        quote = kite.quote(kite_token)
+        return quote[str(kite_token)]["last_price"]
+    else:
+        quote = kite.quote(kite_token)
+        return quote[str(kite_token)]["last_price"]

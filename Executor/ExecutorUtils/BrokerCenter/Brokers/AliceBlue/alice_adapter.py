@@ -12,7 +12,7 @@ load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    discord_bot,discord_admin_bot
 )
 from Executor.Strategies.StrategiesUtil import (
     get_strategy_name_from_trade_id,
@@ -24,6 +24,17 @@ logger = LoggerSetup()
 
 # This function fetches the available free cash balance for a user from the Aliceblue trading platform.
 def alice_fetch_free_cash(user_details):
+    """
+    The function `alice_fetch_free_cash` fetches the available free cash balance for a user from
+    Aliceblue brokerage platform.
+    
+    :param user_details: The `alice_fetch_free_cash` function seems to be fetching the free cash
+    available for a user from a brokerage platform using the Aliceblue API. The function takes
+    `user_details` as a parameter, which likely contains information about the user's brokerage account,
+    such as their username, API key, and
+    :return: The function `alice_fetch_free_cash` returns the free cash available for a user's brokerage
+    account.
+    """
     logger.debug(f"Fetching free cash for {user_details['BrokerUsername']}")
     alice = Aliceblue(
         user_details["BrokerUsername"],
@@ -43,6 +54,14 @@ def alice_fetch_free_cash(user_details):
 
 
 def merge_ins_csv_files():
+    """
+    The function `merge_ins_csv_files` reads and merges specific columns from NFO, BFO, and NSE CSV
+    files, then saves the merged data to a new CSV file.
+    :return: The function `merge_ins_csv_files` returns the merged DataFrame containing the columns
+    specified in the `columns_to_keep` list. If the merging process is successful, it saves the merged
+    DataFrame to a CSV file named "merged_alice_ins.csv" and returns the merged DataFrame. If an error
+    occurs during the merging process, it logs the error and returns `None`.
+    """
     columns_to_keep = [
         "Exch",
         "Exchange Segment",
@@ -90,6 +109,17 @@ def merge_ins_csv_files():
 
 # This function downloads the instrument csv files from Aliceblue trading platform
 def get_ins_csv_alice(user_details):
+    """
+    The function `get_ins_csv_alice` fetches instruments for ALICE using user details provided and
+    merges the instrument CSV files.
+    
+    :param user_details: The `get_ins_csv_alice` function seems to be fetching instruments for ALICE
+    using the provided user details. The user details typically include information about the broker
+    such as the username, API key, and session ID
+    :return: The function `get_ins_csv_alice` is returning the merged instrument CSV files for ALICE
+    after fetching instruments for NFO, BFO, and NSE using the provided user details. If an error occurs
+    during the process, it will return `None`.
+    """
     logger.debug(f"Fetching instruments for ALICE using {user_details['Broker']['BrokerUsername']}")
     alice = Aliceblue(
         user_id=user_details["Broker"]["BrokerUsername"],
@@ -107,6 +137,16 @@ def get_ins_csv_alice(user_details):
         return None
 
 def fetch_aliceblue_holdings_value(user):
+    """
+    The function fetches the total invested value of holdings for a user using Aliceblue API.
+    
+    :param user: The `fetch_aliceblue_holdings_value` function takes a `user` parameter, which is
+    expected to be a dictionary containing information about the user's broker account. The user
+    dictionary should have the following structure:
+    :return: The function `fetch_aliceblue_holdings_value` returns the total invested value of the
+    user's holdings in Aliceblue. If there is an error during the process, it logs the error and returns
+    0.0.
+    """
     try:
         alice = Aliceblue(user["Broker"]["BrokerUsername"], user["Broker"]["ApiKey"], session_id=user["Broker"]["SessionId"])
         holdings = alice.get_holding_positions()
@@ -126,6 +166,19 @@ def fetch_aliceblue_holdings_value(user):
 
 
 def simplify_aliceblue_order(detail):
+    """
+    The function `simplify_aliceblue_order` processes order details and returns a simplified dictionary
+    representation of the order.
+    
+    :param detail: The `simplify_aliceblue_order` function takes in a dictionary `detail` containing
+    various details of an order. It processes the details and returns a simplified version of the order
+    information
+    :return: The function `simplify_aliceblue_order` is returning a dictionary containing simplified
+    order details. The keys in the dictionary include "trade_id", "avg_price", "qty", "time",
+    "strike_price", "option_type", "trading_symbol", "trade_type", and "order_type". The function
+    handles different scenarios based on the input details and returns the simplified order information.
+    If an
+    """
     try:
         if detail["optionType"] == "XX":
             strike_price = 0
@@ -158,6 +211,15 @@ def simplify_aliceblue_order(detail):
 
 
 def create_alice_obj(user_details):
+    """
+    The function `create_alice_obj` creates an instance of the Aliceblue class using user details such
+    as BrokerUsername, ApiKey, and SessionId.
+    
+    :param user_details: The `user_details` parameter is expected to be a dictionary containing the
+    following keys:
+    :return: An Aliceblue object with the user details provided, including BrokerUsername, ApiKey, and
+    SessionId.
+    """
     return Aliceblue(
         user_id=user_details["BrokerUsername"],
         api_key=user_details["ApiKey"],
@@ -166,6 +228,17 @@ def create_alice_obj(user_details):
 
 
 def aliceblue_todays_tradebook(user):
+    """
+    The function `aliceblue_todays_tradebook` fetches the order history for a user from an AliceBlue
+    trading account, handling potential errors.
+    
+    :param user: The `user` parameter in the `aliceblue_todays_tradebook` function is likely used to
+    identify the user for whom the tradebook is being fetched. It is passed to the `create_alice_obj`
+    function to create an object representing the user's account and then used to retrieve the
+    :return: The function `aliceblue_todays_tradebook(user)` will return the tradebook orders for the
+    user if the orders are successfully fetched. If there is an error during the process, it will return
+    `None`.
+    """
     try:
         alice = create_alice_obj(user)
         orders = alice.get_order_history("")
@@ -179,6 +252,17 @@ def aliceblue_todays_tradebook(user):
 
 
 def calculate_transaction_type(transaction_type):
+    """
+    The function `calculate_transaction_type` converts a string transaction type to an enum value.
+    
+    :param transaction_type: The `calculate_transaction_type` function you provided seems to be
+    converting a transaction type string ("BUY" or "SELL") into an enum value (TransactionType.Buy or
+    TransactionType.Sell)
+    :return: The function `calculate_transaction_type` is returning the corresponding `TransactionType`
+    enum value based on the input `transaction_type` string. If the input is "BUY", it returns
+    `TransactionType.Buy`, if the input is "SELL", it returns `TransactionType.Sell`. If the input is
+    neither "BUY" nor "SELL", it raises a ValueError indicating that the transaction_type is invalid
+    """
     if transaction_type == "BUY":
         transaction_type = TransactionType.Buy
     elif transaction_type == "SELL":
@@ -189,6 +273,16 @@ def calculate_transaction_type(transaction_type):
 
 
 def calculate_order_type(order_type):
+    """
+    The function `calculate_order_type` converts a given order type string to a corresponding OrderType
+    enum value.
+    
+    :param order_type: The `calculate_order_type` function takes an `order_type` as input and converts
+    it to an `OrderType` enum value based on the following conditions:
+    :return: The function `calculate_order_type` is returning the corresponding `OrderType` based on the
+    input `order_type`. The return value will be the appropriate `OrderType` enum value based on the
+    conditions specified in the function.
+    """
     if order_type.lower() == "stoploss":
         order_type = OrderType.StopLossLimit
     elif order_type.lower() == "market" or order_type.lower() == "mis":
@@ -201,6 +295,18 @@ def calculate_order_type(order_type):
 
 
 def calculate_product_type(product_type):
+    """
+    The function `calculate_product_type` converts a string representation of a product type to an enum
+    value.
+    
+    :param product_type: It looks like the `calculate_product_type` function is designed to convert a
+    string representation of a product type into an enum value. The function checks the input
+    `product_type` string and maps it to the corresponding enum value from the `ProductType` enum
+    :return: The function `calculate_product_type` is returning the corresponding `ProductType` enum
+    value based on the input `product_type` string. If the input `product_type` is "NRML", it returns
+    `ProductType.Normal`, if it is "MIS", it returns `ProductType.Intraday`, and if it is "CNC", it
+    returns `ProductType.Delivery`. If the
+    """
     if product_type == "NRML":
         product_type = ProductType.Normal
     elif product_type == "MIS":
@@ -213,6 +319,20 @@ def calculate_product_type(product_type):
 
 
 def get_order_status(alice, order_id):
+    """
+    The function `get_order_status` retrieves the status of an order and returns "PASS" if the status is
+    not "rejected", otherwise it returns "FAIL".
+    
+    :param alice: Alice is an object or instance of a class that has a method
+    `get_order_history(order_id)` which is used to retrieve the status of a specific order identified by
+    `order_id`
+    :param order_id: The `order_id` parameter is the unique identifier for a specific order that you
+    want to retrieve the status of. It is used as input to the `get_order_status` function to fetch the
+    status of the order from the `alice` object
+    :return: The function `get_order_status` will return either "PASS" if the order status is not
+    "rejected", or "FAIL" if there is an error fetching the order status or if the order status is
+    "rejected".
+    """
     try:
         order_status = alice.get_order_history(order_id)
         if order_status["Status"] == "rejected":
@@ -224,6 +344,21 @@ def get_order_status(alice, order_id):
 
 
 def ant_place_orders_for_users(orders_to_place, users_credentials):
+    """
+    The function `ant_place_orders_for_users` places orders for users based on the provided parameters
+    and returns the order details.
+    
+    :param orders_to_place: It seems like the code snippet you provided is a function named
+    `ant_place_orders_for_users` that is responsible for placing orders for users based on the input
+    parameters. The function takes two parameters:
+    :param users_credentials: It seems like the definition of the `users_credentials` parameter is
+    missing in the provided code snippet. Could you please provide more information about what data or
+    credentials are expected to be passed in the `users_credentials` parameter when calling the
+    `ant_place_orders_for_users` function? This will help in understanding
+    :return: The function `ant_place_orders_for_users` returns a dictionary `results` containing
+    information about the order placement process. The dictionary includes keys such as
+    "exchange_token", "order_id", "qty", "time_stamp", "trade_id", "order_status", and "tax".
+    """
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
 
     results = {
@@ -249,7 +384,7 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
     if product == "CNC":
         segment = "NSE"
     else:
-        segment = Instrument().get_segment_by_exchange_token(str(exchange_token))
+        segment = Instrument().get_exchange_by_exchange_token(str(exchange_token))
 
     limit_prc = orders_to_place.get("limit_prc", None)
     trigger_price = orders_to_place.get("trigger_prc", None)
@@ -293,16 +428,6 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         return results
 
     try:
-        # logger.debug(f"transaction_type: {transaction_type}")
-        # logger.debug(f"order_type: {order_type}")
-        # logger.debug(f"product_type: {product_type}")
-        # logger.debug(f"segment: {segment}")
-        # logger.debug(f"exchange_token: {exchange_token}")
-        # logger.debug(f"qty: {qty}")
-        # logger.debug(f"limit_prc: {limit_prc}")
-        # logger.debug(f"trigger_price: {trigger_price}")
-        # logger.debug(f"instrument: {alice.get_instrument_by_token(segment, int(exchange_token))}")
-        # logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
         order_id = alice.place_order(
             transaction_type=transaction_type,
             instrument=alice.get_instrument_by_token(segment, int(exchange_token)),
@@ -335,12 +460,27 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
             "qty": qty,
             "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
             "trade_id": orders_to_place.get("trade_id", ""),
-            "order_status": order_status
+            "order_status": order_status,
+            "tax":orders_to_place.get("tax", 0)
         }
 
     return results
 
 def ant_modify_orders_for_users(order_details, user_credentials):
+    """
+    The function `ant_modify_orders_for_users` modifies orders for a user based on the provided order
+    details and user credentials.
+    
+    :param order_details: order_details is a dictionary containing details of an order, such as
+    username, strategy, exchange token, transaction type, order type, product type, segment, limit
+    price, trigger price, and quantity
+    :param user_credentials: User credentials typically include information such as username, password,
+    API key, and any other necessary authentication details that are required to access a user's account
+    or perform actions on behalf of the user. These credentials are used to authenticate and authorize
+    the user before allowing them to interact with the system or perform specific tasks
+    :return: The function `ant_modify_orders_for_users` is returning `None` in case of an exception
+    occurring during the order modification process.
+    """
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
 
     alice = create_alice_obj(user_credentials)
@@ -378,6 +518,22 @@ def ant_modify_orders_for_users(order_details, user_credentials):
 
 
 def ant_create_counter_order(trade, user):
+    """
+    The function `ant_create_counter_order` creates a counter order based on trade information extracted
+    from a trade object.
+    
+    :param trade: The `trade` parameter seems to be a dictionary containing information related to a
+    trade. It includes keys such as "remarks", "token", "Trantype", "Pcode", "Qty", etc. The function
+    `ant_create_counter_order` is designed to create a counter order based on the
+    :param user: The `user` parameter is likely a user object or identifier that is being passed to the
+    `ant_create_counter_order` function. It may contain information about the user who is initiating the
+    trade or performing some action related to the trade. This information could be used within the
+    function for logging, permissions,
+    :return: The function `ant_create_counter_order` is returning a dictionary `counter_order`
+    containing various details related to a trade, such as strategy name, signal, base symbol, exchange
+    token, transaction type, order type, product type, trade ID, order mode, and quantity. If an error
+    occurs during the process, the function will log the error and return `None`.
+    """
     try:
         strategy_name = get_strategy_name_from_trade_id(trade["remarks"])
         counter_order = {
@@ -399,6 +555,21 @@ def ant_create_counter_order(trade, user):
 
 
 def ant_create_hedge_counter_order(trade, user):
+    """
+    The function `ant_create_hedge_counter_order` creates a counter order based on trade information,
+    with error handling in place.
+    
+    :param trade: The `trade` parameter in the `ant_create_hedge_counter_order` function seems to be a
+    dictionary containing information related to a trade. It likely includes the following key-value
+    pairs:
+    :param user: The `user` parameter is not used in the `ant_create_hedge_counter_order` function. It
+    is passed as an argument but not utilized within the function. If you intended to use the `user`
+    parameter in some way, you would need to modify the function to incorporate it into the logic
+    :return: The function `ant_create_hedge_counter_order` is returning a dictionary object
+    `counter_order` containing various details related to a trade, such as strategy name, signal, base
+    symbol, exchange token, transaction type, order type, product type, trade ID, order mode, and
+    quantity. If an error occurs during the process, it will return `None`.
+    """
     try:
         trade_id = trade["remarks"].replace("EN", "EX")
         counter_order = {
@@ -420,6 +591,17 @@ def ant_create_hedge_counter_order(trade, user):
 
 
 def ant_create_cancel_orders(trade, user):
+    """
+    The function `ant_create_cancel_orders` attempts to cancel a trade order using an object created
+    with user details, logging any errors encountered.
+    
+    :param trade: The `trade` parameter seems to be a dictionary containing information related to a
+    trade. It likely includes details such as the order number (`Nstordno`) that needs to be cancelled
+    :param user: The `user` parameter seems to be a dictionary containing user details, and
+    specifically, it looks like it contains information related to a broker. In the code snippet
+    provided, the user details related to the broker are accessed using `user["Broker"]`
+    :return: None
+    """
     try:
         alice = create_alice_obj(user_details=user["Broker"])
         alice.cancel_order(trade["Nstordno"])
@@ -515,6 +697,18 @@ def process_alice_ledger(excel_file_path):
 
 
 def calculate_alice_net_values(categorized_dfs):
+    """
+    The function `calculate_alice_net_values` calculates the net values for each category based on the
+    debit and credit values in the input categorized dataframes.
+    
+    :param categorized_dfs: It seems like you were about to provide more information about the
+    `categorized_dfs` parameter, but it seems to be missing. Could you please provide the details or the
+    structure of the `categorized_dfs` parameter so that I can assist you further with the
+    `calculate_alice_net_values
+    :return: The function `calculate_alice_net_values` returns a dictionary where the keys are
+    categories and the values are the net values calculated as the sum of "Debit" minus the sum of
+    "Credit" for each category's DataFrame in the input `categorized_dfs`.
+    """
     # Calculate net values for each category
     net_values = {
         category: df["Debit"].sum() - df["Credit"].sum()
@@ -523,6 +717,17 @@ def calculate_alice_net_values(categorized_dfs):
     return net_values
 
 def fetch_open_orders(user):
+    """
+    The function fetches open orders for a given user using an Alice object and returns the open
+    positions.
+    
+    :param user: The `fetch_open_orders` function seems to be designed to fetch open orders for a given
+    user. It takes a `user` parameter as input, which likely contains information about the user, such
+    as their broker details
+    :return: The function `fetch_open_orders` is attempting to fetch open orders for a given user. If
+    successful, it will return the open net position. If an error occurs during the process, it will log
+    the error and return `None`.
+    """
     try:
         alice = create_alice_obj(user['Broker'])
         Net_position = alice.get_netwise_positions()
@@ -533,6 +738,17 @@ def fetch_open_orders(user):
         return None
 
 def get_alice_pnl(user):
+    """
+    The function `get_alice_pnl` retrieves the total profit and loss (PnL) for a user's positions using
+    an Alice object and logs any errors encountered.
+    
+    :param user: The `get_alice_pnl` function seems to be designed to calculate the total profit and
+    loss (PnL) for a user's positions using an object called `alice` and the `get_netwise_positions`
+    method. If any errors occur during the process, it logs the error and
+    :return: The function `get_alice_pnl` returns the total profit and loss (PnL) for the user's
+    positions obtained from the Alice object created using the user's broker information. If an error
+    occurs during the process, it logs the error and returns `None`.
+    """
     try:
         alice = create_alice_obj(user['Broker'])
         positions = alice.get_netwise_positions()
@@ -541,3 +757,23 @@ def get_alice_pnl(user):
     except Exception as e:
         logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
         return None
+    
+def get_margin_utilized(user_credentials):
+    """
+    Calculates the required margin for an order based on the order details and user credentials.
+
+    Args:
+        order (dict): Details of the order for which margin needs to be calculated.
+        user_credentials (dict): Credentials required for accessing the user's trading account.
+        broker (str): Name of the broker to apply specific adjustments if needed.
+
+    Returns:
+        float: The calculated margin for the order.
+
+    Raises:
+        Exception: If there is an error in calculating the margin.
+    """
+    discord_admin_bot("get_order_margin for alice blue has not been implemented yet")
+
+def get_broker_payin(user):
+    discord_admin_bot("get_broker_payin for alice blue has not been implemented yet")

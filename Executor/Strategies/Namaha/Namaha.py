@@ -25,6 +25,8 @@ from Executor.Strategies.StrategiesUtil import (
     calculate_stoploss,
     calculate_transaction_type_sl,
     calculate_trigger_price,
+    fetch_qty_amplifier,
+    fetch_strategy_amplifier
 )
 
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
@@ -102,7 +104,9 @@ main_exchange_token = instrument_obj.get_exchange_token_by_criteria(
 ltp = InstrumentCenterUtils.get_single_ltp(exchange_token=main_exchange_token)
 lot_size = instrument_obj.get_lot_size_by_exchange_token(main_exchange_token)
 
-update_qty_user_firebase(strategy_name, ltp, lot_size)
+qty_amplifier = fetch_qty_amplifier(strategy_name,strategy_type)
+strategy_amplifier = fetch_strategy_amplifier(strategy_name)
+update_qty_user_firebase(strategy_name, ltp, lot_size,qty_amplifier,strategy_amplifier)
 
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(
     main_exchange_token

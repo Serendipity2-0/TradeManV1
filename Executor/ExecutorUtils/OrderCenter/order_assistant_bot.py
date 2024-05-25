@@ -1,7 +1,6 @@
 import openai
 import time
 import yfinance as yf
-from Executor.ExecutorUtils.
 
 
 def get_stock_price(symbol: str) -> float:
@@ -31,7 +30,7 @@ tools_list = [{
 
 
 # Initialize the client
-client = openai.OpenAI(api_key="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")
+client = openai.OpenAI(api_key="")
 
 # Step 1: Create an Assistant
 assistant = client.beta.assistants.create(

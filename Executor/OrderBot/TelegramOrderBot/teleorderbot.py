@@ -420,7 +420,7 @@ def process_confirmation(update: Update, context: CallbackContext) -> int:
 
         # Pass the list of details to orders_via_telegram function
         for order_details in order_details_list:
-            print(order_details)
+            logger.debug(order_details)
             # place_order.orders_via_telegram(order_details)
 
         clear_user_data(context)

@@ -35,7 +35,7 @@ tools_list = [{
 
 
 # Initialize the client
-client = openai.OpenAI(api_key="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")
+client = openai.OpenAI(api_key="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 
 # Step 1: Create an Assistant
 assistant = client.beta.assistants.create(

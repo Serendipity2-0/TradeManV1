@@ -81,7 +81,7 @@ def compare_freecash(broker_free_cash, db_free_cash):
 
     for user in broker_free_cash:
         try:
-            message = f"Trader Number - {user} : Broker Freecash - {broker_free_cash[user]} : Difference - {broker_free_cash[user] - db_free_cash[user]}"
+            message = f"Trader Number - {user} : Broker Freecash - {round(broker_free_cash[user],2)} : Difference - {round(broker_free_cash[user] - db_free_cash[user],2)}"
             discord_admin_bot(message)
             sleep(0.3)            
         except KeyError:
@@ -94,7 +94,7 @@ def compare_freecash(broker_free_cash, db_free_cash):
         try:
             if abs(broker_free_cash[user] - db_free_cash[user]) > float(tolerable_difference) * db_free_cash[user]:
                 logger.error(f"Free cash for {user} is not matching")
-                discord_admin_bot(f"Free cash for {user} is not matching, BrokerFreeCash - {broker_free_cash[user]}, DBFreeCash - {db_free_cash[user]}")            
+                discord_admin_bot(f"Free cash for {user} is not matching, BrokerFreeCash - {round(broker_free_cash[user],2)}, DBFreeCash - {round(db_free_cash[user],2)}")            
             else:
                 logger.info(f"Free cash for {user} is matching")
             update_fields_firebase(CLIENTS_USER_FB_DB, user, {dt.datetime.now().strftime("%d%b%y") + "_FreeCash": broker_free_cash[user]},"Accounts")

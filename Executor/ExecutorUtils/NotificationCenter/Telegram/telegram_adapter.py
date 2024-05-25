@@ -2,6 +2,9 @@ import requests
 from telethon.sync import TelegramClient
 import os, sys
 from dotenv import load_dotenv
+import asyncio
+import nest_asyncio
+
 
 DIR = os.getcwd()
 sys.path.append(DIR)  # Add the current directory to the system path
@@ -14,20 +17,9 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-
 # Retrieve API details and contact number from the environment variables
 api_id = os.getenv("TELETHON_API_ID")
 api_hash = os.getenv("TELETHON_API_HASH")
-
-
-def telegram_msg_bot(message, token):
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    data = {"chat_id": "YOUR_CHAT_ID", "text": message}
-    response = requests.post(url, json=data)
-    if response.status_code == 200:
-        logger.info("Message sent successfully!")
-    else:
-        logger.error("Failed to send message.")
 
 
 def send_telegram_message(phone_number, message):
@@ -42,6 +34,30 @@ def send_telegram_message(phone_number, message):
         while message:
             chunk, message = message[:4096], message[4096:]
             client.send_message(phone_number, chunk, parse_mode="md")
+
+async def send_telegram_message_async(phone_number, message, session_filepath, api_id, api_hash):
+    async with TelegramClient(session_filepath, api_id, api_hash) as client:
+        while message:
+            chunk, message = message[:4096], message[4096:]
+            await client.send_message(phone_number, chunk, parse_mode="md")
+
+def send_telegram_async_message(phone_number, message):
+    global api_id, api_hash
+    # Define the session file path
+    session_filepath = os.path.join(
+        DIR, "Executor/ExecutorUtils/NotificationCenter/Telegram/+918618221715.session"
+    )
+
+    # Create a new event loop and set it as the current loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        # Run the asynchronous function
+        loop.run_until_complete(send_telegram_message_async(phone_number, message, session_filepath, api_id, api_hash))
+    finally:
+        # Close the loop at the end of the script
+        loop.close()
 
 def send_file_via_telegram(recipient,file_path, file_name, is_group=False):
     global api_id, api_hash

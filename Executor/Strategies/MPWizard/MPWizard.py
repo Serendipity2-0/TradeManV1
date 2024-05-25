@@ -15,9 +15,9 @@ from Executor.Strategies.StrategiesUtil import StrategyBase
 
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
-from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
-)
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 import MPWizard_calc as MPWizard_calc
 
@@ -47,7 +47,7 @@ def main():
     now = dt.datetime.now()
 
     if now.date() in ExeUtils.holidays:
-        print("Skipping execution as today is a holiday.")
+        logger.info("Skipping execution as today is a holiday.")
         return
 
     # Update the JSON file with average range data
@@ -60,7 +60,7 @@ def main():
         now.year, now.month, now.day, start_hour, start_minute
     )
     wait_time = desired_start_time - now
-    print(f"Waiting for {wait_time} before starting the bot")
+    logger.info(f"Waiting for {wait_time} before starting the bot")
 
     # Sleep for the calculated wait time if it's positive
     if wait_time.total_seconds() > 0:

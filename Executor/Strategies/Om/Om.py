@@ -22,6 +22,8 @@ from Executor.Strategies.StrategiesUtil import (
     update_signal_firebase,
     place_order_strategy_users,
     calculate_transaction_type_sl,
+    fetch_qty_amplifier,
+    fetch_strategy_amplifier
 )
 
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
@@ -29,7 +31,6 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
 from Executor.ExecutorUtils.ExeUtils import holidays
-
 
 class Om(StrategyBase):
     def get_general_params(self):
@@ -51,6 +52,8 @@ next_trade_prefix = om_strategy_obj.NextTradeId
 desired_start_time_str = om_strategy_obj.get_entry_params().EntryTime
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
 window = om_strategy_obj.get_raw_field("EntryParams").get("Window")
+strategy_name = om_strategy_obj.StrategyName
+strategy_type = om_strategy_obj.GeneralParams.StrategyType
 
 def flip_coin():
     # Randomly choose between 'Heads' and 'Tails'
@@ -88,11 +91,15 @@ def fetch_exchange_token(base_symbol, strike_prc, option_type):
 
 
 def update_qty(base_symbol, strike_prc, option_type):
+    global strategy_name, strategy_type
     exchange_token = fetch_exchange_token(base_symbol, strike_prc, option_type)
     token = instrument_obj.get_kite_token_by_exchange_token(exchange_token)
     ltp = InstrumentCenterUtils.get_single_ltp(token)
     lot_size = instrument_obj.get_lot_size_by_exchange_token(exchange_token)
-    update_qty_user_firebase(om_strategy_obj.StrategyName, ltp, lot_size)
+    lot_size = instrument_obj.get_lot_size_by_exchange_token(exchange_token)
+    qty_amplifier = fetch_qty_amplifier(strategy_name,strategy_type)
+    strategy_amplifier = fetch_strategy_amplifier(strategy_name)
+    update_qty_user_firebase(om_strategy_obj.StrategyName, ltp, lot_size,qty_amplifier,strategy_amplifier)
 
 
 def create_order_details(exchange_token, base_symbol):
@@ -164,16 +171,16 @@ def main():
     now = dt.datetime.now()
 
     if now.date() in holidays:
-        print("Skipping execution as today is a holiday.")
+        logger.info("Skipping execution as today is a holiday.")
         return
 
     # If it's already past 11:35 AM, no need to wait
     if seconds_until_11_30_am < 0:
-        print("The window has already passed.")
+        logger.warning("The window has already passed.")
     else:
         # Wait until 11:30 AM, then an additional random amount of time within the 5-minute window
         total_wait_seconds = max(seconds_until_11_30_am, 0) + random_seconds
-        print(f"Waiting for {total_wait_seconds} seconds.")
+        logger.info(f"Waiting for {total_wait_seconds} seconds.")
         time.sleep(total_wait_seconds)
 
     base_symbol, strike_prc, option_type = determine_strike_and_option()

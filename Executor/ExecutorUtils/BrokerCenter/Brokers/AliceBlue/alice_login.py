@@ -13,6 +13,17 @@ logger = LoggerSetup()
 
 
 class CryptoJsAES:
+    """
+    NOTE: THIS CLASS HAS BEEN GIVEN BY ALICEBLUE
+    
+    The `CryptoJsAES` class is a utility class that provides methods for encrypting and decrypting
+    data using the AES algorithm. It is designed to be used in conjunction with the `pya3` library,
+    which provides a Python interface to the AES encryption algorithm.
+    
+    The class provides two methods: `encrypt` and `decrypt`. The `encrypt` method takes a plaintext
+    string and a password as input and returns an encrypted string. The `decrypt` method takes an
+    encrypted string and a password as input and returns the original plaintext string.
+    """
     @staticmethod
     def __pad(data):
         BLOCK_SIZE = 16

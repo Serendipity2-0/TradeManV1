@@ -30,37 +30,49 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     place_order_for_brokers,
     modify_order_for_brokers,
     fetch_strategy_details_for_user,
-    CLIENTS_USER_FB_DB
+    CLIENTS_USER_FB_DB,
+    get_orders_tax
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     fetch_qty_for_holdings_sqldb,
 )
 
-def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size):
-    logger.info(f"Calculating quantity for strategy with capital: {capital} risk: {risk} avg_sl_points: {avg_sl_points} lot_size: {lot_size}")
+def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size, qty_amplifier=None, strategy_amplifier=None):
+    logger.info(f"Calculating quantity for strategy with capital: {capital}, risk: {risk}, avg_sl_points: {avg_sl_points}, lot_size: {lot_size}")
     try:
+        # Set default multipliers if amplifiers are not provided
+        qty_multiplier = 1 + (qty_amplifier / 100) if qty_amplifier is not None else 1   #qty_multiplier is fetcched from the marketinfo
+        strategy_multiplier = 1 + (strategy_amplifier / 100) if strategy_amplifier is not None else 1 #strategy_multiplier is fetched from the strategy
+
         if avg_sl_points is not None:
+            # Calculate the base raw quantity
             raw_quantity = ((risk / 100) * capital) / avg_sl_points
+
+            # Adjust raw quantity with multipliers
+            raw_quantity *= (qty_multiplier * strategy_multiplier)
+
             # Calculate the number of lots
             number_of_lots = raw_quantity / lot_size
-            #ceil the number of lots
+
+            # Round up to the nearest whole number of lots
             number_of_lots = math.ceil(number_of_lots)
-            # Calculate the quantity as a multiple of lot_size
+
+            # Calculate the final quantity as a multiple of lot size
             quantity = int(number_of_lots * lot_size)
-            logger.debug(f"Quantity calculated for strategy: {quantity} raw_quantity: {raw_quantity} number_of_lots: {number_of_lots} lot_size: {lot_size}")
+            logger.debug(f"Final adjusted quantity: {quantity}")
         else:
-            # For other strategies, risk values represent the capital allocated
-            lots = capital / (risk / 100)
+            # For other strategies, adjust risk according to multipliers before calculating lots
+            adjusted_risk = risk / (qty_multiplier * strategy_multiplier)
+            lots = capital / (adjusted_risk / 100)
             quantity = math.ceil(lots) * lot_size
+            logger.debug(f"Quantity calculated using default strategy without avg_sl_points: {quantity}")
+
         return quantity
     except ZeroDivisionError as e:
-        logger.error(f"Error calculating quantity for strategy: {e}")
-        return 0
-    except ValueError as e:
-        logger.error(f"Error calculating quantity for strategy: {e}")
+        logger.error(f"Error calculating quantity for strategy due to division by zero: {e}")
         return 0
     except Exception as e:
-        logger.error(f"Error calculating quantity for strategy: {e}")
+        logger.error(f"General error calculating quantity for strategy: {e}")
         return 0
 
 def place_order_for_strategy_for_a_order(args):

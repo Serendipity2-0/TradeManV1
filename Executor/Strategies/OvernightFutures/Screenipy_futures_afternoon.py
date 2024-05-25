@@ -11,6 +11,8 @@ sys.path.append(DIR_PATH)
 TRADE_MODE = os.getenv("TRADE_MODE")
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
+CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
+STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 import Executor.Strategies.OvernightFutures.OvernightFutures_calc as OF_calc
 from Executor.Strategies.StrategiesUtil import StrategyBase, base_symbol_token,update_qty_user_firebase,update_signal_firebase
@@ -25,15 +27,20 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 from Executor.Strategies.StrategiesUtil import (
     assign_trade_id,
     place_order_strategy_users,
+    fetch_qty_amplifier,
+    fetch_strategy_amplifier
 )
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-hedge_transcation_type = "BUY"
-futures_option_type = "FUT"
-futures_strikeprc = 0
+logger = LoggerSetup()
 
 strategy_obj = StrategyBase.load_from_db("OvernightFutures")
 instrument_obj = InstrumentCenterUtils.Instrument()
+
+hedge_transcation_type = strategy_obj.get_raw_field("GeneralParams").get("HedgeTransactionType")
+futures_option_type = strategy_obj.get_raw_field("GeneralParams").get("FutureOptionType")
+futures_strikeprc = strategy_obj.get_raw_field("GeneralParams").get("FutureStrikePrc")
 
 strategy_name = strategy_obj.StrategyName
 base_symbols = strategy_obj.Instruments
@@ -42,7 +49,6 @@ instrument_token = base_symbol_token(base_symbol)
 
 order_type = strategy_obj.GeneralParams.OrderType
 product_type = strategy_obj.GeneralParams.ProductType
-
 
 def get_strikeprc(instrument_token, strategy_index, prediction):
     strike_prc_multiplier = strategy_obj.EntryParams.SLMultiplier
@@ -53,7 +59,6 @@ def get_strikeprc(instrument_token, strategy_index, prediction):
         strike_prc_multiplier=strike_prc_multiplier,
     )
 
-
 try:
     proxyServer = urllib.request.getproxies()["http"]
 except KeyError:
@@ -62,7 +67,7 @@ except KeyError:
 prediction, percentage = OF_calc.getNiftyPrediction(
     data=OF_calc.fetchLatestNiftyDaily(proxyServer=proxyServer), proxyServer=proxyServer
 )
-print(prediction)
+logger.debug(prediction)
 
 strikeprc = get_strikeprc(instrument_token, base_symbol, prediction)
 option_type = strategy_obj.get_option_type(prediction, "OS")
@@ -76,7 +81,7 @@ weekly_expiry = instrument_obj.get_expiry_by_criteria(
     base_symbol, strikeprc, option_type, weekly_expiry_type
 )
 monthly_expiry = instrument_obj.get_expiry_by_criteria(
-    base_symbol, 0, "FUT", monthly_expiry_type
+    base_symbol, 0, futures_option_type, monthly_expiry_type
 )
 
 
@@ -125,7 +130,6 @@ orders_to_place = [
     },
 ]
 
-
 def message_for_orders(
     prediction, main_trade_symbol, hedge_trade_symbol, weekly_expiry, monthly_expiry
 ):
@@ -138,7 +142,7 @@ def message_for_orders(
         f"Future : {main_trade_symbol} Expiry : {monthly_expiry}\n"
         f"Hedge : {hedge_trade_symbol} Expiry : {weekly_expiry}\n"
     )
-    print(message)
+    logger.debug(message)
     discord_bot(message, strategy_name)
 
 def signal_to_log_firebase(orders_to_place,predicition):
@@ -170,14 +174,14 @@ def main():
     avg_sl_points = strategy_obj.ExitParams.AvgSLPoints
 
     if now.date() in holidays:
-        print("Skipping execution as today is a holiday.")
+        logger.debug("Skipping execution as today is a holiday.")
         return
 
     wait_time = (
         dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
     )
     if wait_time.total_seconds() > 0:
-        print(f"Waiting for {wait_time} before starting the bot")
+        logger.debug(f"Waiting for {wait_time} before starting the bot")
         sleep(wait_time.total_seconds())
 
     message_for_orders(
@@ -188,8 +192,11 @@ def main():
         monthly_expiry,
     )
     orders_to_place = assign_trade_id(orders_to_place)
-    print(orders_to_place)
-    update_qty_user_firebase(strategy_name, avg_sl_points, lot_size)
+    logger.debug(orders_to_place)
+
+    qty_amplifier = fetch_qty_amplifier(strategy_name,"OS")
+    strategy_amplifier = fetch_strategy_amplifier(strategy_name)
+    update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifier,strategy_amplifier)
     signal_to_log_firebase(orders_to_place,prediction)
     place_order_strategy_users(strategy_name, orders_to_place)
 
@@ -204,7 +211,7 @@ def main():
         "HedgeExchangeToken": hedge_exchange_token,
         "Prediction": prediction,
     }
-    update_fields_firebase("strategies", strategy_name, extra_info, "ExtraInformation")
+    update_fields_firebase(STRATEGY_FB_DB, strategy_name, extra_info, "ExtraInformation")
 
 
 if __name__ == "__main__":

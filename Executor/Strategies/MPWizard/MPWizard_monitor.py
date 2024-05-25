@@ -30,6 +30,8 @@ from Executor.Strategies.StrategiesUtil import (
     update_stoploss_orders,
     update_qty_user_firebase,
     update_signal_firebase,
+    fetch_qty_amplifier,
+    fetch_strategy_amplifier
 )
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
@@ -139,7 +141,7 @@ class OrderMonitor:
             token = data["Token"]
 
             if token is None:
-                print(f"Warning: Token not found for instrument {name}")
+                logger.warning(f"Warning: Token not found for instrument {name}")
                 continue
 
             trigger_points = data["TriggerPoints"]
@@ -240,7 +242,7 @@ class OrderMonitor:
                 "trigger_prc": order_details["trigger_prc"],
                 "order_type": "Stoploss",
                 "product_type": order_details["product_type"],
-                "segment": Instrument().get_segment_by_exchange_token(order_details["exchange_token"]),
+                "segment": Instrument().get_exchange_by_exchange_token(order_details["exchange_token"]),
                 "strategy_mode": "MultipleInstruments",
             }
         ]
@@ -267,19 +269,21 @@ class OrderMonitor:
             lot_size = FNOInfo().get_lot_size_by_base_symbol(name)
 
             if self.orders_placed_today >= self.max_orders_per_day:
-                print(
+                logger.info(
                     "Daily signal limit reached. No more signals will be generated today."
                 )
                 return
             order_to_place, trade_prefix = self.create_order_details(name, cross_type, ltp, price_ref)
             logger.debug(f"Placing orders for {order_to_place}")
-            update_qty_user_firebase(strategy_obj.StrategyName,price_ref,lot_size)
+            qty_amplifier = fetch_qty_amplifier(strategy_obj.StrategyName,strategy_obj.GeneralParams.StrategyType)
+            strategy_amplifier = fetch_strategy_amplifier(strategy_obj.StrategyName)
+            update_qty_user_firebase(strategy_obj.StrategyName, price_ref, lot_size,qty_amplifier,strategy_amplifier)
             signal_log_firebase(order_to_place,cross_type,trade_prefix)
             place_order_strategy_users(strategy_obj.StrategyName, order_to_place)
 
 
             if message:
-                print(message)
+                logger.debug(message)
                 discord_bot(message, strategy_obj.StrategyName)
 
             self.indices_triggered_today.add(name)
@@ -293,7 +297,7 @@ class OrderMonitor:
                     if order["order_mode"] == "SL":
                         self.instrument_monitor.add_token(order_details=order)
         else:
-            print("Index name not found for token:", instrument)
+            logger.error("Index name not found for token:", instrument)
 
     def process_modify_orders(self, order_details, message=None):
         logger.debug(f"Starting Modifying orders")
@@ -335,21 +339,21 @@ class OrderMonitor:
                     order_details["exchange_token"]
                 )
                 message = f"New target for {trading_symbol} set to {new_target} and new limit price set to {new_limit_prc} and new trigger price is {new_trigger_prc}."
-                print(message)
+                logger.debug(message)
                 discord_bot(message, strategy_obj.StrategyName)
             else:
-                print("No order details available to update target and limit prices.")
+                logger.debug("No order details available to update target and limit prices.")
 
         elif data["type"] == "limit":
             trading_symbol = self.get_instrument_by_token(
                 order_details["exchange_token"]
             )
             message = f"Stoploss reached for {trading_symbol}."
-            print(message)
+            logger.debug(message)
             discord_bot(message, strategy_obj.StrategyName)
 
     def monitor_index(self):
-        print("Monitoring started...")
+        logger.debug("Monitoring started...")
         if dt.date.today() != self.today_date:
             self._reset_daily_counters()
             self.message_sent = {

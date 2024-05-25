@@ -16,6 +16,7 @@ cred_filepath = os.getenv("FIREBASE_CRED_PATH")
 firebase_db_url = os.getenv("FIREBASE_DATABASE_URL")
 CLIENTS_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
+ADMIN_DB = os.getenv("FIREBASE_ADMIN_COLLECTION")
 
 cred = credentials.Certificate(cred_filepath)
 firebase_admin.initialize_app(cred, {"databaseURL": firebase_db_url})
@@ -135,21 +136,6 @@ def update_strategy_by_name_from_file(strategy_name, file_path):
             return f"Strategy data for {strategy_name} updated successfully from file {file_path}."
     return "Strategy not found to update."
 
-
-def update_maket_info_for_strategies():
-    market_info = fetch_collection_data_firebase("market_info")
-    strategies = fetch_collection_data_firebase("strategies")
-    for strategy_key, strategy_data in strategies.items():
-        strategy_data["market_info"] = market_info
-        update_fields_firebase("strategies", strategy_key, strategy_data)
-    return "Market info updated for all strategies."
-
-
-def upload_client_data_to_firebase(user_dict):
-    ref = db.reference("trademan_clients")
-    ref.push(user_dict)
-    return "Data uploaded successfully"
-
 def upload_collection(collection, data):
     ref = db.reference(collection)
     ref.push(data)
@@ -160,10 +146,9 @@ def update_collection(collection, data):
     ref.update(data)
     return "Data updated successfully"
 
-def upload_client_data_to_firebase(user_dict):
+def upload_new_client_data_to_firebase(trader_number, user_dict):
     ref = db.reference(CLIENTS_DB)
-    # Use the new_tr_no as a key for the new entry
-    new_ref = ref.child("Tr13") # TODO: get the new_tr_no from the admin fb db
+    new_ref = ref.child(trader_number) 
     new_ref.set(user_dict)
     # ref.push(user_dict)
     return "Data uploaded successfully"

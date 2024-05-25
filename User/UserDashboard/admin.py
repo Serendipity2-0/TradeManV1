@@ -18,7 +18,12 @@ import plotly.graph_objects as go
 import streamlit as st
 from formats import custom_format
 from dotenv import load_dotenv
-from User.UserDashBoard.profile_page import display_performance_dashboard, table_style
+
+
+from User.UserDashboard.profile_page import display_performance_dashboard, table_style
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 
 # Initialize session_state if it doesn't exist
@@ -716,7 +721,7 @@ def show_profile(selected_client, selected_client_name):
                     ]
 
                     # Debugging: Print the filtered default_strategy_names
-                    print(
+                    logger.debug(
                         f"Filtered default_strategy_names for Strategy {i+1}:",
                         default_strategy_names,
                     )
@@ -797,7 +802,7 @@ def login():
     if st.button("Login"):
         if login_admin(username, password):
             st.session_state.login_successful = True
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Invalid username or password.")
 

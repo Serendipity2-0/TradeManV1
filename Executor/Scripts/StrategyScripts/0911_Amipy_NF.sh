@@ -12,9 +12,9 @@ chat_id='-367108102'
 
 # Run the script
 while true; do
-    # Check if the current hour is greater than 16 (4 pm)
+    # Check if the current hour is greater than 15 (3 pm)
     current_hour=$(date +%H)
-    if ((current_hour >= 15)); then
+    if ((current_hour>=15)); then
         echo "The script will not retry after 3 pm."
         break
     fi
@@ -32,12 +32,20 @@ while true; do
 
     # If the command failed and we've reached the maximum number of attempts, send a message and exit
     if ((attempt==max_attempts)); then
-        echo "The script AmiPy has some errors. Please Check !!!"
-        
-        # Send a message on Telegram
-        curl -s -X POST https://api.telegram.org/bot$telegram_bot_token/sendMessage -d chat_id=$chat_id -d text="AmiPy errors. Please Check !!!"
+        # Get the current time
+        current_hour=$(date +%H)
+        if ((current_hour<=15)); then
+            echo "The script AmiPy has some errors. Please Check !!!"
+            
+            # Send a message on Telegram
+            curl -s -X POST https://api.telegram.org/bot$telegram_bot_token/sendMessage -d chat_id=$chat_id -d text="AmiPy errors. Please Check !!!"
 
-        exit 1
+            exit 1
+        else
+            # Exit without a message if the time is greater than 15
+            echo "Script failed after 3 PM, exiting without notification."
+            exit 1
+        fi
     fi
 
     # Wait before retrying the command

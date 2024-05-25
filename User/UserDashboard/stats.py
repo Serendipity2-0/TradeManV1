@@ -140,7 +140,7 @@ def return_statistics(df, is_signals):
         "No of Losses": number_of_losses(df, is_signals),
         "No of Cons Win": consecutive_wins(df, is_signals),
         "No of Cons Loss": consecutive_losses(df, is_signals),
-        "Avg. Profit/Loss (Expectancy $)": avg_profit_loss(df, is_signals),
+        "Avg. Profit/Loss (Expectancy Rs)": avg_profit_loss(df, is_signals),
         "Avg. Profit/Loss % (Expectancy %)": avg_profit_loss_percent(df, is_signals),
         "Max. Trade Drawdown": max_trade_drawdown(df, is_signals),
         "Max. System Drawdown": max_system_drawdown(df, is_signals),

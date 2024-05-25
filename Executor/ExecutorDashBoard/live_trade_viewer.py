@@ -22,11 +22,13 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_u
 user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 
 def trade_state_viewer():
+    """
+    The `trade_state_viewer` function in Python fetches user trade data from Firebase, allows the user
+    to select a user and strategy, and displays the trade state information including order details.
+    """
     # Initialize the Streamlit app
     st.title('User Trade State Viewer')
-    # Fetch data from Firebase
-    # users_data = fetch_active_users_from_firebase()
-    
+
     # Fetch data from Firebase
     users_data = fetch_collection_data_firebase(user_db_collection)
 
@@ -51,21 +53,34 @@ def trade_state_viewer():
                 st.write("No orders found for the selected strategy.")
                 
 def format_in_indian_lakhs_crores(number):
+    """
+    The function `format_in_indian_lakhs_crores` formats a given number in Indian currency with commas,
+    and displays the amount in Lakhs or Crores based on the magnitude of the number.
+    
+    :param number: The `format_in_indian_lakhs_crores` function takes a number as input and formats it
+    in Indian currency style, either in Lakhs or Crores based on the magnitude of the number
+    :return: The function `format_in_indian_lakhs_crores` takes a number as input and returns a
+    formatted string representing the number in Indian currency format. If the number is less than 1
+    lakh, it returns the number with 2 decimal places prefixed with the Indian Rupee symbol (₹). If the
+    number is between 1 lakh and 1 crore, it returns the number divided
+    """
     if number < 1e5:
         return f"₹{number:,.2f}"
     elif number < 1e7:
         return f"₹{number/1e5:.2f} Lacs"
     else:
         return f"₹{number/1e7:.2f} Crores"
-# Example usage with your metrics
                 
 def calculate_trademan_stats():
+    """
+    The function `calculate_trademan_stats` fetches active user data, calculates total AUM, net PnL, and
+    displays metrics and detailed user data in a DataFrame.
+    """
     from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 
     users_data = fetch_active_users_from_firebase()
     today_fb_format = datetime.now().strftime("%d%b%y")
     today_acc_key = f"{today_fb_format}_AccountValue"
-    logger.debug(f"type users_data: {type(users_data)}")
     
     previous_trading_day_fb_format = get_previous_trading_day(datetime.today())
     previous_day_key = previous_trading_day_fb_format+"_"+'AccountValue'
@@ -75,7 +90,6 @@ def calculate_trademan_stats():
     net_pnl = 0
     
     no_of_users = len(users_data)
-    
     
     for user in users_data:
         aum += user['Accounts'][previous_day_key]
@@ -92,8 +106,6 @@ def calculate_trademan_stats():
     col2.metric("Active Users", f"{no_of_users}", delta=None)
     col3.metric("Net PnL", format_in_indian_lakhs_crores(net_pnl), delta=None)
 
-    
-        
     logger.debug(f"Total AUM for today: {aum}")
     
     users_data_list = fetch_active_users_from_firebase()  # Assuming this returns the list of user data
@@ -109,8 +121,6 @@ def calculate_trademan_stats():
         "PnLWithdrawals": user['Accounts']['PnLWithdrawals'],
     } for user in users_data_list])
     
-    
-
     # Display the DataFrame
     st.write("Detailed Users Data")
     st.dataframe(users_df,hide_index=True,use_container_width=True)

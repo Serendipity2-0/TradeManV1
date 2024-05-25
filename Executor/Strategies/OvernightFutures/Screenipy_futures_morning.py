@@ -15,7 +15,11 @@ load_dotenv(ENV_PATH)
 from Executor.Strategies.StrategiesUtil import StrategyBase
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.ExeUtils import holidays
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_bot
 from Executor.Strategies.StrategiesUtil import assign_trade_id, fetch_previous_trade_id, place_order_strategy_users
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 strategy_obj = StrategyBase.load_from_db("OvernightFutures")
 instrument_obj = InstrumentCenterUtils.Instrument()
@@ -26,7 +30,7 @@ prediction = strategy_obj.ExtraInformation.Prediction
 hedge_exchange_token = strategy_obj.ExtraInformation.HedgeExchangeToken
 futures_exchange_token = strategy_obj.ExtraInformation.FuturesExchangeToken
 
-hedge_transcation_type = strategy_obj.GeneralParams.HedgeTransactionType
+hedge_transcation_type = strategy_obj.get_raw_field("GeneralParams").get("HedgeSqroffTransactionType")
 
 order_type = strategy_obj.GeneralParams.OrderType
 product_type = strategy_obj.GeneralParams.ProductType
@@ -75,9 +79,10 @@ def main():
     global orders_to_place
     # Check if today is the day after a holiday
     now = dt.datetime.now()
+    yesterday = now - dt.timedelta(days=1)
 
-    if now.date() in holidays:
-        print("Skipping execution as today is a holiday.")
+    if now.date() in holidays or yesterday.date() in holidays:
+        logger.info("Skipping execution as today is a holiday.")
         return
 
     desired_end_time_str = strategy_obj.ExitParams.SquareOffTime
@@ -86,14 +91,14 @@ def main():
         dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
     )
     if wait_time.total_seconds() > 0:
-        print(f"Waiting for {wait_time} before starting the bot")
+        logger.info(f"Waiting for {wait_time} before starting the bot")
         sleep(wait_time.total_seconds())
 
     orders_to_place = assign_trade_id(orders_to_place)
 
-    print(orders_to_place)
+    logger.debug(orders_to_place)
     place_order_strategy_users(strategy_name,orders_to_place, "Holdings")
-
+    discord_bot(f"Exit Orders placed for {strategy_name}", strategy_name)
 
 if __name__ == "__main__":
     main()
