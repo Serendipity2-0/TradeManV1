@@ -2,14 +2,14 @@ from fastapi import FastAPI
 import uvicorn
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi import APIRouter
-from . import schemas
-from . import app
+from UserApi import schemas
+from UserApi import app
 
 
 app_fastapi = FastAPI()
 app_user = APIRouter()
 
-app_fastapi.include_router(app_user, prefix='/v1/user')
+
 
 
 
@@ -25,6 +25,7 @@ def register_user(user_detail:schemas.UserDetails):
 
 
 
+app_fastapi.include_router(app_user, prefix='/v1/user')
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8002, reload=True)
+    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8002, reload=True)
