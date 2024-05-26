@@ -10,5 +10,4 @@ firebase-admin
 loguru
 requests 
 python-dotenv 
-dotenv 
 pendulum

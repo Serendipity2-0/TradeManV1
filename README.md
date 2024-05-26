@@ -187,4 +187,10 @@ WatchList
 
 
 
+Poetry:
+to run poetry:
+1. pip install poetry - in the virtual environment
+2. poetry run trademan - this will run the fastapi server for user registration
+
+
 

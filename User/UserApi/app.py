@@ -1,5 +1,5 @@
 from . import schemas
-from UserDashboard.user_dashboard_utils import get_next_trader_number, update_new_client_data_to_db
+from ..UserDashboard.user_dashboard_utils import get_next_trader_number, update_new_client_data_to_db
 
 
 
