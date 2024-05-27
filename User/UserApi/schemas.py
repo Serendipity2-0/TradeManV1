@@ -4,68 +4,6 @@ from typing import Optional
 from typing import List, Dict
 import datetime
 
-
-# {
-#   "Accounts": {
-#     "CurrentBaseCapital": , # cumpulary
-#     "CurrentWeekCapital": ,
-#     "Drawdown": 0,
-#     "NetAdditions": ,
-#     "NetCharges": ,
-#     "NetCommission": 0,
-#     "NetPnL": ,
-#     "NetWithdrawals": ,
-#     "PnLWithdrawals": 
-#   },
-#   "Active": false,
-#   "Broker": { # compusary
-#     "ApiKey": "",
-#     "ApiSecret": "",
-#     "BrokerName": "",
-#     "BrokerPassword": "",
-#     "BrokerUsername": "",
-#     "SessionId": "", # not compulsary initialize with ""
-#     "TotpAccess": ""
-#   },
-#   "Profile": { # compulsary
-#     "AadharCardNo": "--",
-#     "AccountStartDate": "--",
-#     "BankAccountNo": "--",
-#     "BankName": "State Bank of India",
-#     "DOB": "--",
-#     "Email": "--",
-#     "GmailPassword": "",
-#     "Name": "",
-#     "PANCardNo": "--",
-#     "PhoneNumber": "+--",
-#     "RiskProfile": {
-#       "AreaOfInvestment": [
-#         "Debt",
-#         "Equity",
-#         "FnO"
-#       ],
-#       "Commission": "",
-#       "DrawdownTolerance": "",
-#       "Duration": "",
-#       "WithdrawalFrequency": ""
-#     },
-#     "pwd": "a",
-#     "usr": "0"
-#   },
-#   "Strategies": {
-#     "MPWizard": {
-#       "Qty": , intitialize with 0
-#       "RiskPerTrade": , compulasry
-#       "StrategyName": "" compulasry
-#     }
-#   },
-#   "Tr_No": "" # compulasry
-# }
-
-
-
-
-
 class Accounts_(BaseModel):
     CurrentBaseCapital: int = Field(..., example=0)
     CurrentWeekCapital: int|None = Field(default=0, example=0)
@@ -104,9 +42,6 @@ class Profile_(BaseModel):
     pwd: str = Field(..., example="")
     usr: str = Field(..., example="")
 
-
-    
-    
 
 class Strategy_(BaseModel):
     Qty: int = Field(default=0, example=0)

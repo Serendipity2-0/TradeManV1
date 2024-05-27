@@ -6,6 +6,11 @@ broker_url = 'redis://localhost:6379/0'
 result_backend = 'redis://localhost:6379/0'
 
 # Celery Beat Schedule
+"""
+Here we are using the crontab schedule to run the tasks at specific intervals.
+The schedule is defined as a string in the format of "minute hour day_of_week month day_of_month".
+This is the same format as used by the crontab command.
+"""
 beat_schedule = {
     'run_good_morning_scripts_every_day_at_830am': {
         'task': 'celery_app.good_morning_scripts',

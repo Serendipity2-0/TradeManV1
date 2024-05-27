@@ -1,6 +1,8 @@
 # run_all_tasks.py
 from Executor.Scripts.CeleryScripts.trademan_celery_app import *
 
+#Using this function we are running the celery tasks
+
 # Trigger the tasks
 results = []
 results.append(good_morning_scripts.delay())

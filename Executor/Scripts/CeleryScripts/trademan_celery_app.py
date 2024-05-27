@@ -71,6 +71,12 @@ class LoggerWriter:
 
 # Function to run the script
 def run_script(script_path, retry_hour, logger):
+    """
+    This is the replacement for the old sh files.
+    In this function, we are running the script and handling the retry logic.
+    This function is called by the celery task.
+    This function stores the output of the files in a log file.
+    """
     max_attempts = 1
     attempt = 0
 
@@ -132,19 +138,19 @@ def run_script(script_path, retry_hour, logger):
         sleep(5)
 
 
-
-
-
-def run_multiple_scripts(script_paths):
-    good_morning_logger = setup_logger('good_morning_logger', f'{log_dir}/good_morning.log')
+def run_multiple_scripts(script_paths,logger):
+    #here we are running a set of scripts and logging the output in a log file
     for script_path in script_paths:
-        result = run_script(script_path, 17, good_morning_logger)
+        result = run_script(script_path, 17, logger)
         if "failed" in result:
             return result
     return "All scripts executed successfully."
 
+#Below are the celery tasks/cronjobs
+
 @app.task
 def good_morning_scripts():
+    good_morning_logger = setup_logger('good_morning_logger', f'{log_dir}/good_morning.log')
     scripts = [
         'Executor/Scripts/1_GoodMorning/1_Login/DailyLogin.py',
         'Executor/Scripts/1_GoodMorning/2_FundsValidator/FundValidator.py',
@@ -152,7 +158,7 @@ def good_morning_scripts():
         'Executor/Scripts/1_GoodMorning/4_DailyInstrumentAggregator/DailyInstrumentAggregator.py',
         'Executor/Scripts/1_GoodMorning/5_TelegramOrderBot/TelegramOrderBot.py'
     ]
-    return run_multiple_scripts(scripts)
+    return run_multiple_scripts(scripts,good_morning_logger)
 
 @app.task(bind=True)
 def amipy(self):
