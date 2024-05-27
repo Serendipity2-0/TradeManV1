@@ -90,6 +90,11 @@ def calculate_pnl_summary():
                     overall_summary['Month'] += month_sum
                     overall_summary['Year'] += year_sum
 
+                    overall_summary['Day'] = round(overall_summary['Day'],2)
+                    overall_summary['Week'] = round(overall_summary['Week'],2)
+                    overall_summary['Month'] = round(overall_summary['Month'],2)
+                    overall_summary['Year'] = round(overall_summary['Year'],2)
+
         # After processing all strategies for a user, add the overall summary for that user to the list
         overall_summaries.append(overall_summary)
 
