@@ -1,0 +1,13 @@
+webdriver-manager 
+undetected-chromedriver 
+pyotp 
+pycryptodome
+thefirstock 
+kiteconnect 
+pydantic 
+pya3
+firebase-admin 
+loguru
+requests 
+python-dotenv 
+pendulum
