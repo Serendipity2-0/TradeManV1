@@ -1,0 +1,14 @@
+trademan.env
+*.db
+*.csv
+*.json
+*.pyc
+*.log
+*.xlsx
+*.DS_Store
+*.cursorignore
+*.wav
+trail.py
+*.session
+*.sh
+*.pdf
