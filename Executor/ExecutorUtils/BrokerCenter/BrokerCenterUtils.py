@@ -554,3 +554,13 @@ def get_broker_payin(user):
         return firstock_adapter.get_broker_payin(user)
     else:
         return None
+
+def get_basket_order_margins(orders_to_place,user_credentials):
+    if user_credentials['BrokerName'] == ZERODHA:
+        return zerodha_adapter.get_basket_margin(orders_to_place=orders_to_place)
+    elif user_credentials['BrokerName'] == ALICEBLUE:
+        return alice_adapter.get_basket_margin(user_credentials)
+    elif user_credentials['BrokerName'] == FIRSTOCK:
+        return firstock_adapter.get_basket_margin(orders_to_place=orders_to_place)
+    else:
+        return None

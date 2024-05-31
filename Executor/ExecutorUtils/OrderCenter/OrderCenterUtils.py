@@ -75,10 +75,9 @@ def calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size, qty_amp
 
 
 def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=None):
+    from Executor.ExecutorUtils.MarginCenter.MargenCenterUtils import check_margin_required
     for user in strategy_users:
-        logger.debug(f"Placing orders for user {user['Broker']['BrokerUsername']}")
-        all_order_statuses = []  # To store the status of all orders
-
+        orders_to_place = []
         for order in order_details:
             order_with_user_and_broker = order.copy()
             try:
@@ -107,80 +106,88 @@ def place_order_for_strategy(strategy_users, order_details, order_qty_mode:str=N
                             "qty": user["Strategies"][order.get("strategy")]["Qty"],
                         }
                     )
+                orders_to_place.append(order_with_user_and_broker)
             except Exception as e:
                 logger.error(f"Error updating order with user and broker: {e}")
                 continue
 
-            try:
-                # logger.debug(f"Order with user and broker: {order_with_user_and_broker}")
-                max_qty = FNOInfo().get_max_order_qty_by_base_symbol(
-                    order_with_user_and_broker.get("base_symbol")
-                )
-                user_credentials = fetch_user_credentials_firebase(
-                    user["Broker"]["BrokerUsername"]
-                )
+        if check_margin_required(orders_to_place=orders_to_place,user=user):
+            logger.debug(f"Placing orders for user {user['Broker']['BrokerUsername']}")
+            all_order_statuses = []  # To store the status of all orders
 
-                order_qty = int(order_with_user_and_broker["qty"])
-            except Exception as e:
-                logger.error(f"Error fetching max qty for base symbol: {e}")
-                continue
-
-            if max_qty:
-                # logger.debug(f"Max qty for {order_with_user_and_broker.get('base_symbol')} is {max_qty} so splitting orders.")
-                # Split and place orders if necessary
+            for order in orders_to_place:
                 try:
-                    while order_qty > 0:
-                        current_qty = min(order_qty, max_qty)
-                        order_to_place = order_with_user_and_broker.copy()
-                        order_to_place["qty"] = current_qty
+                    # logger.debug(f"Order with user and broker: {order_with_user_and_broker}")
+                    max_qty = FNOInfo().get_max_order_qty_by_base_symbol(
+                        order_with_user_and_broker.get("base_symbol")
+                    )
+                    user_credentials = fetch_user_credentials_firebase(
+                        user["Broker"]["BrokerUsername"]
+                    )
 
-                        # logger.debug(f"Placing order for {order_to_place}")
-                        order_to_place["tax"] = get_orders_tax(order_to_place, user_credentials)
-                        order_status = place_order_for_brokers(order_to_place, user_credentials)
+                    order_qty = int(order_with_user_and_broker["qty"])
+                except Exception as e:
+                    logger.error(f"Error fetching max qty for base symbol: {e}")
+                    continue
+
+                if max_qty:
+                    # logger.debug(f"Max qty for {order_with_user_and_broker.get('base_symbol')} is {max_qty} so splitting orders.")
+                    # Split and place orders if necessary
+                    try:
+                        while order_qty > 0:
+                            current_qty = min(order_qty, max_qty)
+                            order_to_place = order_with_user_and_broker.copy()
+                            order_to_place["qty"] = current_qty
+
+                            # logger.debug(f"Placing order for {order_to_place}")
+                            order_to_place["tax"] = get_orders_tax(order_to_place, user_credentials)
+                            order_status = place_order_for_brokers(order_to_place, user_credentials)
+                            all_order_statuses.append(order_status)
+
+                            if "Hedge" in order_to_place.get("order_mode", ""):
+                                time.sleep(1)
+                            order_qty -= current_qty
+                    except Exception as e:
+                        logger.error(f"Error splitting orders and order not placed: {e}")
+                else:
+                    # Place the order
+                    # logger.debug(f"Placing order for {order_with_user_and_broker}")
+                    try:
+                        order_with_user_and_broker["tax"] = get_orders_tax(order_with_user_and_broker, user_credentials)
+                        order_status = place_order_for_brokers(order_with_user_and_broker, user_credentials)
                         all_order_statuses.append(order_status)
+                    except Exception as e:
+                        logger.error(f"Error placing order with no max_qty: {e}")
 
-                        if "Hedge" in order_to_place.get("order_mode", ""):
-                            time.sleep(1)
-                        order_qty -= current_qty
-                except Exception as e:
-                    logger.error(f"Error splitting orders and order not placed: {e}")
-            else:
-                # Place the order
-                # logger.debug(f"Placing order for {order_with_user_and_broker}")
-                try:
-                    order_with_user_and_broker["tax"] = get_orders_tax(order_with_user_and_broker, user_credentials)
-                    order_status = place_order_for_brokers(order_with_user_and_broker, user_credentials)
-                    all_order_statuses.append(order_status)
-                except Exception as e:
-                    logger.error(f"Error placing order with no max_qty: {e}")
+            # Update Firebase with order status
+                update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
+                logger.debug(f"update_path: {update_path}")
 
-        # Update Firebase with order status
-            update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
-            logger.debug(f"update_path: {update_path}")
+                if order_qty_mode == "Sweep":
+                    for data in all_order_statuses:
+                        try:
+                            push_orders_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], data, update_path)
+                        except Exception as e:
+                            logger.error(f"Error updating firebase with order status: {e}")
+                    all_order_statuses.clear() 
 
-            if order_qty_mode == "Sweep":
+            if order_qty_mode != "Sweep":
                 for data in all_order_statuses:
                     try:
                         push_orders_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], data, update_path)
                     except Exception as e:
                         logger.error(f"Error updating firebase with order status: {e}")
-                all_order_statuses.clear() 
+                
 
-        if order_qty_mode != "Sweep":
-            for data in all_order_statuses:
-                try:
-                    push_orders_firebase(CLIENTS_USER_FB_DB, user["Tr_No"], data, update_path)
-                except Exception as e:
-                    logger.error(f"Error updating firebase with order status: {e}")
-            
-
-        # Send notification if any orders failed # TODO: check for Zerodha exact fail msgs and send notifications accordingly
-        for status in all_order_statuses:
-            if status.get("message", "") == "Order placement failed":
-                discord_bot(
-                    f"Order failed for user {user['Broker']['BrokerUsername']} in strategy {order.get('strategy')}",
-                    order.get("strategy"),
-                )
+            # Send notification if any orders failed # TODO: check for Zerodha exact fail msgs and send notifications accordingly
+            for status in all_order_statuses:
+                if status.get("message", "") == "Order placement failed":
+                    discord_bot(
+                        f"Order failed for user {user['Broker']['BrokerUsername']} in strategy {order.get('strategy')}",
+                        order.get("strategy"),
+                    )
+        else:
+            logger.debug(f"skipping for user {user}")
     return all_order_statuses
 
 

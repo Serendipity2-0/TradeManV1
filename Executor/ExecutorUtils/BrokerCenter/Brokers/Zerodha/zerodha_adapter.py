@@ -909,3 +909,81 @@ def get_broker_payin(user):
     kite = create_kite_obj(user_details=user["Broker"])
     payin = float(kite.margins().get("equity",{}).get("available",{}).get("intraday_payin",0))
     return payin
+
+def get_basket_margin(orders_to_place):
+    """
+    calculates margin required for a set of orders
+    """
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_primary_accounts_from_firebase
+    zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
+    basket_order = []
+    primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
+
+    kite = create_kite_obj(
+    api_key=primary_account_session_id["Broker"]["ApiKey"],
+    access_token=primary_account_session_id["Broker"]["SessionId"],
+    )
+    for order in orders_to_place:
+        strategy = order["strategy"]
+        exchange_token = order["exchange_token"]
+        product = order.get("product_type")
+        transaction_type = order.get("transaction_type")
+        if transaction_type == "B":
+            transaction_type = "BUY"
+        elif transaction_type == "S":
+            transaction_type = "SELL"
+
+        transaction_type = calculate_transaction_type(
+            kite, transaction_type
+        )
+        order_type = calculate_order_type(kite, order.get("order_type"))
+        #TODO: This is a temporary fix for firstock untill firstock starts providing the tax
+        if product == "I":
+            product = "MIS"
+        elif product == "C":
+            product = "CNC"
+        product_type = calculate_product_type(kite, product)
+        if product == "CNC":
+            segment_type = kite.EXCHANGE_NSE
+            trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+                exchange_token, "NSE"
+            )
+        else:
+            segment_type = Instrument().get_exchange_by_exchange_token(str(exchange_token))
+            trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
+                str(exchange_token)
+            )
+
+        limit_prc = order.get("limit_prc", None)
+        trigger_price = order.get("trigger_prc", None)
+
+        if limit_prc is not None:
+            limit_prc = round(float(limit_prc), 2)
+            if limit_prc < 0:
+                limit_prc = 1.0
+        elif product == "CNC":
+            limit_prc = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+        else:
+            limit_prc = 0.0
+
+        if trigger_price is not None:
+            trigger_price = round(float(trigger_price), 2)
+            if trigger_price < 0:
+                trigger_price = 1.5
+
+        modified_order = {
+                            "variety":kite.VARIETY_REGULAR,
+                            "exchange":segment_type,
+                            "price":limit_prc,
+                            "tradingsymbol":trading_symbol,
+                            "transaction_type":transaction_type,
+                            "quantity":order["qty"],
+                            "trigger_price":trigger_price,
+                            "product":product_type,
+                            "order_type":order_type}
+        basket_order.append(modified_order)
+    basket_details = kite.basket_order_margins(basket_order,mode="compact")
+    margin = basket_details['initial']['total']
+    return margin
