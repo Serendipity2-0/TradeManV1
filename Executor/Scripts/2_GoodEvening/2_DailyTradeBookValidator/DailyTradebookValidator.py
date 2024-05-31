@@ -86,7 +86,7 @@ def get_order_ids_from_strategies(user,strategies):
             orders_from_firebase = trade_state.get("orders", [])
 
             if not orders_from_firebase:
-                logger.error(f"No orders found for user: {user['Broker']['BrokerUsername']} for strategy: {strategy_key}")
+                logger.warning(f"No orders found for user: {user['Broker']['BrokerUsername']} for strategy: {strategy_key}")
                 continue
 
             for order in orders_from_firebase:
