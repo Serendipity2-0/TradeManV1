@@ -3,6 +3,16 @@ import numpy as np
 
 
 def moving_average(df, HA_MA_period):
+    """
+    Calculate moving averages for open, high, low, and close prices.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing 'open', 'high', 'low', and 'close' price columns.
+        HA_MA_period (int): The period over which to calculate the moving averages.
+
+    Returns:
+        pd.DataFrame: DataFrame with additional columns for moving averages of open, high, low, and close prices.
+    """
     MA_open = pd.Series(
         df["open"].rolling(HA_MA_period, min_periods=HA_MA_period).mean(),
         name="MA_open",
@@ -24,6 +34,16 @@ def moving_average(df, HA_MA_period):
 
 
 def atr(df, period):
+    """
+    Calculate the Average True Range (ATR) for a given period.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing 'high', 'low', and 'close' price columns.
+        period (int): The period over which to calculate the ATR.
+
+    Returns:
+        pd.Series: Series representing the ATR values.
+    """
     true_range = pd.Series(index=df.index)
     for i in range(1, len(df)):
         high_low = df["high"][i] - df["low"][i]
@@ -34,6 +54,15 @@ def atr(df, period):
 
 
 def heikin_ashi(df):
+    """
+    Calculate Heikin-Ashi values.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing 'MA_open', 'MA_high', 'MA_low', and 'MA_close' columns.
+
+    Returns:
+        pd.DataFrame: DataFrame with Heikin-Ashi values for open, high, low, and close prices.
+    """
     ha_df = pd.DataFrame(index=df.index)
 
     # HaClose = (Open + High + Low + Close) / 4
@@ -58,6 +87,17 @@ def heikin_ashi(df):
 
 
 def super_trend(df, period=9, multiplier=7):
+    """
+    Calculate the SuperTrend indicator.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing 'ha_high' and 'ha_low' columns.
+        period (int): The period over which to calculate the SuperTrend.
+        multiplier (int): The multiplier factor for the ATR.
+
+    Returns:
+        pd.Series: Series representing the SuperTrend values.
+    """
     hl2 = (df["ha_high"] + df["ha_low"]) / 2
     atr = df["ha_high"].rolling(period).apply(lambda x: np.max(x[:-1] - x[-1])) + df[
         "ha_low"
@@ -87,11 +127,33 @@ def super_trend(df, period=9, multiplier=7):
 
 
 def ema(df, column, period):
+    """
+    Calculate the Exponential Moving Average (EMA) for a specified column and period.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the column to calculate EMA for.
+        column (str): The column name for which EMA is to be calculated.
+        period (int): The period over which to calculate the EMA.
+
+    Returns:
+        pd.Series: Series representing the EMA values.
+    """
     return df[column].ewm(span=period, adjust=False).mean()
 
 
 ######## FOCUS HERE##############
 def supertrend_new(df, period=9, multiplier=7):
+    """
+    Calculate the SuperTrend indicator using a modified approach.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing 'open', 'high', 'low', and 'close' price columns.
+        period (int): The period over which to calculate the SuperTrend.
+        multiplier (int): The multiplier factor for the ATR.
+
+    Returns:
+        pd.DataFrame: DataFrame with calculated SuperTrend values and additional columns for ATR, Up, Dn, Trend, TrendUp, and TrendDown.
+    """
     print("supertrend_new2222")
     # Calculate Average True Range (ATR)
     average_true_range = atr(df, period)
@@ -160,6 +222,17 @@ def supertrend_new(df, period=9, multiplier=7):
 
 
 def supertrend1(df, factor, pd):
+    """
+    Calculate the SuperTrend indicator using an alternative method.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing 'High', 'Low', and 'Close' price columns.
+        factor (float): The factor for the ATR.
+        pd (int): The period over which to calculate the SuperTrend.
+
+    Returns:
+        pd.DataFrame: DataFrame with calculated SuperTrend values and additional columns for Trend, TrendUp, and TrendDown.
+    """
 
     hl2 = (df["High"] + df["Low"]) / 2
     df["TrendUp"] = hl2 + (factor * atr)

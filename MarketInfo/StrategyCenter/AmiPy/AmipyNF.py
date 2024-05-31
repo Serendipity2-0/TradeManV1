@@ -36,6 +36,17 @@ import pytz
 
 
 def process_live_kite_ticker(nf_live_df, call_live_df, put_live_df):
+    """
+    Process live data from Kite ticker for NIFTY options.
+
+    Args:
+        nf_live_df (pd.DataFrame): DataFrame containing NIFTY live data.
+        call_live_df (pd.DataFrame): DataFrame containing call option live data.
+        put_live_df (pd.DataFrame): DataFrame containing put option live data.
+
+    Returns:
+        pd.DataFrame: Merged DataFrame with combined 'open', 'high', 'low', and 'close' values for call and put data.
+    """
 
     print("Processing live 1min OHLC...")
 
@@ -63,6 +74,18 @@ def process_live_kite_ticker(nf_live_df, call_live_df, put_live_df):
 
 
 def get_nf_hist_data(kite, from_date, to_date, interval):
+    """
+    Fetch historical data for NIFTY and its options from Kite API.
+
+    Args:
+        kite (KiteConnect): Initialized KiteConnect object.
+        from_date (str): Start date for historical data in 'YYYY-MM-DD' format.
+        to_date (str): End date for historical data in 'YYYY-MM-DD' format.
+        interval (str): Time interval for historical data ('1minute', '5minute', etc.).
+
+    Returns:
+        pd.DataFrame: Resampled DataFrame with combined historical data.
+    """
     print("Better resampling")
     print("Getting historical data for Nifty...")
     nf_hist_data = kite.historical_data(nifty_token, from_date, to_date, interval)
@@ -100,6 +123,15 @@ def get_nf_hist_data(kite, from_date, to_date, interval):
 
 
 def pd_cruncher(resampled_df):
+    """
+    Process historical data to calculate indicators such as Heikin-Ashi, Supertrend, and EMA.
+
+    Args:
+        resampled_df (pd.DataFrame): Resampled DataFrame with historical data.
+
+    Returns:
+        pd.DataFrame: DataFrame with calculated indicators.
+    """
     ma_df = StrategyTools.moving_average(resampled_df, Heikin_Ashi_MA_period)
 
     ha_df = StrategyTools.heikin_ashi(ma_df)
@@ -121,6 +153,15 @@ def pd_cruncher(resampled_df):
 
 
 def pd_liv_cruncher(resampled_df):
+    """
+    Process live data to calculate indicators such as Heikin-Ashi, Supertrend, and EMA.
+
+    Args:
+        resampled_df (pd.DataFrame): Resampled DataFrame with live data.
+
+    Returns:
+        pd.DataFrame: DataFrame with calculated indicators.
+    """
 
     print("Crunching live 1min OHLC...")
 
@@ -145,11 +186,30 @@ def pd_liv_cruncher(resampled_df):
 
 
 def generate_trade_signals(df):
+    """
+    Generate trade signals based on Supertrend and EMA indicators.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing historical or live data with calculated indicators.
+
+    Returns:
+        pd.DataFrame: DataFrame with generated trade signals.
+    """
     signals = []
     trade_no = 1
     current_position = None
 
     def long(df, i):
+        """
+        Determine if a long position should be entered.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing historical or live data with calculated indicators.
+            i (int): Index of the current row in the DataFrame.
+
+        Returns:
+            bool: True if conditions for entering a long position are met, False otherwise.
+        """
         return (
             (df.loc[df.index[i], "supertrend"] == 1)
             & (df.loc[df.index[i], "close"] > df.loc[df.index[i], "ema"])
@@ -159,11 +219,31 @@ def generate_trade_signals(df):
         )
 
     def longcover(df, i):
+        """
+        Determine if a long position should be exited.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing historical or live data with calculated indicators.
+            i (int): Index of the current row in the DataFrame.
+
+        Returns:
+            bool: True if conditions for exiting a long position are met, False otherwise.
+        """
         return (df.loc[df.index[i], "supertrend"] == -1) | (
             df.index[i].time() > sqroff_time
         )
 
     def short(df, i):
+        """
+        Determine if a short position should be entered.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing historical or live data with calculated indicators.
+            i (int): Index of the current row in the DataFrame.
+
+        Returns:
+            bool: True if conditions for entering a short position are met, False otherwise.
+        """
         return (
             (df.loc[df.index[i], "supertrend"] == -1)
             & (df.loc[df.index[i], "close"] < df.loc[df.index[i], "ema"])
@@ -173,6 +253,16 @@ def generate_trade_signals(df):
         )
 
     def shortcover(df, i):
+        """
+        Determine if a short position should be exited.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing historical or live data with calculated indicators.
+            i (int): Index of the current row in the DataFrame.
+
+        Returns:
+            bool: True if conditions for exiting a short position are met, False otherwise.
+        """
         return (df.loc[df.index[i], "supertrend"] == 1) | (
             df.index[i].time() > sqroff_time
         )

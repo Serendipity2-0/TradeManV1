@@ -11,6 +11,21 @@ Instrument = namedtuple(
 
 
 def get_option_tokens(base_symbol, expiry_date, strike_prc, option_type):
+    """
+    Get option tokens for a given base symbol, expiry date, strike price, and option type.
+
+    Args:
+        base_symbol (str): The base symbol for the options (e.g., 'NIFTY').
+        expiry_date (str): The expiry date for the options (e.g., '2023-05-25').
+        strike_prc (float): The strike price for the options.
+        option_type (str): The type of option ('CE' for call options, 'PE' for put options).
+
+    Returns:
+        tuple: A tuple containing three elements:
+            - List of tokens for the options.
+            - List of trading symbols for the options.
+            - List of Instrument namedtuples for the options.
+    """
     # get out of the folder and then go to Utils folder and fetch the instruments.csv file
     instrument_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -65,6 +80,15 @@ def get_option_tokens(base_symbol, expiry_date, strike_prc, option_type):
 
 
 def get_zrm_users(broker_filepath):
+    """
+    Get users to trade from the broker configuration file.
+
+    Args:
+        broker_filepath (str): Path to the broker configuration file.
+
+    Returns:
+        list: A list of tuples containing the broker name and account name for users to trade.
+    """
     with open(broker_filepath, "r") as file:
         broker_config = json.load(file)
     accounts_to_trade = []
@@ -91,6 +115,18 @@ def get_zrm_users(broker_filepath):
 
 
 def zrm_discord_bot(message):
+    """
+    Send a message to a Discord channel using a bot.
+
+    Args:
+        message (str): The message to be sent.
+
+    Returns:
+        response: The response from the Discord API.
+
+    Raises:
+        ValueError: If the request to Discord returns an error.
+    """
     CHANNEL_ID = "1129673128864391178"  # MPWizard Discord channel
     # CHANNEL_ID = "1128567144565723147" # Test channel
     TOKEN = "MTEyNTY3MTgxODQxMDM0ODU2Ng.GQ5DLZ.BVLPrGy0AEX9ZiZOJsB6cSxOlf8hC2vaANuilA"
@@ -131,6 +167,17 @@ holidays = [
 
 
 def get_expiry_dates():
+    """
+    Get the next non-holiday expiry dates for NIFTY and FINNIFTY options.
+
+    Returns:
+        tuple: A tuple containing two elements:
+            - The next non-holiday Thursday for NIFTY expiry.
+            - The next non-holiday Tuesday for FINNIFTY expiry.
+
+    Raises:
+        ValueError: If no valid expiry dates are found.
+    """
     # Initialize the list of Thursdays and Tuesdays in 2023
     thursdays_2023 = []
     tuesdays_2023 = []

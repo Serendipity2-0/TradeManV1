@@ -40,15 +40,37 @@ class Algo:
     result_csv = ""
 
     def __init__(self, csv, zone_width, users):
+        """
+        Initializes the Algo class.
+
+        Args:
+            csv (str): Path to the result CSV file.
+            zone_width (int): Width of the zone for trade logic.
+            users (list): List of users for trading.
+        """
         self.result_csv = csv
         self.zone_width = zone_width
         self.users = users
 
     def is_trade_complete(self):
+        """
+        Checks if the trade cycle is complete.
+
+        Returns:
+            bool: True if the trade cycle is complete, False otherwise.
+        """
         return self.is_trade_cycle_done
 
     # Same existing functions here
     def exit_all_open_orders(self, point, tick_price, tick_time):
+        """
+        Exits all open orders and logs the details.
+
+        Args:
+            point (str): Identifier for the exit point.
+            tick_price (float): Current price at the time of exit.
+            tick_time (str): Timestamp of the exit.
+        """
         try:
             for idx, item in enumerate(self.order_book):
                 if self.order_book[idx]["order_type"] == "long":
@@ -89,6 +111,21 @@ class Algo:
         is_order_closed,
         quantity,
     ):
+        """
+        Adds a trade entry to the order book.
+
+        Args:
+            trade_cycle (int): Trade cycle number.
+            order_type (str): Type of order ('Long' or 'Short').
+            entry_point (str): Entry point identifier.
+            entry_price (float): Entry price.
+            entry_time (str): Entry time.
+            exit_time (str): Exit time.
+            exit_price (float): Exit price.
+            exit_point (str): Exit point identifier.
+            is_order_closed (bool): Indicates if the order is closed.
+            quantity (int): Quantity of the trade.
+        """
         self.order_book.append(
             {
                 "trade_cycle": trade_cycle,
@@ -105,6 +142,12 @@ class Algo:
         )
 
     def write_results_csv(self, file):
+        """
+        Writes the order book details to a specified CSV file.
+
+        Args:
+            file (str): Path to the CSV file for storing results.
+        """
         with open(file, "a") as f_object:
             # Pass this file object to csv.writer()
             # and get a writer object
@@ -131,6 +174,13 @@ class Algo:
     str_prc = ""
 
     def run(self, tick_price, tick_time):
+        """
+        Executes the trading logic based on the provided tick data.
+
+        Args:
+            tick_price (float): Current price of the asset.
+            tick_time (float): Timestamp of the tick data in milliseconds.
+        """
         global str_prc
         expiry_date = str(get_expiry_dates()[0])
         # print("Expiry Date: ", type(expiry_date))
@@ -331,6 +381,12 @@ class Algo:
 
 
 def main(zone_width):
+    """
+    Main function to initialize the Algo class and execute the trading strategy.
+
+    Args:
+        zone_width (int): Width of the zone for trade logic.
+    """
     order_open = False
     # Initialize KiteConnect object
 
