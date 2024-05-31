@@ -151,7 +151,7 @@ def convert_trade_state_to_list(orders_firebase,user_TR_No):
             except Exception as e:
                 logger.error(f"Error updating trade state for strategy {strategy_name}: {e}")
         else:
-            logger.error(f"Unexpected data structure for strategy {strategy_name} orders.")
+            logger.warning(f"No orders to delete for {strategy_name} orders.")
 
 def get_keys_to_delete(strategy_orders, order_ids_to_delete):
     keys_to_delete = []
@@ -272,7 +272,8 @@ def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
         entry_orders = trade_data["entry_orders"]
         exit_orders = trade_data["exit_orders"]
         if not entry_orders or not exit_orders:
-            raise ValueError("Invalid trade data: entry_orders or exit_orders is empty")
+            logger.warning("Invalid trade data: entry_orders or exit_orders is empty")
+            return None
         
         hedge_orders = trade_data["hedge_orders"]
 
@@ -450,7 +451,7 @@ def process_n_log_trade():
 
                     # Check if DataFrame is properly formatted with expected columns
                     if not set(decimal_columns).issubset(df.columns):
-                        logger.error(f"DataFrame for {trade_prefix} does not have the expected structure, skipping...")
+                        logger.warning(f"DataFrame for {trade_prefix} does not have the expected structure, skipping...")
                         continue  # Skip appending this DataFrame to the database
                     
                     append_df_to_sqlite(conn, df, strategy_name, decimal_columns)
@@ -462,15 +463,15 @@ def process_n_log_trade():
             continue
 
 def main():
-    # download_json(CLIENTS_USER_FB_DB, "before_eod_db_log")
-    # process_n_log_trade()
-    # sleep(5)
+    download_json(CLIENTS_USER_FB_DB, "before_eod_db_log")
+    process_n_log_trade()
+    sleep(5)
     fetch_and_prepare_holdings_data()
-    # sleep(5)
-    # update_signals_firebase()
-    # update_signal_info()
-    # clear_today_orders_firebase()
-    # sleep(5)
+    sleep(5)
+    update_signals_firebase()
+    update_signal_info()
+    clear_today_orders_firebase()
+    sleep(5)
 
 if __name__ == "__main__":
     main()

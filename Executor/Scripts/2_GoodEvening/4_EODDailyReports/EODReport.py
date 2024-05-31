@@ -121,16 +121,23 @@ def create_consolidated_report(active_users, active_strategies):
         #Page 1 data
         df_movements = fetch_market_movement_data()
 
-        #Page 2 data
+        # #Page 2 data
         df_signals = fetch_signal_movement_data()
-
-        #Page 3 data
         df_market_info = create_market_info_df()
 
-        #Page 4 data
+        # # Merge signal and market info data
+        combined_signals = pd.merge(df_signals, df_market_info, left_on='Strategy', right_on='Strategy Name', how='left')
+        # Create 'Market Info' column
+        combined_signals['Market Info'] = combined_signals.apply(lambda x: f"({x['Strategy Type']},{x['Qty Amplifier']},{x['Trade View']},{x['Strategy Amplifier']})", axis=1)
+        # Concatenate 'Strategy' and 'Market Info' into one column
+        combined_signals['Strategy with Info'] = combined_signals['Strategy'] + '\n' + combined_signals['Market Info']
+        # Select only the relevant columns, now including the new combined column
+        combined_signals = combined_signals[['Strategy with Info', 'Today', 'Week', 'Month', 'Year']]
+
+        #Page 3 data
         df_user_pnl = user_pnl_movement_data()
 
-        #Page 5 data
+        #Page 4 data
         today_trades = get_today_trades_for_all_users(active_users, active_strategies)
         consolidated_data = today_trades_data(active_users, today_trades)
 
@@ -138,11 +145,11 @@ def create_consolidated_report(active_users, active_strategies):
         consolidated_df = format_df_data(consolidated_df)
         output_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
 
-        #Page 6 data
+        #Page 5 data
         errorlog_df = fetch_errorlog_data()
         formatted_errorlog_df = format_df_data(errorlog_df)
 
-        convert_dfs_to_pdf(consolidated_df,df_movements, df_signals, df_market_info, df_user_pnl, formatted_errorlog_df,output_path)
+        convert_dfs_to_pdf(consolidated_df,df_movements, combined_signals, df_user_pnl, formatted_errorlog_df,output_path)
         send_consolidated_report_pdf_to_telegram()
 
         logger.info(f"consolidated_data: {consolidated_data}")

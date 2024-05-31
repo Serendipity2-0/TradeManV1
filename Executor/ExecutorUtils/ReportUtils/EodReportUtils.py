@@ -316,7 +316,7 @@ def df_to_table(df, column_widths=None):
     table.setStyle(style)
     return table
 
-def convert_dfs_to_pdf(trade_df, movement_df, signal_df, market_info_df, user_pnl, errorlog_df, output_path):
+def convert_dfs_to_pdf(trade_df, movement_df, signal_with_market_info_df, user_pnl, errorlog_df, output_path):
     # Setup document with appropriate margins
     standard_margin = 0.5 * inch
     pdf = SimpleDocTemplate(output_path, pagesize=landscape(A4), leftMargin=standard_margin,rightMargin=standard_margin, topMargin=top_margin, bottomMargin=standard_margin)
@@ -331,23 +331,12 @@ def convert_dfs_to_pdf(trade_df, movement_df, signal_df, market_info_df, user_pn
         elements.append(PageBreak())  # Still add a page break even if no movement data
     
     # Convert the signal DataFrame to a ReportLab Table and add it to elements
-    if not signal_df.empty:
-        signal_table = df_to_table(signal_df)
+    if not signal_with_market_info_df.empty:
+        signal_table = df_to_table(signal_with_market_info_df)
         elements.append(signal_table)
     else:
         elements.append(Spacer(1, 50))  # Add a spacer if there's no signal data
 
-    # Assuming a blank page is desired between the movement and trade data
-    elements.append(Spacer(1, 50))  # This spacer is just to simulate content on the blank page
-    elements.append(PageBreak())  # Add another page break to start trade data on a new page
-
-    # Convert the market info DataFrame to a ReportLab Table and add it to elements
-    if not market_info_df.empty:
-        market_info_table = df_to_table(market_info_df)
-        elements.append(market_info_table)
-    else:
-        elements.append(Spacer(1, 50))  # Add a spacer if there's no market info data
-    
     # Assuming a blank page is desired between the movement and trade data
     elements.append(Spacer(1, 50))  # This spacer is just to simulate content on the blank page
     elements.append(PageBreak())  # Add another page break to start trade data on a new page
