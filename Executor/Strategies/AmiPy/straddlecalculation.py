@@ -21,6 +21,16 @@ EMA_period = strategy_obj.EntryParams.EMAPeriod
 
 
 def get_option_tokens(strike_prc, base_symbol):
+    """
+    Fetches the option tokens for the given strike price and base symbol.
+
+    This function retrieves the current expiry date for the options and
+    gets the Kite tokens for Call and Put options of the given strike price.
+
+    :param strike_prc: Strike price of the option.
+    :param base_symbol: Base symbol of the instrument.
+    :return: List of tokens including Nifty token and option tokens.
+    """
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
         Instrument as InstrumentBase,
     )
@@ -44,6 +54,13 @@ def get_option_tokens(strike_prc, base_symbol):
 
 
 def callputmergeddf(hist_data, tokens):
+    """
+    Merges the historical data for Nifty, Call, and Put options.
+
+    :param hist_data: Dictionary containing historical data for Nifty, Call, and Put options.
+    :param tokens: List of tokens for Nifty, Call, and Put options.
+    :return: DataFrame containing the merged historical data.
+    """
     nf_hist_data = hist_data[tokens[0]]
     call_hist_data = hist_data[tokens[1]]
     put_hist_data = hist_data[tokens[2]]
@@ -65,6 +82,13 @@ def callputmergeddf(hist_data, tokens):
 
 
 def moving_average(df, HA_MA_period=Heikin_Ashi_MA_period):
+    """
+    Calculates the moving average for the given DataFrame.
+
+    :param df: DataFrame containing historical data.
+    :param HA_MA_period: Period for calculating the moving average.
+    :return: DataFrame with added moving average columns.
+    """
     MA_open = pd.Series(
         df["open"].rolling(HA_MA_period, min_periods=HA_MA_period).mean(),
         name="MA_open",
@@ -86,6 +110,12 @@ def moving_average(df, HA_MA_period=Heikin_Ashi_MA_period):
 
 
 def HeikinAshi(ma_df):
+    """
+    Calculates the Heikin-Ashi values for the given DataFrame.
+
+    :param ma_df: DataFrame containing historical data with moving averages.
+    :return: DataFrame with added Heikin-Ashi columns.
+    """
     ha_df = pd.DataFrame(index=ma_df.index)
 
     # HaClose = (Open + High + Low + Close) / 4
@@ -110,6 +140,13 @@ def HeikinAshi(ma_df):
 
 
 def atr(df, period):
+    """
+    Calculates the Average True Range (ATR) for the given DataFrame.
+
+    :param df: DataFrame containing historical data.
+    :param period: Period for calculating the ATR.
+    :return: Series containing the ATR values.
+    """
     true_range = pd.Series(index=df.index, dtype="float64")
     for i in range(1, len(df)):
         high_low = df["high"][i] - df["low"][i]
@@ -120,6 +157,15 @@ def atr(df, period):
 
 
 def supertrend(ma_df):
+    """
+    Calculates the Supertrend values for the given DataFrame.
+
+    This function calculates the ATR, Heikin-Ashi values, Up and Dn lines, and trend indicators
+    to generate the Supertrend values.
+
+    :param ma_df: DataFrame containing historical data with moving averages.
+    :return: DataFrame with added Supertrend columns.
+    """
 
     # Calculate Average True Range (ATR)
     average_true_range = atr(ma_df, Supertrend_period)

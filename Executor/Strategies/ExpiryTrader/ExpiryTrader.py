@@ -26,7 +26,7 @@ from Executor.Strategies.StrategiesUtil import (
     calculate_transaction_type_sl,
     calculate_trigger_price,
     fetch_qty_amplifier,
-    fetch_strategy_amplifier
+    fetch_strategy_amplifier,
 )
 
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
@@ -34,6 +34,7 @@ import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as Instrume
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
+
 
 class ExpiryTrader(StrategyBase):
     def get_general_params(self):
@@ -48,10 +49,20 @@ class ExpiryTrader(StrategyBase):
     def get_raw_field(self, field_name: str):
         return super().get_raw_field(field_name)
 
+
 expiry_trader_obj = ExpiryTrader.load_from_db("ExpiryTrader")
 instrument_obj = InstrumentCenterUtils.Instrument()
 
+
 def message_for_orders(trade_type, prediction, main_trade_symbol, hedge_trade_symbol):
+    """
+    Sends a message containing the details of the orders placed for the strategy.
+
+    :param trade_type: Type of trade (e.g., Live).
+    :param prediction: Direction of the trade (e.g., Short).
+    :param main_trade_symbol: Symbol of the main trade.
+    :param hedge_trade_symbol: Symbol of the hedge trade.
+    """
     message = (
         f"{trade_type} Trade for {strategy_name}\n"
         f"Direction : {prediction}\n"
@@ -60,6 +71,7 @@ def message_for_orders(trade_type, prediction, main_trade_symbol, hedge_trade_sy
     )
     logger.info(message)
     discord_bot(message, strategy_name)
+
 
 hedge_transaction_type = expiry_trader_obj.get_general_params().HedgeTransactionType
 main_transaction_type = expiry_trader_obj.get_general_params().MainTransactionType
@@ -78,12 +90,14 @@ stoploss_multiplier = expiry_trader_obj.EntryParams.SLMultiplier
 desired_start_time_str = expiry_trader_obj.get_entry_params().EntryTime
 strategy_type = expiry_trader_obj.GeneralParams.StrategyType
 
-logger.debug(f"Values from Firebase for {strategy_name}: {base_symbol}, {today_expiry_token}, {prediction}, {order_type}, {product_type}, {strike_prc_multiplier}, {hedge_multiplier}, {stoploss_multiplier}, {desired_start_time_str}, {strategy_type}")
+logger.debug(
+    f"Values from Firebase for {strategy_name}: {base_symbol}, {today_expiry_token}, {prediction}, {order_type}, {product_type}, {strike_prc_multiplier}, {hedge_multiplier}, {stoploss_multiplier}, {desired_start_time_str}, {strategy_type}"
+)
 
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
 
 main_strikeprc = expiry_trader_obj.calculate_current_atm_strike_prc(
-    base_symbol, today_expiry_token, prediction, strike_prc_multiplier,strategy_type
+    base_symbol, today_expiry_token, prediction, strike_prc_multiplier, strategy_type
 )
 hedge_strikeprc = expiry_trader_obj.get_hedge_strikeprc(
     base_symbol, today_expiry_token, prediction, hedge_multiplier
@@ -104,9 +118,11 @@ main_exchange_token = instrument_obj.get_exchange_token_by_criteria(
 ltp = InstrumentCenterUtils.get_single_ltp(exchange_token=main_exchange_token)
 lot_size = instrument_obj.get_lot_size_by_exchange_token(main_exchange_token)
 
-qty_amplifier = fetch_qty_amplifier(strategy_name,strategy_type)
+qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
 strategy_amplifier = fetch_strategy_amplifier(strategy_name)
-update_qty_user_firebase(strategy_name, ltp, lot_size,qty_amplifier,strategy_amplifier)
+update_qty_user_firebase(
+    strategy_name, ltp, lot_size, qty_amplifier, strategy_amplifier
+)
 
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(
     main_exchange_token
@@ -119,7 +135,9 @@ stoploss_transaction_type = calculate_transaction_type_sl(main_transaction_type)
 limit_prc = calculate_stoploss(
     ltp, main_transaction_type, stoploss_multiplier=stoploss_multiplier
 )
-logger.debug(f"stoploss_transaction_type: {stoploss_transaction_type}, limit_prc: {limit_prc}")
+logger.debug(
+    f"stoploss_transaction_type: {stoploss_transaction_type}, limit_prc: {limit_prc}"
+)
 trigger_prc = calculate_trigger_price(stoploss_transaction_type, limit_prc)
 
 orders_to_place = [
@@ -133,7 +151,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "HedgeEntry",
         "trade_id": next_trade_prefix,
-        "trade_mode": TRADE_MODE
+        "trade_mode": TRADE_MODE,
     },
     {
         "strategy": strategy_name,
@@ -145,7 +163,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "Main",
         "trade_id": next_trade_prefix,
-        "trade_mode": TRADE_MODE
+        "trade_mode": TRADE_MODE,
     },
     {
         "strategy": strategy_name,
@@ -159,13 +177,20 @@ orders_to_place = [
         "trigger_prc": trigger_prc,
         "order_mode": "SL",
         "trade_id": next_trade_prefix,
-        "trade_mode": TRADE_MODE
+        "trade_mode": TRADE_MODE,
     },
 ]
 
 orders_to_place = assign_trade_id(orders_to_place)
 
+
 def main():
+    """
+    Main function to execute the strategy.
+
+    This function waits until the desired start time and then places the orders
+    based on the strategy parameters and current market conditions.
+    """
     global strategy_name, prediction
     now = dt.datetime.now()
 
@@ -196,7 +221,7 @@ def main():
             "TradeId": main_trade_id,
             "Signal": "Short",
             "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Orders" : orders_to_place,
+            "Orders": orders_to_place,
             "StrategyInfo": {
                 "direction": prediction,
                 "sl_multipler": stoploss_multiplier,

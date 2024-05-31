@@ -8,6 +8,15 @@ import pandas as pd
 
 
 def plotly_plot(resultdf):
+    """
+    Generates a Plotly plot for the given DataFrame.
+
+    This function creates a Plotly plot with custom styling, including background colors for each day, trend lines,
+    and markers for trading signals.
+
+    :param resultdf: A DataFrame containing market data and trading signals.
+    :return: A Plotly Figure object.
+    """
     # global trade_state_df
     # Define the custom shapes (background color) for each day
     shapes = []

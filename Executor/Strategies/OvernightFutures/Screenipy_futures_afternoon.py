@@ -15,7 +15,12 @@ CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 import Executor.Strategies.OvernightFutures.OvernightFutures_calc as OF_calc
-from Executor.Strategies.StrategiesUtil import StrategyBase, base_symbol_token,update_qty_user_firebase,update_signal_firebase
+from Executor.Strategies.StrategiesUtil import (
+    StrategyBase,
+    base_symbol_token,
+    update_qty_user_firebase,
+    update_signal_firebase,
+)
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.ExeUtils import holidays
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
@@ -28,7 +33,7 @@ from Executor.Strategies.StrategiesUtil import (
     assign_trade_id,
     place_order_strategy_users,
     fetch_qty_amplifier,
-    fetch_strategy_amplifier
+    fetch_strategy_amplifier,
 )
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
@@ -38,8 +43,12 @@ logger = LoggerSetup()
 strategy_obj = StrategyBase.load_from_db("OvernightFutures")
 instrument_obj = InstrumentCenterUtils.Instrument()
 
-hedge_transcation_type = strategy_obj.get_raw_field("GeneralParams").get("HedgeTransactionType")
-futures_option_type = strategy_obj.get_raw_field("GeneralParams").get("FutureOptionType")
+hedge_transcation_type = strategy_obj.get_raw_field("GeneralParams").get(
+    "HedgeTransactionType"
+)
+futures_option_type = strategy_obj.get_raw_field("GeneralParams").get(
+    "FutureOptionType"
+)
 futures_strikeprc = strategy_obj.get_raw_field("GeneralParams").get("FutureStrikePrc")
 
 strategy_name = strategy_obj.StrategyName
@@ -50,7 +59,19 @@ instrument_token = base_symbol_token(base_symbol)
 order_type = strategy_obj.GeneralParams.OrderType
 product_type = strategy_obj.GeneralParams.ProductType
 
+
 def get_strikeprc(instrument_token, strategy_index, prediction):
+    """
+    Calculate the strike price based on the current ATM strike price.
+
+    Args:
+        instrument_token (str): The token for the instrument.
+        strategy_index (str): The index for the strategy.
+        prediction (str): The market prediction.
+
+    Returns:
+        float: The calculated strike price.
+    """
     strike_prc_multiplier = strategy_obj.EntryParams.SLMultiplier
     return strategy_obj.calculate_current_atm_strike_prc(
         base_symbol=strategy_index,
@@ -58,6 +79,7 @@ def get_strikeprc(instrument_token, strategy_index, prediction):
         prediction=prediction,
         strike_prc_multiplier=strike_prc_multiplier,
     )
+
 
 try:
     proxyServer = urllib.request.getproxies()["http"]
@@ -114,7 +136,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "HedgeEntry",
         "trade_id": next_trade_prefix,
-        "trade_mode": TRADE_MODE
+        "trade_mode": TRADE_MODE,
     },
     {
         "strategy": strategy_name,
@@ -126,13 +148,24 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "Main",
         "trade_id": next_trade_prefix,
-        "trade_mode": TRADE_MODE
+        "trade_mode": TRADE_MODE,
     },
 ]
+
 
 def message_for_orders(
     prediction, main_trade_symbol, hedge_trade_symbol, weekly_expiry, monthly_expiry
 ):
+    """
+    Send a message about the placed orders.
+
+    Args:
+        prediction (str): The market prediction.
+        main_trade_symbol (str): The main trade symbol.
+        hedge_trade_symbol (str): The hedge trade symbol.
+        weekly_expiry (str): The weekly expiry date.
+        monthly_expiry (str): The monthly expiry date.
+    """
     strategy_name = strategy_obj.StrategyName
 
     message = (
@@ -145,32 +178,50 @@ def message_for_orders(
     logger.debug(message)
     discord_bot(message, strategy_name)
 
-def signal_to_log_firebase(orders_to_place,predicition):
+
+def signal_to_log_firebase(orders_to_place, predicition):
+    """
+    Log the trading signal to Firebase.
+
+    Args:
+        orders_to_place (list): List of orders to be placed.
+        prediction (str): The market prediction.
+    """
     for order in orders_to_place:
-            if order.get("order_mode") == "MO":
-                main_trade_id = order.get("trade_id")
-                main_trade_id_prefix = main_trade_id.split("_")[0]
-    
+        if order.get("order_mode") == "MO":
+            main_trade_id = order.get("trade_id")
+            main_trade_id_prefix = main_trade_id.split("_")[0]
+
     trade_signal = "Long" if predicition == "Bullish" else "Short"
 
     signals_to_log = {
-            "TradeId": main_trade_id,
-            "Signal": trade_signal,
-            "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Orders" : orders_to_place,
-            "StrategyInfo": {
-                "trade_id": main_trade_id_prefix,
-                "direction": predicition,
-                "percentage":float(percentage[0])
-            }
-        }
+        "TradeId": main_trade_id,
+        "Signal": trade_signal,
+        "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Orders": orders_to_place,
+        "StrategyInfo": {
+            "trade_id": main_trade_id_prefix,
+            "direction": predicition,
+            "percentage": float(percentage[0]),
+        },
+    }
     update_signal_firebase(strategy_obj.StrategyName, signals_to_log, next_trade_prefix)
 
+
 def main():
+    """
+    The `main` function performs various tasks related to trading strategy execution and updates
+    information in Firebase.
+    :return: The `main()` function is being called and executed, but it does not explicitly return any
+    value. It performs a series of operations related to trading strategies, order placement, and
+    updating information in a Firebase database.
+    """
     global hedge_exchange_token, futures_exchange_token, prediction, orders_to_place
     now = dt.datetime.now()
 
-    lot_size = lot_size = FNOInfo().get_lot_size_by_base_symbol(strategy_obj.Instruments[0])
+    lot_size = lot_size = FNOInfo().get_lot_size_by_base_symbol(
+        strategy_obj.Instruments[0]
+    )
     avg_sl_points = strategy_obj.ExitParams.AvgSLPoints
 
     if now.date() in holidays:
@@ -194,10 +245,12 @@ def main():
     orders_to_place = assign_trade_id(orders_to_place)
     logger.debug(orders_to_place)
 
-    qty_amplifier = fetch_qty_amplifier(strategy_name,"OS")
+    qty_amplifier = fetch_qty_amplifier(strategy_name, "OS")
     strategy_amplifier = fetch_strategy_amplifier(strategy_name)
-    update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifier,strategy_amplifier)
-    signal_to_log_firebase(orders_to_place,prediction)
+    update_qty_user_firebase(
+        strategy_name, avg_sl_points, lot_size, qty_amplifier, strategy_amplifier
+    )
+    signal_to_log_firebase(orders_to_place, prediction)
     place_order_strategy_users(strategy_name, orders_to_place)
 
     hedge_exchange_token = np.int64(hedge_exchange_token)
@@ -211,7 +264,9 @@ def main():
         "HedgeExchangeToken": hedge_exchange_token,
         "Prediction": prediction,
     }
-    update_fields_firebase(STRATEGY_FB_DB, strategy_name, extra_info, "ExtraInformation")
+    update_fields_firebase(
+        STRATEGY_FB_DB, strategy_name, extra_info, "ExtraInformation"
+    )
 
 
 if __name__ == "__main__":

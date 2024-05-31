@@ -35,11 +35,11 @@ logger = LoggerSetup()
 zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
 
 from Executor.Strategies.StrategiesUtil import (
-    StrategyBase, 
+    StrategyBase,
     base_symbol_token,
     update_signal_firebase,
-    update_next_trade_id_firebase
-    )
+    update_next_trade_id_firebase,
+)
 from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
     create_kite_obj,
 )
@@ -148,18 +148,27 @@ for column, dtype in column_types.items():
 
 # Setting StrikePrc at 09.20 a.m.
 def job():
+    """
+    Fetches the latest price for the nifty token and sets the strike price.
+
+    :return: The calculated strike price.
+    """
     global strike_prc, nifty_token
-    
-    
+
     nifty_ltp_dict = kite.ltp(nifty_token)
     nifty_ltp = nifty_ltp_dict[str(nifty_token[0])]
     logger.info(f"Nifty LTP: {nifty_ltp}")
-    
-    strike_prc = round(nifty_ltp['last_price'] / 100) * 100
+
+    strike_prc = round(nifty_ltp["last_price"] / 100) * 100
     return strike_prc
 
 
 def get_ltp():
+    """
+    Fetches the latest price for NIFTY 50 and sets the strike price.
+
+    :return: The calculated strike price.
+    """
     global nifty_token, strike_prc
     nifty_ltp = kite.ltp("NSE:NIFTY 50")
     strike_prc = round(nifty_ltp["NSE:NIFTY 50"]["last_price"] / 100) * 100
@@ -167,6 +176,12 @@ def get_ltp():
 
 
 def time_until(target_time):
+    """
+    Calculates the time remaining until a specified target time.
+
+    :param target_time: The target time to calculate the difference from.
+    :return: The time difference as a timedelta object.
+    """
     now = datetime.datetime.now()
     target_datetime = datetime.datetime.combine(now.date(), target_time)
     if now > target_datetime:
@@ -236,7 +251,14 @@ trade_state_df = pd.DataFrame(
     ]
 )
 
+
 def genSignals(resultdf):
+    """
+    Generates trading signals based on the given DataFrame.
+
+    :param resultdf: The DataFrame containing market data and indicators.
+    :return: A tuple containing the updated DataFrame with signals and the trade state dictionary.
+    """
     counter = 0
     signals = []
     trade_no = 1
@@ -263,6 +285,20 @@ def genSignals(resultdf):
     shortcover_indices = []
 
     def long(df, i):
+        """
+        The function `long` returns a boolean value based on specific conditions involving a DataFrame and
+        index `i`.
+
+        :param df: The `df` parameter in the `long` function is likely a pandas DataFrame that contains
+        financial data such as stock prices, indicators, and timestamps. The function seems to be checking
+        conditions for entering a long trade based on the values in the DataFrame at a specific index `i`
+        :param i: The parameter `i` in the `long` function is used as an index to access specific rows in
+        the DataFrame `df`. It is used to check conditions based on the values in the DataFrame at the
+        specified index `i`
+        :return: The function `long` is returning a boolean value based on the conditions specified in the
+        code snippet. It checks if the following conditions are met for a given row `i` in the DataFrame
+        `df`:
+        """
         return (
             (df.loc[df.index[i], "Trend"] == 1)
             & (df.loc[df.index[i], "close"] > df.loc[df.index[i], "EMA"])
@@ -272,6 +308,20 @@ def genSignals(resultdf):
         )
 
     def short(df, i):
+        """
+        The function `short` returns a boolean value based on specific conditions involving a DataFrame and
+        index `i`.
+
+        :param df: The `df` parameter is likely a pandas DataFrame that contains financial data such as
+        stock prices, indicators, and timestamps. The function `short` takes this DataFrame `df` and an
+        index `i` as input parameters to perform some calculations based on the data in the DataFrame
+        :param i: It seems like you were about to provide some information about the parameter `i`, but the
+        information is missing. Could you please provide more details or let me know how I can assist you
+        further?
+        :return: The `short` function is returning a boolean value based on the conditions specified in the
+        code snippet. It checks if the following conditions are met for a given row `i` in the DataFrame
+        `df`:
+        """
         return (
             (df.loc[df.index[i], "Trend"] == -1)
             & (df.loc[df.index[i], "close"] < df.loc[df.index[i], "EMA"])
@@ -281,6 +331,21 @@ def genSignals(resultdf):
         )
 
     def longcover(df, i):
+        """
+        The function `longcover` checks if a specific condition is met based on the input DataFrame `df` and
+        index `i`.
+
+        :param df: The `df` parameter in the `longcover` function seems to be a DataFrame object that is
+        being used to perform some operations within the function. It is likely that this DataFrame contains
+        time series data with an index that represents time intervals
+        :param i: The parameter `i` in the `longcover` function is typically used as an index to access a
+        specific row in the DataFrame `df`. It seems like this function is checking certain conditions based
+        on the data at the specified index `i`
+        :return: The function `longcover` is returning a boolean value based on the conditions specified in
+        the return statement. The return value will be `True` if the current minute (obtained from the
+        DataFrame index at position `i` and floored to the nearest minute) is not in `longcover_indices` and
+        either the "Trend" value at the current index `i` is equal to
+        """
         current_minute = df.index[i].floor("T")
         return (current_minute not in longcover_indices) and (
             (df.loc[df.index[i], "Trend"] == -1).any()
@@ -288,6 +353,22 @@ def genSignals(resultdf):
         )
 
     def shortcover(df, i):
+        """
+        The function `shortcover` checks if a specific condition is met based on the input DataFrame and
+        index.
+
+        :param df: It seems like you were about to provide some information about the `df` parameter, but
+        the information is missing. Could you please provide more details or specify what kind of
+        information you need regarding the `df` parameter?
+        :param i: The parameter `i` in the `shortcover` function is an index value that is used to access a
+        specific row in the DataFrame `df`. It is used to perform certain checks and calculations based on
+        the data present in the DataFrame at that particular index
+        :return: The function `shortcover` is returning a boolean value based on the conditions specified in
+        the code snippet. The return statement checks if the `current_minute` (obtained from the index of
+        the DataFrame `df` at position `i`) is not in the `shortcover_indices` list and if either of the
+        following conditions is true:
+        1. At least one value in the "Trend
+        """
         current_minute = df.index[i].floor("T")
         return (current_minute not in shortcover_indices) and (
             (df.loc[df.index[i], "Trend"] == 1).any()
@@ -386,6 +467,12 @@ signals = []
 
 
 def updateSignalDf(last_signal, trade_state):
+    """
+    Updates the signals DataFrame and handles order placement.
+
+    :param last_signal: The last generated signal.
+    :param trade_state: The current state of the trade.
+    """
     print("updateSignalDf")
     global signalsdf, signals
 
@@ -409,7 +496,7 @@ def updateSignalDf(last_signal, trade_state):
 
     if trade_type == "LongSignal" or trade_type == "ShortSignal":
         signal = {
-            "TradeId" : next_trade_prefix,
+            "TradeId": next_trade_prefix,
             "Strike_Price": strike_prc,
             "Trade_No": trade_no,
             "Trade_Type": trade_type,
@@ -434,7 +521,7 @@ def updateSignalDf(last_signal, trade_state):
             )
         else:
             signal = {
-                "TradeId" : next_trade_prefix,
+                "TradeId": next_trade_prefix,
                 "Strike_Price": strike_prc,
                 "Trade_No": trade_no,
                 "Trade_Type": trade_type,
@@ -464,6 +551,12 @@ last_signal_t = None
 
 
 def on_ticks(ws, ticks):
+    """
+    Callback function for processing received ticks.
+
+    :param ws: The WebSocket instance.
+    :param ticks: The list of received ticks.
+    """
     global hist_data, signalsdf, last_signal_t
     # print('Received ticks:', ticks)
     current_minute = (
@@ -535,6 +628,12 @@ def on_ticks(ws, ticks):
 
 
 def on_connect(ws, response):  # noqa
+    """
+    Callback function for handling WebSocket connection.
+
+    :param ws: The WebSocket instance.
+    :param response: The response from the server.
+    """
     global trading_tokens
     # Callback on successful connect.
     ws.subscribe(trading_tokens)
@@ -579,6 +678,12 @@ app.layout = html.Div(
 # Define callback to update chart and trade state
 @app.callback(Output("live-graph", "figure"), [Input("graph-update", "n_intervals")])
 def update_graph_scatter(n):
+    """
+    Updates the live graph with the latest trading data.
+
+    :param n: The interval update count.
+    :return: The updated figure for the graph.
+    """
     if trade_state_df.empty:
         trade_state = {
             "in_trade": 0,

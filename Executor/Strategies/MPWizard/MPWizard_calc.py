@@ -17,12 +17,13 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_primary_accounts_from_firebase,
-    STRATEGY_FB_DB
+    STRATEGY_FB_DB,
 )
 from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
     create_kite_obj,
 )
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
 logger = LoggerSetup()
 
 strategy_obj = StrategyBase.load_from_db("MPWizard")
@@ -30,6 +31,16 @@ zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
 
 
 def get_price_reference_firebase(strategy_name, instrument):
+    """
+    Fetch the price reference for the given strategy and instrument from Firebase.
+
+    Parameters:
+    strategy_name (str): The name of the strategy.
+    instrument (str): The instrument for which to fetch the price reference.
+
+    Returns:
+    int: The price reference value for today, or 0 if not found.
+    """
     # Here we are using a mock strategy JSON for demonstration purposes
     strategy_data = fetch_collection_data_firebase(STRATEGY_FB_DB)
     today_index = dt.datetime.today().weekday()
@@ -44,6 +55,12 @@ def get_price_reference_firebase(strategy_name, instrument):
 def calculate_average_range(historical_data):
     """
     Calculate the average range (High - Low) from the historical data.
+
+    Parameters:
+    historical_data (list): A list of historical data dictionaries containing 'high' and 'low' prices.
+
+    Returns:
+    float: The average range calculated from the historical data.
     """
     total_range = 0
     for day_data in historical_data:
@@ -53,7 +70,10 @@ def calculate_average_range(historical_data):
 
 def get_average_range_and_update_json(days):
     """
-    Calculate and update the average range in the JSON file.
+    Calculate and update the average range in the JSON file for the specified number of days.
+
+    Parameters:
+    days (int): The number of days to consider for calculating the average range.
     """
     # fetch primary account
     primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
@@ -96,6 +116,12 @@ def get_average_range_and_update_json(days):
 def determine_ib_level(ratio):
     """
     Determine the IB Level based on the given ratio.
+
+    Parameters:
+    ratio (float): The ratio of the current range to the average range.
+
+    Returns:
+    str: The IB Level, which can be "Small", "Medium", or "Big".
     """
     if ratio <= 0.3333:
         return "Small"
@@ -106,6 +132,16 @@ def determine_ib_level(ratio):
 
 
 def get_price_ref_for_today(instrument: str, extra_info=None) -> Optional[int]:
+    """
+    Get the price reference for today for the specified instrument.
+
+    Parameters:
+    instrument (str): The instrument for which to fetch the price reference.
+    extra_info (Optional[dict]): Optional extra information dictionary. If not provided, the strategy's extra information is used.
+
+    Returns:
+    Optional[int]: The price reference for today, or None if not found.
+    """
     # Get the current day of the week (0=Monday, 6=Sunday)
     if extra_info is None:
         extra_info = strategy_obj.ExtraInformation
@@ -130,7 +166,7 @@ def get_price_ref_for_today(instrument: str, extra_info=None) -> Optional[int]:
 
 def get_high_low_range_and_update_json():
     """
-    Calculate and update the high-low range in the JSON file.
+    Calculate and update the high-low range in the JSON file for the current day.
     """
     # today = dt.date.today().strftime('%Y-%m-%d')
     primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
@@ -178,6 +214,17 @@ def get_high_low_range_and_update_json():
 
 
 def calculate_option_type(ib_level, cross_type, trade_view):
+    """
+    Calculate the option type based on IB Level, cross type, and trade view.
+
+    Parameters:
+    ib_level (str): The IB Level, which can be "Small", "Medium", or "Big".
+    cross_type (str): The cross type, which can be "UpCross" or "DownCross".
+    trade_view (str): The trade view, which can be "Bullish" or "Bearish".
+
+    Returns:
+    str: The option type, which can be "CE" or "PE".
+    """
     if ib_level == "Big":
         return "PE" if cross_type == "UpCross" else "CE"
     elif ib_level == "Small":
