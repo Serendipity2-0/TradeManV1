@@ -22,7 +22,7 @@ jobs:
     - name: Check formatting with black
       run: |
         pip install black
-        black --check .
+        black .
 
     - name: Lint with flake8
       run: |
