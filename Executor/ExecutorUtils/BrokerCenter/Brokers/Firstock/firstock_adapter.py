@@ -12,6 +12,7 @@ ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
@@ -21,7 +22,50 @@ from Executor.Strategies.StrategiesUtil import (
     calculate_transaction_type_sl,
 )
 
+from thefirstock.ordersNReport.placeOrderFunctionality.execution import PLACEORDER , CONFIG_PATH 
+import aiohttp
+import json
+
 logger = LoggerSetup()
+
+
+
+
+async def firstock_placeOrder(exchange, tradingSymbol, quantity, price, product, transactionType,
+                        priceType, retention, triggerPrice, remarks, userId):
+    
+    url = PLACEORDER
+
+    with open(CONFIG_PATH) as file:
+        config_data = json.load(file)
+
+    if userId in config_data:
+        payload = {
+                    "userId": userId,
+                    "exchange": exchange,
+                    "tradingSymbol": tradingSymbol,
+                    "quantity": quantity,
+                    "price": price,
+                    "product": product,
+                    "transactionType": transactionType,
+                    "priceType": priceType,
+                    "retention": retention,
+                    "triggerPrice": triggerPrice,
+                    "remarks": remarks,
+                    "jKey": config_data[userId]['jKey']
+                }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url,
+                                    json=payload
+                                    ) as response:
+                if response.status == 200:
+                    return await response.json()
+                return await response.read()
+    
+    return {
+        "status": "Failed",
+        "data": "User not LoggedIn"
+    }
 
 def firstock_fetch_free_cash(user_details):
     """
@@ -197,7 +241,7 @@ def get_order_status(user_id, order_id):
         logger.error(f"Error in get_order_status: {e}")
         return "FAIL"
 
-def firstock_place_orders_for_users(orders_to_place, users_credentials):
+async def firstock_place_orders_for_users(orders_to_place, users_credentials):
     """
     The function `firstock_place_orders_for_users` places orders for users based on the provided order
     details and user credentials.
@@ -288,7 +332,7 @@ def firstock_place_orders_for_users(orders_to_place, users_credentials):
 
 
     try:
-        order_id = thefirstock.firstock_placeOrder(
+        order_id = await firstock_placeOrder(
                     userId = users_credentials['BrokerUsername'],
                     exchange = segment_type,
                     tradingSymbol=trading_symbol,
