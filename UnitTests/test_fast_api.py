@@ -1,6 +1,14 @@
+import os
+import sys
+
+DIR_PATH = os.getcwd()
+sys.path.append(DIR_PATH)
+
+from User.UserApi.main import app_user
+
+
 def test_register_user_with_valid_details():
     from fastapi.testclient import TestClient
-    from User.UserApi.main import app_user
 
     client = TestClient(app_user)
 
