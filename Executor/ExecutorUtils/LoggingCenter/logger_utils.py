@@ -10,6 +10,20 @@ load_dotenv(ENV_PATH)
 
 
 class LoggerSetup:
+    """
+    Singleton class for setting up a logger using the loguru library.
+
+    This class ensures that only one instance of the logger is created and configured
+    with the specified settings. The logger writes logs to the file specified in the
+    environment variable "ERROR_LOG_PATH".
+
+    Attributes:
+        _instance (LoggerSetup): Singleton instance of LoggerSetup.
+
+    Methods:
+        __new__(cls, *args, **kwargs): Creates a new instance of LoggerSetup if one does not already exist.
+    """
+
     _instance = None
 
     def __new__(cls, *args, **kwargs):

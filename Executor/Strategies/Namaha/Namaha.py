@@ -26,7 +26,7 @@ from Executor.Strategies.StrategiesUtil import (
     calculate_transaction_type_sl,
     calculate_trigger_price,
     fetch_qty_amplifier,
-    fetch_strategy_amplifier
+    fetch_strategy_amplifier,
 )
 
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
@@ -35,23 +35,57 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
 
+
 class Namaha(StrategyBase):
     def get_general_params(self):
+        """
+        The function `get_general_params` returns the `GeneralParams` attribute of the object.
+        :return: The method `get_general_params` is returning the attribute `GeneralParams` of the object
+        `self`.
+        """
         return self.GeneralParams
 
     def get_entry_params(self):
+        """
+        The `get_entry_params` function returns the `EntryParams` attribute of the object.
+        :return: The `EntryParams` attribute of the `self` object is being returned.
+        """
         return self.EntryParams
 
     def get_exit_params(self):
+        """
+        The function `get_exit_params` returns the `ExitParams` attribute of the object.
+        :return: The `ExitParams` attribute of the `self` object is being returned.
+        """
         return self.ExitParams
 
     def get_raw_field(self, field_name: str):
+        """
+        The `get_raw_field` function returns the raw value of a specified field.
+
+        :param field_name: The `get_raw_field` method takes a parameter `field_name` of type `str`, which
+        represents the name of the field you want to retrieve from the object
+        :type field_name: str
+        :return: The `get_raw_field` method is returning the raw value of the field specified by the
+        `field_name` parameter.
+        """
         return super().get_raw_field(field_name)
+
 
 namaha_obj = Namaha.load_from_db("Namaha")
 instrument_obj = InstrumentCenterUtils.Instrument()
 
+
 def message_for_orders(trade_type, prediction, main_trade_symbol, hedge_trade_symbol):
+    """
+    Sends a message with the trade details to Discord.
+
+    Args:
+        trade_type (str): The type of the trade (e.g., 'Live').
+        prediction (str): The market prediction.
+        main_trade_symbol (str): The main trade symbol.
+        hedge_trade_symbol (str): The hedge trade symbol.
+    """
     message = (
         f"{trade_type} Trade for {strategy_name}\n"
         f"Direction : {prediction}\n"
@@ -60,6 +94,7 @@ def message_for_orders(trade_type, prediction, main_trade_symbol, hedge_trade_sy
     )
     logger.info(message)
     discord_bot(message, strategy_name)
+
 
 hedge_transaction_type = namaha_obj.get_general_params().HedgeTransactionType
 main_transaction_type = namaha_obj.get_general_params().MainTransactionType
@@ -78,12 +113,14 @@ stoploss_multiplier = namaha_obj.EntryParams.SLMultiplier
 desired_start_time_str = namaha_obj.get_entry_params().EntryTime
 strategy_type = namaha_obj.GeneralParams.StrategyType
 
-logger.debug(f"Values from Firebase for {strategy_name}: {base_symbol}, {today_expiry_token}, {prediction}, {order_type}, {product_type}, {strike_prc_multiplier}, {hedge_multiplier}, {stoploss_multiplier}, {desired_start_time_str}, {strategy_type}")
+logger.debug(
+    f"Values from Firebase for {strategy_name}: {base_symbol}, {today_expiry_token}, {prediction}, {order_type}, {product_type}, {strike_prc_multiplier}, {hedge_multiplier}, {stoploss_multiplier}, {desired_start_time_str}, {strategy_type}"
+)
 
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
 
 main_strikeprc = namaha_obj.calculate_current_atm_strike_prc(
-    base_symbol, today_expiry_token, prediction, strike_prc_multiplier,strategy_type
+    base_symbol, today_expiry_token, prediction, strike_prc_multiplier, strategy_type
 )
 hedge_strikeprc = namaha_obj.get_hedge_strikeprc(
     base_symbol, today_expiry_token, prediction, hedge_multiplier
@@ -104,9 +141,11 @@ main_exchange_token = instrument_obj.get_exchange_token_by_criteria(
 ltp = InstrumentCenterUtils.get_single_ltp(exchange_token=main_exchange_token)
 lot_size = instrument_obj.get_lot_size_by_exchange_token(main_exchange_token)
 
-qty_amplifier = fetch_qty_amplifier(strategy_name,strategy_type)
+qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
 strategy_amplifier = fetch_strategy_amplifier(strategy_name)
-update_qty_user_firebase(strategy_name, ltp, lot_size,qty_amplifier,strategy_amplifier)
+update_qty_user_firebase(
+    strategy_name, ltp, lot_size, qty_amplifier, strategy_amplifier
+)
 
 main_trade_symbol = instrument_obj.get_trading_symbol_by_exchange_token(
     main_exchange_token
@@ -119,7 +158,9 @@ stoploss_transaction_type = calculate_transaction_type_sl(main_transaction_type)
 limit_prc = calculate_stoploss(
     ltp, main_transaction_type, stoploss_multiplier=stoploss_multiplier
 )
-logger.debug(f"stoploss_transaction_type: {stoploss_transaction_type}, limit_prc: {limit_prc}")
+logger.debug(
+    f"stoploss_transaction_type: {stoploss_transaction_type}, limit_prc: {limit_prc}"
+)
 trigger_prc = calculate_trigger_price(stoploss_transaction_type, limit_prc)
 
 orders_to_place = [
@@ -133,7 +174,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "HedgeEntry",
         "trade_id": next_trade_prefix,
-        "trade_mode": TRADE_MODE
+        "trade_mode": TRADE_MODE,
     },
     {
         "strategy": strategy_name,
@@ -145,7 +186,7 @@ orders_to_place = [
         "product_type": product_type,
         "order_mode": "Main",
         "trade_id": next_trade_prefix,
-        "trade_mode": TRADE_MODE
+        "trade_mode": TRADE_MODE,
     },
     {
         "strategy": strategy_name,
@@ -159,14 +200,26 @@ orders_to_place = [
         "trigger_prc": trigger_prc,
         "order_mode": "SL",
         "trade_id": next_trade_prefix,
-        "trade_mode": TRADE_MODE
+        "trade_mode": TRADE_MODE,
     },
 ]
 
 orders_to_place = assign_trade_id(orders_to_place)
 logger.debug(f"orders_to_place for {strategy_name}: {orders_to_place}")
 
+
 def main():
+    """
+    Main function to execute the trading strategy.
+
+    This function performs the following steps:
+    1. Checks if today is a holiday and skips execution if it is.
+    2. Waits until the desired start time if the current time is before 9:00 AM.
+    3. Calculates the wait time before starting the bot and sleeps for that duration.
+    4. Logs the trade details to Firebase.
+    5. Sends the trade details to Discord.
+    6. Places the orders for the strategy.
+    """
     global strategy_name, prediction
     now = dt.datetime.now()
 

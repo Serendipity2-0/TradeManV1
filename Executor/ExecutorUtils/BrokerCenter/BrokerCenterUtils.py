@@ -24,22 +24,40 @@ import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as ze
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_adapter as firstock_adapter
 
 
-async def place_order_for_brokers(order_details, user_credentials):
+def place_order_for_brokers(order_details, user_credentials):
+    """
+    Places an order for a given broker.
+
+    Args:
+        order_details (dict): Details of the order to be placed.
+        user_credentials (dict): Credentials of the user placing the order.
+
+    Returns:
+        dict: Response from the broker API.
+    """
     if order_details["broker"] == ZERODHA:
-        return await zerodha_adapter.kite_place_orders_for_users(
+        return zerodha_adapter.kite_place_orders_for_users(
             order_details, user_credentials
         )
     elif order_details["broker"] == ALICEBLUE:
-        return await alice_adapter.ant_place_orders_for_users(
-            order_details, user_credentials
-        )
+        return alice_adapter.ant_place_orders_for_users(order_details, user_credentials)
     elif order_details["broker"] == FIRSTOCK:
-        return await firstock_adapter.firstock_place_orders_for_users(
+        return firstock_adapter.firstock_place_orders_for_users(
             order_details, user_credentials
         )
 
 
 def modify_order_for_brokers(order_details, user_credentials):
+    """
+    Modifies an order for a given broker.
+
+    Args:
+        order_details (dict): Details of the order to be modified.
+        user_credentials (dict): Credentials of the user modifying the order.
+
+    Returns:
+        dict: Response from the broker API.
+    """
     if order_details["broker"] == ZERODHA:
         return zerodha_adapter.kite_modify_orders_for_users(
             order_details, user_credentials
@@ -55,6 +73,15 @@ def modify_order_for_brokers(order_details, user_credentials):
 
 
 def all_broker_login(active_users):
+    """
+    Logs in all active users to their respective brokers.
+
+    Args:
+        active_users (list): List of active user accounts.
+
+    Returns:
+        list: List of active user accounts after login attempt.
+    """
     import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
     import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
     import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_login as firstock
@@ -180,7 +207,15 @@ def fetch_users_for_strategies_from_firebase(strategy_name):
 
 
 def fetch_primary_accounts_from_firebase(primary_account):
-    # fetch the tr_no from .env file and fetch the primary account from firebase
+    """
+    Fetches the primary account details from Firebase.
+
+    Args:
+        primary_account (str): The primary account identifier.
+
+    Returns:
+        dict: Details of the primary account.
+    """
     try:
         account_details = firebase_utils.fetch_collection_data_firebase(
             CLIENTS_USER_FB_DB
@@ -193,7 +228,15 @@ def fetch_primary_accounts_from_firebase(primary_account):
 
 
 def fetch_freecash_for_user(user):
-    """Retrieves the cash margin available for a user based on their broker."""
+    """
+    Retrieves the cash margin available for a user based on their broker.
+
+    Args:
+        user (dict): Details of the user account.
+
+    Returns:
+        float: Available cash margin.
+    """
     try:
         logger.debug(
             f"Fetching free cash for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}"
@@ -212,6 +255,15 @@ def fetch_freecash_for_user(user):
 
 
 def download_csv_for_brokers(primary_account):
+    """
+    Downloads CSV data for a given broker's primary account.
+
+    Args:
+        primary_account (dict): Primary account details.
+
+    Returns:
+        str: Path to the downloaded CSV file.
+    """
     if primary_account["Broker"]["BrokerName"] == ZERODHA:
         return zerodha_adapter.get_csv_kite(primary_account)  # Get CSV for this user
     elif primary_account["Broker"]["BrokerName"] == ALICEBLUE:
@@ -221,6 +273,15 @@ def download_csv_for_brokers(primary_account):
 
 
 def fetch_holdings_value_for_user_broker(user):
+    """
+    Fetches the value of holdings for a user based on their broker.
+
+    Args:
+        user (dict): User account details.
+
+    Returns:
+        float: Value of holdings.
+    """
     if user["Broker"]["BrokerName"] == ZERODHA:
         return zerodha_adapter.fetch_zerodha_holdings_value(user)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
@@ -230,6 +291,15 @@ def fetch_holdings_value_for_user_broker(user):
 
 
 def fetch_user_credentials_firebase(broker_user_name):
+    """
+    Fetches user credentials from Firebase based on the broker username.
+
+    Args:
+        broker_user_name (str): The broker username.
+
+    Returns:
+        dict: User credentials for the specified broker username.
+    """
     try:
         user_credentials = firebase_utils.fetch_collection_data_firebase(
             CLIENTS_USER_FB_DB
@@ -242,6 +312,15 @@ def fetch_user_credentials_firebase(broker_user_name):
 
 
 def fetch_strategy_details_for_user(username):
+    """
+    Fetches strategy details for a user from Firebase based on their username.
+
+    Args:
+        username (str): The username of the user.
+
+    Returns:
+        dict: Strategy details for the specified user.
+    """
     try:
         user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
         for user in user_details:
@@ -252,6 +331,12 @@ def fetch_strategy_details_for_user(username):
 
 
 def fetch_active_strategies_all_users():
+    """
+    Fetches a list of all active strategies from Firebase.
+
+    Returns:
+        list: A list of active strategies for all users.
+    """
     try:
         user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
         strategies = []
@@ -266,6 +351,15 @@ def fetch_active_strategies_all_users():
 
 
 def get_today_orders_for_brokers(user):
+    """
+    Fetches today's orders for a user based on their broker.
+
+    Args:
+        user (dict): User account details.
+
+    Returns:
+        list: List of today's orders.
+    """
     if user["Broker"]["BrokerName"] == ZERODHA:
         try:
             logger.debug(
@@ -323,8 +417,17 @@ def get_today_orders_for_brokers(user):
 
 
 def get_today_open_orders_for_brokers(user):
+    """
+    Fetches today's open orders for a user based on their broker.
+
+    Args:
+        user (dict): User account details.
+
+    Returns:
+        list: List of today's open orders.
+    """
     if user["Broker"]["BrokerName"] == ZERODHA:
-        kite_data = zerodha_adapter.fetch_kite_open_orders(user)
+        kite_data = zerodha_adapter.fetch_open_orders(user)
         return kite_data
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         alice_data = alice_adapter.fetch_open_orders(user)
@@ -335,6 +438,16 @@ def get_today_open_orders_for_brokers(user):
 
 
 def create_counter_order_details(tradebook, user):
+    """
+    Creates counter order details based on the tradebook and user details.
+
+    Args:
+        tradebook (list): List of trades.
+        user (dict): User account details.
+
+    Returns:
+        list: List of counter order details.
+    """
     counter_order_details = []
     try:
         for trade in tradebook:
@@ -375,6 +488,17 @@ def create_counter_order_details(tradebook, user):
 
 
 def create_hedge_counter_order_details(tradebook, user, open_orders):
+    """
+    Creates hedge counter order details based on the tradebook, user details, and open orders.
+
+    Args:
+        tradebook (list): List of trades.
+        user (dict): User account details.
+        open_orders (list): List of open orders.
+
+    Returns:
+        list: List of hedge counter order details.
+    """
     hedge_counter_order = []
     if user["Broker"]["BrokerName"] == ZERODHA:
         try:
@@ -474,6 +598,15 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
 
 
 def get_avg_prc_broker_key(broker_name):
+    """
+    Returns the average price key for a given broker.
+
+    Args:
+        broker_name (str): The name of the broker.
+
+    Returns:
+        str: The average price key.
+    """
     if broker_name == ZERODHA:
         return "average_price"
     elif broker_name == ALICEBLUE:
@@ -483,6 +616,15 @@ def get_avg_prc_broker_key(broker_name):
 
 
 def get_order_id_broker_key(broker_name):
+    """
+    Returns the order ID key for a given broker.
+
+    Args:
+        broker_name (str): The name of the broker.
+
+    Returns:
+        str: The order ID key.
+    """
     if broker_name == ZERODHA:
         return "order_id"
     elif broker_name == ALICEBLUE:
@@ -492,6 +634,15 @@ def get_order_id_broker_key(broker_name):
 
 
 def get_trading_symbol_broker_key(broker_name):
+    """
+    Returns the trading symbol key for a given broker.
+
+    Args:
+        broker_name (str): The name of the broker.
+
+    Returns:
+        str: The trading symbol key.
+    """
     if broker_name == ZERODHA:
         return "tradingsymbol"
     elif broker_name == ALICEBLUE:
@@ -501,6 +652,15 @@ def get_trading_symbol_broker_key(broker_name):
 
 
 def get_qty_broker_key(broker_name):
+    """
+    Returns the quantity key for a given broker.
+
+    Args:
+        broker_name (str): The name of the broker.
+
+    Returns:
+        str: The quantity key.
+    """
     if broker_name == ZERODHA:
         return "quantity"
     elif broker_name == ALICEBLUE:
@@ -510,6 +670,15 @@ def get_qty_broker_key(broker_name):
 
 
 def get_time_stamp_broker_key(broker_name):
+    """
+    Returns the timestamp key for a given broker.
+
+    Args:
+        broker_name (str): The name of the broker.
+
+    Returns:
+        str: The timestamp key.
+    """
     if broker_name == ZERODHA:
         return "order_timestamp"
     elif broker_name == ALICEBLUE:
@@ -519,6 +688,15 @@ def get_time_stamp_broker_key(broker_name):
 
 
 def get_trade_id_broker_key(broker_name):
+    """
+    Returns the trade ID key for a given broker.
+
+    Args:
+        broker_name (str): The name of the broker.
+
+    Returns:
+        str: The trade ID key.
+    """
     if broker_name == ZERODHA:
         return "tag"
     elif broker_name == ALICEBLUE:
@@ -528,6 +706,15 @@ def get_trade_id_broker_key(broker_name):
 
 
 def convert_date_str_to_standard_format(date_str):
+    """
+    Converts a date string to a standard format.
+
+    Args:
+        date_str (str): The date string to convert.
+
+    Returns:
+        str: The date string in standard format.
+    """
     from datetime import datetime
 
     # Define possible date formats
@@ -552,6 +739,15 @@ def convert_date_str_to_standard_format(date_str):
 
 
 def convert_to_standard_format(date_str):
+    """
+    Converts a date string or datetime object to a standard format.
+
+    Args:
+        date_str (str or datetime): The date string or datetime object to convert.
+
+    Returns:
+        str: The date string in standard format.
+    """
     from datetime import datetime
 
     # first check the type of the date_str whether it is string or datetime and then convert it to standard format
@@ -565,6 +761,15 @@ def convert_to_standard_format(date_str):
 
 
 def get_ledger_for_user(user):
+    """
+    Fetches the ledger for a user based on their broker.
+
+    Args:
+        user (dict): User account details.
+
+    Returns:
+        dict: Ledger details.
+    """
     if user["Broker"]["BrokerName"] == ZERODHA:
         return zerodha_adapter.zerodha_get_ledger(user)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
@@ -574,6 +779,16 @@ def get_ledger_for_user(user):
 
 
 def process_user_ledger(user, ledger):
+    """
+    Processes the ledger for a user based on their broker.
+
+    Args:
+        user (dict): User account details.
+        ledger (dict): Ledger details.
+
+    Returns:
+        dict: Processed ledger details.
+    """
     if user["Broker"]["BrokerName"] == ZERODHA:
         return zerodha_adapter.process_kite_ledger(ledger, user)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
@@ -583,6 +798,16 @@ def process_user_ledger(user, ledger):
 
 
 def calculate_user_net_values(user, categorized_df):
+    """
+    Calculates the net values for a user based on their broker and categorized dataframe.
+
+    Args:
+        user (dict): User account details.
+        categorized_df (DataFrame): Categorized dataframe.
+
+    Returns:
+        dict: Calculated net values.
+    """
     if user["Broker"]["BrokerName"] == ZERODHA:
         return zerodha_adapter.calculate_kite_net_values(user, categorized_df)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
@@ -592,6 +817,12 @@ def calculate_user_net_values(user, categorized_df):
 
 
 def get_primary_account_obj():
+    """
+    Fetches the primary account object for the primary broker account.
+
+    Returns:
+        object: Primary account object.
+    """
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
     primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
     obj = zerodha_adapter.create_kite_obj(
@@ -602,6 +833,15 @@ def get_primary_account_obj():
 
 
 def get_broker_pnl(user):
+    """
+    Fetches the Profit and Loss (PnL) for a user based on their broker.
+
+    Args:
+        user (dict): User account details.
+
+    Returns:
+        dict: Broker PnL details.
+    """
     try:
         broker = user["Broker"]["BrokerName"]
         if broker == ZERODHA:
@@ -617,28 +857,46 @@ def get_broker_pnl(user):
         return None
 
 
-async def get_orders_tax(orders_to_place, user_credentials):
-    # TODO As of now passing all the brokers to zerodha adapter
+def get_orders_tax(orders_to_place, user_credentials):
+    """
+    Fetches the order tax for a user based on their broker.
+
+    Args:
+        orders_to_place (list): List of orders to place.
+        user_credentials (dict): User credentials.
+
+    Returns:
+        dict: Order tax details.
+    """
     if user_credentials["BrokerName"] == ZERODHA:
-        return await zerodha_adapter.get_kite_order_tax(
-            orders_to_place, user_credentials["BrokerName"]
+        return zerodha_adapter.get_order_tax(
+            orders_to_place, user_credentials, user_credentials["BrokerName"]
         )
     elif user_credentials["BrokerName"] == ALICEBLUE:
-        return await zerodha_adapter.get_kite_order_tax(
-            orders_to_place, user_credentials["BrokerName"]
+        return zerodha_adapter.get_order_tax(
+            orders_to_place, user_credentials, user_credentials["BrokerName"]
         )
     elif user_credentials["BrokerName"] == FIRSTOCK:
-        return await zerodha_adapter.get_kite_order_tax(
-            orders_to_place, user_credentials["BrokerName"]
+        return zerodha_adapter.get_order_tax(
+            orders_to_place, user_credentials, user_credentials["BrokerName"]
         )
     else:
         return None
 
 
 def get_order_margin(orders_to_place, user_credentials):
-    # TODO As of now passing all the brokers to zerodha adapter
+    """
+    Fetches the order margin for a user based on their broker.
+
+    Args:
+        orders_to_place (list): List of orders to place.
+        user_credentials (dict): User credentials.
+
+    Returns:
+        dict: Order margin details.
+    """
     if user_credentials["BrokerName"] == ZERODHA:
-        return zerodha_adapter.get_kite_margin_utilized(user_credentials)
+        return zerodha_adapter.get_margin_utilized(user_credentials)
     elif user_credentials["BrokerName"] == ALICEBLUE:
         return alice_adapter.get_margin_utilized(user_credentials)
     elif user_credentials["BrokerName"] == FIRSTOCK:
@@ -648,8 +906,17 @@ def get_order_margin(orders_to_place, user_credentials):
 
 
 def get_broker_payin(user):
+    """
+    Fetches the broker payin details for a user based on their broker.
+
+    Args:
+        user (dict): User account details.
+
+    Returns:
+        dict: Broker payin details.
+    """
     if user["Broker"]["BrokerName"] == ZERODHA:
-        return zerodha_adapter.get_kite_broker_payin(user)
+        return zerodha_adapter.get_broker_payin(user)
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
         return alice_adapter.get_broker_payin(user)
     elif user["Broker"]["BrokerName"] == FIRSTOCK:

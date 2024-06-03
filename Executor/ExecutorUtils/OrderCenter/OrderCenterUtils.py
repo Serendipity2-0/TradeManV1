@@ -16,7 +16,6 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     push_orders_firebase,
 )
@@ -40,6 +39,20 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
 def calculate_qty_for_strategies(
     capital, risk, avg_sl_points, lot_size, qty_amplifier=None, strategy_amplifier=None
 ):
+    """
+    Calculate the quantity for a trading strategy based on various parameters.
+
+    Args:
+        capital (float): The capital available for trading.
+        risk (float): The percentage of capital to be risked.
+        avg_sl_points (float): The average stop-loss points for the strategy.
+        lot_size (int): The lot size of the instrument.
+        qty_amplifier (float, optional): The quantity amplifier percentage. Defaults to None.
+        strategy_amplifier (float, optional): The strategy amplifier percentage. Defaults to None.
+
+    Returns:
+        int: The calculated quantity for the strategy.
+    """
     logger.info(
         f"Calculating quantity for strategy with capital: {capital}, risk: {risk}, avg_sl_points: {avg_sl_points}, lot_size: {lot_size}"
     )
@@ -47,7 +60,7 @@ def calculate_qty_for_strategies(
         # Set default multipliers if amplifiers are not provided
         qty_multiplier = (
             1 + (qty_amplifier / 100) if qty_amplifier is not None else 1
-        )  # qty_multiplier is fetcched from the marketinfo
+        )  # qty_multiplier is fetched from the marketinfo
         strategy_multiplier = (
             1 + (strategy_amplifier / 100) if strategy_amplifier is not None else 1
         )  # strategy_multiplier is fetched from the strategy
@@ -214,6 +227,13 @@ async def place_order_for_strategy(
 
 
 def modify_orders_for_strategy(strategy_users, order_details):
+    """
+    Modify orders for a trading strategy for multiple users.
+
+    Args:
+        strategy_users (list): A list of users involved in the strategy.
+        order_details (list): A list of order details to be modified.
+    """
     # Update the order details with the username and broker details for each order and pass it to modify_order_for_brokers
     for users in strategy_users:
         logger.debug(f"Modifying orders for user {users['Broker']['BrokerUsername']}")
@@ -238,6 +258,17 @@ def modify_orders_for_strategy(strategy_users, order_details):
 
 
 def retrieve_order_id(account_name, strategy, exchange_token: int):
+    """
+    Retrieve the order ID from Firebase for the given account name, strategy name, and exchange token.
+
+    Args:
+        account_name (str): The account name of the user.
+        strategy (str): The name of the strategy.
+        exchange_token (int): The exchange token of the instrument.
+
+    Returns:
+        dict: A dictionary with order IDs as keys and quantities as values.
+    """
     # retrieve the order id from firebase for the given account name, strategy name and trade id
     order_ids = {}
     user_details = fetch_strategy_details_for_user(account_name)

@@ -9,7 +9,6 @@ from telegram.ext import (
 )
 import logging
 import os, sys
-from dotenv import load_dotenv
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -51,6 +50,11 @@ TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
 def get_strategies_from_users():
+    """
+    Fetches active users from Firebase and extracts their strategies.
+    Adds "Extra" and "Stocks" to the strategy list.
+    Returns a sorted dictionary of strategies.
+    """
     active_users = fetch_active_users_from_firebase()
     strategies = set()
     for user in active_users:
@@ -85,17 +89,36 @@ strategy_map = get_strategies_from_users()
 
 # Handler functions
 def start(update: Update, context: CallbackContext) -> int:
+    """
+    Initiates the conversation and prompts the user to choose the order type.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state ORDER_TYPE.
+    """
     update.message.reply_text(
         "Welcome to the Trading Bot! Please choose the transaction:\n"
         "1. Place Order\n"
         "2. Place Stoploss\n"
         "3. Modify Order"
     )
-
     return ORDER_TYPE
 
 
 def order_type(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the user's order type selection and prompts for the strategy selection.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state STRATEGY_SELECTION.
+    """
     user_input = update.message.text
     context.user_data["order_type"] = order_type_map[user_input]
 
@@ -109,6 +132,16 @@ def order_type(update: Update, context: CallbackContext) -> int:
 
 
 def strategy_selection(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the strategy selection and prompts for user selection based on the chosen strategy.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state USER_SELECTION.
+    """
     user_input = update.message.text
     selected_strategy = strategy_map.get(user_input, "Unknown")
     if selected_strategy == "Unknown":
@@ -148,6 +181,16 @@ def strategy_selection(update: Update, context: CallbackContext) -> int:
 
 
 def user_selection(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the user selection and prompts for the transaction type.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state TRANSACTION_TYPE.
+    """
     user_inputs = update.message.text.split(",")
     all_users_option = str(
         len(context.user_data.get("filtered_users", [])) + 1
@@ -181,6 +224,16 @@ def user_selection(update: Update, context: CallbackContext) -> int:
 
 
 def transaction_type(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the transaction type selection and prompts for the base instrument.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state BASE_INSTRUMENT.
+    """
     user_input = update.message.text
     context.user_data["transaction_type"] = transaction_type_map[user_input]
 
@@ -195,6 +248,16 @@ def transaction_type(update: Update, context: CallbackContext) -> int:
 
 
 def base_instrument(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the base instrument selection and prompts for the stock name if applicable or the product type.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state STOCK_NAME_INPUT or PRODUCT_TYPE.
+    """
     user_input = update.message.text
     context.user_data["base_instrument"] = base_instrument_map.get(
         user_input, "Unknown"
@@ -209,6 +272,16 @@ def base_instrument(update: Update, context: CallbackContext) -> int:
 
 
 def stock_name_input(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the stock name input and prompts for the product type.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state PRODUCT_TYPE.
+    """
     user_input = update.message.text
     context.user_data["stock_name"] = user_input
     logger.info(f"Stock name received: {user_input}")  # Log for debugging
@@ -217,6 +290,16 @@ def stock_name_input(update: Update, context: CallbackContext) -> int:
 
 
 def product_type(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the product type selection and prompts for the option type.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state OPTION_TYPE.
+    """
     user_input = update.message.text
     context.user_data["product_type"] = product_type_map.get(user_input, "Unknown")
     logger.info(
@@ -229,6 +312,16 @@ def product_type(update: Update, context: CallbackContext) -> int:
 
 
 def option_type(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the option type selection and prompts for the strike price selection.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state STRIKE_PRICE_SELECTION.
+    """
     user_input = update.message.text
     context.user_data["option_type"] = option_type_map.get(user_input, "Unknown")
     # If user selects CE or PE, ask for strike price
@@ -251,6 +344,16 @@ def option_type(update: Update, context: CallbackContext) -> int:
 
 
 def strike_price_selection(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the strike price selection and prompts for the strike price input if applicable.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state EXPIRY_SELECTION or STRIKE_PRICE_INPUT.
+    """
     user_input = update.message.text
     if user_input == "1":
         context.user_data["strike_price"] = "ATM"
@@ -273,6 +376,16 @@ def strike_price_selection(update: Update, context: CallbackContext) -> int:
 
 
 def strike_price_input(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the strike price input and prompts for the expiry selection.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state EXPIRY_SELECTION.
+    """
     user_input = update.message.text
     context.user_data["strike_price"] = user_input
     # After inputting strike price, proceed to expiry selection
@@ -288,6 +401,16 @@ def strike_price_input(update: Update, context: CallbackContext) -> int:
 
 
 def expiry_selection(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the expiry selection and prompts for the quantity or risk selection.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state QTY_RISK_SELECTION.
+    """
     user_input = update.message.text
     context.user_data["expiry"] = expiry_map[user_input]
     update.message.reply_text("Enter:\n" "1. Qty\n" "2. Risk\n" "3. Strategy QTY")
@@ -295,6 +418,16 @@ def expiry_selection(update: Update, context: CallbackContext) -> int:
 
 
 def qty_risk_selection(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the quantity or risk selection and prompts for the respective input.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state QTY_RISK_INPUT or TRADE_ID_INPUT.
+    """
     user_input = update.message.text
     context.user_data["qty_or_risk"] = user_input
 
@@ -315,6 +448,16 @@ def qty_risk_selection(update: Update, context: CallbackContext) -> int:
 
 
 def qty_risk_input(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the quantity or risk input and prompts for the trade ID.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state TRADE_ID_INPUT.
+    """
     user_input = update.message.text
 
     # Determine whether to store quantity or risk percentage based on previous selection
@@ -322,9 +465,9 @@ def qty_risk_input(update: Update, context: CallbackContext) -> int:
         if context.user_data["qty_or_risk"] == "1":
             context.user_data["quantity"] = user_input  # Store the quantity
         elif context.user_data["qty_or_risk"] == "2":
-            context.user_data["risk_percentage"] = (
-                user_input  # Store the risk percentage
-            )
+            context.user_data[
+                "risk_percentage"
+            ] = user_input  # Store the risk percentage
     else:
         # Handle the error case where 'qty_or_risk' was not set
         update.message.reply_text("An error occurred. Please start again.")
@@ -335,6 +478,16 @@ def qty_risk_input(update: Update, context: CallbackContext) -> int:
 
 
 def trade_id_input(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the trade ID input and prompts for the entry or exit selection.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state ENTRY_EXIT_SELECTION.
+    """
     user_input = update.message.text
     context.user_data["trade_id"] = user_input.upper()
     update.message.reply_text("Please select:\n" "1. Entry\n" "2. Exit")
@@ -342,6 +495,16 @@ def trade_id_input(update: Update, context: CallbackContext) -> int:
 
 
 def entry_exit_selection(update: Update, context: CallbackContext) -> int:
+    """
+    Handles the entry or exit selection and provides a summary of the user's selections for confirmation.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state CONFIRMATION.
+    """
     user_input = update.message.text
     trade_id = context.user_data.get("trade_id")
     if user_input == "1":
@@ -373,15 +536,41 @@ def entry_exit_selection(update: Update, context: CallbackContext) -> int:
 
 
 def confirmation(update: Update, context: CallbackContext) -> int:
+    """
+    Prompts the user to confirm the order details.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The next state CONFIRMATION.
+    """
     update.message.reply_text("Do you want to place the order?\n1. Yes\n2. No")
     return CONFIRMATION
 
 
 def clear_user_data(context: CallbackContext):
+    """
+    Clears the user data stored in the context.
+
+    Args:
+    context (CallbackContext): Context object.
+    """
     context.user_data.clear()
 
 
 def process_confirmation(update: Update, context: CallbackContext) -> int:
+    """
+    Processes the user's confirmation, places the order, and clears user data.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+
+    Returns:
+    int: The state indicating the end of the conversation.
+    """
     user_input = update.message.text
     if user_input == "1":
         order_details_list = []
@@ -437,10 +626,20 @@ def process_confirmation(update: Update, context: CallbackContext) -> int:
 
 
 def error(update: Update, context: CallbackContext):
+    """
+    Logs any errors that occur during the conversation.
+
+    Args:
+    update (Update): Incoming update.
+    context (CallbackContext): Context object.
+    """
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 
 def main():
+    """
+    The main function that initializes the bot and starts polling for updates.
+    """
     # Create the Updater and pass it your bot's token.
     updater = Updater(TOKEN, use_context=True)
 
