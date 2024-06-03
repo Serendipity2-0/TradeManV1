@@ -18,14 +18,13 @@ from Executor.Strategies.StrategiesUtil import (
     assign_trade_id,
     update_qty_user_firebase,
     update_signal_firebase,
-    fetch_previous_trade_id,
     place_order_strategy_users,
     fetch_qty_amplifier,
-    fetch_strategy_amplifier
+    fetch_strategy_amplifier,
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,    
+    discord_bot,
 )
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 
@@ -37,6 +36,7 @@ avg_sl_points = strategy_obj.ExitParams.AvgSLPoints
 lot_size = FNOInfo().get_lot_size_by_base_symbol(strategy_obj.Instruments[0])
 next_trade_prefix = strategy_obj.NextTradeId
 
+
 def message_for_orders(
     trade_type,
     signal,
@@ -45,6 +45,16 @@ def message_for_orders(
     hedge_CE_exchange_token,
     hedge_PE_exchange_token,
 ):
+    """
+    Constructs and sends a message regarding the orders to be placed using Discord.
+
+    :param trade_type: The type of trade (entry/exit).
+    :param signal: The signal indicating the type of order (Long/Short).
+    :param main_CE_exchange_token: The exchange token for the main CE order.
+    :param main_PE_exchange_token: The exchange token for the main PE order.
+    :param hedge_CE_exchange_token: The exchange token for the hedge CE order.
+    :param hedge_PE_exchange_token: The exchange token for the hedge PE order.
+    """
 
     main_trade_CE_symbol = instrument_obj.get_trading_symbol_by_exchange_token(
         main_CE_exchange_token
@@ -77,31 +87,47 @@ def message_for_orders(
 
     discord_bot(message, strategy_obj.StrategyName)
 
-def signal_to_log_firebase(orders_to_place,signal):
+
+def signal_to_log_firebase(orders_to_place, signal):
+    """
+    Logs the signal and order details to Firebase.
+
+    :param orders_to_place: A list of dictionaries containing order details.
+    :param signal: The signal indicating the type of order (ShortSignal/LongSignal).
+    """
     for order in orders_to_place:
-            if order.get("order_mode") == "MO":
-                main_trade_id = order.get("trade_id")
-                main_trade_id_prefix = main_trade_id.split("_")[0]
-    
+        if order.get("order_mode") == "MO":
+            main_trade_id = order.get("trade_id")
+            main_trade_id_prefix = main_trade_id.split("_")[0]
+
     if signal == "ShortSignal" or signal == "LongSignal":
         signals_to_log = {
-                "TradeId": main_trade_id,
-                "Signal": signal,
-                "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Orders" : orders_to_place,
-                "StrategyInfo": {
-                    "trade_id": main_trade_id_prefix,
-                    "signal": signal,
-                    "hedge_multiplier": strategy_obj.ExtraInformation.HedgeDistance,
-                    "ema_period": strategy_obj.EntryParams.EMAPeriod,
-                    "heikin_ashi_period": strategy_obj.EntryParams.HeikinAshiMAPeriod,
-                    "super_trend_multiplier": strategy_obj.EntryParams.SupertrendMultiplier,
-                    "super_trend_period": strategy_obj.EntryParams.SupertrendPeriod,
-                }
-            }
-        update_signal_firebase(strategy_obj.StrategyName, signals_to_log, next_trade_prefix)
+            "TradeId": main_trade_id,
+            "Signal": signal,
+            "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Orders": orders_to_place,
+            "StrategyInfo": {
+                "trade_id": main_trade_id_prefix,
+                "signal": signal,
+                "hedge_multiplier": strategy_obj.ExtraInformation.HedgeDistance,
+                "ema_period": strategy_obj.EntryParams.EMAPeriod,
+                "heikin_ashi_period": strategy_obj.EntryParams.HeikinAshiMAPeriod,
+                "super_trend_multiplier": strategy_obj.EntryParams.SupertrendMultiplier,
+                "super_trend_period": strategy_obj.EntryParams.SupertrendPeriod,
+            },
+        }
+        update_signal_firebase(
+            strategy_obj.StrategyName, signals_to_log, next_trade_prefix
+        )
+
 
 def place_orders(strike_prc, signal):
+    """
+    Places orders based on the given strike price and signal.
+
+    :param strike_prc: The strike price for the orders.
+    :param signal: The signal indicating the type of order (ShortSignal/LongSignal).
+    """
     global avg_sl_points, lot_size
     strategy_name = strategy_obj.StrategyName
     order_type = strategy_obj.GeneralParams.OrderType
@@ -140,9 +166,9 @@ def place_orders(strike_prc, signal):
             hedge_order_mode = "HedgeExit"
 
         main_orders = [
-        {"exchange_token": main_CE_exchange_token, "order_mode": main_order_mode},
-        {"exchange_token": main_PE_exchange_token, "order_mode": main_order_mode},
-    ]
+            {"exchange_token": main_CE_exchange_token, "order_mode": main_order_mode},
+            {"exchange_token": main_PE_exchange_token, "order_mode": main_order_mode},
+        ]
 
         hedge_orders = [
             {"exchange_token": hedge_CE_exchange_token, "order_mode": hedge_order_mode},
@@ -168,7 +194,7 @@ def place_orders(strike_prc, signal):
     trade_type = (
         "entry" if signal == "ShortSignal" or signal == "LongSignal" else "exit"
     )
-    
+
     trade_id = strategy_obj.NextTradeId
 
     for order in orders_to_place:
@@ -186,18 +212,18 @@ def place_orders(strike_prc, signal):
                 "order_type": order_type,
                 "product_type": product_type,
                 "trade_id": trade_id,
-                "trade_mode": TRADE_MODE
+                "trade_mode": TRADE_MODE,
             }
         )
 
-    
     orders_to_place = assign_trade_id(orders_to_place)
-    qty_amplifier = fetch_qty_amplifier(strategy_name,"OS")
+    qty_amplifier = fetch_qty_amplifier(strategy_name, "OS")
     strategy_amplifier = fetch_strategy_amplifier(strategy_name)
-    update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifier,strategy_amplifier)
+    update_qty_user_firebase(
+        strategy_name, avg_sl_points, lot_size, qty_amplifier, strategy_amplifier
+    )
     update_qty_user_firebase(strategy_name, avg_sl_points, lot_size)
-    signal_to_log_firebase(orders_to_place,signal)
-    
+    signal_to_log_firebase(orders_to_place, signal)
 
     message_for_orders(
         trade_type,
