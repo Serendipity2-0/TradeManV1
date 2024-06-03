@@ -18,6 +18,7 @@ import Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter as exesql_adapt
 ins_db_path = os.getenv("SQLITE_INS_PATH")
 logger = LoggerSetup()
 
+
 def get_ins_df():
     try:
         conn = exesql_adapter.get_db_connection(ins_db_path)
@@ -29,9 +30,12 @@ def get_ins_df():
         logger.error(f"An error occurred: {e}")
         return None
 
+
 class Instrument:
+    _dataframe = get_ins_df()
+
     def __init__(self):
-        self._dataframe = get_ins_df()
+        self._dataframe = Instrument._dataframe
         self._instrument_token = None
         self._exchange_token = None
 
@@ -165,7 +169,7 @@ class Instrument:
         else:
             return None
 
-    def get_kite_token_by_exchange_token(self, exchange_token,segment=None):
+    def get_kite_token_by_exchange_token(self, exchange_token, segment=None):
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
         if not filtered_data.empty:
             if segment:
@@ -186,15 +190,17 @@ class Instrument:
         if exchange:
             filtered_data = self._filter_data_by_exchange_token(exchange_token)
             filtered_data = filtered_data[filtered_data["exchange"] == exchange]
-            filtered_data = filtered_data[filtered_data['exchange'] != 'CDS']
+            filtered_data = filtered_data[filtered_data["exchange"] != "CDS"]
             return filtered_data.iloc[0]["tradingsymbol"]
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
         if not filtered_data.empty:
             return filtered_data.iloc[0]["tradingsymbol"]
         else:
             return None
-        
-    def get_full_format_trading_symbol_by_exchange_token(self, exchange_token: str, segment=None):
+
+    def get_full_format_trading_symbol_by_exchange_token(
+        self, exchange_token: str, segment=None
+    ):
         if segment:
             filtered_data = self._filter_data_by_exchange_token(exchange_token)
             filtered_data = filtered_data[filtered_data["segment"] == segment]
@@ -214,8 +220,8 @@ class Instrument:
 
     def get_exchange_by_exchange_token(self, exchange_token):
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
-        #Remove CDS from the list of segments
-        filtered_data = filtered_data[filtered_data['exchange'] != 'CDS']
+        # Remove CDS from the list of segments
+        filtered_data = filtered_data[filtered_data["exchange"] != "CDS"]
         if not filtered_data.empty:
             return filtered_data.iloc[0]["exchange"]
         else:
@@ -244,8 +250,9 @@ class Instrument:
             return filtered_data.iloc[0]["exchange_token"]
         else:
             return None
-        
+
         # get_instrument_type with exchange_token
+
     def get_instrument_type_by_exchange_token(self, exchange_token):
         filtered_data = self._filter_data_by_exchange_token(exchange_token)
         if not filtered_data.empty:
@@ -306,10 +313,11 @@ class Instrument:
         }
         # Return the token for the given base symbol, or a default message if not found
         return symbol_to_token.get(base_symbol, "No token found for given symbol")
-    
+
     def get_margin_multiplier(self, trading_symbol):
-        #TODO: Remove this hardcoding and fetch from API
+        # TODO: Remove this hardcoding and fetch from API
         return 546
+
 
 def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
@@ -320,10 +328,12 @@ def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
     kite.set_access_token(
         access_token=primary_account_session_id["Broker"]["SessionId"]
     )
-    
+
     if exchange_token:
         if segment:
-            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token,segment)
+            kite_token = Instrument().get_kite_token_by_exchange_token(
+                exchange_token, segment
+            )
         else:
             kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
         ltp = kite.ltp(kite_token)
@@ -331,6 +341,7 @@ def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
     else:
         ltp = kite.ltp(kite_token)
         return ltp[str(kite_token)]["last_price"]
+
 
 def get_single_quote(kite_token=None, exchange_token=None, segment=None):
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
@@ -341,10 +352,12 @@ def get_single_quote(kite_token=None, exchange_token=None, segment=None):
     kite.set_access_token(
         access_token=primary_account_session_id["Broker"]["SessionId"]
     )
-    
+
     if exchange_token:
         if segment:
-            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token,segment)
+            kite_token = Instrument().get_kite_token_by_exchange_token(
+                exchange_token, segment
+            )
         else:
             kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
         quote = kite.quote(kite_token)

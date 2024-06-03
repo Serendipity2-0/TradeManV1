@@ -4,10 +4,11 @@ import re
 import sys
 from datetime import time
 from typing import Dict, List, Optional, Union
+import asyncio
 
 import pandas as pd
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -21,12 +22,12 @@ STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
-    push_orders_firebase,
     update_fields_firebase,
 )
 from Executor.ExecutorUtils.ExeUtils import holidays
 
 logger = LoggerSetup()
+
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):
@@ -62,7 +63,7 @@ class ExtraInformation(BaseModel):
     Prediction: Optional[str] = None
     HedgeExchangeToken: Optional[int] = None
     FuturesExchangeToken: Optional[int] = None
-    MultiLeg : Optional[bool] = None
+    MultiLeg: Optional[bool] = None
 
     class Config:
         extra = "allow"
@@ -100,7 +101,7 @@ class TodayOrder(BaseModel):
     ExitPrc: Optional[float] = None
     ExitTime: Optional[time] = None
     Signal: Optional[str] = None
-    StrategyInfo: Optional[Dict[str, Union[str,float]]] = None
+    StrategyInfo: Optional[Dict[str, Union[str, float]]] = None
     TradeId: Optional[str] = None
 
     class Config:
@@ -142,11 +143,11 @@ class StrategyBase(BaseModel):
         if data is None:
             raise ValueError(f"No data found for strategy {strategy_name}")
         return cls.parse_obj(data)
-    
+
     @staticmethod
     def reload_strategy(strategy_name: str):
         return StrategyBase.load_from_db(strategy_name)
-    
+
     ###########################################################################
     def get_option_type(self, prediction, strategy_option_mode):
         if strategy_option_mode == "OS":
@@ -200,9 +201,7 @@ class StrategyBase(BaseModel):
         else:
             return "No expiry today"
 
-    def round_strike_prc(
-        self, ltp, base_symbol
-    ):
+    def round_strike_prc(self, ltp, base_symbol):
         strike_step = self.get_strike_step(base_symbol)
         return round(ltp / strike_step) * strike_step
 
@@ -214,7 +213,12 @@ class StrategyBase(BaseModel):
         return strike_step
 
     def calculate_current_atm_strike_prc(
-        self, base_symbol, token=None, prediction=None, strike_prc_multiplier=None, strategy_type = None
+        self,
+        base_symbol,
+        token=None,
+        prediction=None,
+        strike_prc_multiplier=None,
+        strategy_type=None,
     ):
         from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
             get_single_ltp,
@@ -314,6 +318,7 @@ def fetch_strategy_users(strategy_name):
     from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
         fetch_active_users_from_firebase,
     )
+
     try:
         active_users = fetch_active_users_from_firebase()
         strategy_users = []
@@ -340,6 +345,7 @@ def fetch_freecash_firebase(strategy_name):
         logger.error(f"Error fetching free cash: {e}")
         return None
 
+
 def fetch_risk_per_trade_firebase(strategy_name):
     try:
         users = fetch_strategy_users(strategy_name)
@@ -353,7 +359,10 @@ def fetch_risk_per_trade_firebase(strategy_name):
         logger.error(f"Error fetching risk per trade: {e}")
         return None
 
-def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifier=None,strategy_amplifier=None):
+
+def update_qty_user_firebase(
+    strategy_name, avg_sl_points, lot_size, qty_amplifier=None, strategy_amplifier=None
+):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
         calculate_qty_for_strategies,
     )
@@ -367,11 +376,21 @@ def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifie
                 risk = risk_per_trade[user["Tr_No"]]
             if user["Tr_No"] in free_cash_dict:
                 capital = free_cash_dict[user["Tr_No"]]
-            qty = calculate_qty_for_strategies(capital, risk, avg_sl_points, lot_size,qty_amplifier,strategy_amplifier)
+            qty = calculate_qty_for_strategies(
+                capital,
+                risk,
+                avg_sl_points,
+                lot_size,
+                qty_amplifier,
+                strategy_amplifier,
+            )
             user["Strategies"][strategy_name]["Qty"] = qty
 
             update_fields_firebase(
-                user_db_collection, user["Tr_No"], {"Qty": qty}, f"Strategies/{strategy_name}"
+                user_db_collection,
+                user["Tr_No"],
+                {"Qty": qty},
+                f"Strategies/{strategy_name}",
             )
     except Exception as e:
         logger.error(f"Error updating qty for user: {e}")
@@ -380,16 +399,20 @@ def update_qty_user_firebase(strategy_name, avg_sl_points, lot_size,qty_amplifie
 def assign_trade_id(orders_to_place):
     for order in orders_to_place:
         # Determine the last part of the trade_id based on order_mode
-        if order["order_mode"] in ["Main", "HedgeEntry","MainEntry"]:
+        if order["order_mode"] in ["Main", "HedgeEntry", "MainEntry"]:
             trade_id_suffix = "EN"
-        elif order["order_mode"] in ["SL", "Trailing", "HedgeExit","MainExit"]:
+        elif order["order_mode"] in ["SL", "Trailing", "HedgeExit", "MainExit"]:
             trade_id_suffix = "EX"
         else:
             trade_id_suffix = "unknown"
 
         if order["order_mode"] == "HedgeEntry" or order["order_mode"] == "HedgeExit":
             order["order_mode"] = "HO"
-        if order["order_mode"] == "Main" or order["order_mode"] == "MainEntry" or order["order_mode"] == "MainExit":
+        if (
+            order["order_mode"] == "Main"
+            or order["order_mode"] == "MainEntry"
+            or order["order_mode"] == "MainExit"
+        ):
             order["order_mode"] = "MO"
         if order["order_mode"] == "SL" or order["order_mode"] == "Trailing":
             order["order_mode"] = "SL"
@@ -458,14 +481,19 @@ def place_order_strategy_users(strategy_name, orders_to_place, order_qty_mode=No
     )
 
     strategy_users = fetch_strategy_users(strategy_name)
-    place_order_for_strategy(strategy_users, orders_to_place, order_qty_mode)
+    asyncio.run(
+        place_order_for_strategy(strategy_users, orders_to_place, order_qty_mode)
+    )
     pass
 
-def place_order_single_user(user_details,orders_to_place,order_qty_mode=None):
+
+def place_order_single_user(user_details, orders_to_place, order_qty_mode=None):
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
         place_order_for_strategy,
     )
-    return place_order_for_strategy(user_details,orders_to_place,order_qty_mode)
+
+    return place_order_for_strategy(user_details, orders_to_place, order_qty_mode)
+
 
 def update_stoploss_orders(strategy_name, orders_to_modify):
     # I fetch the users for the strategy and then pass the users and orders to modify to the modify_orders_for_strategy function
@@ -497,7 +525,9 @@ def calculate_multipler_stoploss(main_transaction_type, ltp, stoploss_multiplier
         stoploss = round(float(ltp - (ltp * stoploss_multiplier)), 1)
     elif main_transaction_type == "SELL":
         stoploss = round(float(ltp + (ltp * stoploss_multiplier)), 1)
-    logger.debug(f"stoploss: {stoploss}, ltp: {ltp}, stoploss_multiplier: {stoploss_multiplier}")
+    logger.debug(
+        f"stoploss: {stoploss}, ltp: {ltp}, stoploss_multiplier: {stoploss_multiplier}"
+    )
     if stoploss < 0:
         return 1
 
@@ -565,25 +595,37 @@ def get_signal_from_trade_id(trade_id):
     else:
         return None
 
-def fetch_qty_amplifier(strategy_name,strategy_type):
+
+def fetch_qty_amplifier(strategy_name, strategy_type):
     try:
         strategy_data = fetch_collection_data_firebase(STRATEGIES_DB, strategy_name)
         if strategy_type == "OS":
-            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get("OSQtyAmplifier", 1)
+            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get(
+                "OSQtyAmplifier", 1
+            )
         elif strategy_type == "OB":
-            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get("OBQtyAmplifier", 1)
+            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get(
+                "OBQtyAmplifier", 1
+            )
         elif strategy_type == "Equity":
-            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get("EquityQtyAmplifier", 1)
+            qty_amplifier = strategy_data.get("MarketInfoParams", {}).get(
+                "EquityQtyAmplifier", 1
+            )
         return qty_amplifier
     except Exception as e:
         logger.error(f"Error fetching qty amplifier for strategy {strategy_name}: {e}")
         return 1
 
+
 def fetch_strategy_amplifier(strategy_name):
     try:
         strategy_data = fetch_collection_data_firebase(STRATEGIES_DB, strategy_name)
-        amplifier = strategy_data.get("MarketInfoParams", {}).get("StrategyQtyAmplifier", 1)
+        amplifier = strategy_data.get("MarketInfoParams", {}).get(
+            "StrategyQtyAmplifier", 1
+        )
         return amplifier
     except Exception as e:
-        logger.error(f"Error fetching strategy amplifier for strategy {strategy_name}: {e}")
+        logger.error(
+            f"Error fetching strategy amplifier for strategy {strategy_name}: {e}"
+        )
         return 1

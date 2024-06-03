@@ -1,12 +1,11 @@
 import datetime
-
 import pandas as pd
 from kiteconnect import KiteConnect
-import os,sys
-
-DIR = os.getcwd()
-sys.path.append(DIR)
-
+import os, sys
+from six.moves.urllib.parse import urljoin
+import aiohttp
+import json
+import kiteconnect.exceptions as ex
 from Executor.Strategies.StrategiesUtil import (
     get_strategy_name_from_trade_id,
     get_signal_from_trade_id,
@@ -19,27 +18,198 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
+DIR = os.getcwd()
+sys.path.append(DIR)
+
+
+class aysnc_KiteConnect(KiteConnect):
+    async def place_order(
+        self,
+        variety,
+        exchange,
+        tradingsymbol,
+        transaction_type,
+        quantity,
+        product,
+        order_type,
+        price=None,
+        validity=None,
+        validity_ttl=None,
+        disclosed_quantity=None,
+        trigger_price=None,
+        iceberg_legs=None,
+        iceberg_quantity=None,
+        auction_number=None,
+        tag=None,
+    ):
+        """Place an order."""
+        params = locals()
+        del params["self"]
+
+        for k in list(params.keys()):
+            if params[k] is None:
+                del params[k]
+
+        return await self._post(
+            "order.place", url_args={"variety": variety}, params=params
+        )["order_id"]
+
+    async def _post(
+        self, route, url_args=None, params=None, is_json=False, query_params=None
+    ):
+        """Alias for sending a POST request."""
+        return await self._request(
+            route,
+            "POST",
+            url_args=url_args,
+            params=params,
+            is_json=is_json,
+            query_params=query_params,
+        )
+
+    async def async_post(
+        self,
+        url,
+        json,
+        data,
+        params,
+        headers,
+        verify,
+        allow_redirects,
+        timeout,
+        proxies,
+    ):
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                url,
+                json=json,
+                data=data,
+                params=params,
+                headers=headers,
+                # ssl=verify,
+                # allow_redirects=allow_redirects,
+                timeout=timeout,
+                # proxy_auth=proxies
+            ) as response:
+                return response.status, await response.read(), response.headers
+
+    async def basket_order_margins(self, params, consider_positions=True, mode=None):
+        """
+        Calculate total margins required for basket of orders including margin benefits
+
+        - `params` is list of orders to fetch basket margin
+        - `consider_positions` is a boolean to consider users positions
+        - `mode` is margin response mode type. compact - Compact mode will only give the total margins
+        """
+        return await self._post(
+            "order.margins.basket",
+            params=params,
+            is_json=True,
+            query_params={"consider_positions": "true", "mode": mode},
+        )
+
+    async def _request(
+        self,
+        route,
+        method,
+        url_args=None,
+        params=None,
+        is_json=False,
+        query_params=None,
+    ):
+        """Make an HTTP request."""
+        # Form a restful URL
+        if url_args:
+            uri = self._routes[route].format(**url_args)
+        else:
+            uri = self._routes[route]
+
+        url = urljoin(self.root, uri)
+
+        # Custom headers
+        headers = {
+            "X-Kite-Version": self.kite_header_version,
+            "User-Agent": self._user_agent(),
+        }
+
+        if self.api_key and self.access_token:
+            # set authorization header
+            auth_header = self.api_key + ":" + self.access_token
+            headers["Authorization"] = "token {}".format(auth_header)
+
+        if self.debug:
+            logger.debug(
+                "Request: {method} {url} {params} {headers}".format(
+                    method=method, url=url, params=params, headers=headers
+                )
+            )
+
+        # prepare url query params
+        if method in ["GET", "DELETE"]:
+            query_params = params
+
+        try:
+            status_code, content, headers = await self.async_post(
+                url,
+                json=params if (method in ["POST", "PUT"] and is_json) else None,
+                data=params if (method in ["POST", "PUT"] and not is_json) else None,
+                params=query_params,
+                headers=headers,
+                verify=not self.disable_ssl,
+                allow_redirects=True,
+                timeout=self.timeout,
+                proxies=self.proxies,
+            )
+        # Any requests lib related exceptions are raised here - https://requests.readthedocs.io/en/latest/api/#exceptions
+        except Exception as e:
+            raise e
+
+        if self.debug:
+            logger.debug(
+                "Response: {code} {content}".format(code=status_code, content=content)
+            )
+
+        # Validate the content type.
+        if "json" in headers["content-type"]:
+            try:
+                data = json.loads(content.decode("utf-8"))
+            except ValueError:
+                raise ex.DataException(
+                    "Couldn't parse the JSON response received from the server: {content}".format(
+                        content=content
+                    )
+                )
+
+            # api error
+            if data.get("status") == "error" or data.get("error_type"):
+                # Call session hook if its registered and TokenException is raised
+                if (
+                    self.session_expiry_hook
+                    and status_code == 403
+                    and data["error_type"] == "TokenException"
+                ):
+                    self.session_expiry_hook()
+
+                # native Kite errors
+                exp = getattr(ex, data.get("error_type"), ex.GeneralException)
+                raise exp(data["message"], code=status_code)
+
+            return data["data"]
+        elif "csv" in headers["content-type"]:
+            return content
+        else:
+            raise ex.DataException(
+                "Unknown Content-Type ({content_type}) with response: ({content})".format(
+                    content_type=headers["content-type"], content=content
+                )
+            )
+
 
 def create_kite_obj(user_details=None, api_key=None, access_token=None):
-    """
-    Creates a KiteConnect object either with directly provided API key and access token, or
-    via a user details dictionary.
-
-    Parameters:
-        user_details (dict, optional): Dictionary containing 'ApiKey' and 'SessionId' for the user.
-        api_key (str, optional): API key for KiteConnect.
-        access_token (str, optional): Access token for KiteConnect.
-
-    Returns:
-        KiteConnect: An instance of the KiteConnect class.
-
-    Raises:
-        ValueError: If neither user details nor API key and access token are provided.
-    """
     if api_key and access_token:
-        return KiteConnect(api_key=api_key, access_token=access_token)
+        return aysnc_KiteConnect(api_key=api_key, access_token=access_token)
     elif user_details:
-        return KiteConnect(
+        return aysnc_KiteConnect(
             api_key=user_details["ApiKey"], access_token=user_details["SessionId"]
         )
     else:
@@ -49,18 +219,6 @@ def create_kite_obj(user_details=None, api_key=None, access_token=None):
 
 
 def zerodha_fetch_free_cash(user_details):
-    """
-    Fetches and returns the free cash balance from a Zerodha account using user credentials.
-    
-    Args:
-        user_details (dict): Dictionary containing the API credentials.
-
-    Returns:
-        float: The free cash balance in the user's account.
-
-    Raises:
-        Exception: If there is an issue fetching the balance.
-    """
     logger.debug(f"Fetching free cash for {user_details['BrokerUsername']}")
     kite = KiteConnect(api_key=user_details["ApiKey"])
     kite.set_access_token(user_details["SessionId"])
@@ -77,27 +235,21 @@ def zerodha_fetch_free_cash(user_details):
                 if isinstance(value, dict) and "cash" in value:
                     cash_balance = value.get("cash", 0)
                     break
-        logger.info(f"Free cash fetched for {user_details['BrokerUsername']}: {cash_balance}")
+        logger.info(
+            f"Free cash fetched for {user_details['BrokerUsername']}: {cash_balance}"
+        )
         return cash_balance
     except Exception as e:
-        logger.error(f"Error fetching free cash: {e} for {user_details['BrokerUsername']}")
+        logger.error(
+            f"Error fetching free cash: {e} for {user_details['BrokerUsername']}"
+        )
         return 0
 
 
 def get_csv_kite(user_details):
-    """
-    Fetches instrument data from Kite and returns it as a pandas DataFrame.
-    
-    Args:
-        user_details (dict): Dictionary containing user API credentials.
-
-    Returns:
-        DataFrame: A DataFrame of instruments from Kite, or None if there is an error.
-
-    Raises:
-        Exception: If fetching instruments fails.
-    """
-    logger.debug(f"Fetching instruments for KITE using {user_details['Broker']['BrokerUsername']}")
+    logger.debug(
+        f"Fetching instruments for KITE using {user_details['Broker']['BrokerUsername']}"
+    )
     try:
         kite = KiteConnect(api_key=user_details["Broker"]["ApiKey"])
         kite.set_access_token(user_details["Broker"]["SessionId"])
@@ -106,43 +258,27 @@ def get_csv_kite(user_details):
         instrument_df["exchange_token"] = instrument_df["exchange_token"].astype(str)
         return instrument_df
     except Exception as e:
-        logger.error(f"Error fetching instruments for KITE: {e} for {user_details['Broker']['BrokerUsername']}")
+        logger.error(
+            f"Error fetching instruments for KITE: {e} for {user_details['Broker']['BrokerUsername']}"
+        )
         return None
-    
+
+
 def fetch_zerodha_holdings_value(user):
-    """
-    Calculates and returns the total value of all holdings in a user's Zerodha account.
-    
-    Args:
-        user (dict): Dictionary containing user's broker credentials.
-
-    Returns:
-        float: Total value of holdings, or 0.0 if there is an error.
-
-    Raises:
-        Exception: If fetching holdings fails.
-    """
     try:
-        kite = KiteConnect(api_key=user['Broker']['ApiKey'], access_token=user['Broker']['SessionId'])
+        kite = KiteConnect(
+            api_key=user["Broker"]["ApiKey"], access_token=user["Broker"]["SessionId"]
+        )
         holdings = kite.holdings()
-        return sum(stock['average_price'] * stock['quantity'] for stock in holdings)
+        return sum(stock["average_price"] * stock["quantity"] for stock in holdings)
     except Exception as e:
-        logger.error(f"Error fetching holdings for user {user['Broker']['BrokerUsername']}: {e}")
+        logger.error(
+            f"Error fetching holdings for user {user['Broker']['BrokerUsername']}: {e}"
+        )
         return 0.0
 
+
 def simplify_zerodha_order(detail):
-    """
-    Simplifies order details into a more manageable dictionary format, focusing on key aspects.
-    
-    Args:
-        detail (dict): Dictionary containing the order details.
-
-    Returns:
-        dict: Simplified version of the order details.
-
-    Raises:
-        Exception: If there is an error during processing.
-    """
     logger.debug(f"Processing order details: {detail['tag']}")
     try:
         trade_symbol = detail["tradingsymbol"]
@@ -152,7 +288,9 @@ def simplify_zerodha_order(detail):
             strike_price = 0
             option_type = "FUT"
         else:
-            strike_price = int(trade_symbol[-7:-2])  # Convert to integer to store as number
+            strike_price = int(
+                trade_symbol[-7:-2]
+            )  # Convert to integer to store as number
             option_type = trade_symbol[-2:]
 
         trade_id = detail["tag"]
@@ -178,18 +316,6 @@ def simplify_zerodha_order(detail):
 
 
 def zerodha_todays_tradebook(user):
-    """
-    Fetches and returns the list of today's trades from a user's Zerodha account.
-
-    Args:
-        user (dict): Dictionary containing the user's API credentials.
-
-    Returns:
-        list: List of today's trades or None if there is an error or no trades.
-
-    Raises:
-        Exception: If there is an error fetching the tradebook.
-    """
     try:
         kite = create_kite_obj(api_key=user["ApiKey"], access_token=user["SessionId"])
         orders = kite.orders()
@@ -202,19 +328,6 @@ def zerodha_todays_tradebook(user):
 
 
 def calculate_transaction_type(kite, transaction_type):
-    """
-    Converts a transaction type string into the corresponding KiteConnect constant.
-    
-    Args:
-        kite (KiteConnect): The KiteConnect instance.
-        transaction_type (str): The transaction type as a string, e.g., "BUY" or "SELL".
-
-    Returns:
-        str: The corresponding KiteConnect constant for the transaction type.
-
-    Raises:
-        ValueError: If the transaction type is invalid.
-    """
     if transaction_type == "BUY":
         transaction_type = kite.TRANSACTION_TYPE_BUY
     elif transaction_type == "SELL":
@@ -225,22 +338,9 @@ def calculate_transaction_type(kite, transaction_type):
 
 
 def calculate_order_type(kite, order_type):
-    """
-    Determines and returns the Kite order type based on the given string.
-
-    Args:
-    kite: A KiteConnect object.
-    order_type (str): The type of order as a string.
-
-    Returns:
-    str: The order type as defined in the KiteConnect constants.
-
-    Raises:
-    ValueError: If the provided order_type is not recognized.
-    """
-    if order_type.lower() == "stoploss" or order_type.lower() == "sl":
+    if order_type.lower() == "stoploss":
         order_type = kite.ORDER_TYPE_SL
-    elif order_type.lower() == "market" or order_type.lower() == "mis":
+    elif order_type.lower() == "market":
         order_type = kite.ORDER_TYPE_MARKET
     elif order_type.lower() == "limit":
         order_type = kite.ORDER_TYPE_LIMIT
@@ -250,19 +350,6 @@ def calculate_order_type(kite, order_type):
 
 
 def calculate_product_type(kite, product_type):
-    """
-    Determines and returns the Kite product type based on the given string.
-
-    Args:
-    kite: A KiteConnect object.
-    product_type (str): The type of product as a string.
-
-    Returns:
-    str: The product type as defined in the KiteConnect constants.
-
-    Raises:
-    ValueError: If the provided product_type is not recognized.
-    """
     if product_type == "NRML":
         product_type = kite.PRODUCT_NRML
     elif product_type == "MIS":
@@ -275,19 +362,6 @@ def calculate_product_type(kite, product_type):
 
 
 def calculate_segment_type(kite, segment_type):
-    """
-    Determines the segment type by checking if the segment type attribute exists in the KiteConnect object.
-
-    Args:
-    kite: A KiteConnect object.
-    segment_type (str): The market segment type.
-
-    Returns:
-    str: The segment type attribute from the KiteConnect object.
-
-    Raises:
-    ValueError: If the attribute does not exist in the kite object.
-    """
     # Prefix to indicate the exchange type
     prefix = "EXCHANGE_"
 
@@ -302,19 +376,6 @@ def calculate_segment_type(kite, segment_type):
 
 
 def get_avg_prc(kite, order_id):
-    """
-    Fetches the average price for a completed order given its ID.
-
-    Args:
-    kite: A KiteConnect object.
-    order_id (int): The ID of the order.
-
-    Returns:
-    float: The average price of the completed order. Returns 0.0 if not found or an error occurs.
-
-    Raises:
-    Exception: If no order_id is provided or other general exceptions occur during API call.
-    """
     if not order_id:
         raise Exception("Order_id not found")
 
@@ -329,87 +390,42 @@ def get_avg_prc(kite, order_id):
         logger.error(f"Error fetching avg_prc for order_id {order_id}: {e}")
         return 0.0
 
+
 def get_order_status(kite, order_id):
-    """
-    Fetches and returns the order status for a given order ID.
-
-    Args:
-    kite: A KiteConnect object.
-    order_id (int): The ID of the order.
-
-    Returns:
-    str: The status of the order, or "FAIL" if the order cannot be fetched or does not pass.
-
-    Raises:
-    Exception: If any errors occur during the fetching of the order status.
-    """
     try:
         order_history = kite.order_history(order_id=order_id)
         for order in order_history:
             if order.get("status") == "REJECTED":
-                return order.get('status_message')
-            elif order.get("status") == "COMPLETE" or order.get("status") == "TRIGGER PENDING" or order.get("status") == "OPEN":
+                return order.get("status_message")
+            elif (
+                order.get("status") == "COMPLETE"
+                or order.get("status") == "TRIGGER PENDING"
+                or order.get("status") == "OPEN"
+            ):
                 return "PASS"
         return "FAIL"
     except Exception as e:
         logger.error(f"Error fetching order status for order_id {order_id}: {e}")
         return "FAIL"
 
+
 def get_order_details(user):
-    """
-    Retrieves all orders for a specific user based on API key and access token.
-
-    Args:
-    user (dict): A dictionary containing user's 'api_key' and 'access_token'.
-
-    Returns:
-    list: A list of orders, or None if an error occurs.
-
-    Raises:
-    Exception: If any errors occur during the retrieval of orders.
-    """  
     try:
-        kite = create_kite_obj(api_key=user["api_key"], access_token=user["access_token"])
+        kite = create_kite_obj(
+            api_key=user["api_key"], access_token=user["access_token"]
+        )
         orders = kite.orders()
         return orders
     except Exception as e:
         logger.error(f"Error fetching orders for KITE: {e}")
         return None
 
-def kite_place_orders_for_users(orders_to_place, users_credentials):
-    """
-    Places orders for multiple users based on their credentials and order details provided.
-    This function handles both paper trades for testing and actual order placements.
 
-    Args:
-        orders_to_place (dict): A dictionary containing all necessary details for the orders to be placed, such as:
-            - strategy (str): Strategy to be applied for the order.
-            - exchange_token (str): Token representing the specific exchange to trade on.
-            - qty (int, optional): Quantity of the stock to trade. Defaults to 1.
-            - product_type (str): Type of the product to be traded.
-            - transaction_type (str): Type of transaction (e.g., "BUY" or "SELL").
-            - order_type (str): Type of the order (e.g., "MARKET", "LIMIT").
-            - limit_prc (float, optional): Limit price for the order. Not required for market orders.
-            - trigger_prc (float, optional): Trigger price for the order.
-            - trade_mode (str, optional): Indicates if the order is a real trade or a paper trade for simulation.
-        users_credentials (dict): Credentials of the users for whom orders are being placed.
-
-    Returns:
-        dict: A dictionary containing the results of the order placement including:
-            - avg_prc (float, optional): Average price at which the order was executed.
-            - exchange_token (int): Token of the exchange where the order was placed.
-            - order_id (int): ID of the placed order.
-            - qty (int): Quantity of the stocks ordered.
-            - time_stamp (str): Timestamp when the order was placed.
-            - trade_id (str, optional): Trade identifier if available.
-            - message (str, optional): Message related to the order status.
-            - order_status (str, optional): Status of the order ("PASS" for successful placement).
-            - tax (float, optional): Calculated tax for the order.
-
-    Raises:
-        Exception: If the order placement fails due to API error or data validation issues.
-    """
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
+async def kite_place_orders_for_users(orders_to_place, users_credentials):
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
+        Instrument,
+        get_single_ltp,
+    )
 
     results = {
         "avg_prc": None,
@@ -444,7 +460,7 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
     else:
         segment_type = Instrument().get_exchange_by_exchange_token(str(exchange_token))
         trading_symbol = Instrument().get_trading_symbol_by_exchange_token(
-            str(exchange_token)
+            str(exchange_token), segment_type
         )
 
     limit_prc = orders_to_place.get("limit_prc", None)
@@ -477,16 +493,16 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         logger.debug(f"instrument: {trading_symbol}")
         logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
         results = {
-                "exchange_token": int(exchange_token),
-                "order_id": 123456789,
-                "qty": qty,
-                "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "trade_id": orders_to_place.get("trade_id", "")
-            }
+            "exchange_token": int(exchange_token),
+            "order_id": 123456789,
+            "qty": qty,
+            "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "trade_id": orders_to_place.get("trade_id", ""),
+        }
         return results
 
     try:
-        order_id = kite.place_order(
+        order_id = await kite.place_order(
             variety=kite.VARIETY_REGULAR,
             exchange=segment_type,
             price=limit_prc,
@@ -510,39 +526,20 @@ def kite_place_orders_for_users(orders_to_place, users_credentials):
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)
         discord_bot(message, strategy)
-        
+
     results = {
-                "exchange_token": int(exchange_token),
-                "order_id": order_id,
-                "qty": qty,
-                "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "trade_id": orders_to_place.get("trade_id", ""),
-                "order_status": order_status,
-                "tax":orders_to_place.get("tax", 0)
-            }
-    
+        "exchange_token": int(exchange_token),
+        "order_id": order_id,
+        "qty": qty,
+        "time_stamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "trade_id": orders_to_place.get("trade_id", ""),
+        "order_status": order_status,
+    }
+
     return results
 
 
 def kite_modify_orders_for_users(order_details, users_credentials):
-    """
-    Modifies existing orders for users based on provided order details and user credentials.
-
-    Args:
-        order_details (dict): A dictionary containing the details needed to modify an order including:
-            - username (str): Username associated with the order.
-            - strategy (str): Strategy under which the order was placed.
-            - exchange_token (str): Token identifying the exchange where the order was placed.
-            - limit_prc (float, optional): New limit price for the order.
-            - trigger_prc (float, optional): New trigger price for the order.
-        users_credentials (dict): Credentials of the users whose orders are being modified.
-
-    Returns:
-        None: Returns None if the order modification was successful or if it failed.
-
-    Raises:
-        Exception: If the order modification fails due to API error or data validation issues.
-    """
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
 
     kite = create_kite_obj(
@@ -574,24 +571,13 @@ def kite_modify_orders_for_users(order_details, users_credentials):
 
 
 def kite_create_sl_counter_order(trade, user):
-    """
-    Creates a stop-loss counter order based on a given trade and user details.
-
-    Args:
-        trade (dict): Trade details required to create the counter order.
-        user (dict): User details needed for API credentials.
-
-    Returns:
-        dict: A dictionary containing the details of the counter order if successful, or None if it fails.
-
-    Raises:
-        Exception: If creating the counter order fails.
-    """
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
     try:
         strategy_name = get_strategy_name_from_trade_id(trade["tag"])
-        exchange_token = Instrument().get_exchange_token_by_token(trade["instrument_token"])
+        exchange_token = Instrument().get_exchange_token_by_token(
+            trade["instrument_token"]
+        )
         counter_order = {
             "strategy": strategy_name,
             "signal": get_signal_from_trade_id(trade["tag"]),
@@ -609,20 +595,8 @@ def kite_create_sl_counter_order(trade, user):
         logger.error(f"Error creating counter order: {e}")
         return None
 
+
 def kite_create_cancel_order(trade, user):
-    """
-    Cancels an existing order based on the trade and user details.
-
-    Args:
-        trade (dict): Trade details for the order that needs to be cancelled.
-        user (dict): User details needed for API credentials.
-
-    Returns:
-        None: Returns None if the order cancellation was successful or failed.
-
-    Raises:
-        Exception: If cancelling the order fails.
-    """
     try:
         kite = create_kite_obj(user_details=user["Broker"])
         kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade["order_id"])
@@ -632,34 +606,24 @@ def kite_create_cancel_order(trade, user):
 
 
 def kite_create_hedge_counter_order(trade, user):
-    """
-    Creates a hedge counter order for a given trade and user.
-
-    Args:
-        trade (dict): Details of the trade for which the hedge order is to be created.
-        user (dict): User details necessary for API credentials.
-
-    Returns:
-        dict: A dictionary containing the hedge order details if successful, or None if it fails.
-
-    Raises:
-        Exception: If creating the hedge order fails.
-    """
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
     try:
         strategy_name = get_strategy_name_from_trade_id(trade["tag"])
-        exchange_token = Instrument().get_exchange_token_by_token(trade["instrument_token"])
+        exchange_token = Instrument().get_exchange_token_by_token(
+            trade["instrument_token"]
+        )
         # i want to replace EN to EX in the trade['tag']
-        trade_id = trade['tag'].replace('EN', 'EX')
-
+        trade_id = trade["tag"].replace("EN", "EX")
 
         counter_order = {
             "strategy": strategy_name,
             "signal": get_signal_from_trade_id(trade["tag"]),
             "base_symbol": "NIFTY",  # WARNING: dummy base symbol
             "exchange_token": exchange_token,
-            "transaction_type": calculate_transaction_type_sl(trade["transaction_type"]),
+            "transaction_type": calculate_transaction_type_sl(
+                trade["transaction_type"]
+            ),
             "order_type": "MARKET",
             "product_type": trade["product"],
             "trade_id": trade_id,
@@ -673,18 +637,6 @@ def kite_create_hedge_counter_order(trade, user):
 
 
 def process_kite_ledger(csv_file_path):
-    """
-    Processes and categorizes transactions from a CSV file containing Kite ledger data.
-
-    Args:
-        csv_file_path (str): The file path to the CSV file containing the ledger data.
-
-    Returns:
-        dict: A dictionary of categorized DataFrames corresponding to each transaction category.
-
-    Raises:
-        Exception: If there is an issue reading the CSV file or processing the data.
-    """
     # Define patterns for categorizing transactions
     patterns = {
         "Deposits": [
@@ -738,7 +690,7 @@ def process_kite_ledger(csv_file_path):
     other_transactions_final = ledger_data_filtered[
         ledger_data_filtered["Category"] == "Other"
     ]
-    other_transactions_final.to_csv(f"kite_other.csv", index=False)
+    other_transactions_final.to_csv("kite_other.csv", index=False)
 
     # save categorized_dfs to csv as {category}.csv
     for category, df in categorized_dfs.items():
@@ -748,15 +700,6 @@ def process_kite_ledger(csv_file_path):
 
 
 def calculate_kite_net_values(categorized_dfs):
-    """
-    Calculates net values for each transaction category from categorized DataFrames.
-
-    Args:
-        categorized_dfs (dict): A dictionary of DataFrames for each transaction category.
-
-    Returns:
-        dict: A dictionary containing the net values for each category.
-    """
     # Calculate net values for each category
     net_values = {
         category: df["debit"].sum() - df["credit"].sum()
@@ -764,50 +707,31 @@ def calculate_kite_net_values(categorized_dfs):
     }
     return net_values
 
-def fetch_open_orders(user_details):
-    """
-    Fetches open orders from Kite for a given user.
 
-    Args:
-        user_details (dict): User details required to access their Kite account.
-
-    Returns:
-        list: A list of open orders if successful, None otherwise.
-
-    Raises:
-        Exception: If fetching the orders fails.
-    """
+def fetch_kite_open_orders(user_details):
     try:
-        kite = create_kite_obj(user_details['Broker'])
+        kite = create_kite_obj(user_details["Broker"])
         positions = kite.positions()
         return positions
     except Exception as e:
         logger.error(f"Error fetching open orders for KITE: {e}")
         return None
 
+
 def get_zerodha_pnl(user):
-    """
-    Retrieves the profit and loss for a given user's Zerodha account.
-
-    Args:
-        user (dict): User details needed to access their Zerodha account.
-
-    Returns:
-        float: The total profit or loss.
-
-    Raises:
-        Exception: If there is an error in fetching the profit and loss data.
-    """
     try:
         kite = create_kite_obj(user["Broker"])
-        positions = kite.positions()['net']
-        total_pnl = sum(position['pnl'] for position in positions)
+        positions = kite.positions()["net"]
+        total_pnl = sum(position["pnl"] for position in positions)
         return total_pnl
     except Exception as e:
-        logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
+        logger.error(
+            f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}"
+        )
         return None
 
-def get_order_tax(order,user_credentials,broker):
+
+async def get_kite_order_tax(order, broker):
     """
     Calculates the required tax for an order based on the order details and user credentials.
 
@@ -823,17 +747,21 @@ def get_order_tax(order,user_credentials,broker):
         Exception: If there is an error in calculating the tax.
     """
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
-    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_primary_accounts_from_firebase
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
+        get_single_ltp,
+    )
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+        fetch_primary_accounts_from_firebase,
+    )
+
     zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
     basket_order = []
     primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
 
     kite = create_kite_obj(
-    api_key=primary_account_session_id["Broker"]["ApiKey"],
-    access_token=primary_account_session_id["Broker"]["SessionId"],
+        api_key=primary_account_session_id["Broker"]["ApiKey"],
+        access_token=primary_account_session_id["Broker"]["SessionId"],
     )
-    strategy = order["strategy"]
     exchange_token = order["exchange_token"]
     product = order.get("product_type")
     transaction_type = order.get("transaction_type")
@@ -842,11 +770,9 @@ def get_order_tax(order,user_credentials,broker):
     elif transaction_type == "S":
         transaction_type = "SELL"
 
-    transaction_type = calculate_transaction_type(
-        kite, transaction_type
-    )
+    transaction_type = calculate_transaction_type(kite, transaction_type)
     order_type = calculate_order_type(kite, order.get("order_type"))
-    #TODO: This is a temporary fix for firstock untill firstock starts providing the tax
+    # TODO: This is a temporary fix for firstock untill firstock starts providing the tax
     if product == "I":
         product = "MIS"
     elif product == "C":
@@ -881,31 +807,38 @@ def get_order_tax(order,user_credentials,broker):
             trigger_price = 1.5
 
     tax_order = {
-                        "variety":kite.VARIETY_REGULAR,
-                        "exchange":segment_type,
-                        "price":limit_prc,
-                        "tradingsymbol":trading_symbol,
-                        "transaction_type":transaction_type,
-                        "quantity":order["qty"],
-                        "trigger_price":trigger_price,
-                        "product":product_type,
-                        "order_type":order_type}
+        "variety": kite.VARIETY_REGULAR,
+        "exchange": segment_type,
+        "price": limit_prc,
+        "tradingsymbol": trading_symbol,
+        "transaction_type": transaction_type,
+        "quantity": order["qty"],
+        "trigger_price": trigger_price,
+        "product": product_type,
+        "order_type": order_type,
+    }
     basket_order.append(tax_order)
-    tax_details = kite.basket_order_margins(basket_order,mode="compact")
-    tax = tax_details["orders"][0]['charges']['total']
-    tax = round(tax,2)
+    tax_details = await kite.basket_order_margins(basket_order, mode="compact")
+    tax = tax_details["orders"][0]["charges"]["total"]
+    tax = round(tax, 2)
     if broker.lower() == "aliceblue":
-        tax = float(tax)  - 5
+        tax = float(tax) - 5
     return tax
 
-def get_margin_utilized(user_credentials):
+
+def get_kite_margin_utilized(user_credentials):
     kite = create_kite_obj(user_details=user_credentials)
-    live_bal =(kite.margins().get("equity",{}).get("available",{}).get("live_balance"))
-    opening_bal = (kite.margins().get("equity",{}).get("available",{}).get("opening_balance"))
+    live_bal = kite.margins().get("equity", {}).get("available", {}).get("live_balance")
+    opening_bal = (
+        kite.margins().get("equity", {}).get("available", {}).get("opening_balance")
+    )
     funds_utilized = opening_bal - live_bal
     return funds_utilized
 
-def get_broker_payin(user):
+
+def get_kite_broker_payin(user):
     kite = create_kite_obj(user_details=user["Broker"])
-    payin = float(kite.margins().get("equity",{}).get("available",{}).get("intraday_payin",0))
+    payin = float(
+        kite.margins().get("equity", {}).get("available", {}).get("intraday_payin", 0)
+    )
     return payin
