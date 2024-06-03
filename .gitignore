@@ -12,3 +12,4 @@ trail.py
 *.session
 *.sh
 *.pdf
+.devcontainer/
