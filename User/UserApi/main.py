@@ -2,8 +2,8 @@ from fastapi import FastAPI
 import uvicorn
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi import APIRouter
-import schemas
-import app
+import User.UserApi.schemas as schemas
+import User.UserApi.app as app
 
 """
 This is the main API for the user application.
@@ -21,6 +21,7 @@ Then we use the data from the user and pass it to function which are in app.py
 app_fastapi = FastAPI()
 app_user = APIRouter()
 
+
 @app_fastapi.get("/swagger", include_in_schema=False)
 def overridden_swagger():
     """
@@ -31,7 +32,7 @@ def overridden_swagger():
 
 
 @app_user.post("/register")
-def register_user(user_detail:schemas.UserDetails):
+def register_user(user_detail: schemas.UserDetails):
     """
     This is the route for registering a new user.
     It takes a UserDetails object as input and returns a response.
@@ -39,11 +40,13 @@ def register_user(user_detail:schemas.UserDetails):
     """
     return app.register_user(user_detail)
 
-app_fastapi.include_router(app_user, prefix='/v1/user')
+
+app_fastapi.include_router(app_user, prefix="/v1/user")
+
 
 def main_api():
     uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8002, reload=True)
 
+
 if __name__ == "__main__":
     main_api()
-

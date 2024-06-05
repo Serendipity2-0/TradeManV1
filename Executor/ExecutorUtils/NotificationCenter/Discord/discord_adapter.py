@@ -10,6 +10,26 @@ load_dotenv(ENV_PATH)
 
 
 def discord_bot(message, strategy):
+    """
+    Send a message to a Discord channel using a bot.
+
+    This function sends a message to a Discord channel specified by the strategy name.
+    It retrieves the bot token and channel ID from environment variables.
+
+    Args:
+        message (str): The message to be sent to the Discord channel.
+        strategy (str): The strategy name, used to determine the specific Discord channel.
+
+    Returns:
+        response: The response object returned by the requests.post() method.
+
+    Raises:
+        ValueError: If the request to Discord returns a status code other than 200.
+
+    Environment Variables:
+        discord_bot_token (str): The token for the Discord bot.
+        {strategy.lower()}_channel_id (str): The channel ID for the specified strategy.
+    """
     token = os.getenv("discord_bot_token")
     channel_id = os.getenv(f"{strategy.lower()}_channel_id")
 
@@ -28,7 +48,26 @@ def discord_bot(message, strategy):
         )
     return response
 
+
 def discord_admin_bot(message):
+    """
+    Send a message to the admin Discord channel using a bot.
+
+    This function sends a message to a predefined admin Discord channel.
+    It retrieves the bot token from environment variables and uses a hardcoded channel ID.
+
+    Args:
+        message (str): The message to be sent to the Discord admin channel.
+
+    Returns:
+        response: The response object returned by the requests.post() method.
+
+    Raises:
+        ValueError: If the request to Discord returns a status code other than 200.
+
+    Environment Variables:
+        discord_bot_token (str): The token for the Discord bot.
+    """
     token = os.getenv("discord_bot_token")
     channel_id = "1169540251325313034"
 

@@ -3,6 +3,24 @@ import pandas as pd
 
 # Define a function to load sheets from both files and compare the 'trade_points'
 def compare_trade_points(user_file, signal_file):
+    """
+    Compare 'trade_points' from user and signal Excel files and identify discrepancies.
+
+    This function loads sheets from two Excel files, compares the 'trade_points' column for each
+    common sheet, calculates the percentage difference, and identifies discrepancies where the
+    percentage difference is greater than 5% or where trade points are missing.
+
+    Args:
+        user_file (str): Path to the user Excel file.
+        signal_file (str): Path to the signal Excel file.
+
+    Returns:
+        pd.DataFrame: A dataframe containing discrepancies in 'trade_points' with columns
+                      'trade_id', 'trade_points_user', 'trade_points_signal', and 'perc_diff'.
+
+    Raises:
+        FileNotFoundError: If any of the specified files are not found.
+    """
     # Load Excel files and obtain sheet names
     user_xl = pd.ExcelFile(user_file)
     signal_xl = pd.ExcelFile(signal_file)
