@@ -983,7 +983,7 @@ def get_zerodha_pnl(user):
         return None
 
 
-def get_order_tax(order, user_credentials, broker):
+async def get_order_tax(order, user_credentials, broker):
     """
     Calculates the required tax for an order based on the order details and user credentials.
 
@@ -1024,7 +1024,7 @@ def get_order_tax(order, user_credentials, broker):
 
     transaction_type = calculate_transaction_type(kite, transaction_type)
     order_type = calculate_order_type(kite, order.get("order_type"))
-    # TODO: This is a temporary fix for firstock untill firstock starts providing the tax
+    # TODO: This is a temporary fix for firstock until firstock starts providing the tax
     if product == "I":
         product = "MIS"
     elif product == "C":
@@ -1049,7 +1049,7 @@ def get_order_tax(order, user_credentials, broker):
         if limit_prc < 0:
             limit_prc = 1.0
     elif product == "CNC":
-        limit_prc = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+        limit_prc = await get_single_ltp(exchange_token=exchange_token, segment="NSE")
     else:
         limit_prc = 0.0
 
