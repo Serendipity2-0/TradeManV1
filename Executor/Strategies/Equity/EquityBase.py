@@ -14,7 +14,7 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
-    
+
 def get_stock_codes():
     """
     Fetch stock codes from a CSV file specified in the environment variables.
@@ -203,7 +203,7 @@ def check_if_above_50EMA(stock_data):
     else:
         return None
     
-def get_stockpicks_csv():
+def store_stock_data_sqldb():
     """
     Fetches stock data and selects top picks based on various strategies.
     Exports selected stocks to CSV files for short term, mid term, and long term picks.
@@ -224,9 +224,9 @@ def get_stockpicks_csv():
         stock_data_weekly = get_stock_data(stock, period="2y", duration="1wk")
         
         if stock_data_daily is not None and stock_data_weekly is not None:
-            # Create a DataFrame to store combined data
+            # Combine daily and weekly data
             combined_data = pd.DataFrame({
-                'Date': stock_data_daily.index,
+                'Date': stock_data_daily.index.date,  # Extract only the date part
                 'DailyOpen': stock_data_daily['Open'],
                 'DailyHigh': stock_data_daily['High'],
                 'DailyLow': stock_data_daily['Low'],
@@ -236,7 +236,7 @@ def get_stockpicks_csv():
                 'WeeklyHigh': stock_data_weekly['High'].reindex(stock_data_daily.index, method='ffill'),
                 'WeeklyLow': stock_data_weekly['Low'].reindex(stock_data_daily.index, method='ffill'),
                 'WeeklyClose': stock_data_weekly['Close'].reindex(stock_data_daily.index, method='ffill'),
-                'WeeklyVolume': stock_data_weekly['Volume'].reindex(stock_data_daily.index, method='ffill')
+                'WeeklyVolume': stock_data_weekly['Volume'].reindex(stock_data_daily.index, method='ffill'),
             })
 
             # Create table for each stock if it doesn't exist
@@ -253,7 +253,7 @@ def get_stockpicks_csv():
                     WeeklyHigh REAL,
                     WeeklyLow REAL,
                     WeeklyClose REAL,
-                    WeeklyVolume INTEGER
+                    WeeklyVolume INTEGER,
                 )
             ''')
 
@@ -268,5 +268,102 @@ def get_stockpicks_csv():
 
     print("Stock data has been successfully stored in the database.")
 
-# Call the function to execute the process
-get_stockpicks_csv()
+def read_stock_data_from_db(db_path):
+    """
+    Reads data from the SQLite database and stores it in a dictionary.
+
+    Args:
+        db_path (str): The path to the SQLite database.
+
+    Returns:
+        dict: A dictionary containing stock data.
+    """
+    stock_data_dict = {}
+
+    # Connect to the SQLite database
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Fetch the list of tables (stock symbols)
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = cursor.fetchall()
+
+    for table in tables:
+        stock_symbol = table[0]
+        
+        # Read daily data
+        daily_query = f"SELECT Date, DailyOpen AS Open, DailyHigh AS High, DailyLow AS Low, DailyClose AS Close, DailyVolume AS Volume FROM '{stock_symbol}'"
+        daily_data = pd.read_sql_query(daily_query, conn)
+        
+        # Read weekly data
+        weekly_query = f"SELECT Date, WeeklyOpen AS Open, WeeklyHigh AS High, WeeklyLow AS Low, WeeklyClose AS Close, WeeklyVolume AS Volume FROM '{stock_symbol}'"
+        weekly_data = pd.read_sql_query(weekly_query, conn)
+
+        # Populate the dictionary with data
+        stock_data_dict[stock_symbol] = {
+            "daily_data": {
+                "Open": daily_data['Open'].tolist(),
+                "High": daily_data['High'].tolist(),
+                "Low": daily_data['Low'].tolist(),
+                "Close": daily_data['Close'].tolist(),
+                "Volume": daily_data['Volume'].tolist()
+            },
+            "weekly_data": {
+                "Open": weekly_data['Open'].tolist(),
+                "High": weekly_data['High'].tolist(),
+                "Low": weekly_data['Low'].tolist(),
+                "Close": weekly_data['Close'].tolist(),
+                "Volume": weekly_data['Volume'].tolist()
+            }
+        }
+
+    # Close the connection
+    conn.close()
+
+    return stock_data_dict
+def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df):
+    """
+    Merge the DataFrames from different strategies into one comprehensive DataFrame.
+    
+    Args:
+        momentum_df (DataFrame): DataFrame of momentum stocks.
+        mean_reversion_df (DataFrame): DataFrame of mean reversion stocks.
+        ema_bb_df (DataFrame): DataFrame of EMA-BB confluence stocks.
+
+    Returns:
+        DataFrame: Combined DataFrame with all strategies.
+    """
+    # Merge the DataFrames on 'Symbol'
+    combined_df = pd.merge(momentum_df, mean_reversion_df, on='Symbol', how='outer', suffixes=('_Momentum', '_MeanReversion'))
+    combined_df = pd.merge(combined_df, ema_bb_df, on='Symbol', how='outer', suffixes=('', '_EMABBConfluence'))
+    
+    # Fill NaN values with appropriate defaults
+    combined_df.fillna({'DailyOpen': 0, 'DailyHigh': 0, 'DailyLow': 0, 'DailyClose': 0,
+                        'WeeklyOpen': 0, 'WeeklyHigh': 0, 'WeeklyLow': 0, 'WeeklyClose': 0,
+                        'DailyRSI': 0, 'DailyUpper_band': 0, 'DailyAbove_50_EMA': 0,
+                        'DailyMACD': 0, 'DailySignal_Line': 0, 'DailyEMA_50': 0, 
+                        'DailyMA': 0, 'DailyLower_band': 0, 'WeeklyMA': 0, 
+                        'WeeklyLower_band': 0, 'Short_Momentum': 0, 
+                        'Short_MeanReversion': 0, 'Short_EMABBConfluence': 0}, inplace=True)
+    
+    return combined_df
+
+def update_todaystocks_db(combined_df):
+    """
+    Stores the combined DataFrame to a SQL database.
+
+    Args:
+        combined_df (DataFrame): Combined DataFrame of all stocks from different strategies.
+    """
+    # Connect to the TodayStocks.db database (create it if it doesn't exist)
+    db_path = 'TodayStocks.db'
+    conn = sqlite3.connect(db_path)
+
+    # Write the DataFrame to a table in the SQL database
+    combined_df.to_sql('CombinedStocks', conn, if_exists='replace', index=False)
+
+    # Commit and close the connection
+    conn.commit()
+    conn.close()
+
+    print("Stock data has been successfully stored in the TodayStocks.db database.")
