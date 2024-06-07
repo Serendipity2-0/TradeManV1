@@ -24,7 +24,7 @@ import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as ze
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_adapter as firstock_adapter
 
 
-def place_order_for_brokers(order_details, user_credentials):
+async def place_order_for_brokers(order_details, user_credentials):
     """
     Places an order for a given broker.
 
@@ -36,13 +36,15 @@ def place_order_for_brokers(order_details, user_credentials):
         dict: Response from the broker API.
     """
     if order_details["broker"] == ZERODHA:
-        return zerodha_adapter.kite_place_orders_for_users(
+        return await zerodha_adapter.kite_place_orders_for_users(
             order_details, user_credentials
         )
     elif order_details["broker"] == ALICEBLUE:
-        return alice_adapter.ant_place_orders_for_users(order_details, user_credentials)
+        return await alice_adapter.ant_place_orders_for_users(
+            order_details, user_credentials
+        )
     elif order_details["broker"] == FIRSTOCK:
-        return firstock_adapter.firstock_place_orders_for_users(
+        return await firstock_adapter.firstock_place_orders_for_users(
             order_details, user_credentials
         )
 
@@ -427,13 +429,13 @@ def get_today_open_orders_for_brokers(user):
         list: List of today's open orders.
     """
     if user["Broker"]["BrokerName"] == ZERODHA:
-        kite_data = zerodha_adapter.fetch_open_orders(user)
+        kite_data = zerodha_adapter.fetch_kite_open_orders(user)
         return kite_data
     elif user["Broker"]["BrokerName"] == ALICEBLUE:
-        alice_data = alice_adapter.fetch_open_orders(user)
+        alice_data = alice_adapter.fetch_alice_open_orders(user)
         return alice_data
     elif user["Broker"]["BrokerName"] == FIRSTOCK:
-        firstock_data = firstock_adapter.fetch_open_orders(user)
+        firstock_data = firstock_adapter.fetch_firstock_open_orders(user)
         return firstock_data
 
 
@@ -857,7 +859,7 @@ def get_broker_pnl(user):
         return None
 
 
-def get_orders_tax(orders_to_place, user_credentials):
+async def get_orders_tax(orders_to_place, user_credentials):
     """
     Fetches the order tax for a user based on their broker.
 
@@ -869,15 +871,15 @@ def get_orders_tax(orders_to_place, user_credentials):
         dict: Order tax details.
     """
     if user_credentials["BrokerName"] == ZERODHA:
-        return zerodha_adapter.get_order_tax(
+        return await zerodha_adapter.get_kite_order_tax(
             orders_to_place, user_credentials, user_credentials["BrokerName"]
         )
     elif user_credentials["BrokerName"] == ALICEBLUE:
-        return zerodha_adapter.get_order_tax(
+        return await zerodha_adapter.get_kite_order_tax(
             orders_to_place, user_credentials, user_credentials["BrokerName"]
         )
     elif user_credentials["BrokerName"] == FIRSTOCK:
-        return zerodha_adapter.get_order_tax(
+        return await zerodha_adapter.get_kite_order_tax(
             orders_to_place, user_credentials, user_credentials["BrokerName"]
         )
     else:

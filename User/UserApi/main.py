@@ -2,6 +2,11 @@ from fastapi import FastAPI
 import uvicorn
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi import APIRouter
+import os, sys
+
+DIR_PATH = os.getcwd()
+sys.path.append(DIR_PATH)
+
 import User.UserApi.schemas as schemas
 import User.UserApi.app as app
 

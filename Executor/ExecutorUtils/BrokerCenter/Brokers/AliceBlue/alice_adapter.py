@@ -866,7 +866,7 @@ def calculate_alice_net_values(categorized_dfs):
     return net_values
 
 
-def fetch_open_orders(user):
+def fetch_alice_open_orders(user):
     """
     The function fetches open orders for a given user using an Alice object and returns the open
     positions.
