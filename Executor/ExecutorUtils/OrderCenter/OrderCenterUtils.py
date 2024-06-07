@@ -142,9 +142,7 @@ async def place_order_for_strategy(
                         }
                     )
             except Exception as e:
-                logger.error(
-                    f"Error updating order with user and broker: {e} : {traceback.format_exc()}"
-                )
+                logger.error(f"Error updating order with user and broker: {e}")
                 continue
 
             try:
@@ -165,9 +163,8 @@ async def place_order_for_strategy(
                         current_qty = min(order_qty, max_qty)
                         order_to_place = order_with_user_and_broker.copy()
                         order_to_place["qty"] = current_qty
-
-                        order_to_place["tax"] = await asyncio.gather(
-                            get_orders_tax(order_to_place, user_credentials)
+                        order_to_place["tax"] = await get_orders_tax(
+                            order_to_place, user_credentials
                         )
                         order_tasks.append(
                             place_order_for_brokers(order_to_place, user_credentials)
@@ -179,8 +176,8 @@ async def place_order_for_strategy(
                     )
             else:
                 try:
-                    order_to_place["tax"] = await asyncio.gather(
-                        get_orders_tax(order_to_place, user_credentials)
+                    order_to_place["tax"] = await get_orders_tax(
+                        order_to_place, user_credentials
                     )
                     order_tasks.append(
                         place_order_for_brokers(

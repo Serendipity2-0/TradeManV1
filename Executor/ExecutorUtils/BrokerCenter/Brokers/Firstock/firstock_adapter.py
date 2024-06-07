@@ -144,7 +144,7 @@ def firstock_todays_tradebook(user_details):
         return None
 
 
-def fetch_open_orders(user):
+def fetch_firstock_open_orders(user):
     """
     The function fetches open orders for a user from a stock position book using their broker username.
 
@@ -378,6 +378,8 @@ async def firstock_place_orders_for_users(orders_to_place, users_credentials):
         logger.success(
             f"Order placed. ID is: {order_id.get('data', {}).get('orderNumber', {})}"
         )
+
+        order_status = None
         # #TODO: Fetch the order status of the order_id and check if it is complete
         order_status = get_order_status(users_credentials["BrokerUsername"], order_id)
         if order_status != "PASS":
@@ -388,6 +390,7 @@ async def firstock_place_orders_for_users(orders_to_place, users_credentials):
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)
         discord_bot(message, strategy)
+        order_status = "FAIL"
 
     results = {
         "exchange_token": int(exchange_token),
