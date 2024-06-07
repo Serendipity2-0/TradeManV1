@@ -41,6 +41,5 @@ def main():
     merged_df = merge_dataframes(momentum_stocks_df,mean_reversion_stocks_df,ema_bb_confluence_stocks_df)
     update_todaystocks_db(combined_df=merged_df)
     print(merged_df.columns)
-
 if "__main__" == __name__:
     main()

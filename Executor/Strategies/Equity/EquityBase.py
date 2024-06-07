@@ -333,19 +333,33 @@ def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df):
     Returns:
         DataFrame: Combined DataFrame with all strategies.
     """
-    # Merge the DataFrames on 'Symbol'
-    combined_df = pd.merge(momentum_df, mean_reversion_df, on='Symbol', how='outer', suffixes=('_Momentum', '_MeanReversion'))
-    combined_df = pd.merge(combined_df, ema_bb_df, on='Symbol', how='outer', suffixes=('', '_EMABBConfluence'))
+    # First, merge the momentum and mean reversion DataFrames on 'Symbol'
+    combined_df = pd.merge(momentum_df, mean_reversion_df, on='Symbol', how='outer', suffixes=('', '_Drop'))
+
+    # Drop the '_Drop' suffix columns from the first merge (these are the columns from mean_reversion_df)
+    for col in combined_df.columns:
+        if col.endswith('_Drop'):
+            combined_df.drop(columns=[col], inplace=True)
     
+    # Merge the combined DataFrame with the EMA-BB DataFrame
+    combined_df = pd.merge(combined_df, ema_bb_df, on='Symbol', how='outer', suffixes=('', '_Drop'))
+
+    # Drop the '_Drop' suffix columns from the second merge (these are the columns from ema_bb_df)
+    for col in combined_df.columns:
+        if col.endswith('_Drop'):
+            combined_df.drop(columns=[col], inplace=True)
+
     # Fill NaN values with appropriate defaults
-    combined_df.fillna({'DailyOpen': 0, 'DailyHigh': 0, 'DailyLow': 0, 'DailyClose': 0,
-                        'WeeklyOpen': 0, 'WeeklyHigh': 0, 'WeeklyLow': 0, 'WeeklyClose': 0,
-                        'DailyRSI': 0, 'DailyUpper_band': 0, 'DailyAbove_50_EMA': 0,
-                        'DailyMACD': 0, 'DailySignal_Line': 0, 'DailyEMA_50': 0, 
-                        'DailyMA': 0, 'DailyLower_band': 0, 'WeeklyMA': 0, 
-                        'WeeklyLower_band': 0, 'Short_Momentum': 0, 
-                        'Short_MeanReversion': 0, 'Short_EMABBConfluence': 0}, inplace=True)
-    
+    combined_df.fillna({
+        'DailyOpen': 0, 'DailyHigh': 0, 'DailyLow': 0, 'DailyClose': 0,
+        'WeeklyOpen': 0, 'WeeklyHigh': 0, 'WeeklyLow': 0, 'WeeklyClose': 0,
+        'DailyRSI': 0, 'DailyUpper_band': 0, 'DailyAbove_50_EMA': 0,
+        'DailyMACD': 0, 'DailySignal_Line': 0, 'DailyEMA_50': 0,
+        'DailyMA': 0, 'DailyLower_band': 0, 'WeeklyMA': 0,
+        'WeeklyLower_band': 0, 'Short_Momentum': 0,
+        'Short_MeanReversion': 0, 'Short_EMABBConfluence': 0
+    }, inplace=True)
+
     return combined_df
 
 def update_todaystocks_db(combined_df):
