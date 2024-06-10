@@ -49,6 +49,30 @@ def get_stock_data(stockCode, period, duration):
         return None
     
 
+def get_financial_data(stock_symbols):
+    data = []
+    for symbol in stock_symbols:
+        try:
+            stock = yf.Ticker(symbol + ".NS")
+            info = stock.info
+            financials = {
+                "Symbol": symbol,
+                "Market Cap": info.get("marketCap"),
+                "Total Revenue": info.get("totalRevenue"),
+                "Net Income": info.get("netIncomeToCommon"),
+                "EPS": info.get("trailingEps"),
+                "P/E Ratio": info.get("trailingPE"),
+                "P/B Ratio": info.get("priceToBook"),
+                "Dividend Yield": info.get("dividendYield"),
+                "Operating Income": info.get("operatingIncome"),
+                "Total Debt": info.get("totalDebt"),
+                "Cash": info.get("totalCash"),
+                "EBITDA": info.get("ebitda"),
+            }
+            data.append(financials)
+        except Exception as e:
+            print(f"Error fetching data for {symbol}: {e}")
+    return pd.DataFrame(data)
 
 def indicator_5EMA(stock_data):
     """
