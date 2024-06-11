@@ -82,10 +82,16 @@ def calculate_qty_for_strategies(
             quantity = int(number_of_lots * lot_size)
             logger.debug(f"Final adjusted quantity: {quantity}")
         else:
-            # For other strategies, adjust risk according to multipliers before calculating lots
-            adjusted_risk = risk / (qty_multiplier * strategy_multiplier)
-            lots = capital / (adjusted_risk / 100)
-            quantity = math.ceil(lots) * lot_size
+            # Adjusted risk to take into account multipliers
+            adjusted_risk_percentage = risk / (qty_multiplier * strategy_multiplier)
+            capital_at_risk = capital * (adjusted_risk_percentage / 100)
+
+            # Calculate the number of effective lots that can be bought
+            effective_lots = capital_at_risk / lot_size
+
+            # Final quantity is the number of lots times the lot size, rounded up to the nearest lot
+            quantity = math.ceil(effective_lots) * lot_size
+
             logger.debug(
                 f"Quantity calculated using default strategy without avg_sl_points: {quantity}"
             )
