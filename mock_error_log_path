@@ -1,0 +1,263 @@
+2024-06-14 11:13:53.614 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 11:13:53.614 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 11:13:53.614 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 11:13:53.614 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 11:14:16.088 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 11:14:16.088 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 11:14:16.088 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 11:14:16.088 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 11:15:06.237 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 11:15:06.237 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 11:15:06.237 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 11:15:06.237 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 11:17:06.666 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 11:17:06.666 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 11:17:06.666 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 11:17:06.666 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 11:17:07.644 | DEBUG    | DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 11:17:07.644 | INFO     | DailyLogin:main:51 - Total active users today: 1
+2024-06-14 11:17:07.644 | DEBUG    | DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 11:17:07.708 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 11:19:41.808 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 11:19:41.808 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 11:19:41.808 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 11:19:41.822 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 11:19:42.897 | DEBUG    | DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 11:19:42.897 | INFO     | DailyLogin:main:51 - Total active users today: 1
+2024-06-14 11:19:42.897 | DEBUG    | DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 11:19:42.967 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 11:20:08.154 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 11:20:08.154 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 11:20:08.154 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 11:20:08.154 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 11:20:09.228 | DEBUG    | DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 11:20:09.228 | INFO     | DailyLogin:main:51 - Total active users today: 1
+2024-06-14 11:20:09.228 | DEBUG    | DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 11:20:09.290 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 11:22:51.465 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 11:22:51.465 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 11:22:51.465 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 11:22:51.465 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 11:24:44.764 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 11:24:44.764 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 11:24:44.775 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 11:24:44.775 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 11:24:45.831 | DEBUG    | DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 11:24:45.831 | INFO     | DailyLogin:main:51 - Total active users today: 1
+2024-06-14 11:24:45.831 | DEBUG    | DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 11:24:45.916 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 13:36:01.708 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 13:36:03.541 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:103 - Error while logging in for Zerodha: 'str' object has no attribute 'capabilities' for user: YY0222
+2024-06-14 13:38:19.527 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 13:38:22.022 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:103 - Error while logging in for Zerodha: 'str' object has no attribute 'capabilities' for user: YY0222
+2024-06-14 14:12:46.183 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 14:12:46.183 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 14:12:46.183 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 14:12:46.183 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 14:13:24.657 | INFO     | DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 14:13:24.657 | INFO     | DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 14:13:24.657 | INFO     | DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 14:13:24.657 | INFO     | DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:30:30.310 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 15:30:30.310 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 15:30:30.310 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 15:30:30.322 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:30:30.322 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 15:30:30.322 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 15:30:30.322 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 15:30:30.536 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:30:59.689 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0222: mock_access_token
+2024-06-14 15:32:29.437 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 15:32:29.437 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 15:32:29.437 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 15:32:29.446 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:32:29.449 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 15:32:29.456 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 15:32:29.456 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 15:32:29.702 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:33:06.496 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 15:33:06.496 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 15:33:06.496 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 15:33:06.500 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:33:06.500 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 15:33:06.507 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 15:33:06.507 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 15:33:06.696 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:33:35.704 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0222: mock_access_token
+2024-06-14 15:34:43.506 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 15:34:43.506 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 15:34:43.506 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 15:34:43.511 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:34:43.511 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 15:34:43.519 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 15:34:43.519 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 15:34:43.736 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:35:12.749 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0222: mock_access_token
+2024-06-14 15:35:12.749 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:35:41.755 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0222: mock_access_token
+2024-06-14 15:37:12.915 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 15:37:12.915 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 15:37:12.915 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 15:37:12.915 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:37:12.921 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 15:37:12.928 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 15:37:12.928 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 15:37:13.165 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:37:42.199 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0222: mock_access_token
+2024-06-14 15:37:42.201 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:38:11.205 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0222: mock_access_token
+2024-06-14 15:42:59.522 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 15:42:59.522 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 15:42:59.522 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 15:42:59.527 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:42:59.527 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 15:42:59.536 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 15:42:59.537 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 15:42:59.729 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:43:33.308 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 15:43:33.308 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 15:43:33.308 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 15:43:33.317 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:43:33.317 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 15:43:33.325 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 15:43:33.325 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 15:43:33.579 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:44:02.591 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0222: mock_access_token
+2024-06-14 15:44:02.597 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:47:40.436 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 15:47:40.436 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 15:47:40.436 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 15:47:40.436 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:47:40.436 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 15:47:40.441 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 15:47:40.441 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 15:47:40.645 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:48:09.660 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0222: mock_access_token
+2024-06-14 15:48:09.663 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0222
+2024-06-14 15:55:53.105 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 15:55:53.105 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 15:55:53.105 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 15:55:53.107 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 15:55:53.107 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 15:55:53.107 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 15:55:53.107 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 15:55:53.390 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 15:56:22.409 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0333: mock_access_token
+2024-06-14 15:56:22.415 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 16:01:39.230 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:01:39.230 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:01:39.230 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:01:39.240 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:01:39.240 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:01:39.248 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:01:39.248 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:03:20.770 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:03:20.770 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:03:20.770 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:03:20.770 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:03:20.770 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:03:20.783 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:03:20.783 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:03:41.997 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:03:42.000 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:03:42.000 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:03:42.000 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:03:42.000 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:03:42.010 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:03:42.010 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:04:37.200 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:04:37.200 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:04:37.200 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:04:37.204 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:04:37.204 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:04:37.213 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:04:37.213 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:04:37.450 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 16:06:01.622 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:06:01.622 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:06:01.622 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:06:01.622 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:06:01.622 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:06:01.636 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:06:01.636 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:11:39.069 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:11:39.069 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:11:39.069 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:11:39.069 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:11:39.069 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:11:39.082 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:11:39.082 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:18:39.159 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:18:39.159 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:18:39.159 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:18:39.159 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:18:39.159 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:18:39.159 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:18:39.159 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:23:34.587 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:23:34.587 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:23:34.587 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:23:34.587 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:23:34.594 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:23:34.600 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:23:34.600 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:25:27.357 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:25:27.357 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:25:27.357 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:25:27.361 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:25:27.361 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:25:27.368 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:25:27.368 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:27:42.366 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 16:27:42.366 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 16:27:42.366 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 16:27:42.366 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 16:27:42.366 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 16:27:42.376 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 16:27:42.376 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 16:27:42.571 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 16:28:11.586 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0333: mock_access_token
+2024-06-14 16:28:11.586 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 18:11:02.151 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 18:11:02.151 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 18:11:02.151 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 18:11:02.154 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 18:11:02.154 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 18:11:02.164 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 18:11:02.164 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 18:11:02.421 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 18:11:31.426 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0333: mock_access_token
+2024-06-14 18:11:31.426 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 18:23:11.710 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 18:23:11.710 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 18:23:11.710 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 18:23:11.710 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 18:23:11.710 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 18:23:11.710 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 2
+2024-06-14 18:23:11.710 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 18:23:11.710 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: AliceBlue: Jane Smith
+2024-06-14 18:23:11.941 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 18:23:30.959 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:103 - Error while logging in for Zerodha: 'function' object has no attribute 'now' for user: YY0333
+2024-06-14 18:23:30.959 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:107 - Logging in for AliceBlue for user: AB1234
+2024-06-14 18:23:31.666 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:119 - Error while logging in for AliceBlue: 'sCount' for user: AB1234
+2024-06-14 18:23:31.666 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 18:23:31.666 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:107 - Logging in for AliceBlue for user: AB1234
+2024-06-14 18:23:31.935 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:119 - Error while logging in for AliceBlue: 'sCount' for user: AB1234
+2024-06-14 18:24:57.258 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 18:24:57.258 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 18:24:57.258 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 18:24:57.258 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 18:24:57.258 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 18:24:57.280 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 18:24:57.280 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 18:24:57.448 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 18:25:59.602 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-06-14 18:25:59.602 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-06-14 18:25:59.602 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-06-14 18:25:59.602 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 14-06-2024
+2024-06-14 18:25:59.602 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from trademan_clients and strategies collections.
+2024-06-14 18:25:59.619 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-06-14 18:25:59.619 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: Zerodha: John Doe
+2024-06-14 18:25:59.823 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
+2024-06-14 18:26:28.834 | INFO     | Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login:login_in_zerodha:92 - Session ID for YY0333: mock_access_token
+2024-06-14 18:26:28.837 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:91 - Logging in for Zerodha for user: YY0333
