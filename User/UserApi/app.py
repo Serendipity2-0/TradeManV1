@@ -29,11 +29,12 @@ def check_credentials(user_credentials: schemas.LoginUserDetails):
         bool: True if the credentials are valid, False otherwise.
     """
     users = fetch_collection_data_firebase(CLIENTS_COLLECTION)
-    for user in users:
+
+    for user_id, user in users.items():
         # Assuming user_name and password are top-level keys in each user dict
         if (
-            user_credentials.Email == user["Profile"]["user_name"]
-            and user_credentials.Password == user["Profile"]["password"]
+            user_credentials.Email == user["Profile"]["usr"]
+            and user_credentials.Password == user["Profile"]["pwd"]
         ):
             return True
     return False
@@ -67,12 +68,8 @@ def get_user_profile(tr_no: str):
     """
     # Assume fetching user profile from a database
     users = fetch_collection_data_firebase(CLIENTS_COLLECTION)
-    for user in users:
+    for user_id, user in users.items():
         if user["Tr_No"] == tr_no:
-            return schemas.LoginUserDetails(
-                name=user["Profile"]["Name"],
-                email=user["Profile"]["Email"],
-                phone=user["Profile"]["PhoneNumber"],
-            )
+            return user
         else:
             raise KeyError("User not found")
