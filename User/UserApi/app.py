@@ -30,14 +30,14 @@ def check_credentials(user_credentials: schemas.LoginUserDetails):
     """
     users = fetch_collection_data_firebase(CLIENTS_COLLECTION)
 
-    for user_id, user in users.items():
+    for trader_no, user in users.items():
         # Assuming user_name and password are top-level keys in each user dict
         if (
             user_credentials.Email == user["Profile"]["usr"]
             and user_credentials.Password == user["Profile"]["pwd"]
         ):
-            return True
-    return False
+            return trader_no
+    return None
 
 
 def register_user(user_detail: schemas.UserDetails):
@@ -70,6 +70,21 @@ def get_user_profile(tr_no: str):
     users = fetch_collection_data_firebase(CLIENTS_COLLECTION)
     for user_id, user in users.items():
         if user["Tr_No"] == tr_no:
-            return user
+            strategies = []
+            for strategy_name, strategy_data in user["Strategies"].items():
+                strategies.append(strategy_name)
+            profile_data = {
+                "Name": user["Profile"]["Name"],
+                "Email": user["Profile"]["Email"],
+                "Phone": user["Profile"]["PhoneNumber"],
+                "Date of Birth": user["Profile"]["DOB"],
+                "Aadhar Card": user["Profile"]["AadharCardNo"],
+                "Pan Card": user["Profile"]["PANCardNo"],
+                "Bank Name": user["Profile"]["BankName"],
+                "Bank Account Number": user["Profile"]["BankAccountNo"],
+                "Broker Name": user["Broker"]["BrokerName"],
+                "Strategies": strategies,
+            }
+            return profile_data
         else:
             raise KeyError("User not found")

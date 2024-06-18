@@ -54,9 +54,9 @@ def login(user_credentials: schemas.LoginUserDetails):
     We are storing the user details in a dictionary and then passing it to the check_credentials function in app.py.
     """
     # Authentication function to check credentials
-    is_authenticated = app.check_credentials(user_credentials)
-    if is_authenticated:
-        return {"message": "Login successful"}
+    trader_no = app.check_credentials(user_credentials)
+    if trader_no:
+        return {"message": "Login successful", "trader_no": trader_no}
     else:
         raise HTTPException(status_code=401, detail="Incorrect email or password")
 
