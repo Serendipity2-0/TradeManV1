@@ -12,3 +12,5 @@ requests
 python-dotenv
 pendulum
 fastapi
+reportlab
+psutil
