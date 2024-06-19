@@ -6,8 +6,10 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v2
@@ -19,10 +21,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Set up Firebase credentials
+      run: |
+        echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}" | base64 --decode > firebase-service-account.json
+      shell: bash
+
     - name: Check formatting with black
       run: |
         pip install black
         black .
+
+    - name: Test with pytest
+      env:
+        FIREBASE_CRED_PATH: ${{ github.workspace }}/firebase-service-account.json
+      run: |
+        pip install pytest
+        pytest
+
 
     # - name: Lint with flake8
     #   run: |
@@ -34,7 +49,3 @@ jobs:
     #     pip install pydocstyle
     #     pydocstyle .
 
-    - name: Test with pytest
-      run: |
-        pip install pytest
-        pytest
