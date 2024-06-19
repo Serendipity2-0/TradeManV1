@@ -25,10 +25,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install firebase-admin
 
+    - name: Set environment variables
+      run: |
+        echo "FIREBASE_CRED_PATH=$GITHUB_WORKSPACE/firebase_credentials.json" >> $GITHUB_ENV
+        echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
+
     - name: Run Firebase script
       env:
-        FIREBASE_CRED_PATH: "$GITHUB_WORKSPACE/firebase_credentials.json"
-        FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+        FIREBASE_CRED_PATH: ${{ env.FIREBASE_CRED_PATH }}
+        FIREBASE_DATABASE_URL: ${{ env.FIREBASE_DATABASE_URL }}
       run: |
         pip install pytest
         pytest --tb=short -v
