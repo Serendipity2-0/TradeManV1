@@ -19,14 +19,27 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install firebase-admin  # Ensure firebase-admin is installed
+        pip install firebase-admin
+
+    - name: Enable Debug Mode
+      # Enable debug mode to print each command before execution
+      run: |
+        set -x
 
     - name: Write Firebase credentials to file
       # Write the JSON content from the secret to a file
       run: |
-        echo "${{ secrets.FIREBASE_CRED_PATH }}" > firebase-service-account.json
-        echo "File Content:"
+        echo -e "${{ secrets.FIREBASE_CRED_PATH }}" > firebase-service-account.json
+        echo "File written. Printing content:"
         cat firebase-service-account.json  # Print to ensure it's written correctly
+      shell: bash
+
+    - name: Explicitly Print JSON File Content
+      # Explicitly print the JSON file content for debugging
+      run: |
+        echo "---- File Content Start ----"
+        cat firebase-service-account.json
+        echo "---- File Content End ----"
       shell: bash
 
     - name: Export Firebase environment variables
