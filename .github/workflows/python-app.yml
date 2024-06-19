@@ -36,7 +36,7 @@ jobs:
 
     - name: Test with pytest
       env:
-        FIREBASE_CRED_PATH: ${{ github.workspace }}/firebase-service-account.json
+        FIREBASE_CRED_PATH: ${{ secrets.FIREBASE_CRED_PATH }}
         FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
       run: |
         pip install pytest
