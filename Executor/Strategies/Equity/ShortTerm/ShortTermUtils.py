@@ -10,10 +10,10 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     indicator_bollinger_bands,
-    indicator_50EMA,
-    indicator_RSI,
-    indicator_MACD,
-    check_if_above_50EMA,
+    indicator_50ema,
+    indicator_rsi,
+    indicator_macd,
+    check_if_above_50ema,
 )
 
 logger = LoggerSetup()
@@ -47,7 +47,7 @@ def perform_EmaBB_Confluence_strategy(stock_data_dict):
             stock_data_weekly = indicator_bollinger_bands(stock_data_weekly, bb_window)
 
             # Calculate 50 EMA for daily data
-            stock_data_daily["EMA_50"] = indicator_50EMA(stock_data_daily)
+            stock_data_daily["EMA_50"] = indicator_50ema(stock_data_daily)
 
             # Get the most recent row of data
             latest_daily_data = stock_data_daily.iloc[-1]
@@ -172,7 +172,7 @@ def perform_mean_reversion_strategy(stock_data_dict):
             # Calculate RSI for daily data
             rsi_length_input = 14
             rsi_source_input = "Close"
-            rsi_values = indicator_RSI(
+            rsi_values = indicator_rsi(
                 stock_data_daily, rsi_length_input, rsi_source_input
             )
 
@@ -182,7 +182,7 @@ def perform_mean_reversion_strategy(stock_data_dict):
             stock_data_weekly = indicator_bollinger_bands(stock_data_weekly, bb_window)
 
             # Check if LTP is above 50 EMA for daily data
-            stock_data_daily = check_if_above_50EMA(stock_data_daily)
+            stock_data_daily = check_if_above_50ema(stock_data_daily)
 
             # Get the most recent data
             latest_daily_data = stock_data_daily.iloc[-1]
@@ -311,7 +311,7 @@ def perform_momentum_strategy(stock_data_dict):
             # Calculate RSI for daily data
             rsi_length_input = 14
             rsi_source_input = "Close"
-            rsi_values = indicator_RSI(
+            rsi_values = indicator_rsi(
                 stock_data_daily, rsi_length_input, rsi_source_input
             )
 
@@ -320,10 +320,10 @@ def perform_momentum_strategy(stock_data_dict):
             stock_data_daily = indicator_bollinger_bands(stock_data_daily, bb_window)
 
             # Check if LTP is above 50 EMA for daily data
-            stock_data_daily = check_if_above_50EMA(stock_data_daily)
+            stock_data_daily = check_if_above_50ema(stock_data_daily)
 
             # Calculate MACD for daily data
-            macd, signal_line = indicator_MACD(stock_data_daily)
+            macd, signal_line = indicator_macd(stock_data_daily)
 
             # Get the most recent data
             latest_daily_data = stock_data_daily.iloc[-1]

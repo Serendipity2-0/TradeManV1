@@ -4,6 +4,7 @@ import pandas as pd
 import sqlite3
 import yfinance as yf
 from dotenv import load_dotenv
+import numpy as np
 
 # Add current directory to system path
 DIR = os.getcwd()
@@ -58,36 +59,91 @@ def get_stock_data(stock_code, period, duration):
 
 def get_financial_data(stock_symbols):
     """
-    Fetch financial data for given stock symbols.
+    Fetch financial data for given stock symbols and add additional calculated metrics.
 
     Args:
         stock_symbols (list): List of stock symbols.
 
     Returns:
-        DataFrame: DataFrame containing financial data.
+        DataFrame: DataFrame containing financial data with additional metrics.
     """
     data = []
     for symbol in stock_symbols:
         try:
             stock = yf.Ticker(f"{symbol}.NS")
             info = stock.info
+
+            # Extract necessary financial information
+            total_revenue = info.get("totalRevenue", np.nan)
+            operating_cashflow = info.get(
+                "operatingCashflow", np.nan
+            )  # Use operatingCashflow if operatingIncome is not available
+            total_debt = info.get("totalDebt", np.nan)
+            book_value_per_share = info.get("bookValue", np.nan)
+            shares_outstanding = info.get("sharesOutstanding", np.nan)
+            revenue_growth = info.get("revenueGrowth", np.nan)
+
+            # Calculate Operating Profit Margin
+            operating_profit_margin = (
+                (operating_cashflow / total_revenue)
+                if total_revenue and operating_cashflow
+                else np.nan
+            )
+
+            # Estimate Debt to Equity Ratio
+            equity = (
+                (book_value_per_share * shares_outstanding)
+                if book_value_per_share and shares_outstanding
+                else np.nan
+            )
+            debt_to_equity = (total_debt / equity) if equity and total_debt else np.nan
+
+            # Gross Profit Growth (approximated)
+            gross_profit_growth = revenue_growth  # Simplified assumption
+
+            # Simplified Piotroski F-Score calculation
+            f_score = 0
+            f_score += (
+                1 if info.get("netIncomeToCommon", 0) > 0 else 0
+            )  # Positive net income
+            f_score += 1 if info.get("trailingEps", 0) > 0 else 0  # Positive EPS
+            f_score += (
+                1 if operating_profit_margin and operating_profit_margin > 0 else 0
+            )  # Positive operating profit margin
+            f_score += (
+                1 if debt_to_equity and debt_to_equity < 1 else 0
+            )  # Low debt to equity
+            f_score += (
+                1 if info.get("priceToBook", 3) < 3 else 0
+            )  # Price to book ratio < 3
+            f_score += (
+                1 if info.get("trailingPE", 20) < 20 else 0
+            )  # Price to earnings ratio < 20
+
+            # Construct the financial dictionary
             financials = {
                 "Symbol": symbol,
-                "Market Cap": info.get("marketCap"),
-                "Total Revenue": info.get("totalRevenue"),
-                "Net Income": info.get("netIncomeToCommon"),
-                "EPS": info.get("trailingEps"),
-                "P/E Ratio": info.get("trailingPE"),
-                "P/B Ratio": info.get("priceToBook"),
-                "Dividend Yield": info.get("dividendYield"),
-                "Operating Income": info.get("operatingIncome"),
-                "Total Debt": info.get("totalDebt"),
-                "Cash": info.get("totalCash"),
-                "EBITDA": info.get("ebitda"),
+                "Market Cap": info.get("marketCap", np.nan),
+                "Total Revenue": total_revenue,
+                "Net Income": info.get("netIncomeToCommon", np.nan),
+                "EPS": info.get("trailingEps", np.nan),
+                "P/E Ratio": info.get("trailingPE", np.nan),
+                "P/B Ratio": info.get("priceToBook", np.nan),
+                "Dividend Yield": info.get("dividendYield", np.nan),
+                "Operating Cashflow": operating_cashflow,
+                "Total Debt": total_debt,
+                "Cash": info.get("totalCash", np.nan),
+                "EBITDA": info.get("ebitda", np.nan),
+                "Operating Profit Margin": operating_profit_margin,
+                "Debt to Equity": debt_to_equity,
+                "Gross Profit Growth": gross_profit_growth,
+                "Piotroski F-Score": f_score,
             }
+
             data.append(financials)
         except Exception as e:
             logger.error(f"Error fetching financial data for {symbol}: {e}")
+
     return pd.DataFrame(data)
 
 
@@ -418,7 +474,7 @@ def read_stock_data_from_db(db_path):
         return {}
 
 
-def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df):
+def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df, ratio_df, combo_df):
     """
     Merge the DataFrames from different strategies into one comprehensive DataFrame.
 
@@ -426,12 +482,14 @@ def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df):
         momentum_df (DataFrame): DataFrame of momentum stocks.
         mean_reversion_df (DataFrame): DataFrame of mean reversion stocks.
         ema_bb_df (DataFrame): DataFrame of EMA-BB confluence stocks.
+        ratio_df (DataFrame): DataFrame of stocks from the ratio strategy.
+        combo_df (DataFrame): DataFrame of stocks from the combo strategy.
 
     Returns:
         DataFrame: Combined DataFrame with all strategies.
     """
     try:
-        # First, merge the momentum and mean reversion DataFrames on 'Symbol'
+        # Merge momentum and mean reversion DataFrames on 'Symbol'
         combined_df = pd.merge(
             momentum_df,
             mean_reversion_df,
@@ -445,12 +503,32 @@ def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df):
             if col.endswith("_Drop"):
                 combined_df.drop(columns=[col], inplace=True)
 
-        # Merge the combined DataFrame with the EMA-BB DataFrame
+        # Merge with EMA-BB DataFrame
         combined_df = pd.merge(
             combined_df, ema_bb_df, on="Symbol", how="outer", suffixes=("", "_Drop")
         )
 
         # Drop the '_Drop' suffix columns from the second merge
+        for col in combined_df.columns:
+            if col.endswith("_Drop"):
+                combined_df.drop(columns=[col], inplace=True)
+
+        # Merge with Ratio DataFrame
+        combined_df = pd.merge(
+            combined_df, ratio_df, on="Symbol", how="outer", suffixes=("", "_Drop")
+        )
+
+        # Drop the '_Drop' suffix columns from the third merge
+        for col in combined_df.columns:
+            if col.endswith("_Drop"):
+                combined_df.drop(columns=[col], inplace=True)
+
+        # Merge with Combo DataFrame
+        combined_df = pd.merge(
+            combined_df, combo_df, on="Symbol", how="outer", suffixes=("", "_Drop")
+        )
+
+        # Drop the '_Drop' suffix columns from the fourth merge
         for col in combined_df.columns:
             if col.endswith("_Drop"):
                 combined_df.drop(columns=[col], inplace=True)
@@ -476,9 +554,20 @@ def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df):
                 "DailyLower_band": 0,
                 "WeeklyMA": 0,
                 "WeeklyLower_band": 0,
+                "Market Cap": 0,
+                "P/E Ratio": 0,
+                "P/B Ratio": 0,
+                "Dividend Yield": 0,
+                "Piotroski F-Score": 0,
+                "Operating Profit Margin": 0,
+                "Debt to Equity": 0,
+                "Gross Profit Growth": 0,
                 "Short_Momentum": 0,
                 "Short_MeanReversion": 0,
                 "Short_EMABBConfluence": 0,
+                "Long_Ratio": 0,
+                "Long_Combo": 0,
+                # Add defaults for any new columns used in the strategies
             },
             inplace=True,
         )

@@ -42,10 +42,7 @@ def main():
     momentum_stocks_df = perform_momentum_strategy(stock_data_dict)
     mean_reversion_stocks_df = perform_mean_reversion_strategy(stock_data_dict)
     ema_bb_confluence_stocks_df = perform_EmaBB_Confluence_strategy(stock_data_dict)
-    merged_df = merge_dataframes(
-        momentum_stocks_df, mean_reversion_stocks_df, ema_bb_confluence_stocks_df
-    )
-    update_todaystocks_db(combined_df=merged_df)
+    return momentum_stocks_df, mean_reversion_stocks_df, ema_bb_confluence_stocks_df
 
 
 if "__main__" == __name__:
