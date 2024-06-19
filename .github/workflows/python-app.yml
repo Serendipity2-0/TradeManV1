@@ -10,45 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Step to check out the code
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # Step to set up Python 3.11
     - name: Set up Python 3.11
       uses: actions/setup-python@v2
       with:
         python-version: '3.11'
 
-    # Step to install dependencies
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    # Check if Firebase credentials are provided
-    - name: Check Firebase secret
-      if: ${{ secrets.FIREBASE_CRED_PATH }}
-      run: echo "Firebase secret exists."
+    - name: Create Firebase credentials file
+      # This step writes the content of FIREBASE_CRED_PATH secret into a file
+      run: echo "${{ secrets.FIREBASE_CRED_PATH }}" > $GITHUB_WORKSPACE/firebase-service-account.json
       shell: bash
 
-    # Step to set up Firebase credentials
-    - name: Set up Firebase credentials
-      if: ${{ secrets.FIREBASE_CRED_PATH }}
-      run: echo "${{ secrets.FIREBASE_CRED_PATH }}" > firebase-service-account.json
-      shell: bash
-
-    # Export Firebase environment variables
-    - name: Export Firebase environment variables
-      if: ${{ secrets.FIREBASE_DATABASE_URL }}
+    - name: Export environment variables
       run: |
-        echo "FIREBASE_CRED_PATH=$(pwd)/firebase-service-account.json" >> $GITHUB_ENV
+        echo "FIREBASE_CRED_PATH=$GITHUB_WORKSPACE/firebase-service-account.json" >> $GITHUB_ENV
         echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
+        echo "FIREBASE_USER_COLLECTION=${{ secrets.FIREBASE_USER_COLLECTION }}" >> $GITHUB_ENV
+        echo "FIREBASE_STRATEGY_COLLECTION=${{ secrets.FIREBASE_STRATEGY_COLLECTION }}" >> $GITHUB_ENV
+        echo "discord_bot_token=${{ secrets.discord_bot_token }}" >> $GITHUB_ENV
       shell: bash
 
-    # Verify Firebase credentials
     - name: Verify Firebase credentials
-      if: ${{ secrets.FIREBASE_CRED_PATH }}
       run: |
         if [ -f "$FIREBASE_CRED_PATH" ]; then
           echo "Firebase credentials file found at $FIREBASE_CRED_PATH"
@@ -58,31 +47,16 @@ jobs:
         fi
       shell: bash
 
-    # Check code formatting with Black
     - name: Check formatting with black
       run: |
         pip install black
         black .
-    
-    # Run tests with pytest
+        
     - name: Test with pytest
       env:
         FIREBASE_CRED_PATH: ${{ env.FIREBASE_CRED_PATH }}
         FIREBASE_DATABASE_URL: ${{ env.FIREBASE_DATABASE_URL }}
+        discord_bot_token: ${{ env.discord_bot_token }}
       run: |
         pip install pytest
         pytest
-
-    # Uncomment and modify the following steps as needed
-
-    # # Lint code with flake8
-    # - name: Lint with flake8
-    #   run: |
-    #     pip install flake8
-    #     flake8 .
-
-    # # Check documentation with pydocstyle
-    # - name: Check documentation with pydocstyle
-    #   run: |
-    #     pip install pydocstyle
-    #     pydocstyle .
