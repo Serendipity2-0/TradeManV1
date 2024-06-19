@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import uvicorn
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi import APIRouter
 import os, sys
+from fastapi.middleware.cors import CORSMiddleware
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -24,6 +25,15 @@ Then we use the data from the user and pass it to function which are in app.py
 
 
 app_fastapi = FastAPI()
+
+app_fastapi.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app_user = APIRouter()
 
 
@@ -36,6 +46,21 @@ def overridden_swagger():
     return get_swagger_ui_html(openapi_url="openapi.json", title="Trademan")
 
 
+@app_user.post("/login")
+def login(user_credentials: schemas.LoginUserDetails):
+    """
+    This is the route for logging in a user.
+    It takes a LoginUserDetails object as input and returns a response.
+    We are storing the user details in a dictionary and then passing it to the check_credentials function in app.py.
+    """
+    # Authentication function to check credentials
+    trader_no = app.check_credentials(user_credentials)
+    if trader_no:
+        return {"message": "Login successful", "trader_no": trader_no}
+    else:
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+
+
 @app_user.post("/register")
 def register_user(user_detail: schemas.UserDetails):
     """
@@ -43,7 +68,29 @@ def register_user(user_detail: schemas.UserDetails):
     It takes a UserDetails object as input and returns a response.
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
-    return app.register_user(user_detail)
+    try:
+        return app.register_user(user_detail)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app_user.get("/profilepage/{tr_no}")
+def profile_page(tr_no: str):
+    """
+    Retrieves the profile page for a specific user by their user ID.
+
+    Args:
+    user_id (int): The unique identifier of the user.
+
+    Returns:
+    dict: The user profile information.
+    """
+    try:
+        return app.get_user_profile(tr_no)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 app_fastapi.include_router(app_user, prefix="/v1/user")
