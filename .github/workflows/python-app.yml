@@ -32,7 +32,7 @@ jobs:
         echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
       shell: bash
 
-    - name: Verify Firebase credentials
+    - name: Verify Firebase credentials file
       run: |
         if [ -f "$FIREBASE_CRED_PATH" ]; then
           echo "Firebase credentials file found at $FIREBASE_CRED_PATH"
@@ -42,6 +42,23 @@ jobs:
           exit 1
         fi
       shell: bash
+
+    - name: Validate JSON content
+      run: |
+        python -c "
+        import os, json
+        path = os.getenv('FIREBASE_CRED_PATH')
+        if not path:
+            raise ValueError('FIREBASE_CRED_PATH is not set')
+        print(f'Reading from: {path}')
+        with open(path, 'r') as f:
+            try:
+                data = json.load(f)
+                print('JSON data is valid and contains:', data)
+            except json.JSONDecodeError as e:
+                print(f'Failed to decode JSON: {e}')
+                exit(1)
+        "
 
     - name: Check formatting with black
       run: |
@@ -54,17 +71,4 @@ jobs:
         FIREBASE_DATABASE_URL: ${{ env.FIREBASE_DATABASE_URL }}
       run: |
         pip install pytest
-        pytest
-
-
-
-    # - name: Lint with flake8
-    #   run: |
-    #     pip install flake8
-    #     flake8 .
-
-    # - name: Check documentation with pydocstyle
-    #   run: |
-    #     pip install pydocstyle
-    #     pydocstyle .
-
+        pytest --tb=short -v
