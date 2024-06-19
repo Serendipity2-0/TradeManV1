@@ -21,16 +21,11 @@ jobs:
         pip install -r requirements.txt
         pip install firebase-admin  # Ensure firebase-admin is installed
 
-    - name: Print Firebase credentials secret
-      # Print the content of the secret for debugging
-      run: |
-        echo "${{ secrets.FIREBASE_CRED_PATH }}"
-      shell: bash
-
     - name: Write Firebase credentials to file
       # Write the JSON content from the secret to a file
       run: |
         echo "${{ secrets.FIREBASE_CRED_PATH }}" > firebase-service-account.json
+        echo "File Content:"
         cat firebase-service-account.json  # Print to ensure it's written correctly
       shell: bash
 
