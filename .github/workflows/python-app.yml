@@ -20,9 +20,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Debug: Show environment variables
+      run: printenv
+
+    - name: Print Firebase credentials secret
+      run: |
+        echo "${{ secrets.FIREBASE_CRED_PATH }}"
+      shell: bash
+
     - name: Set up Firebase credentials
       # Write the JSON content from the secret to a file
-      run: echo "${{ secrets.FIREBASE_CRED_PATH }}" > firebase-service-account.json
+      run: |
+        echo "${{ secrets.FIREBASE_CRED_PATH }}" > firebase-service-account.json
+        cat firebase-service-account.json
       shell: bash
 
     - name: Export Firebase environment variables
@@ -32,18 +42,7 @@ jobs:
         echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
       shell: bash
 
-    - name: Verify Firebase credentials file
-      run: |
-        if [ -f "$FIREBASE_CRED_PATH" ]; then
-          echo "Firebase credentials file found at $FIREBASE_CRED_PATH"
-          cat $FIREBASE_CRED_PATH
-        else
-          echo "Firebase credentials file not found."
-          exit 1
-        fi
-      shell: bash
-
-    - name: Validate JSON content
+    - name: Validate Firebase JSON content
       run: |
         python -c "
         import os, json
@@ -57,6 +56,12 @@ jobs:
                 print('JSON data is valid and contains:', data)
             except json.JSONDecodeError as e:
                 print(f'Failed to decode JSON: {e}')
+                exit(1)
+            except FileNotFoundError as fnfe:
+                print(f'File not found: {fnfe}')
+                exit(1)
+            except Exception as ex:
+                print(f'An error occurred: {ex}')
                 exit(1)
         "
 
