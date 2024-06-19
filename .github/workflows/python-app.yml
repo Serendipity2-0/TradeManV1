@@ -20,7 +20,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Debug: Show environment variables
+    - name: Print environment variables
+      # Print all environment variables for debugging
       run: printenv
 
     - name: Print Firebase credentials secret
