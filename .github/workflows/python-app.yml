@@ -1,4 +1,3 @@
-# .github/workflows/python-app.yml
 name: Python application
 
 on: [push]
@@ -26,6 +25,10 @@ jobs:
         echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}" | base64 --decode > firebase-service-account.json
       shell: bash
 
+    - name: Export Firebase database URL
+      run: echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
+      shell: bash
+
     - name: Check formatting with black
       run: |
         pip install black
@@ -34,6 +37,7 @@ jobs:
     - name: Test with pytest
       env:
         FIREBASE_CRED_PATH: ${{ github.workspace }}/firebase-service-account.json
+        FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
       run: |
         pip install pytest
         pytest
