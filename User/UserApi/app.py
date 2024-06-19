@@ -12,6 +12,9 @@ import User.UserApi.schemas as schemas
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
 )
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 CLIENTS_COLLECTION = os.getenv("FIREBASE_USER_COLLECTION")
 
