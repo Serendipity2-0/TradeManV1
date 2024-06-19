@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import time
 from typing import Dict, List, Optional, Union
-
+import asyncio
 import pandas as pd
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -716,7 +716,9 @@ def place_order_strategy_users(strategy_name, orders_to_place, order_qty_mode=No
     )
 
     strategy_users = fetch_strategy_users(strategy_name)
-    place_order_for_strategy(strategy_users, orders_to_place, order_qty_mode)
+    asyncio.run(
+        place_order_for_strategy(strategy_users, orders_to_place, order_qty_mode)
+    )
     pass
 
 
