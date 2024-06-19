@@ -19,21 +19,19 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
-    - name: Print environment variables
-      # Print all environment variables for debugging
-      run: printenv
+        pip install firebase-admin  # Ensure firebase-admin is installed
 
     - name: Print Firebase credentials secret
+      # Print the content of the secret for debugging
       run: |
         echo "${{ secrets.FIREBASE_CRED_PATH }}"
       shell: bash
 
-    - name: Set up Firebase credentials
+    - name: Write Firebase credentials to file
       # Write the JSON content from the secret to a file
       run: |
         echo "${{ secrets.FIREBASE_CRED_PATH }}" > firebase-service-account.json
-        cat firebase-service-account.json
+        cat firebase-service-account.json  # Print to ensure it's written correctly
       shell: bash
 
     - name: Export Firebase environment variables
@@ -51,19 +49,19 @@ jobs:
         if not path:
             raise ValueError('FIREBASE_CRED_PATH is not set')
         print(f'Reading from: {path}')
-        with open(path, 'r') as f:
-            try:
+        try:
+            with open(path, 'r') as f:
                 data = json.load(f)
                 print('JSON data is valid and contains:', data)
-            except json.JSONDecodeError as e:
-                print(f'Failed to decode JSON: {e}')
-                exit(1)
-            except FileNotFoundError as fnfe:
-                print(f'File not found: {fnfe}')
-                exit(1)
-            except Exception as ex:
-                print(f'An error occurred: {ex}')
-                exit(1)
+        except json.JSONDecodeError as e:
+            print(f'Failed to decode JSON: {e}')
+            exit(1)
+        except FileNotFoundError as fnfe:
+            print(f'File not found: {fnfe}')
+            exit(1)
+        except Exception as ex:
+            print(f'An error occurred: {ex}')
+            exit(1)
         "
 
     - name: Check formatting with black
