@@ -12,7 +12,15 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-cred_filepath = os.getenv("FIREBASE_CRED_PATH")
+# Environment-specific credentials path
+if "GITHUB_WORKSPACE" in os.environ:
+    # Path when running in GitHub Actions
+    cred_filepath = "./firebase_credentials.json"
+else:
+    # Local development path from .env
+    cred_filepath = os.getenv("FIREBASE_CRED_PATH")
+
+
 firebase_db_url = os.getenv("FIREBASE_DATABASE_URL")
 CLIENTS_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
