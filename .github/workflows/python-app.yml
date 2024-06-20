@@ -35,7 +35,7 @@ jobs:
 
     - name: Load environment variables
       run: |
-        echo "FIREBASE_URL=${{ secrets.FIREBASE_URL }}" >> $GITHUB_ENV
+        echo "FIREBASE_CRED_PATH =${{ secrets.FIREBASE_CRED_PATH  }}" >> $GITHUB_ENV
         echo "FIREBASE_CREDENTIALS_PATH=./firebase_credentials.json" >> $GITHUB_ENV
 
     - name: Check formatting with black
