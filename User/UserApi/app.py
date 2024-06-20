@@ -1,5 +1,9 @@
 import os, sys
 from dotenv import load_dotenv
+import numpy as np
+import pandas as pd
+import json
+from fastapi import HTTPException
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -18,6 +22,8 @@ from User.UserApi.userapi_utils import (
     create_portfolio_stats,
     get_monthly_returns_data,
     get_weekly_cumulative_returns_data,
+    get_individual_strategy_data,
+    get_broker_bank_transactions_data,
 )
 
 logger = LoggerSetup()
@@ -53,7 +59,6 @@ def register_user(user_detail: schemas.UserDetails):
         user_detail (schemas.UserDetails): An object containing the user's details.
     """
     user_detail = dict(user_detail)
-    logger.debug(user_detail)
     update_new_client_data_to_db(get_next_trader_number(), user_detail)
     return {"message": "User registered successfully"}
 
@@ -110,7 +115,24 @@ def get_portfolio_stats(tr_no: str):
     users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
     user_stats = create_portfolio_stats(users_db_path)
     # TODO: Check if latest account value is required for plotting the graph
-    return user_stats
+
+    # Convert DataFrame to a list of dictionaries and ensure JSON serializable
+    result = user_stats.to_dict(orient="records")
+
+    # Ensure all values are JSON serializable
+    for i, record in enumerate(result):
+        for key, value in record.items():
+            if isinstance(value, (np.integer, int)):
+                record[key] = int(value)
+            elif isinstance(value, (np.floating, float)):
+                record[key] = float(value)
+            elif isinstance(value, (np.datetime64, pd.Timestamp)):
+                record[key] = value.isoformat()  # Convert datetime to ISO format
+            elif isinstance(value, np.ndarray):
+                record[key] = value.tolist()
+            else:
+                record[key] = str(value)  # Convert any other types to string
+    return result
 
 
 def monthly_returns_data(tr_no: str):
@@ -130,7 +152,7 @@ def monthly_returns_data(tr_no: str):
     return get_monthly_returns_data(user_stats)
 
 
-def weekly_cummulative_returns(tr_no: str):
+def weekly_cummulative_returns_data(tr_no: str):
     """
     Retrieves the weekly cummulative returns data for a specific user by their user ID.
 
@@ -145,3 +167,34 @@ def weekly_cummulative_returns(tr_no: str):
     users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
     user_stats = create_portfolio_stats(users_db_path)
     return get_weekly_cumulative_returns_data(user_stats)
+
+
+def individual_strategy_data(tr_no: str, strategy_name: str):
+    """
+    Retrieves the individual strategy data for a specific user by their user ID and strategy name.
+
+    Args:
+    user_id: The unique identifier of the user.
+    strategy_name: The name of the strategy.
+
+    Returns:
+    dict: The individual strategy data.
+    """
+    strategy_data = get_individual_strategy_data(tr_no, strategy_name)
+    return strategy_data
+
+
+def broker_bank_transactions_data(tr_no: str):
+    """
+    Retrieves the broker and bank transactions data for a specific user by their user ID.
+
+    Args:
+    user_id: The unique identifier of the user.
+
+    Returns:
+    dict: The broker and bank transactions data.
+    """
+
+    transaction_data = get_broker_bank_transactions_data(tr_no)
+
+    return transaction_data

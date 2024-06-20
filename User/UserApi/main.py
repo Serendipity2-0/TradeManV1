@@ -4,6 +4,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi import APIRouter
 import os, sys
 from fastapi.middleware.cors import CORSMiddleware
+import json
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -124,7 +125,8 @@ def monthly_returns(tr_no: str):
     dict: The monthly returns data.
     """
     try:
-        return app.monthly_returns_data(tr_no)
+        monthly_data = app.monthly_returns_data(tr_no)
+        return json.loads(monthly_data.to_json(orient="records"))
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
@@ -143,7 +145,49 @@ def weekly_cummulative_returns(tr_no: str):
     dict: The weekly cummulative returns data.
     """
     try:
-        return app.weekly_cummulative_returns(tr_no)
+        weekly_data = app.weekly_cummulative_returns_data(tr_no)
+        return json.loads(weekly_data.to_json(orient="records"))
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app_user.get("/individualstrategydata")
+def individual_strategy_performance(tr_no: str, strategy_name: str):
+    """
+    Retrieves the individual strategy data for a specific user by their user ID and strategy name.
+
+    Args:
+    user_id: The unique identifier of the user.
+    strategy_name: The name of the strategy.
+
+    Returns:
+    dict: The individual strategy data.
+    """
+    try:
+        strategy_data = app.individual_strategy_data(tr_no, strategy_name)
+        return json.loads(strategy_data.to_json(orient="records"))
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app_user.get("/transactions")
+def transactions(tr_no: str):
+    """
+    Retrieves the transactions data for a specific user by their user ID.
+
+    Args:
+    user_id: The unique identifier of the user.
+
+    Returns:
+    dict: The transactions data.
+    """
+    try:
+        transactions_data = app.broker_bank_transactions_data(tr_no)
+        return json.loads(transactions_data.to_json(orient="records"))
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
