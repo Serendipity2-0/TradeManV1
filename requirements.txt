@@ -18,3 +18,9 @@ aiohttp
 telethon
 openpyxl
 nest_asyncio
+pytest
+pytest-mock
+pytest-asyncio
+pandas
+numpy
+
