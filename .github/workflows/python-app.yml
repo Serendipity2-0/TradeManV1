@@ -21,8 +21,10 @@ jobs:
 
     - name: Create Firebase Credentials File
       run: |
-        printf '%s' "${{ secrets.FIREBASE_CREDENTIALS_JSON }}" > firebase_credentials.json
-        echo "${{ secrets.FIREBASE_CREDENTIALS_JSON }}" > ./firebase_credentials.json
+        #!/bin/bash
+        cat <<EOF >firebase_credentials.json
+        ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+        EOF
       env:
         FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
 
