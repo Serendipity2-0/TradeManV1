@@ -75,3 +75,7 @@ jobs:
         name: Logs
         path: ./logs/
 
+    - name: List files in TestData directory
+      run: ls -l path/to/TestData
+
+
