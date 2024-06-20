@@ -41,12 +41,24 @@ jobs:
       env:
         EXPIRYTRADER_JSON: ${{ secrets.EXPIRYTRADER_JSON }}
 
+    - name: Create FNO Info CSV File
+      run: |
+        #!/bin/bash
+        cat <<EOF >test_fno_info.csv
+        ${{ secrets.FNO_INFO_PATH }}
+        EOF
+      env:
+        FNO_INFO_PATH: ${{ secrets.FNO_INFO_PATH }}
+
+    - name: Check FNO Info CSV File
+      run: cat ./test_fno_info.csv
 
     - name: Load environment variables
       run: |
         echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
         echo "FIREBASE_CREDENTIALS_PATH=./firebase_credentials.json" >> $GITHUB_ENV
         echo "FIREBASE_CRED_PATH=./firebase_credentials.json" >> $GITHUB_ENV
+        echo "FNO_INFO_PATH=./test_fno_info.csv" >> $GITHUB_ENV
 
     - name: Check formatting with black
       run: |
@@ -77,5 +89,3 @@ jobs:
 
     - name: List files in TestData directory
       run: ls -l path/to/TestData
-
-
