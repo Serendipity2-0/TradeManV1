@@ -7,57 +7,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v2
       with:
-        python-version: '3.11'
+        python-version: 3.11
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Set up Firebase credentials
-      # Write the JSON content from the secret to a file
-      run: echo "${{ secrets.FIREBASE_CRED_PATH }}" > firebase-service-account.json
-      shell: bash
-
-    - name: Export Firebase environment variables
-      # Set the environment variables for the database URL and credentials path
+    - name: Create Firebase Credentials File
       run: |
-        echo "FIREBASE_CRED_PATH=$(pwd)/firebase-service-account.json" >> $GITHUB_ENV
-        echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
-      shell: bash
+        echo "${{ secrets.FIREBASE_CREDENTIALS_JSON }}" > ./firebase_credentials.json
+      env:
+        FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
 
-    - name: Verify Firebase credentials
+    - name: Load environment variables
       run: |
-        if [ -f "$FIREBASE_CRED_PATH" ]; then
-          echo "Firebase credentials file found at $FIREBASE_CRED_PATH"
-          cat $FIREBASE_CRED_PATH
-        else
-          echo "Firebase credentials file not found."
-          exit 1
-        fi
-      shell: bash
+        echo "FIREBASE_URL=${{ secrets.FIREBASE_URL }}" >> $GITHUB_ENV
+        echo "FIREBASE_CREDENTIALS_PATH=./firebase_credentials.json" >> $GITHUB_ENV
 
     - name: Check formatting with black
       run: |
         pip install black
         black .
 
-    - name: Test with pytest
-      env:
-        FIREBASE_CRED_PATH: ${{ env.FIREBASE_CRED_PATH }}
-        FIREBASE_DATABASE_URL: ${{ env.FIREBASE_DATABASE_URL }}
-      run: |
-        pip install pytest
-        pytest
-
-
-
+    # Uncomment and use as needed:
     # - name: Lint with flake8
     #   run: |
     #     pip install flake8
@@ -68,3 +46,7 @@ jobs:
     #     pip install pydocstyle
     #     pydocstyle .
 
+    - name: Test with pytest
+      run: |
+        pip install pytest
+        pytest
