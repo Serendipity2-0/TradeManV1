@@ -1,9 +1,6 @@
 name: Python application CI
 
-on:
-  push:
-    branches:
-      - main  # Specify the branch if needed
+on: [push]
 
 jobs:
   build:
