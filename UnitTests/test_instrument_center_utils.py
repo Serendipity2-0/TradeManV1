@@ -33,7 +33,7 @@ logger = LoggerSetup()
 # Fixture to load the instrument dataframe from the SQLite database
 @pytest.fixture
 def mock_instrument_dataframe():
-    db_path = "D:/TradeManV1/Data/instrument.db"
+    db_path = "Data/instrument.db"
     conn = sqlite3.connect(db_path)
     query = "SELECT * FROM instrument_master"  # Adjust this query based on your table structure
     df = pd.read_sql_query(query, conn)
