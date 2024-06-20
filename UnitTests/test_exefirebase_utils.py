@@ -55,7 +55,9 @@ def test_file_upload():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
     # Create the relative path to the JSON file
-    test_json_path = os.path.join(BASE_DIR, "TestData", "test_data.json")
+    test_json_path = os.path.join(
+        BASE_DIR, "IntegrationTest", "TestData", "test_data.json"
+    )
 
     # Ensure the file exists before proceeding (optional check)
     if not os.path.exists(test_json_path):
