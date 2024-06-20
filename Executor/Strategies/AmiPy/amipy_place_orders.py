@@ -1,3 +1,4 @@
+import logging
 import os, sys
 import datetime as dt
 from dotenv import load_dotenv
@@ -9,8 +10,14 @@ ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
 
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH", "default_log.log")
 TRADE_MODE = os.getenv("TRADE_MODE")
+
+logging.basicConfig(
+    filename=ERROR_LOG_PATH,
+    level=logging.ERROR,
+    format="%(asctime)s:%(levelname)s:%(message)s",
+)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.Strategies.StrategiesUtil import (

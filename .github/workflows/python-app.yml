@@ -68,3 +68,9 @@ jobs:
       run: |
         pip install pytest
         pytest
+
+    - name: Upload Log Files
+    uses: actions/upload-artifact@v2
+    with:
+      name: logs
+      path: ./logs/
