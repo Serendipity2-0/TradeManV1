@@ -25,6 +25,10 @@ jobs:
       env:
         FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
 
+    - name: Check Firebase Credentials File
+      run: cat ./firebase_credentials.json
+
+
     - name: Load environment variables
       run: |
         echo "FIREBASE_URL=${{ secrets.FIREBASE_URL }}" >> $GITHUB_ENV
