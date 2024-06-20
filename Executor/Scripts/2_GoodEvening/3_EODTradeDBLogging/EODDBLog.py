@@ -41,7 +41,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils impo
     download_json,
 )
 
-from Executor.Strategies.StrategiesUtil import StrategyBase
+from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
 
 
 def update_signal_info():

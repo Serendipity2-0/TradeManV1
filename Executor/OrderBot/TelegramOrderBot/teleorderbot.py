@@ -16,7 +16,7 @@ sys.path.append(DIR)
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
 )
-from Executor.Strategies.StrategiesUtil import fetch_strategy_users
+from Executor.NSEStrategies.NSEStrategiesUtil import fetch_strategy_users
 
 # Enable logging
 logging.basicConfig(

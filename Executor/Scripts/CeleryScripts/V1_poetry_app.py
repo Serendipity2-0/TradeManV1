@@ -30,7 +30,8 @@ telegram_bot_token = os.getenv("error_telegram_bot_token")
 chat_id = os.getenv("error_chat_id")
 
 # log files path
-log_dir = os.getenv("SCRIPTS_LOG_PATH")
+# log_dir = os.getenv("SCRIPTS_LOG_PATH")
+log_dir = "/Users/amolkittur/Desktop/TradeManV1/Executor/Scripts/CeleryScripts/logs"
 
 # Strategy Constants
 AMIPY = "amipy"
@@ -98,10 +99,10 @@ def run_script(script_path, retry_hour, logger):
         try:
             logger.debug(f"Running script {script_path}")
             with subprocess.Popen(
-                f"source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && "
-                f"conda activate tradingenv && "
-                f"cd /Users/traderscafe/Desktop/TradeManV1/ && "
-                f"/Users/traderscafe/miniconda3/envs/tradingenv/bin/python {script_path}",
+                f"source /Users/amolkittur/miniconda3/etc/profile.d/conda.sh && "
+                f"conda activate traderscafe && "
+                f"cd /Users/amolkittur/Desktop/TradeManV1/ && "
+                f"/Users/amolkittur/miniconda3/envs/traderscafe/bin/python {script_path}",
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -149,7 +150,7 @@ def run_script(script_path, retry_hour, logger):
 def run_multiple_scripts(script_paths, logger):
     # here we are running a set of scripts and logging the output in a log file
     for script_path in script_paths:
-        result = run_script(script_path, 17, logger)
+        result = run_script(script_path, 20, logger)
         if "failed" in result:
             return result
     return "All scripts executed successfully."
@@ -178,7 +179,9 @@ def amipy(self):
     amipy_logger = setup_logger(AMIPY, f"{log_dir}/{AMIPY}.log")
     task_id = self.request.id
     redis_client.set("amipy_task_id", task_id)
-    return run_script("Executor/Strategies/AmiPy/AmiPyLive.py", 15, amipy_logger)
+    return run_script(
+        "Executor/NSEStrategies/Derivatives/AmiPy/AmiPyLive.py", 15, amipy_logger
+    )
 
 
 @app.task
@@ -187,7 +190,7 @@ def overnight_exit():
         OVERNIGHT_FUTURES, f"{log_dir}/{OVERNIGHT_FUTURES}.log"
     )
     return run_script(
-        "Executor/Strategies/OvernightFutures/Screenipy_futures_morning.py",
+        "Executor/NSEStrategies/Derivatives/OvernightFutures/Screenipy_futures_morning.py",
         10,
         overnight_futures_logger,
     )
@@ -197,21 +200,27 @@ def overnight_exit():
 def expiry_trader():
     expirytrader_logger = setup_logger(EXPIRY_TRADER, f"{log_dir}/{EXPIRY_TRADER}.log")
     return run_script(
-        "Executor/Strategies/ExpiryTrader/ExpiryTrader.py", 15, expirytrader_logger
+        "Executor/NSEStrategies/Derivatives/ExpiryTrader/ExpiryTrader.py",
+        15,
+        expirytrader_logger,
     )
 
 
 @app.task
 def namaha():
     namaha_logger = setup_logger(NAMAHA, f"{log_dir}/{NAMAHA}.log")
-    return run_script("Executor/Strategies/Namaha/Namaha.py", 15, namaha_logger)
+    return run_script(
+        "Executor/NSEStrategies/Derivatives/Namaha/Namaha.py", 15, namaha_logger
+    )
 
 
 @app.task
 def pystocks_entry():
     pystocks_logger = setup_logger(PYSTOCKS, f"{log_dir}/{PYSTOCKS}.log")
     return run_script(
-        "Executor/Strategies/PyStocks/PyStocksMain.py", 15, pystocks_logger
+        "Executor/NSEStrategies/Derivatives/PyStocks/PyStocksMain.py",
+        15,
+        pystocks_logger,
     )
 
 
@@ -219,7 +228,9 @@ def pystocks_entry():
 def pystocks_exit():
     pystocks_logger = setup_logger(PYSTOCKS, f"{log_dir}/{PYSTOCKS}.log")
     return run_script(
-        "Executor/Strategies/PyStocks/PyStocksStoploss.py", 15, pystocks_logger
+        "Executor/NSEStrategies/Derivatives/PyStocks/PyStocksStoploss.py",
+        15,
+        pystocks_logger,
     )
 
 
@@ -227,14 +238,16 @@ def pystocks_exit():
 def golden_coin():
     golden_coin_logger = setup_logger(GOLDEN_COIN, f"{log_dir}/{GOLDEN_COIN}.log")
     return run_script(
-        "Executor/Strategies/GoldenCoin/GoldenCoin.py", 15, golden_coin_logger
+        "Executor/NSEStrategies/Derivatives/GoldenCoin/GoldenCoin.py",
+        15,
+        golden_coin_logger,
     )
 
 
 @app.task
 def om():
     om_logger = setup_logger(OM, f"{log_dir}/{OM}.log")
-    return run_script("Executor/Strategies/Om/Om.py", 15, om_logger)
+    return run_script("Executor/NSEStrategies/Derivatives/Om/Om.py", 15, om_logger)
 
 
 @app.task(bind=True)
@@ -242,7 +255,9 @@ def mpwizard(self):
     mpwizard_logger = setup_logger(MPWIZARD, f"{log_dir}/{MPWIZARD}.log")
     task_id = self.request.id
     redis_client.set("mpwizard_task_id", task_id)
-    return run_script("Executor/Strategies/MPWizard/MPWizard.py", 15, mpwizard_logger)
+    return run_script(
+        "Executor/NSEStrategies/Derivatives/MPWizard/MPWizard.py", 15, mpwizard_logger
+    )
 
 
 @app.task
@@ -261,7 +276,7 @@ def overnight_entry():
         OVERNIGHT_FUTURES, f"{log_dir}/{OVERNIGHT_FUTURES}.log"
     )
     return run_script(
-        "Executor/Strategies/OvernightFutures/Screenipy_futures_afternoon.py",
+        "Executor/NSEStrategies/Derivatives/OvernightFutures/Screenipy_futures_afternoon.py",
         16,
         overnight_futures_logger,
     )

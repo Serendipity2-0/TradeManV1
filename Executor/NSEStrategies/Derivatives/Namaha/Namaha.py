@@ -16,8 +16,8 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-from Executor.Strategies.StrategiesUtil import StrategyBase
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     update_qty_user_firebase,
     assign_trade_id,
     update_signal_firebase,

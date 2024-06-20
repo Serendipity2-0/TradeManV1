@@ -14,8 +14,8 @@ load_dotenv(ENV_PATH)
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
-import Executor.Strategies.OvernightFutures.OvernightFutures_calc as OF_calc
-from Executor.Strategies.StrategiesUtil import (
+import OvernightFutures_calc as OF_calc
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     StrategyBase,
     base_symbol_token,
     update_qty_user_firebase,
@@ -29,7 +29,7 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     update_fields_firebase,
 )
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     assign_trade_id,
     place_order_strategy_users,
     fetch_qty_amplifier,

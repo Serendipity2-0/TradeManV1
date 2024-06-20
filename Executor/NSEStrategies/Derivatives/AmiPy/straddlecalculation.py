@@ -9,7 +9,7 @@ import json
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-from Executor.Strategies.StrategiesUtil import StrategyBase
+from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
 
 strategy_obj = StrategyBase.load_from_db("AmiPy")
 

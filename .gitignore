@@ -13,3 +13,4 @@ trail.py
 *.sh
 *.pdf
 .devcontainer/
+.pre-commit-config.yaml
