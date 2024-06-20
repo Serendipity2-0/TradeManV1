@@ -4,6 +4,22 @@ import glob
 import os
 
 
+# Function to get all table names from a SQLite database file
+def get_db_table_names(conn):
+    """
+    This function retrieves all table names from a SQLite database file.
+
+    Args:
+    conn (sqlite3.Connection): The SQLite connection object.
+
+    Returns:
+    list: A list of table names.
+    """
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    return [table[0] for table in cursor.fetchall()]
+
+
 def db_to_excel(db_folder_path, output_folder):
     """
     Convert all SQLite database files in a folder to Excel files.
@@ -76,11 +92,3 @@ def excel_to_db(excel_folder_path, output_folder):
         # Close the connection to the database
         conn.close()
         print(f"Converted {excel_file} to {db_file}")
-
-
-db_folder_path = ""
-excel_folder = ""
-
-# Run the function
-db_to_excel(db_folder_path, excel_folder)
-excel_to_db(excel_folder, db_folder_path)

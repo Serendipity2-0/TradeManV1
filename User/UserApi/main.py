@@ -74,19 +74,76 @@ def register_user(user_detail: schemas.UserDetails):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app_user.get("/profilepage/{tr_no}")
+@app_user.get("/profilepage")
 def profile_page(tr_no: str):
     """
     Retrieves the profile page for a specific user by their user ID.
 
     Args:
-    user_id (int): The unique identifier of the user.
+    user_id: The unique identifier of the user.
 
     Returns:
     dict: The user profile information.
     """
     try:
         return app.get_user_profile(tr_no)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app_user.get("/portfoliostatsview")
+def portfolio_stats_view(tr_no: str):
+    """
+    Retrieves the portfolio stats view for a specific user by their user ID.
+
+    Args:
+    user_id: The unique identifier of the user.
+
+    Returns:
+    dict: The portfolio stats view.
+    """
+    try:
+        return app.get_portfolio_stats(tr_no)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app_user.get("/monthlyreturns")
+def monthly_returns(tr_no: str):
+    """
+    Retrieves the monthly returns data for a specific user by their user ID.
+
+    Args:
+    user_id: The unique identifier of the user.
+
+    Returns:
+    dict: The monthly returns data.
+    """
+    try:
+        return app.monthly_returns_data(tr_no)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app_user.get("/weeklycummulativereturns")
+def weekly_cummulative_returns(tr_no: str):
+    """
+    Retrieves the weekly cummulative returns data for a specific user by their user ID.
+
+    Args:
+    user_id: The unique identifier of the user.
+
+    Returns:
+    dict: The weekly cummulative returns data.
+    """
+    try:
+        return app.weekly_cummulative_returns(tr_no)
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
