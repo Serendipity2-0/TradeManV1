@@ -20,7 +20,9 @@ from Executor.Strategies.StrategiesUtil import StrategyBase
 def load_mock_data(script_path):
     script_name = os.path.basename(script_path)
     mock_data_filename = f"{script_name.replace('.py', '')}_mock.json"
-    mock_data_path = os.path.join(os.path.dirname(__file__), mock_data_filename)
+    # Change to the directory where mock data is stored relative to the script
+    base_dir = os.path.dirname(__file__)  # Directory of the script
+    mock_data_path = os.path.join(base_dir, "TestData", mock_data_filename)
     with open(mock_data_path, "r") as file:
         return json.load(file)
 
@@ -28,7 +30,7 @@ def load_mock_data(script_path):
 # Paths to the strategy scripts
 strategy_scripts = [
     os.path.join(DIR_PATH, "Executor", "Strategies", "AmiPy", "amipy_place_orders.py"),
-    os.path.join(DIR_PATH, "Executor", "Strategies", "ExpiryTrader", "ExpiryTrader.py"),
+    # os.path.join(DIR_PATH, "Executor", "Strategies", "ExpiryTrader", "ExpiryTrader.py"),
     # Add other script paths here
 ]
 
