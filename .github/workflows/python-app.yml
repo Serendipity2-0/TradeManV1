@@ -59,6 +59,9 @@ jobs:
         echo "FIREBASE_CREDENTIALS_PATH=./firebase_credentials.json" >> $GITHUB_ENV
         echo "FIREBASE_CRED_PATH=./firebase_credentials.json" >> $GITHUB_ENV
         echo "FNO_INFO_PATH=./test_fno_info.csv" >> $GITHUB_ENV
+        echo "ZERODHA_BROKER=${{ secrets.ZERODHA_BROKER }}"
+        echo "ALICEBLUE_BROKER=${{ secrets.ALICEBLUE_BROKER }}"
+        echo "FIRSTOCK_BROKER=${{ secrets.FIRSTOCK_BROKER }}"
 
     - name: Check formatting with black
       run: |
