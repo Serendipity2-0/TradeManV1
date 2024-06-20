@@ -22,9 +22,7 @@ def load_mock_data(script_path):
     mock_data_filename = f"{script_name.replace('.py', '')}_mock.json"
     # Change to the directory where mock data is stored relative to the script
     base_dir = os.path.dirname(__file__)  # Directory of the script
-    mock_data_path = os.path.join(
-        base_dir, "IntegrationTest", "TestData", mock_data_filename
-    )
+    mock_data_path = os.path.join(base_dir, "TestData", mock_data_filename)
     with open(mock_data_path, "r") as file:
         return json.load(file)
 
