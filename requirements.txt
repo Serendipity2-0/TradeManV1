@@ -15,3 +15,5 @@ fastapi
 reportlab
 psutil
 aiohttp
+telethon
+openpyxl
