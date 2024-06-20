@@ -51,9 +51,21 @@ def setup_directory():
 
 
 def test_file_upload():
-    test_json_path = r"D:\TradeManV1\UnitTests\test_data.json"  # Use raw string to handle backslashes
+    # Determine the base directory (assuming this script is in the same directory as the test)
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    # Create the relative path to the JSON file
+    test_json_path = os.path.join(BASE_DIR, "TestData", "test_data.json")
+
+    # Ensure the file exists before proceeding (optional check)
+    if not os.path.exists(test_json_path):
+        raise FileNotFoundError(f"JSON file not found: {test_json_path}")
+
     test_collection_name = "test"
+
+    # Call the file_upload function (assume it's defined elsewhere)
     file_upload(test_json_path, test_collection_name)
+
     print(f"Uploaded data from {test_json_path} to {test_collection_name} in Firebase.")
 
 
