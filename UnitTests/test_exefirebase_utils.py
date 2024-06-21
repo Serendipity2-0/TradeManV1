@@ -54,8 +54,8 @@ def test_file_upload():
     # Determine the base directory (assuming this script is in the same directory as the test)
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    # Create the relative path to the JSON file
-    test_json_path = os.path.join(BASE_DIR, "TestData", "test_data.json")
+    # Create the path to the JSON file located in the root of the repository
+    test_json_path = os.path.join(BASE_DIR, "TestData.json")
 
     # Ensure the file exists before proceeding (optional check)
     if not os.path.exists(test_json_path):

@@ -37,6 +37,18 @@ jobs:
       - name: Check Firebase Credentials File
         run: cat ./firebase_credentials.json
 
+      - name: Create Test Data JSON File
+        run: |
+          #!/bin/bash
+          cat <<EOF >TestData.json
+          ${{ secrets.TEST_DATA_JSON }}
+          EOF
+        env:
+          TEST_DATA_JSON: ${{ secrets.TEST_DATA_JSON }}
+
+      - name: Check Test Data JSON File
+        run: cat ./TestData.json
+
       - name: Create ExpiryTrader Mock JSON
         run: |
           #!/bin/bash
