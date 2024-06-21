@@ -68,12 +68,25 @@ jobs:
         echo "USER_SQLDB_PATH=./Data/UserSQLDB" >> $GITHUB_ENV
         echo "FIREBASE_USER_COLLECTION=${{ secrets.FIREBASE_USER_COLLECTION }}" >> $GITHUB_ENV
 
-    - name: Verify directory structure
+    - name: Verify environment variables
       run: |
+        echo "Verifying environment variables..."
+        echo "ERROR_LOG_PATH is set to $ERROR_LOG_PATH"
+        if [ -z "$ERROR_LOG_PATH" ]; then
+          echo "ERROR_LOG_PATH is not set!"
+          exit 1
+        fi
+
+    - name: Verify directory structure and permissions
+      run: |
+        echo "Verifying directory structure and permissions..."
         ls -al ./Data/ErrorLogs/
-        echo $ERROR_LOG_PATH
+        echo "Checking log file permissions..."
+        ls -l ./Data/ErrorLogs/TradeManError.log
 
-
+    - name: Create logs directory
+      run: |
+        mkdir -p ./logs/
 
     - name: Check formatting with black
       run: |
@@ -100,7 +113,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Logs
-        path: ./logs/
+        path: ./Data/ErrorLogs/TradeManError.log
 
     - name: List files in TestData directory
       run: ls -l path/to/TestData

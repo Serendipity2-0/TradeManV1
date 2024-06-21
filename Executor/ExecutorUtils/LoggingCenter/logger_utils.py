@@ -1,6 +1,6 @@
-from loguru import logger
 import os
 import sys
+from loguru import logger
 from dotenv import load_dotenv
 
 DIR_PATH = os.getcwd()
@@ -37,6 +37,7 @@ class LoggerSetup:
     def _setup_logger():
         # Fetch the ERROR_LOG_PATH from environment variables
         ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+        print(f"DEBUG: ERROR_LOG_PATH is set to {ERROR_LOG_PATH}")  # Debugging line
 
         if ERROR_LOG_PATH:
             # Resolve to an absolute path
@@ -58,7 +59,6 @@ class LoggerSetup:
                 logger.warning(
                     f"Failed to add file logger at {ERROR_LOG_PATH}: {str(e)}"
                 )
-                logger.warning("Logging will proceed with standard error output.")
         else:
             # Fallback to console logging if ERROR_LOG_PATH is not set
             logger.add(sys.stderr, level="WARNING")
