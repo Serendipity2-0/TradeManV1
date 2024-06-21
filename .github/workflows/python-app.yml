@@ -40,12 +40,12 @@ jobs:
       - name: Ensure Data directory and copy database
         run: |
             mkdir -p Data
-            cp ./Data/instrument.db Data/instrument.db
+            cp ./Data/instrument.db
 
       - name: Ensure UnitTests directory and copy test data
         run: |
           mkdir -p UnitTests
-          cp ./UnitTests/Instrument_TestData.json UnitTests/Instrument_TestData.json
+          cp ./UnitTests/Instrument_TestData.json
 
       - name: Create ExpiryTrader Mock JSON
         run: |
