@@ -37,10 +37,14 @@ logger = LoggerSetup()
 # Constants and Environment Setup
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
+
+# Use relative paths to reference files and directories within the repository
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
-os.environ["CONSOLIDATED_REPORT_PATH"] = "D:/TradeManV1/Data/ConsolidatedReports"
-os.environ["ERROR_LOG_PATH"] = "D:/TradeManV1/Data/ErrorLogs"
-os.environ["DB_DIR"] = "D:/TradeManV1/Data/UserSQLDB"
+os.environ["CONSOLIDATED_REPORT_PATH"] = os.path.join(
+    DIR_PATH, "Data/ConsolidatedReports"
+)
+os.environ["ERROR_LOG_PATH"] = os.path.join(DIR_PATH, "Data/ErrorLogs")
+os.environ["DB_DIR"] = os.path.join(DIR_PATH, "Data/UserSQLDB")
 os.environ["FIREBASE_TEST_COLLECTION"] = "test"
 
 today_string = datetime.now().strftime("%Y-%m-%d")
