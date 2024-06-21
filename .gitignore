@@ -13,3 +13,4 @@ trail.py
 *.sh
 *.pdf
 .devcontainer/
+supervisord.conf

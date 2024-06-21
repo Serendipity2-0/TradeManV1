@@ -15,7 +15,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
+CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (

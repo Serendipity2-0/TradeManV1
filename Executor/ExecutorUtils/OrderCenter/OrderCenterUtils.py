@@ -10,7 +10,6 @@ DIR = os.getcwd()
 sys.path.append(DIR)
 
 load_dotenv(os.path.join(DIR, "trademan.env"))
-db_dir = os.getenv("DB_DIR")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 

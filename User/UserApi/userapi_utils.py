@@ -249,7 +249,7 @@ def get_individual_strategy_data(tr_no: str, strategy_name: str):
     """
     try:
         # Assume fetching user profile from a database
-        USER_DB_FOLDER_PATH = os.getenv("DB_DIR")
+        USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
         users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
 
         conn = get_db_connection(users_db_path)
@@ -300,7 +300,7 @@ def get_broker_bank_transactions_data(tr_no: str):
     dict: The broker and bank transactions data.
     """
     # Assume fetching user profile from a database
-    USER_DB_FOLDER_PATH = os.getenv("DB_DIR")
+    USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
     users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
     conn = get_db_connection(users_db_path)
     starting_capital = get_base_capital(tr_no)

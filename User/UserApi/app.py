@@ -111,7 +111,7 @@ def get_portfolio_stats(tr_no: str):
     dict: The portfolio stats view.
     """
     # Assume fetching user profile from a database
-    USER_DB_FOLDER_PATH = os.getenv("DB_DIR")
+    USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
     users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
     user_stats = create_portfolio_stats(users_db_path)
     # TODO: Check if latest account value is required for plotting the graph
@@ -146,7 +146,7 @@ def monthly_returns_data(tr_no: str):
     dict: The monthly returns data.
     """
     # Assume fetching user profile from a database
-    USER_DB_FOLDER_PATH = os.getenv("DB_DIR")
+    USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
     users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
     user_stats = create_portfolio_stats(users_db_path)
     return get_monthly_returns_data(user_stats)
@@ -163,7 +163,7 @@ def weekly_cummulative_returns_data(tr_no: str):
     dict: The weekly cummulative returns data.
     """
     # Assume fetching user profile from a database
-    USER_DB_FOLDER_PATH = os.getenv("DB_DIR")
+    USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
     users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
     user_stats = create_portfolio_stats(users_db_path)
     return get_weekly_cumulative_returns_data(user_stats)

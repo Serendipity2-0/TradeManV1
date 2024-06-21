@@ -44,8 +44,8 @@ def update_user_db(user, categorized_df):
         append_df_to_sqlite,
     )
 
-    # db_path = os.path.join(db_dir, f"{user}.db")
-    # db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
+    # db_path = os.path.join(USR_TRADELOG_DB_FOLDER, f"{user}.db")
+    # db_path = os.path.join(USR_TRADELOG_DB_FOLDER, f"{user['Tr_No']}.db")
     db_path = None
     conn = get_db_connection(db_path)
 
