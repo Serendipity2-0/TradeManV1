@@ -20,6 +20,11 @@ jobs:
           pip install -r requirements.txt
           pip install aiohttp
 
+      - name: Create logs directory
+        run: |
+          mkdir -p ./logs/
+          echo "Logs directory created at $(pwd)/logs/"
+
       - name: Create Firebase Credentials File
         run: |
           #!/bin/bash
@@ -82,12 +87,8 @@ jobs:
           echo "Verifying directory structure and permissions..."
           ls -al ./logs/
           echo "Checking log file permissions..."
+          touch ./logs/TradeManError.log
           ls -l ./logs/TradeManError.log
-
-      - name: Create logs directory
-        run: |
-          mkdir -p ./logs/
-          echo "Logs directory created at $(pwd)/logs/"
 
       - name: Check formatting with black
         run: |
