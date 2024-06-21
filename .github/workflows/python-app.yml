@@ -68,6 +68,10 @@ jobs:
         echo "USER_SQLDB_PATH=./Data/UserSQLDB" >> $GITHUB_ENV
         echo "FIREBASE_USER_COLLECTION=${{ secrets.FIREBASE_USER_COLLECTION }}" >> $GITHUB_ENV
 
+    - name: Verify directory structure
+      run: |
+        ls -al ./Data/ErrorLogs/
+        echo $ERROR_LOG_PATH
 
 
 
