@@ -20,15 +20,13 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 
 class TestLoggerSetup(TestCase):
-    @patch.dict(
-        os.environ, {"ERROR_LOG_PATH": "D:/TradeManV1/Data/ErrorLogs/TradeManError.log"}
-    )
+    @patch.dict(os.environ, {"ERROR_LOG_PATH": "./Data/ErrorLogs/TradeManError.log"})
     def test_logger_file_logging(self):
         # Test when ERROR_LOG_PATH is correctly set and file logging is successful
         with mock.patch("loguru.logger.add") as mock_add:
             _ = LoggerSetup()
             mock_add.assert_called_with(
-                "D:/TradeManV1/Data/ErrorLogs/TradeManError.log",
+                "./Data/ErrorLogs/TradeManError.log",
                 level="TRACE",
                 rotation="00:00",
                 enqueue=True,
@@ -45,9 +43,7 @@ class TestLoggerSetup(TestCase):
         except Exception as e:
             self.fail(f"LoggerSetup raised an exception unexpectedly: {e}")
 
-    @patch.dict(
-        os.environ, {"ERROR_LOG_PATH": "D:/TradeManV1/Data/TradeManInvalidError.log"}
-    )
+    @patch.dict(os.environ, {"ERROR_LOG_PATH": "./Data/ErrorLogs/TradeManError.log"})
     def test_logger_initialization_with_invalid_error_log_path(self):
         # Test if LoggerSetup initializes without any error when ERROR_LOG_PATH is invalid
         try:
