@@ -2,7 +2,7 @@ import pandas as pd
 import os, sys
 from dotenv import load_dotenv
 from babel.numbers import format_currency
-
+from datetime import date
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -289,41 +289,56 @@ def get_base_capital(tr_no: str):
         return 0.0
 
 
-def get_broker_bank_transactions_data(tr_no: str):
+def equity_get_broker_bank_transactions_data(
+    tr_no: str, from_date: date = None, to_date: date = None
+):
     """
-    Retrieves the broker and bank transactions data for a specific user by their user ID.
+    Retrieves the broker and bank transactions data for a specific user by their user ID, filtered by a date range.
 
     Args:
-    user_id: The unique identifier of the user.
+        tr_no: The unique identifier of the user.
+        from_date: Start date for filtering transactions(YYYY-MM-DD). Defaults to None.
+        to_date: End date for filtering transactions(YYYY-MM-DD). Defaults to None.
 
     Returns:
-    dict: The broker and bank transactions data.
+        DataFrame: The broker and bank transactions data.
     """
-    # Assume fetching user profile from a database
     USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
     users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
     conn = get_db_connection(users_db_path)
     starting_capital = get_base_capital(tr_no)
 
-    # Read the tables into pandas DataFrames
+    # Build the query dynamically based on whether date filters are provided
+    where_clauses = []
+    if from_date:
+        where_clauses.append(f"posting_date >= '{from_date}'")
+    if to_date:
+        where_clauses.append(f"posting_date <= '{to_date}'")
+    where_stmt = " AND ".join(where_clauses) if where_clauses else "1=1"
+
+    # Query modifications to include the date filters
     deposits = pd.read_sql_query(
-        "SELECT posting_date AS date, particulars, debit, credit FROM Deposits", conn
+        f"SELECT posting_date AS date, particulars, debit, credit FROM Deposits WHERE {where_stmt}",
+        conn,
     )
     withdrawals = pd.read_sql_query(
-        "SELECT posting_date AS date, particulars, debit, credit FROM Withdrawals", conn
+        f"SELECT posting_date AS date, particulars, debit, credit FROM Withdrawals WHERE {where_stmt}",
+        conn,
     )
     charges = pd.read_sql_query(
-        "SELECT posting_date AS date, particulars, debit, credit FROM Charges", conn
+        f"SELECT posting_date AS date, particulars, debit, credit FROM Charges WHERE {where_stmt}",
+        conn,
     )
 
     # Combine the data from all tables
     combined_data = pd.concat([deposits, withdrawals, charges], ignore_index=True)
-
-    # Convert 'date' to datetime and sort
     combined_data["date"] = pd.to_datetime(combined_data["date"])
     sorted_data = combined_data.sort_values(by="date", ascending=True).reset_index(
         drop=True
     )
+
+    # Convert 'date' to a string in the desired format
+    sorted_data["date"] = sorted_data["date"].dt.strftime("%Y-%m-%d")
 
     # Initialize running balance column
     sorted_data["running balance"] = 0.0  # Initialize as float

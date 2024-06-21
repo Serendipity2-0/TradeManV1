@@ -23,7 +23,7 @@ from User.UserApi.userapi_utils import (
     get_monthly_returns_data,
     get_weekly_cumulative_returns_data,
     get_individual_strategy_data,
-    get_broker_bank_transactions_data,
+    equity_get_broker_bank_transactions_data,
 )
 
 logger = LoggerSetup()
@@ -184,7 +184,7 @@ def individual_strategy_data(tr_no: str, strategy_name: str):
     return strategy_data
 
 
-def broker_bank_transactions_data(tr_no: str):
+def equity_broker_bank_transactions_data(tr_no: str, from_date, to_date):
     """
     Retrieves the broker and bank transactions data for a specific user by their user ID.
 
@@ -195,6 +195,8 @@ def broker_bank_transactions_data(tr_no: str):
     dict: The broker and bank transactions data.
     """
 
-    transaction_data = get_broker_bank_transactions_data(tr_no)
+    transaction_data = equity_get_broker_bank_transactions_data(
+        tr_no, from_date, to_date
+    )
 
     return transaction_data

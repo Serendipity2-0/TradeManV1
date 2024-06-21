@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
 import uvicorn
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi import APIRouter
 import os, sys
 from fastapi.middleware.cors import CORSMiddleware
 import json
+from datetime import date
+from fastapi import FastAPI, HTTPException, Query, APIRouter
+
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -174,20 +175,36 @@ def individual_strategy_performance(tr_no: str, strategy_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/transactions")
-def transactions(tr_no: str):
+@app_user.get("/equitytransactions")
+def equity_transactions(
+    tr_no: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1),
+    from_date: date = None,
+    to_date: date = None,
+):
     """
-    Retrieves the transactions data for a specific user by their user ID.
+    Retrieves the transactions data for a specific user by their user ID, optionally filtering by date and paginating the results.
 
     Args:
-    user_id: The unique identifier of the user.
+        tr_no: The unique identifier of the user.
+        page: The page number of results to return.
+        page_size: The number of items per page.
+        from_date: Start date for filtering transactions.(YYYY-MM-DD). Defaults to None.
+        to_date: End date for filtering transactions.(YYYY-MM-DD). Defaults to None.
 
     Returns:
-    dict: The transactions data.
+        dict: The paginated transactions data.
     """
     try:
-        transactions_data = app.broker_bank_transactions_data(tr_no)
-        return json.loads(transactions_data.to_json(orient="records"))
+        transactions_data = app.equity_broker_bank_transactions_data(
+            tr_no, from_date, to_date
+        )
+        # Implement pagination
+        start = (page - 1) * page_size
+        end = start + page_size
+        paginated_data = transactions_data[start:end]
+        return json.loads(paginated_data.to_json(orient="records"))
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
