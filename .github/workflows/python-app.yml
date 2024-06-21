@@ -37,6 +37,16 @@ jobs:
       - name: Check Firebase Credentials File
         run: cat ./firebase_credentials.json
 
+      - name: Ensure Data directory and copy database
+        run: |
+            mkdir -p Data
+            cp ./Data/instrument.db Data/instrument.db
+
+      - name: Ensure UnitTests directory and copy test data
+        run: |
+          mkdir -p UnitTests
+          cp ./UnitTests/Instrument_TestData.json UnitTests/Instrument_TestData.json
+
       - name: Create ExpiryTrader Mock JSON
         run: |
           #!/bin/bash

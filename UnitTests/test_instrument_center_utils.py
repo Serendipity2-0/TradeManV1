@@ -33,7 +33,7 @@ logger = LoggerSetup()
 # Fixture to load the instrument dataframe from the SQLite database
 @pytest.fixture
 def mock_instrument_dataframe():
-    db_path = "Data/instrument.db"
+    db_path = os.path.join(os.getcwd(), "Data", "instrument.db")
     conn = sqlite3.connect(db_path)
     query = "SELECT * FROM instrument_master"  # Adjust this query based on your table structure
     df = pd.read_sql_query(query, conn)
@@ -83,8 +83,13 @@ def mock_firebase_fetch(mocker):
 # Load JSON test data
 @pytest.fixture
 def load_json_data():
-    with open("D:/TradeManV1/UnitTests/Instrument_TestData.json") as f:
+    # Construct the relative path to the JSON file
+    json_path = os.path.join(os.getcwd(), "UnitTests", "Instrument_TestData.json")
+
+    # Load the JSON data from the file
+    with open(json_path, "r") as f:
         data = json.load(f)
+
     return data
 
 
