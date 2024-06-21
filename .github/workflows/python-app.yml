@@ -87,6 +87,7 @@ jobs:
     - name: Create logs directory
       run: |
         mkdir -p ./logs/
+        echo "Logs directory created at $(pwd)/logs/"
 
     - name: Check formatting with black
       run: |
