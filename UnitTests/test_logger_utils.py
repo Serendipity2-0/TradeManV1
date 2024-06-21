@@ -2,7 +2,8 @@ import os
 import sys
 from unittest import TestCase, mock
 from unittest.mock import patch
-from loguru import logger
+
+# from loguru import logger
 import tempfile
 
 from dotenv import load_dotenv
@@ -22,11 +23,11 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 class TestLoggerSetup(TestCase):
     @patch.dict(os.environ, {"ERROR_LOG_PATH": "./Data/ErrorLogs/TradeManError.log"})
     def test_logger_file_logging(self):
-        # Test when ERROR_LOG_PATH is correctly set and file logging is successful
         with mock.patch("loguru.logger.add") as mock_add:
             _ = LoggerSetup()
+            log_path = os.path.abspath("./Data/ErrorLogs/TradeManError.log")
             mock_add.assert_called_with(
-                "./Data/ErrorLogs/TradeManError.log",
+                log_path,
                 level="TRACE",
                 rotation="00:00",
                 enqueue=True,
