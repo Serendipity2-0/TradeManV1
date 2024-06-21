@@ -40,7 +40,11 @@ jobs:
       - name: Ensure Data directory and copy database
         run: |
             mkdir -p Data
-            cp ./Data/instrument.db
+            if [ ! -f ./Data/instrument.db ]; then
+              echo "Error: ./Data/instrument.db not found!"
+              exit 1
+            fi
+
 
       - name: Ensure UnitTests directory and copy test data
         run: |
