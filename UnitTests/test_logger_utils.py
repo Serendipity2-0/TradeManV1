@@ -25,7 +25,7 @@ class TestLoggerSetup(TestCase):
     def test_logger_file_logging(self):
         with mock.patch("loguru.logger.add") as mock_add:
             _ = LoggerSetup()
-            log_file_path = os.path.join(ERROR_LOG_PATH, "error.log")
+            log_file_path = os.path.join(ERROR_LOG_PATH, "./Data/ErrorLogs")
             mock_add.assert_called_with(
                 log_file_path,
                 level="TRACE",
