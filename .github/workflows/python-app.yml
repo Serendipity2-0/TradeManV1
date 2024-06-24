@@ -65,6 +65,15 @@ jobs:
       - name: Check FNO Info CSV File
         run: cat ./test_fno_info.csv
 
+      - name: Ensure ERROR_LOG_PATH directory exists
+        run: mkdir -p ./Data/ErrorLogs
+
+      - name: Create TradeManError.log file
+        run: touch ./Data/ErrorLogs/TradeManError.log
+
+      - name: List directory contents
+        run: ls -la ./Data/ErrorLogs
+
       - name: Load environment variables
         run: |
           echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
@@ -78,7 +87,10 @@ jobs:
           echo "CONSOLIDATED_REPORT_PATH=./Data/ConsolidatedReports" >> $GITHUB_ENV
           echo "USER_SQLDB_PATH=./Data/UserSQLDB" >> $GITHUB_ENV
           echo "FIREBASE_USER_COLLECTION=${{ secrets.FIREBASE_USER_COLLECTION }}" >> $GITHUB_ENV
-          echo "ERROR_LOG_PATH=./Data/ErrorLogs" >> $GITHUB_ENV
+          echo "ERROR_LOG_PATH=./Data/ErrorLogs/TradeManError.log" >> $GITHUB_ENV
+
+      - name: Verify environment variable
+        run: echo $ERROR_LOG_PATH
 
 
 

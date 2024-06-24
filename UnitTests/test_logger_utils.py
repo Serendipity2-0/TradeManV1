@@ -17,15 +17,15 @@ sys.path.append(DIR_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 # Set the environment variable for the log path
-ERROR_LOG_PATH = "./Data/ErrorLogs"
+LOGGER_ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 
 
 class TestLoggerSetup(TestCase):
-    @patch.dict(os.environ, {"ERROR_LOG_PATH": ERROR_LOG_PATH})
+    @patch.dict(os.environ, {"ERROR_LOG_PATH": LOGGER_ERROR_LOG_PATH})
     def test_logger_file_logging(self):
         with mock.patch("loguru.logger.add") as mock_add:
             _ = LoggerSetup()
-            log_file_path = os.path.join(ERROR_LOG_PATH, "./Data/ErrorLogs")
+            log_file_path = os.path.join(LOGGER_ERROR_LOG_PATH)
             mock_add.assert_called_with(
                 log_file_path,
                 level="TRACE",
@@ -43,7 +43,7 @@ class TestLoggerSetup(TestCase):
         except Exception as e:
             self.fail(f"LoggerSetup raised an exception unexpectedly: {e}")
 
-    @patch.dict(os.environ, {"ERROR_LOG_PATH": ERROR_LOG_PATH})
+    @patch.dict(os.environ, {"ERROR_LOG_PATH": LOGGER_ERROR_LOG_PATH})
     def test_logger_initialization_with_invalid_error_log_path(self):
         try:
             _ = LoggerSetup()
