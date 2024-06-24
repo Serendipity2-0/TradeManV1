@@ -103,10 +103,19 @@ def calculate_qty_for_strategies(
 async def place_order_for_strategy(
     strategy_users, order_details, order_qty_mode: str = None
 ):
-    all_order_statuses = []  # To store the status of all orders
+    """
+    Places an order for a given strategy.
 
+    Args:
+        strategy_users (list): A list of users involved in the strategy.
+        order_details (list): A list of order details to place.
+        order_qty_mode (str, optional): The order quantity mode ("Sweep" or "Holdings"). Defaults to None.
+
+    Returns:
+        str: A message indicating the status of the order placement.
+    """
     for order in order_details:
-        order_tasks = []
+        user_tasks = {}  # Dictionary to store tasks for each user
 
         for user in strategy_users:
             logger.debug(f"Placing orders for user {user['Broker']['BrokerUsername']}")
@@ -165,7 +174,9 @@ async def place_order_for_strategy(
                         order_to_place["tax"] = await get_orders_tax(
                             order_to_place, user_credentials
                         )
-                        order_tasks.append(
+                        if user["Tr_No"] not in user_tasks:
+                            user_tasks[user["Tr_No"]] = []
+                        user_tasks[user["Tr_No"]].append(
                             place_order_for_brokers(order_to_place, user_credentials)
                         )
                         order_qty -= current_qty
@@ -175,10 +186,12 @@ async def place_order_for_strategy(
                     )
             else:
                 try:
-                    order_to_place["tax"] = await get_orders_tax(
-                        order_to_place, user_credentials
+                    order_with_user_and_broker["tax"] = await get_orders_tax(
+                        order_with_user_and_broker, user_credentials
                     )
-                    order_tasks.append(
+                    if user["Tr_No"] not in user_tasks:
+                        user_tasks[user["Tr_No"]] = []
+                    user_tasks[user["Tr_No"]].append(
                         place_order_for_brokers(
                             order_with_user_and_broker, user_credentials
                         )
@@ -186,40 +199,36 @@ async def place_order_for_strategy(
                 except Exception as e:
                     logger.error(f"Error placing order with no max_qty: {e}")
 
-        all_order_statuses = await asyncio.gather(*order_tasks)
+            if "Hedge" in order.get("order_mode", ""):
+                time.sleep(1)
 
-        # Update Firebase with order status
-        update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
-        logger.debug(f"update_path: {update_path}")
-
-        if order_qty_mode == "Sweep":
+        # Await tasks for each user and update Firebase
+        for user_tr_no, tasks in user_tasks.items():
             try:
-                push_orders_firebase(
-                    CLIENTS_USER_FB_DB, user["Tr_No"], all_order_statuses, update_path
+                user_order_statuses = await asyncio.gather(
+                    *tasks, return_exceptions=True
                 )
+                update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
+                logger.debug(f"update_path: {update_path}")
+
+                push_orders_firebase(
+                    CLIENTS_USER_FB_DB, user_tr_no, user_order_statuses, update_path
+                )
+
+                for status in user_order_statuses:
+                    if status.get("order_status", "") == "FAIL":
+                        user = next(
+                            u for u in strategy_users if u["Tr_No"] == user_tr_no
+                        )
+                        discord_bot(
+                            f"Order failed for user {user['Broker']['BrokerUsername']} in strategy {order.get('strategy')}",
+                            order.get("strategy"),
+                        )
+
             except Exception as e:
                 logger.error(f"Error updating firebase with order status: {e}")
-            all_order_statuses.clear()
 
-        if order_qty_mode != "Sweep":
-            try:
-                push_orders_firebase(
-                    CLIENTS_USER_FB_DB, user["Tr_No"], all_order_statuses, update_path
-                )
-            except Exception as e:
-                logger.error(f"Error updating firebase with order status: {e}")
-
-        if "Hedge" in order.get("order_mode", ""):
-            time.sleep(1)
-
-    # Send notification if any orders failed
-    for status in all_order_statuses:
-        if status.get("message", "") == "Order placement failed":
-            discord_bot(
-                f"Order failed for user {user['Broker']['BrokerUsername']} in strategy {order.get('strategy')}",
-                order.get("strategy"),
-            )
-    return all_order_statuses
+    return "All orders processed"
 
 
 def modify_orders_for_strategy(strategy_users, order_details):
