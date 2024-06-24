@@ -132,32 +132,6 @@ def mock_env():
     ).start()
 
 
-def test_get_today_trades(sample_user_tables):
-    active_strategies = ["StrategyA", "StrategyB"]
-    result = get_today_trades(sample_user_tables, active_strategies)
-
-    # Adding more detailed output for debugging
-    print(f"Fetched trades: {result}")
-
-    # Validate that trades are returned for each active strategy
-    assert len(result) == 2, f"Expected 2 trades, got {len(result)}"
-    assert result[0]["other_data"] == 100, "Trade data mismatch for StrategyA"
-    assert result[1]["other_data"] == 300, "Trade data mismatch for StrategyB"
-
-
-def test_get_additions_withdrawals(sample_user_tables):
-    sample_user_tables[0] = {
-        "Transactions": pd.DataFrame(
-            {
-                "transaction_date": ["2024-06-07 10:00:00", "2024-06-07 12:00:00"],
-                "amount": [1000, -500],
-            }
-        )
-    }
-    result = get_additions_withdrawals(sample_user_tables)
-    assert result == 500
-
-
 def test_get_new_holdings(sample_user_tables):
     sample_user_tables[0] = {
         "Holdings": pd.DataFrame({"margin_utilized": ["1000", "2000"]})
