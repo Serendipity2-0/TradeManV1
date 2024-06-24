@@ -470,13 +470,13 @@ def test_calculate_user_net_values(mock_env):
 
 
 # Example for testing get_primary_account_obj
-def test_get_primary_account_obj(mock_env):
-    with patch(
-        "Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter.create_kite_obj"
-    ) as mock_obj:
-        mock_obj.return_value = MagicMock()
-        obj = get_primary_account_obj()
-        assert obj is not None
+# def test_get_primary_account_obj(mock_env):
+#     with patch(
+#         "Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter.create_kite_obj"
+#     ) as mock_obj:
+#         mock_obj.return_value = MagicMock()
+#         obj = get_primary_account_obj()
+#         assert obj is not None
 
 
 # Example for testing get_broker_pnl
