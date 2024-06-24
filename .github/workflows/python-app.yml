@@ -129,5 +129,4 @@ jobs:
           name: Logs
           path: ./logs/TradeManError.log
 
-      - name: List files in TestData directory
-        run: ls -l path/to/TestData
+
