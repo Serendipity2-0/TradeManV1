@@ -20,11 +20,6 @@ jobs:
           pip install -r requirements.txt
           pip install aiohttp
 
-      - name: Create logs directory
-        run: |
-          mkdir -p ./logs/
-          echo "Logs directory created at $(pwd)/logs/"
-
       - name: Create Firebase Credentials File
         run: |
           #!/bin/bash
@@ -81,26 +76,10 @@ jobs:
           echo "FIRSTOCK_BROKER=${{ secrets.FIRSTOCK_BROKER }}" >> $GITHUB_ENV
           echo "FIREBASE_TEST_COLLECTION=${{ secrets.FIREBASE_TEST_COLLECTION }}" >> $GITHUB_ENV
           echo "CONSOLIDATED_REPORT_PATH=./Data/ConsolidatedReports" >> $GITHUB_ENV
-          echo "ERROR_LOG_PATH=./logs/TradeManError.log" >> $GITHUB_ENV
           echo "USER_SQLDB_PATH=./Data/UserSQLDB" >> $GITHUB_ENV
           echo "FIREBASE_USER_COLLECTION=${{ secrets.FIREBASE_USER_COLLECTION }}" >> $GITHUB_ENV
+          echo "ERROR_LOG_PATH=${{ secrets.ERROR_LOG_PATH }}" >> $GITHUB_ENV
 
-      - name: Verify environment variables
-        run: |
-          echo "Verifying environment variables..."
-          echo "ERROR_LOG_PATH is set to $ERROR_LOG_PATH"
-          if [ -z "$ERROR_LOG_PATH" ]; then
-            echo "ERROR_LOG_PATH is not set!"
-            exit 1
-          fi
-
-      - name: Verify directory structure and permissions
-        run: |
-          echo "Verifying directory structure and permissions..."
-          ls -al ./logs/
-          echo "Checking log file permissions..."
-          touch ./logs/TradeManError.log
-          ls -l ./logs/TradeManError.log
 
       - name: Check formatting with black
         run: |
@@ -123,10 +102,6 @@ jobs:
           pip install pytest
           pytest
 
-      - name: Upload Log Files
-        uses: actions/upload-artifact@v2
-        with:
-          name: Logs
-          path: ./logs/TradeManError.log
+
 
 

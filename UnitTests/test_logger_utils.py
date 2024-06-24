@@ -4,29 +4,30 @@ from unittest import TestCase, mock
 from unittest.mock import patch
 from loguru import logger
 import tempfile
-
 from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Add the necessary path
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-# Load environment variables
-ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
-load_dotenv(ENV_PATH)
-
 # Import the functions to test
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
+# Retrieve ERROR_LOG_PATH from the environment variables
+ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+
 
 class TestLoggerSetup(TestCase):
-    @patch.dict(os.environ, {"ERROR_LOG_PATH": "./logs/TradeManError.log"})
+    @patch.dict(os.environ, {"ERROR_LOG_PATH": ERROR_LOG_PATH})
     def test_logger_file_logging(self):
         # Test when ERROR_LOG_PATH is correctly set and file logging is successful
         with mock.patch("loguru.logger.add") as mock_add:
             _ = LoggerSetup()
             mock_add.assert_called_with(
-                "./logs/TradeManError.log",
+                ERROR_LOG_PATH,
                 level="TRACE",
                 rotation="00:00",
                 enqueue=True,
@@ -43,7 +44,7 @@ class TestLoggerSetup(TestCase):
         except Exception as e:
             self.fail(f"LoggerSetup raised an exception unexpectedly: {e}")
 
-    @patch.dict(os.environ, {"ERROR_LOG_PATH": "./logs/TradeManError.log"})
+    @patch.dict(os.environ, {"ERROR_LOG_PATH": ERROR_LOG_PATH})
     def test_logger_initialization_with_invalid_error_log_path(self):
         # Test if LoggerSetup initializes without any error when ERROR_LOG_PATH is invalid
         try:
