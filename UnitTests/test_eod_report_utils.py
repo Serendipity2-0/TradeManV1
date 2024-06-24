@@ -135,9 +135,14 @@ def mock_env():
 def test_get_today_trades(sample_user_tables):
     active_strategies = ["StrategyA", "StrategyB"]
     result = get_today_trades(sample_user_tables, active_strategies)
-    assert len(result) == 2
-    assert result[0]["other_data"] == 100
-    assert result[1]["other_data"] == 300
+
+    # Adding more detailed output for debugging
+    print(f"Fetched trades: {result}")
+
+    # Validate that trades are returned for each active strategy
+    assert len(result) == 2, f"Expected 2 trades, got {len(result)}"
+    assert result[0]["other_data"] == 100, "Trade data mismatch for StrategyA"
+    assert result[1]["other_data"] == 300, "Trade data mismatch for StrategyB"
 
 
 def test_get_additions_withdrawals(sample_user_tables):
