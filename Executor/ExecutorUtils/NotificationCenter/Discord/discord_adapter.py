@@ -31,12 +31,12 @@ def discord_bot(message, strategy):
         ValueError: If the request to Discord returns a status code other than 200.
 
     Environment Variables:
-        discord_bot_token (str): The token for the Discord bot.
+        DISCORD_BOT_TOKEN (str): The token for the Discord bot.
         {strategy.lower()}_channel_id (str): The channel ID for the specified strategy.
     """
     try:
-        token = os.getenv("discord_bot_token")
-        channel_id = os.getenv(f"{strategy.lower()}_channel_id")
+        token = os.getenv("DISCORD_BOT_TOKEN")
+        channel_id = os.getenv(f"{strategy.upper()}_CHANNEL_ID")
 
         url = f"https://discord.com/api/v9/channels/{channel_id}/messages"
         headers = {
@@ -73,10 +73,10 @@ def discord_admin_bot(message):
         ValueError: If the request to Discord returns a status code other than 200.
 
     Environment Variables:
-        discord_bot_token (str): The token for the Discord bot.
+        DISCORD_BOT_TOKEN (str): The token for the Discord bot.
     """
-    token = os.getenv("discord_bot_token")
-    channel_id = "1169540251325313034"
+    token = os.getenv("DISCORD_BOT_TOKEN")
+    channel_id = os.getenv("ADMIN_CHANNEL_ID")
 
     url = f"https://discord.com/api/v9/channels/{channel_id}/messages"
     headers = {

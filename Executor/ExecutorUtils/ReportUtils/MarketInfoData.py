@@ -8,7 +8,6 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-DB_DIR = os.getenv("DB_DIR")
 STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (

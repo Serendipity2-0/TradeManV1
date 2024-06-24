@@ -18,7 +18,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 logger = LoggerSetup()
 
 
-CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
+CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
@@ -642,7 +642,7 @@ def process_n_log_trade():
         logger.debug(f"Processing trade for user: {user['Tr_No']}")
         db_path = os.path.join(
             CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db"
-        )  # Ensure db_dir is defined
+        )  # Ensure USR_TRADELOG_DB_FOLDER is defined
         conn = get_db_connection(db_path)
         if not user.get("Active"):
             continue

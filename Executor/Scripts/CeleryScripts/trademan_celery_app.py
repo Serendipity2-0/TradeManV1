@@ -17,20 +17,24 @@ sys.path.append(DIR)  # Add the current directory to the system path
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
+CONDA_PATH = os.getenv("CONDA_PATH")
+CONDA_ENV_NAME = os.getenv("CONDA_ENV_NAME")
+PROJECT_PATH = os.getenv("PROJECT_PATH")
+PYTHON_ENV_PATH = os.getenv("PYTHON_ENV_PATH")
 
 # Create a Celery instance
 app = Celery("tasks")
-app.config_from_object("celeryconfig")
+app.config_from_object("Executor.Scripts.CeleryScripts.celeryconfig")
 
 # redis client
 redis_client = redis.StrictRedis(host="localhost", port=6379, db=0)
 
 # Telegram bot parameters
-telegram_bot_token = os.getenv("error_telegram_bot_token")
-chat_id = os.getenv("error_chat_id")
+TELEGRAM_BOT_TOKEN = os.getenv("ERROR_TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("ERROR_CHAT_ID")
 
 # log files path
-log_dir = os.getenv("SCRIPTS_LOG_PATH")
+log_dir = os.getenv("CELERY_SCRIPTS_LOG_PATH")
 
 # Strategy Constants
 AMIPY = "amipy"
@@ -98,10 +102,10 @@ def run_script(script_path, retry_hour, logger):
         try:
             logger.debug(f"Running script {script_path}")
             with subprocess.Popen(
-                f"source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && "
-                f"conda activate tradingenv && "
-                f"cd /Users/traderscafe/Desktop/TradeManV1/ && "
-                f"/Users/traderscafe/miniconda3/envs/tradingenv/bin/python {script_path}",
+                f"source {CONDA_PATH}/etc/profile.d/conda.sh && "
+                f"conda activate {CONDA_ENV_NAME} && "
+                f"cd {PROJECT_PATH} && "
+                f"{PYTHON_ENV_PATH} {script_path}",
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -133,8 +137,8 @@ def run_script(script_path, retry_hour, logger):
                     )
                     message = f"{script_path} errors. Please Check !!!"
                     requests.post(
-                        f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage",
-                        data={"chat_id": chat_id, "text": message},
+                        f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                        data={"chat_id": CHAT_ID, "text": message},
                     )
                     return "failed"
                 else:
@@ -318,8 +322,8 @@ def revoke_amipy_task():
         app.control.revoke(task_id.decode("utf-8"), terminate=True)
         message = f"Task {task_id.decode('utf-8')} has been revoked."
         requests.post(
-            f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage",
-            data={"chat_id": chat_id, "text": message},
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data={"chat_id": CHAT_ID, "text": message},
         )
         return message
     return "No task_id found to revoke."
@@ -332,8 +336,22 @@ def revoke_mpwizard_task():
         app.control.revoke(task_id.decode("utf-8"), terminate=True)
         message = f"Task {task_id.decode('utf-8')} has been revoked."
         requests.post(
-            f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage",
-            data={"chat_id": chat_id, "text": message},
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data={"chat_id": CHAT_ID, "text": message},
         )
         return message
     return "No task_id found to revoke."
+
+
+def start_worker():
+    from celery.bin import worker
+
+    worker_instance = worker.worker(app=app)
+    worker_instance.run(loglevel="info", traceback=True)
+
+
+def start_beat():
+    from celery.bin import beat
+
+    beat = beat.beat(app=app)
+    beat.run(loglevel="info")

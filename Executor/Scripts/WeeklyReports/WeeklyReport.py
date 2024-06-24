@@ -11,7 +11,7 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-db_dir = os.getenv("DB_DIR")
+USR_TRADELOG_DB_FOLDER = os.getenv("USR_TRADELOG_DB_FOLDER")
 user_collection_firebase = os.getenv("FIREBASE_USER_COLLECTION")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
@@ -74,7 +74,7 @@ def get_current_week_trades(user, active_strategies, start_date, end_date):
     :return: A dictionary with strategy names as keys and net PnL as values.
     """
     trades = {}
-    db_path = os.path.join(db_dir, f"{user['Tr_No']}.db")
+    db_path = os.path.join(USR_TRADELOG_DB_FOLDER, f"{user['Tr_No']}.db")
     conn = get_db_connection(db_path)
     if conn is not None:
         for strategy in active_strategies:
