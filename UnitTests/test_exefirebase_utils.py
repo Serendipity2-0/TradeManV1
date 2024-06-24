@@ -1,9 +1,9 @@
-import os, sys
+import os
+import sys
 import pytest
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials
-
 
 # Add the necessary path
 DIR_PATH = os.getcwd()
@@ -27,7 +27,6 @@ if not firebase_admin._apps:
 
 # Import the functions to test
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
-
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
     file_upload,
     update_fields_firebase,
@@ -54,18 +53,17 @@ def test_file_upload():
     # Determine the base directory (assuming this script is in the same directory as the test)
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    # Create the path to the JSON file located in the root of the repository
-    test_json_path = os.path.join(BASE_DIR, "TestData.json")
+    # Update the path to point to the correct location
+    test_json_path = os.path.join(BASE_DIR, "..", "TestData", "test_data.json")
 
-    # Ensure the file exists before proceeding (optional check)
+    # Ensure the file exists before proceeding
     if not os.path.exists(test_json_path):
         raise FileNotFoundError(f"JSON file not found: {test_json_path}")
 
     test_collection_name = "test"
 
-    # Call the file_upload function (assume it's defined elsewhere)
+    # Call the file_upload function
     file_upload(test_json_path, test_collection_name)
-
     print(f"Uploaded data from {test_json_path} to {test_collection_name} in Firebase.")
 
 
