@@ -15,7 +15,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_strategy_name_from_trade_id,
     get_signal_from_trade_id,
     calculate_transaction_type_sl,

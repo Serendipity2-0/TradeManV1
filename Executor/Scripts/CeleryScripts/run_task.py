@@ -1,7 +1,7 @@
 # run_all_tasks.py
-from Executor.Scripts.CeleryScripts.trademan_celery_app import *
+from Executor.Scripts.CeleryScripts.V1_poetry_app import *
 
-#Using this function we are running the celery tasks
+# Using this function we are running the celery tasks
 
 # Trigger the tasks
 results = []

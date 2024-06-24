@@ -10,7 +10,7 @@ import kiteconnect.exceptions as ex
 DIR = os.getcwd()
 sys.path.append(DIR)
 
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_strategy_name_from_trade_id,
     get_signal_from_trade_id,
     calculate_transaction_type_sl,
@@ -737,7 +737,7 @@ def kite_create_cancel_order(trade, user):
         Exception: If cancelling the order fails.
     """
     try:
-        kite = create_kite_obj(user_details=user["Broker"])
+        kite = create_async_kite_obj(user_details=user["Broker"])
         kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade["order_id"])
     except Exception as e:
         logger.error(f"Error cancelling order: {e}")
@@ -1041,7 +1041,7 @@ def get_margin_utilized(user_credentials):
     Raises:
         Exception: If there is an error in fetching the margin details.
     """
-    kite = create_kite_obj(user_details=user_credentials)
+    kite = create_async_kite_obj(user_details=user_credentials)
     live_bal = kite.margins().get("equity", {}).get("available", {}).get("live_balance")
     opening_bal = (
         kite.margins().get("equity", {}).get("available", {}).get("opening_balance")
@@ -1063,7 +1063,7 @@ def get_broker_payin(user):
     Raises:
         Exception: If there is an error in fetching the payin amount.
     """
-    kite = create_kite_obj(user_details=user["Broker"])
+    kite = create_async_kite_obj(user_details=user["Broker"])
     payin = float(
         kite.margins().get("equity", {}).get("available", {}).get("intraday_payin", 0)
     )
