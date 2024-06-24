@@ -78,7 +78,8 @@ jobs:
           echo "CONSOLIDATED_REPORT_PATH=./Data/ConsolidatedReports" >> $GITHUB_ENV
           echo "USER_SQLDB_PATH=./Data/UserSQLDB" >> $GITHUB_ENV
           echo "FIREBASE_USER_COLLECTION=${{ secrets.FIREBASE_USER_COLLECTION }}" >> $GITHUB_ENV
-          echo "ERROR_LOG_PATH=./Data/ErrorLogs" >> $GITHUB_ENV
+          echo "ERROR_LOG_PATH=./Data/ErrorLogs/" >> $GITHUB_ENV
+
 
 
       - name: Check formatting with black
