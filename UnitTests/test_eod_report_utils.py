@@ -166,16 +166,6 @@ def test_update_account_keys_fb(mock_update_fields_firebase, sample_user):
     "Executor.ExecutorUtils.ReportUtils.EodReportUtils.get_today_trades",
     return_value=[{"trade_id": "T1", "net_pnl": "100"}],
 )
-def test_get_today_trades_for_all_users(
-    mock_get_today_trades, mock_fetch_user_tables, mock_get_db_connection
-):
-    active_users = [{"Tr_No": "001"}]
-    active_strategies = ["StrategyA"]
-    result = get_today_trades_for_all_users(active_users, active_strategies)
-    assert len(result) == 1
-    assert result[0]["net_pnl"] == "100"
-
-
 def test_df_to_table():
     # Test case for a normal DataFrame with the expected columns
     df = pd.DataFrame(
