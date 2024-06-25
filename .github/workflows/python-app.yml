@@ -88,10 +88,6 @@ jobs:
           echo "USER_SQLDB_PATH=./Data/UserSQLDB" >> $GITHUB_ENV
           echo "FIREBASE_USER_COLLECTION=${{ secrets.FIREBASE_USER_COLLECTION }}" >> $GITHUB_ENV
           echo "ERROR_LOG_PATH=./Data/ErrorLogs/TradeManError.log" >> $GITHUB_ENV
-          echo "EOD_CONSOLIDATED_REPORT_PATH=${{ secrets.mock_path }}" >> $GITHUB_ENV
-          echo "EOD_ERROR_LOG_PATH=${{ secrets.mock_error_log_path }}" >> $GITHUB_ENV
-          echo "EOD_DB_DIR=${{ secrets.mock_db_dir }}" >> $GITHUB_ENV
-          echo "EOD_FIREBASE_USER_COLLECTION=${{ secrets.mock_fb_collection }}" >> $GITHUB_ENV
           echo "CLIENTS_TRADE_SQL_DB=${{ secrets.DB_DIR }}" >> $GITHUB_ENV
 
       - name: Verify environment variable

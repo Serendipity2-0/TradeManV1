@@ -34,20 +34,13 @@ from Executor.ExecutorUtils.ReportUtils.EodReportUtils import (
 # Set up the logger
 logger = LoggerSetup()
 
-# Constants and Environment Setup
+# Add the necessary path
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-# Use relative paths to reference files and directories within the repository
+# Load environment variables
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
-os.environ["CONSOLIDATED_REPORT_PATH"] = os.path.join(
-    DIR_PATH, "Data/ConsolidatedReports"
-)
-os.environ["ERROR_LOG_PATH"] = os.path.join(DIR_PATH, "Data/ErrorLogs")
-os.environ["DB_DIR"] = os.path.join(DIR_PATH, "Data/UserSQLDB")
-os.environ["FIREBASE_TEST_COLLECTION"] = "test"
-
-today_string = datetime.now().strftime("%Y-%m-%d")
+load_dotenv(ENV_PATH)
 
 
 @pytest.fixture
@@ -121,15 +114,16 @@ def mock_connection():
 
 @pytest.fixture
 def mock_env():
-    patch.dict(
-        "os.environ",
+    with patch.dict(
+        os.environ,
         {
-            "CONSOLIDATED_REPORT_PATH": "mock_path",
+            "CONSOLIDATED_REPORT_PATH": "mock_consolidated_report_path",
             "ERROR_LOG_PATH": "mock_error_log_path",
             "DB_DIR": "mock_db_dir",
             "FIREBASE_USER_COLLECTION": "mock_fb_collection",
         },
-    ).start()
+    ):
+        yield
 
 
 def test_get_new_holdings(sample_user_tables):
