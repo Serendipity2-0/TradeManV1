@@ -106,7 +106,7 @@ class TestIntegration(unittest.TestCase):
         mock_alice_login.return_value = "mock_alice_session_id"
         mock_firstock_login.return_value = "mock_firstock_session_id"
 
-        # Mock logger methods
+        # Mock logger method
         mock_logger_instance = MagicMock()
         mock_logger.return_value = mock_logger_instance
 
