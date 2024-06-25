@@ -88,7 +88,7 @@ class TestIntegration(unittest.TestCase):
         {
             "CLIENTS_USER_FB_DB": "mock_trademan_clients",
             "STRATEGY_FB_DB": "mock_strategy",
-            "ERROR_LOG_PATH": "D:/TradeManV1Data/ErrorLogs.log",
+            "ERROR_LOG_PATH": "./Data/ErrorLogs.log",
         },
     )
     def test_main_function_flow(

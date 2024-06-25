@@ -90,6 +90,8 @@ jobs:
           echo "ERROR_LOG_PATH=./Data/ErrorLogs/TradeManError.log" >> $GITHUB_ENV
           echo "DB_DIR=./Data/UserSQLDB" >> $GITHUB_ENV
           echo "CLIENTS_TRADE_SQL_DB=${{ secrets.DB_DIR }}" >> $GITHUB_ENV
+          echo "CLIENTS_USER_FB_DB=${{ secrets.mock_trademan_clients }}" >> $GITHUB_ENV
+          echo "STRATEGY_FB_DB=${{ secrets.mock_strategy }}" >> $GITHUB_ENV
 
 
       - name: Verify environment variable
