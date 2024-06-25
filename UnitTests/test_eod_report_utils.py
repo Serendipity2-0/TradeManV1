@@ -124,10 +124,10 @@ def mock_env():
     patch.dict(
         "os.environ",
         {
-            "EOD_CONSOLIDATED_REPORT_PATH": "mock_path",
-            "EOD_ERROR_LOG_PATH": "mock_error_log_path",
-            "EOD_DB_DIR": "mock_db_dir",
-            "EOD_FIREBASE_USER_COLLECTION": "mock_fb_collection",
+            "CONSOLIDATED_REPORT_PATH": "mock_path",
+            "ERROR_LOG_PATH": "mock_error_log_path",
+            "DB_DIR": "mock_db_dir",
+            "FIREBASE_USER_COLLECTION": "mock_fb_collection",
         },
     ).start()
 
