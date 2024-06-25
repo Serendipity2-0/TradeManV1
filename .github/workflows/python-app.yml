@@ -88,7 +88,9 @@ jobs:
           echo "USER_SQLDB_PATH=./Data/UserSQLDB" >> $GITHUB_ENV
           echo "FIREBASE_USER_COLLECTION=${{ secrets.FIREBASE_USER_COLLECTION }}" >> $GITHUB_ENV
           echo "ERROR_LOG_PATH=./Data/ErrorLogs/TradeManError.log" >> $GITHUB_ENV
+          echo "DB_DIR=./Data/UserSQLDB" >> $GITHUB_ENV
           echo "CLIENTS_TRADE_SQL_DB=${{ secrets.DB_DIR }}" >> $GITHUB_ENV
+
 
       - name: Verify environment variable
         run: |
