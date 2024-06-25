@@ -118,10 +118,10 @@ jobs:
       #     pip install pydocstyle
       #     pydocstyle .
 
-      - name: Test with pytest
+      - name: Test with pytest (Unit Tests)
         run: |
           pip install pytest
-          pytest
+          pytest UnitTests -v
 
 
 
