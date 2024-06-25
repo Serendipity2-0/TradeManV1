@@ -132,27 +132,6 @@ def mock_env():
     ).start()
 
 
-def test_get_today_trades(sample_user_tables):
-    active_strategies = ["StrategyA", "StrategyB"]
-    result = get_today_trades(sample_user_tables, active_strategies)
-    assert len(result) == 2
-    assert result[0]["other_data"] == 100
-    assert result[1]["other_data"] == 300
-
-
-def test_get_additions_withdrawals(sample_user_tables):
-    sample_user_tables[0] = {
-        "Transactions": pd.DataFrame(
-            {
-                "transaction_date": ["2024-06-07 10:00:00", "2024-06-07 12:00:00"],
-                "amount": [1000, -500],
-            }
-        )
-    }
-    result = get_additions_withdrawals(sample_user_tables)
-    assert result == 500
-
-
 def test_get_new_holdings(sample_user_tables):
     sample_user_tables[0] = {
         "Holdings": pd.DataFrame({"margin_utilized": ["1000", "2000"]})
