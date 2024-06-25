@@ -92,6 +92,7 @@ jobs:
           echo "EOD_ERROR_LOG_PATH=${{ secrets.mock_error_log_path }}" >> $GITHUB_ENV
           echo "EOD_DB_DIR=${{ secrets.mock_db_dir }}" >> $GITHUB_ENV
           echo "EOD_FIREBASE_USER_COLLECTION=${{ secrets.mock_fb_collection }}" >> $GITHUB_ENV
+          echo "CLIENTS_TRADE_SQL_DB=${{ secrets.DB_DIR }}" >> $GITHUB_ENV
 
       - name: Verify environment variable
         run: echo $ERROR_LOG_PATH
