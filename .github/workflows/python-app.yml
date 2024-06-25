@@ -123,6 +123,11 @@ jobs:
           pip install pytest
           pytest UnitTests -v
 
+      - name: Test with pytest (Integration Tests)
+        run: |
+          pip install pytest
+          pytest IntegrationTests -v
+
 
 
 
