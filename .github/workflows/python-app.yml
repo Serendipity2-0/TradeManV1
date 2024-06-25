@@ -92,6 +92,7 @@ jobs:
           echo "CLIENTS_TRADE_SQL_DB=${{ secrets.DB_DIR }}" >> $GITHUB_ENV
           echo "CLIENTS_USER_FB_DB=${{ secrets.mock_trademan_clients }}" >> $GITHUB_ENV
           echo "STRATEGY_FB_DB=${{ secrets.mock_strategy }}" >> $GITHUB_ENV
+          echo "discord_bot_token: ${{ secrets.DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
 
 
       - name: Verify environment variable
