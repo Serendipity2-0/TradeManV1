@@ -95,7 +95,12 @@ jobs:
           echo "CLIENTS_TRADE_SQL_DB=${{ secrets.DB_DIR }}" >> $GITHUB_ENV
 
       - name: Verify environment variable
-        run: echo $ERROR_LOG_PATH
+        run: |
+          echo $CLIENTS_TRADE_SQL_DB
+          echo $CONSOLIDATED_REPORT_PATH
+          echo $ERROR_LOG_PATH
+          echo $FIREBASE_USER_COLLECTION
+
 
 
 
