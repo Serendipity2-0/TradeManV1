@@ -15,8 +15,8 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-from Executor.Strategies.StrategiesUtil import StrategyBase
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     update_qty_user_firebase,
     assign_trade_id,
     update_signal_firebase,
@@ -33,63 +33,58 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
 from Executor.ExecutorUtils.ExeUtils import holidays
 
 
-class GoldenCoin(StrategyBase):
+class Om(StrategyBase):
     def get_general_params(self):
         """
-        The above functions are used to retrieve general parameters, entry parameters, exit parameters, and
-        raw fields by name.
-        :return: The `get_raw_field` method is returning the value of the field with the specified
-        `field_name`.
+        The function `get_general_params` returns the GeneralParams attribute of the object.
+        :return: The method `get_general_params` is returning the attribute `GeneralParams` of the object
+        `self`.
         """
         return self.GeneralParams
 
     def get_entry_params(self):
         """
-        The above code snippet defines three methods in a Python class for getting entry parameters, exit
-        parameters, and a raw field by name.
-        :return: The `get_entry_params` method returns the `EntryParams` attribute of the class instance.
-        The `get_exit_params` method returns the `ExitParams` attribute of the class instance. The
-        `get_raw_field` method returns the value of the field specified by the `field_name` parameter using
-        the `super()` function to access the parent class method.
+        The `get_entry_params` function returns the `EntryParams` attribute of the object.
+        :return: The `EntryParams` attribute of the `self` object is being returned.
         """
         return self.EntryParams
 
     def get_exit_params(self):
         """
-        The above code snippet includes two methods in a Python class, one to get exit parameters and
-        another to retrieve a raw field by name.
-        :return: The `get_exit_params` method is returning the `ExitParams` attribute of the object, and the
-        `get_raw_field` method is returning the raw field value for the specified `field_name`.
+        The function `get_exit_params` returns the `ExitParams` attribute of the object.
+        :return: The `ExitParams` attribute of the `self` object is being returned.
         """
         return self.ExitParams
 
     def get_raw_field(self, field_name: str):
         """
-        The function `get_raw_field` returns the raw value of a specified field.
+        The `get_raw_field` function returns the raw value of a specified field.
 
-        :param field_name: The `get_raw_field` method takes a parameter `field_name` of type `str`, which
-        represents the name of the field you want to retrieve from the object
+        :param field_name: The `get_raw_field` method takes a `field_name` parameter, which is expected to
+        be a string representing the name of the field you want to retrieve
         :type field_name: str
         :return: The `get_raw_field` method is returning the raw value of the field specified by the
-        `field_name` parameter. It is calling the `get_raw_field` method of the superclass using `super()`.
+        `field_name` parameter.
         """
         return super().get_raw_field(field_name)
 
 
-goldencoin_strategy_obj = GoldenCoin.load_from_db("GoldenCoin")
+om_strategy_obj = Om.load_from_db("Om")
 instrument_obj = InstrumentCenterUtils.Instrument()
-next_trade_prefix = goldencoin_strategy_obj.NextTradeId
-desired_start_time_str = goldencoin_strategy_obj.get_entry_params().EntryTime
+next_trade_prefix = om_strategy_obj.NextTradeId
+desired_start_time_str = om_strategy_obj.get_entry_params().EntryTime
 start_hour, start_minute, start_second = map(int, desired_start_time_str.split(":"))
-window = goldencoin_strategy_obj.get_raw_field("EntryParams").get("Window")
-strategy_name = goldencoin_strategy_obj.StrategyName
-strategy_type = goldencoin_strategy_obj.GeneralParams.StrategyType
+window = om_strategy_obj.get_raw_field("EntryParams").get("Window")
+strategy_name = om_strategy_obj.StrategyName
+strategy_type = om_strategy_obj.GeneralParams.StrategyType
 
 
 def flip_coin():
     """
-    Randomly choose between 'Heads' and 'Tails' to simulate a coin flip.
-    Returns the result of the coin flip.
+    Randomly choose between 'Heads' and 'Tails'.
+
+    Returns:
+        str: 'Heads' or 'Tails'.
     """
     # Randomly choose between 'Heads' and 'Tails'
     result = random.choice(["Heads", "Tails"])
@@ -103,15 +98,17 @@ prediction = "Bullish" if flip_coin() == "Heads" else "Bearish"
 
 def determine_strike_and_option():
     """
-    Determine the strike price and option type based on the strategy parameters and prediction.
-    Returns the base symbol, strike price, and option type.
+    Determine the strike price and option type based on the prediction.
+
+    Returns:
+        tuple: base symbol, strike price, option type.
     """
     global prediction
-    strike_price_multiplier = goldencoin_strategy_obj.EntryParams.StrikeMultiplier
-    strategy_type = goldencoin_strategy_obj.GeneralParams.StrategyType
-    base_symbol, _ = goldencoin_strategy_obj.determine_expiry_index()
+    strike_price_multiplier = om_strategy_obj.EntryParams.StrikeMultiplier
+    strategy_type = om_strategy_obj.GeneralParams.StrategyType
+    base_symbol, _ = om_strategy_obj.determine_expiry_index()
     option_type = "CE" if prediction == "Bullish" else "PE"
-    strike_prc = goldencoin_strategy_obj.calculate_current_atm_strike_prc(
+    strike_prc = om_strategy_obj.calculate_current_atm_strike_prc(
         base_symbol=base_symbol,
         prediction=prediction,
         strike_prc_multiplier=strike_price_multiplier,
@@ -123,7 +120,14 @@ def determine_strike_and_option():
 def fetch_exchange_token(base_symbol, strike_prc, option_type):
     """
     Fetch the exchange token for the given base symbol, strike price, and option type.
-    Returns the exchange token.
+
+    Args:
+        base_symbol (str): The base symbol.
+        strike_prc (int): The strike price.
+        option_type (str): The option type (e.g., 'CE', 'PE').
+
+    Returns:
+        int: The exchange token.
     """
     today_expiry = instrument_obj.get_expiry_by_criteria(
         base_symbol, strike_prc, option_type, "current_week"
@@ -136,7 +140,12 @@ def fetch_exchange_token(base_symbol, strike_prc, option_type):
 
 def update_qty(base_symbol, strike_prc, option_type):
     """
-    Update the quantity for the strategy based on the current market conditions.
+    Update the quantity in the Firebase database.
+
+    Args:
+        base_symbol (str): The base symbol.
+        strike_prc (int): The strike price.
+        option_type (str): The option type (e.g., 'CE', 'PE').
     """
     global strategy_name, strategy_type
     exchange_token = fetch_exchange_token(base_symbol, strike_prc, option_type)
@@ -147,43 +156,45 @@ def update_qty(base_symbol, strike_prc, option_type):
     qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
     strategy_amplifier = fetch_strategy_amplifier(strategy_name)
     update_qty_user_firebase(
-        goldencoin_strategy_obj.StrategyName,
-        ltp,
-        lot_size,
-        qty_amplifier,
-        strategy_amplifier,
+        om_strategy_obj.StrategyName, ltp, lot_size, qty_amplifier, strategy_amplifier
     )
 
 
 def create_order_details(exchange_token, base_symbol):
     """
-    Create the order details for the main and stoploss orders.
-    Returns a list of order details.
+    Create order details for placing the orders.
+
+    Args:
+        exchange_token (int): The exchange token.
+        base_symbol (str): The base symbol.
+
+    Returns:
+        list: A list of order details.
     """
     stoploss_transaction_type = calculate_transaction_type_sl(
-        goldencoin_strategy_obj.get_general_params().TransactionType
+        om_strategy_obj.get_general_params().TransactionType
     )
     order_details = [
         {
-            "strategy": goldencoin_strategy_obj.StrategyName,
+            "strategy": om_strategy_obj.StrategyName,
             "signal": "Long",
             "base_symbol": base_symbol,
             "exchange_token": exchange_token,
-            "transaction_type": goldencoin_strategy_obj.get_general_params().TransactionType,
-            "order_type": goldencoin_strategy_obj.get_general_params().OrderType,
-            "product_type": goldencoin_strategy_obj.get_general_params().ProductType,
+            "transaction_type": om_strategy_obj.get_general_params().TransactionType,
+            "order_type": om_strategy_obj.get_general_params().OrderType,
+            "product_type": om_strategy_obj.get_general_params().ProductType,
             "order_mode": "Main",
             "trade_id": next_trade_prefix,
             "trade_mode": TRADE_MODE,
         },
         {
-            "strategy": goldencoin_strategy_obj.StrategyName,
+            "strategy": om_strategy_obj.StrategyName,
             "signal": "Long",
             "base_symbol": base_symbol,
             "exchange_token": exchange_token,
             "transaction_type": stoploss_transaction_type,
             "order_type": "Stoploss",
-            "product_type": goldencoin_strategy_obj.get_general_params().ProductType,
+            "product_type": om_strategy_obj.get_general_params().ProductType,
             "limit_prc": 0.1,
             "trigger_prc": 0.2,
             "order_mode": "SL",
@@ -196,26 +207,32 @@ def create_order_details(exchange_token, base_symbol):
 
 def send_signal_msg(base_symbol, strike_prc, option_type):
     """
-    Send a message with the details of the signal to the logger and Discord.
+    Send a signal message to Discord.
+
+    Args:
+        base_symbol (str): The base symbol.
+        strike_prc (int): The strike price.
+        option_type (str): The option type.
     """
     message = (
-        "GoldenCoin Order placed for "
-        + base_symbol
-        + " "
-        + str(strike_prc)
-        + " "
-        + option_type
+        "OM Order placed for " + base_symbol + " " + str(strike_prc) + " " + option_type
     )
     logger.info(message)
-    discord_bot(message, goldencoin_strategy_obj.StrategyName)
+    discord_bot(message, om_strategy_obj.StrategyName)
 
 
 def main():
     """
-    Main function to execute the GoldenCoin strategy.
+    Main function to execute the trading strategy.
 
-    This function waits until the desired start time and then places the orders
-    based on the strategy parameters and current market conditions.
+    This function performs the following steps:
+    1. Checks if today is a holiday and skips execution if it is.
+    2. Waits until the desired start time if the current time is before 9:00 AM.
+    3. Calculates the wait time before starting the bot and sleeps for that duration.
+    4. Determines the strike price and option type.
+    5. Updates the quantity in the Firebase database.
+    6. Sends a signal message to Discord.
+    7. Creates order details and places the orders.
     """
     global start_hour, start_minute, window
     hour = int(start_hour)
@@ -240,16 +257,16 @@ def main():
     now = dt.datetime.now()
 
     if now.date() in holidays:
-        logger.debug("Skipping execution as today is a holiday.")
+        logger.info("Skipping execution as today is a holiday.")
         return
 
     # If it's already past 11:35 AM, no need to wait
     if seconds_until_11_30_am < 0:
-        logger.debug("The window has already passed.")
+        logger.warning("The window has already passed.")
     else:
         # Wait until 11:30 AM, then an additional random amount of time within the 5-minute window
         total_wait_seconds = max(seconds_until_11_30_am, 0) + random_seconds
-        logger.debug(f"Waiting for {total_wait_seconds} seconds.")
+        logger.info(f"Waiting for {total_wait_seconds} seconds.")
         time.sleep(total_wait_seconds)
 
     base_symbol, strike_prc, option_type = determine_strike_and_option()
@@ -280,9 +297,9 @@ def main():
     }
 
     update_signal_firebase(
-        goldencoin_strategy_obj.StrategyName, signals_to_log, next_trade_prefix
+        om_strategy_obj.StrategyName, signals_to_log, next_trade_prefix
     )
-    place_order_strategy_users(goldencoin_strategy_obj.StrategyName, orders_to_place)
+    place_order_strategy_users(om_strategy_obj.StrategyName, orders_to_place)
 
 
 if __name__ == "__main__":

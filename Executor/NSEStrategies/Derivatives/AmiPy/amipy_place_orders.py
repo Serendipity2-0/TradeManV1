@@ -13,7 +13,7 @@ ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 TRADE_MODE = os.getenv("TRADE_MODE")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     StrategyBase,
     assign_trade_id,
     update_qty_user_firebase,

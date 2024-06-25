@@ -14,7 +14,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-from Executor.Strategies.StrategiesUtil import StrategyBase
+from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_primary_accounts_from_firebase,

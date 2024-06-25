@@ -10,7 +10,7 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from Executor.Strategies.StrategiesUtil import StrategyBase, get_previous_dates
+from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase, get_previous_dates
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
     update_fields_firebase,

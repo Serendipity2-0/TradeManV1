@@ -19,7 +19,7 @@ from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
     Instrument,
     get_single_ltp,
 )
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     StrategyBase,
     assign_trade_id,
     calculate_trigger_price,

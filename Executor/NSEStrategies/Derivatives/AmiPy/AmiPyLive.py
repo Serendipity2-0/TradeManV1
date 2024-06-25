@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os, sys
-
+import asyncio
 from datetime import timedelta, datetime, date
 from time import sleep
 
@@ -34,7 +34,7 @@ logger = LoggerSetup()
 
 zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
 
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     StrategyBase,
     base_symbol_token,
     update_signal_firebase,
