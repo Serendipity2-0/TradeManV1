@@ -14,17 +14,15 @@ This is the same format as used by the crontab command.
 beat_schedule = {
     "run_good_morning_scripts_every_day_at_830am": {
         "task": "V1_poetry_app.good_morning_scripts",
-        "schedule": crontab(
-            hour=18, minute=37, day_of_week="0-5"
-        ),  # Monday to saturday
+        "schedule": crontab(hour=8, minute=30, day_of_week="0-5"),  # Monday to saturday
     },
     "run_amipy_every_day_at_9am": {
         "task": "V1_poetry_app.amipy",
-        "schedule": crontab(hour=18, minute=39, day_of_week="0-4"),  # Monday to Friday
+        "schedule": crontab(hour=9, minute=11, day_of_week="0-4"),  # Monday to Friday
     },
     "run_expirytrader_every_day_at_916am": {
         "task": "V1_poetry_app.expiry_trader",
-        "schedule": crontab(hour=18, minute=41, day_of_week="0-4"),  # Monday to Friday
+        "schedule": crontab(hour=9, minute=16, day_of_week="0-4"),  # Monday to Friday
     },
     "run_namaha_every_day_at_917am": {
         "task": "V1_poetry_app.namaha",
