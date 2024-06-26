@@ -66,6 +66,7 @@ class InstrumentMonitor:
             self.monitor_thread = threading.Thread(target=self.monitor)
             self.monitor_thread.daemon = False
             self.monitor_thread.start()
+            self.monitor_thread.join()
 
     def add_token(
         self,

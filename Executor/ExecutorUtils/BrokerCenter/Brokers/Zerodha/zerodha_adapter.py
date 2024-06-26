@@ -933,7 +933,7 @@ def get_zerodha_pnl(user):
         return None
 
 
-async def get_kite_order_tax(order, user_credentials, broker):
+def get_kite_order_tax(order, broker):
     """
     Calculates the required tax for an order based on the order details and user credentials.
 
@@ -960,7 +960,11 @@ async def get_kite_order_tax(order, user_credentials, broker):
     basket_order = []
     primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
 
-    kite = create_async_kite_obj(
+    # kite = create_async_kite_obj(
+    #     api_key=primary_account_session_id["Broker"]["ApiKey"],
+    #     access_token=primary_account_session_id["Broker"]["SessionId"],
+    # )
+    kite = create_kite_obj(
         api_key=primary_account_session_id["Broker"]["ApiKey"],
         access_token=primary_account_session_id["Broker"]["SessionId"],
     )
@@ -1020,7 +1024,7 @@ async def get_kite_order_tax(order, user_credentials, broker):
         "order_type": order_type,
     }
     basket_order.append(tax_order)
-    tax_details = await kite.basket_order_margins(basket_order, mode="compact")
+    tax_details = kite.basket_order_margins(basket_order, mode="compact")
     tax = tax_details["orders"][0]["charges"]["total"]
     tax = round(tax, 2)
     if broker.lower() == "aliceblue":
@@ -1041,7 +1045,7 @@ def get_margin_utilized(user_credentials):
     Raises:
         Exception: If there is an error in fetching the margin details.
     """
-    kite = create_async_kite_obj(user_details=user_credentials)
+    kite = create_kite_obj(user_details=user_credentials)
     live_bal = kite.margins().get("equity", {}).get("available", {}).get("live_balance")
     opening_bal = (
         kite.margins().get("equity", {}).get("available", {}).get("opening_balance")
@@ -1063,7 +1067,7 @@ def get_broker_payin(user):
     Raises:
         Exception: If there is an error in fetching the payin amount.
     """
-    kite = create_async_kite_obj(user_details=user["Broker"])
+    kite = create_kite_obj(user_details=user["Broker"])
     payin = float(
         kite.margins().get("equity", {}).get("available", {}).get("intraday_payin", 0)
     )
