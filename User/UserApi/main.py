@@ -4,7 +4,8 @@ import os, sys
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from datetime import date
-from fastapi import FastAPI, HTTPException, Query, APIRouter
+from fastapi import FastAPI, HTTPException, Query, APIRouter, Body, Path
+from typing import Optional, Dict, Any, List
 
 
 DIR_PATH = os.getcwd()
@@ -115,19 +116,32 @@ def portfolio_stats_view(tr_no: str):
 
 
 @app_user.get("/monthlyreturns")
-def monthly_returns(tr_no: str):
+def monthly_returns(
+    tr_no: str, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100)
+):
     """
-    Retrieves the monthly returns data for a specific user by their user ID.
+    Retrieves the paginated monthly returns data for a specific user by their user ID.
 
     Args:
-    user_id: The unique identifier of the user.
+    tr_no: The unique identifier of the user.
+    page: The page number (default: 1).
+    page_size: The number of items per page (default: 20, max: 100).
 
     Returns:
-    dict: The monthly returns data.
+    dict: The paginated monthly returns data.
     """
     try:
-        monthly_data = app.monthly_returns_data(tr_no)
-        return json.loads(monthly_data.to_json(orient="records"))
+        monthly_data = app.monthly_returns_data(tr_no, page, page_size)
+        total_items = monthly_data["total_items"]
+        items = monthly_data["items"]
+
+        return {
+            "items": json.loads(items.to_json(orient="records")),
+            "total_items": total_items,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total_items + page_size - 1) // page_size,
+        }
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
@@ -135,19 +149,32 @@ def monthly_returns(tr_no: str):
 
 
 @app_user.get("/weeklycummulativereturns")
-def weekly_cummulative_returns(tr_no: str):
+def weekly_cummulative_returns(
+    tr_no: str, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100)
+):
     """
-    Retrieves the weekly cummulative returns data for a specific user by their user ID.
+    Retrieves the paginated weekly cummulative returns data for a specific user by their user ID.
 
     Args:
-    user_id: The unique identifier of the user.
+    tr_no: The unique identifier of the user.
+    page: The page number (default: 1).
+    page_size: The number of items per page (default: 20, max: 100).
 
     Returns:
-    dict: The weekly cummulative returns data.
+    dict: The paginated weekly cummulative returns data.
     """
     try:
-        weekly_data = app.weekly_cummulative_returns_data(tr_no)
-        return json.loads(weekly_data.to_json(orient="records"))
+        weekly_data = app.weekly_cummulative_returns_data(tr_no, page, page_size)
+        total_items = weekly_data["total_items"]
+        items = weekly_data["items"]
+
+        return {
+            "items": json.loads(items.to_json(orient="records")),
+            "total_items": total_items,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total_items + page_size - 1) // page_size,
+        }
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
@@ -155,20 +182,38 @@ def weekly_cummulative_returns(tr_no: str):
 
 
 @app_user.get("/individualstrategydata")
-def individual_strategy_performance(tr_no: str, strategy_name: str):
+def individual_strategy_performance(
+    tr_no: str,
+    strategy_name: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
     """
     Retrieves the individual strategy data for a specific user by their user ID and strategy name.
 
     Args:
-    user_id: The unique identifier of the user.
+    tr_no: The unique identifier of the user.
     strategy_name: The name of the strategy.
+    page: The page number (default: 1).
+    page_size: The number of items per page (default: 20, max: 100).
 
     Returns:
-    dict: The individual strategy data.
+    dict: The paginated individual strategy data.
     """
     try:
-        strategy_data = app.individual_strategy_data(tr_no, strategy_name)
-        return json.loads(strategy_data.to_json(orient="records"))
+        strategy_data = app.individual_strategy_data(
+            tr_no, strategy_name, page, page_size
+        )
+        total_items = strategy_data["total_items"]
+        items = strategy_data["items"]
+
+        return {
+            "items": items.to_dict("records"),  # Convert DataFrame to list of dicts
+            "total_items": int(total_items),  # Ensure this is a Python int
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total_items + page_size - 1) // page_size,
+        }
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
@@ -179,9 +224,9 @@ def individual_strategy_performance(tr_no: str, strategy_name: str):
 def equity_transactions(
     tr_no: str,
     page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1),
-    from_date: date = None,
-    to_date: date = None,
+    pagesize: int = Query(10, ge=1),
+    fromdate: Optional[date] = None,
+    todate: Optional[date] = None,
 ):
     """
     Retrieves the transactions data for a specific user by their user ID, optionally filtering by date and paginating the results.
@@ -189,26 +234,254 @@ def equity_transactions(
     Args:
         tr_no: The unique identifier of the user.
         page: The page number of results to return.
-        page_size: The number of items per page.
-        from_date: Start date for filtering transactions.(YYYY-MM-DD). Defaults to None.
-        to_date: End date for filtering transactions.(YYYY-MM-DD). Defaults to None.
+        pagesize: The number of items per page.
+        fromdate: Start date for filtering transactions (YYYY-MM-DD). Defaults to None.
+        todate: End date for filtering transactions (YYYY-MM-DD). Defaults to None.
 
     Returns:
-        dict: The paginated transactions data.
+        dict: A dictionary containing the paginated transactions data and the total number of results.
     """
     try:
         transactions_data = app.equity_broker_bank_transactions_data(
-            tr_no, from_date, to_date
+            tr_no, fromdate, todate
         )
-        # Implement pagination
-        start = (page - 1) * page_size
-        end = start + page_size
+        total_results = len(
+            transactions_data
+        )  # Calculate the total number of transactions
+        start = (page - 1) * pagesize
+        end = start + pagesize
         paginated_data = transactions_data[start:end]
-        return json.loads(paginated_data.to_json(orient="records"))
+
+        # Prepare the response data including total results
+        return {
+            "total_results": total_results,
+            "transactions": json.loads(paginated_data.to_json(orient="records")),
+        }
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app_user.put("/market-info-params")
+def update_market_info_params(
+    updated_market_info: schemas.MarketInfoParams = Body(
+        ..., description="Updated market info parameters"
+    )
+):
+    """
+    Update market info parameters.
+
+    This endpoint allows updating the market info parameters in the Firebase database.
+    It also logs the changes and sends a notification via Discord.
+
+    Args:
+        updated_market_info (Dict[str, Any]): A dictionary containing the updated market info parameters.
+
+    Returns:
+        dict: A message indicating successful update.
+
+    Raises:
+        HTTPException: If there's an error updating the database.
+    """
+    try:
+        app.update_market_info_params(updated_market_info)
+        return {"message": "Market info updated successfully!"}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error updating market info: {str(e)}"
+        )
+
+
+@app_user.get("/market-info-params")
+def get_market_info_params():
+    """
+    Fetch current market info parameters.
+
+    This endpoint retrieves the current market info parameters from the Firebase database.
+
+    Returns:
+        dict: The current market info parameters.
+
+    Raises:
+        HTTPException: If there's an error fetching from the database.
+    """
+    try:
+        return app.get_market_info_params()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching market info: {str(e)}"
+        )
+
+
+@app_user.put("/strategy-qty-amplifier")
+def update_strategy_qty_amplifier(
+    strategy: str = Body(..., description="Strategy name or 'all' for all strategies"),
+    amplifier: float = Body(..., description="New StrategyQtyAmplifier value"),
+):
+    """
+    Update StrategyQtyAmplifier for a specific strategy or all strategies.
+
+    Args:
+        strategy (str): The name of the strategy to update, or 'all' for all strategies.
+        amplifier (float): The new StrategyQtyAmplifier value.
+
+    Returns:
+        dict: A message indicating successful update.
+
+    Raises:
+        HTTPException: If there's an error updating the database.
+    """
+    try:
+        app.update_strategy_qty_amplifier(strategy, amplifier)
+        return {"message": "StrategyQtyAmplifier updated successfully!"}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error updating StrategyQtyAmplifier: {str(e)}"
+        )
+
+
+@app_user.get("/strategy-params/{strategy_name}")
+def get_strategy_params(
+    strategy_name: str = Path(..., description="Name of the strategy"),
+):
+    """
+    Fetch current parameters for a specific strategy.
+
+    This endpoint retrieves the current parameters for a given strategy from the Firebase database.
+
+    Args:
+        strategy_name (str): The name of the strategy to fetch.
+
+    Returns:
+        dict: The current parameters for the strategy.
+
+    Raises:
+        HTTPException: If there's an error fetching from the database or if the strategy is not found.
+    """
+    try:
+        return app.get_strategy_params(strategy_name)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching strategy parameters: {str(e)}"
+        )
+
+
+@app_user.put("/strategy-params/{strategy_name}/{section}")
+def modify_strategy_params(
+    strategy_name: str = Path(..., description="Name of the strategy"),
+    section: str = Path(
+        ..., description="Section of the strategy parameters to update"
+    ),
+    updated_params: Dict[str, Any] = Body(
+        ..., description="Updated parameters for the strategy section"
+    ),
+):
+    """
+    Modify parameters for a specific section of a strategy.
+
+    This endpoint allows updating the parameters of a specific section for a given strategy.
+    It also logs the changes and sends a notification via Discord.
+
+    Args:
+        strategy_name (str): The name of the strategy to update.
+        section (str): The section of the strategy parameters to update.
+        updated_params (Dict[str, Any]): A dictionary containing the updated parameters for the section.
+
+    Returns:
+        dict: A message indicating successful update.
+
+    Raises:
+        HTTPException: If there's an error updating the database or if the strategy or section is not found.
+    """
+    try:
+        app.modify_strategy_params(strategy_name, section, updated_params)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error updating strategy parameters: {str(e)}"
+        )
+
+
+@app_user.get("/user-strategy-params")
+def get_user_risk_params(
+    strategy: str = Query(..., description="The trading strategy to fetch"),
+    trader_numbers: Optional[List[str]] = Query(
+        None, description="List of trader numbers to fetch, or omit for all traders"
+    ),
+):
+    """
+    Fetch current strategy parameters for one or multiple users.
+
+    This endpoint retrieves the current strategy parameters including risk percentage,
+    and for PyStocks strategy, the sector and cap for one or multiple users.
+
+    Args:
+        strategy (str): The trading strategy to fetch.
+        trader_numbers (Optional[List[str]]): List of trader numbers to fetch, or omit for all traders.
+
+    Returns:
+        dict: A dictionary containing the current strategy parameters for the specified users.
+
+    Raises:
+        HTTPException: If there's an error fetching the data or if the input is invalid.
+    """
+    try:
+        return app.get_user_risk_params(strategy, trader_numbers)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching user strategy parameters: {str(e)}"
+        )
+
+
+@app_user.put("/user-strategy-params")
+def modify_user_strategy_params(
+    strategy: str = Query(..., description="The trading strategy to update"),
+    trader_numbers: List[str] = Query(
+        ..., description="List of trader numbers to update, or ['all'] for all traders"
+    ),
+    risk_percentage: float = Query(
+        ..., ge=0.0, le=10.0, description="Risk percentage to set"
+    ),
+    sector: Optional[str] = Query(None, description="Sector for PyStocks strategy"),
+    cap: Optional[str] = Query(None, description="Cap for PyStocks strategy"),
+):
+    """
+    Modify strategy parameters for one or multiple users.
+
+    This endpoint allows updating the risk percentage and, for PyStocks strategy,
+    the sector and cap for one or multiple users.
+
+    Args:
+        strategy (str): The trading strategy to update.
+        trader_numbers (List[str]): List of trader numbers to update, or ['all'] for all traders.
+        risk_percentage (float): Risk percentage to set (between 0.0 and 10.0).
+        sector (Optional[str]): Sector for PyStocks strategy.
+        cap (Optional[str]): Cap for PyStocks strategy.
+
+    Returns:
+        dict: A message indicating successful update.
+
+    Raises:
+        HTTPException: If there's an error updating the database or if the input is invalid.
+    """
+    try:
+        return app.update_user_risk_params(
+            strategy, trader_numbers, risk_percentage, sector, cap
+        )
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error updating user strategy parameters: {str(e)}"
+        )
 
 
 app_fastapi.include_router(app_user, prefix="/v1/user")

@@ -14,8 +14,14 @@ load_dotenv(ENV_PATH)
 # importing packages
 import User.UserApi.schemas as schemas
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    discord_admin_bot,
+)
 from User.UserApi.userapi_utils import (
     ACTIVE_STRATEGIES,
+    CLIENTS_COLLECTION,
+    MARKET_INFO_FB_COLLECTION,
+    STRATEGIES_FB_COLLECTION,
     get_next_trader_number,
     update_new_client_data_to_db,
     all_users_data,
@@ -24,6 +30,15 @@ from User.UserApi.userapi_utils import (
     get_weekly_cumulative_returns_data,
     get_individual_strategy_data,
     equity_get_broker_bank_transactions_data,
+    log_changes_via_webapp,
+)
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
+    fetch_collection_data_firebase,
+    update_collection,
+    update_fields_firebase,
+)
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+    fetch_users_for_strategies_from_firebase,
 )
 
 logger = LoggerSetup()
@@ -135,52 +150,56 @@ def get_portfolio_stats(tr_no: str):
     return result
 
 
-def monthly_returns_data(tr_no: str):
+def monthly_returns_data(tr_no: str, page: int, page_size: int):
     """
-    Retrieves the monthly returns data for a specific user by their user ID.
+    Retrieves the paginated monthly returns data for a specific user by their user ID.
 
     Args:
-    user_id: The unique identifier of the user.
+    tr_no: The unique identifier of the user.
+    page: The page number.
+    page_size: The number of items per page.
 
     Returns:
-    dict: The monthly returns data.
+    dict: The paginated monthly returns data.
     """
-    # Assume fetching user profile from a database
     USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
     users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
     user_stats = create_portfolio_stats(users_db_path)
-    return get_monthly_returns_data(user_stats)
+    return get_monthly_returns_data(user_stats, page, page_size)
 
 
-def weekly_cummulative_returns_data(tr_no: str):
+def weekly_cummulative_returns_data(tr_no: str, page: int, page_size: int):
     """
-    Retrieves the weekly cummulative returns data for a specific user by their user ID.
+    Retrieves the paginated weekly cummulative returns data for a specific user by their user ID.
 
     Args:
-    user_id: The unique identifier of the user.
+    tr_no: The unique identifier of the user.
+    page: The page number.
+    page_size: The number of items per page.
 
     Returns:
-    dict: The weekly cummulative returns data.
+    dict: The paginated weekly cummulative returns data.
     """
-    # Assume fetching user profile from a database
     USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
     users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
     user_stats = create_portfolio_stats(users_db_path)
-    return get_weekly_cumulative_returns_data(user_stats)
+    return get_weekly_cumulative_returns_data(user_stats, page, page_size)
 
 
-def individual_strategy_data(tr_no: str, strategy_name: str):
+def individual_strategy_data(tr_no: str, strategy_name: str, page: int, page_size: int):
     """
-    Retrieves the individual strategy data for a specific user by their user ID and strategy name.
+    Retrieves the paginated individual strategy data for a specific user by their user ID and strategy name.
 
     Args:
-    user_id: The unique identifier of the user.
+    tr_no: The unique identifier of the user.
     strategy_name: The name of the strategy.
+    page: The page number.
+    page_size: The number of items per page.
 
     Returns:
-    dict: The individual strategy data.
+    dict: The paginated individual strategy data.
     """
-    strategy_data = get_individual_strategy_data(tr_no, strategy_name)
+    strategy_data = get_individual_strategy_data(tr_no, strategy_name, page, page_size)
     return strategy_data
 
 
@@ -200,3 +219,284 @@ def equity_broker_bank_transactions_data(tr_no: str, from_date, to_date):
     )
 
     return transaction_data
+
+
+def update_market_info_params(updated_market_info):
+    """
+    Update market info parameters.
+
+    This function updates the market info parameters in the Firebase database.
+    It also logs the changes and sends a notification via Discord.
+
+    Args:
+    updated_market_info (dict): A dictionary containing the updated market info parameters.
+
+    Returns:
+    dict: A message indicating successful update.
+    """
+    # Update the database
+    update_collection(MARKET_INFO_FB_COLLECTION, updated_market_info)
+
+    # Log changes
+    log_changes_via_webapp(updated_market_info)
+
+    # Send Discord notification
+    message = f"Market info updated for {updated_market_info}"
+    discord_admin_bot(message)
+
+    return {"message": "Market info updated successfully!"}
+
+
+def get_market_info_params():
+    """
+    Fetch current market info parameters.
+
+    This function retrieves the current market info parameters from the Firebase database.
+
+    Returns:
+    dict: The current market info parameters.
+    """
+    market_info = fetch_collection_data_firebase(MARKET_INFO_FB_COLLECTION)
+    return market_info
+
+
+def update_strategy_qty_amplifier(strategy, amplifier):
+    """
+    Update StrategyQtyAmplifier for a specific strategy or all strategies.
+
+    This function updates the StrategyQtyAmplifier for a specific strategy or all strategies in the Firebase database.
+    It also logs the changes and sends a notification via Discord.
+
+    Args:
+    strategy (str): The name of the strategy to update, or 'all' for all strategies.
+    amplifier (float): The new StrategyQtyAmplifier value.
+
+    Returns:
+    dict: A message indicating successful update.
+    """
+    try:
+        active_strategies = ACTIVE_STRATEGIES
+
+        if strategy.lower() == "all":
+            for strat in active_strategies:
+                update_path = f"{strat}/MarketInfoParams/"
+                update_fields_firebase(
+                    STRATEGIES_FB_COLLECTION,
+                    update_path,
+                    {"StrategyQtyAmplifier": amplifier},
+                )
+            return {
+                "message": f"StrategyQtyAmplifier set to {amplifier} for all strategies."
+            }
+        else:
+            if strategy not in active_strategies:
+                raise HTTPException(
+                    status_code=404, detail=f"Strategy '{strategy}' not found."
+                )
+            update_path = f"{strategy}/MarketInfoParams/"
+            update_fields_firebase(
+                STRATEGIES_FB_COLLECTION,
+                update_path,
+                {"StrategyQtyAmplifier": amplifier},
+            )
+            return {
+                "message": f"StrategyQtyAmplifier set to {amplifier} for {strategy}."
+            }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error updating StrategyQtyAmplifier: {str(e)}"
+        )
+
+
+def modify_strategy_params(strategy_name, section, updated_params):
+    """
+    Modify parameters for a specific section of a strategy.
+
+    This function allows updating the parameters of a specific section for a given strategy.
+    It also logs the changes and sends a notification via Discord.
+
+    Args:
+        strategy_name (str): The name of the strategy to update.
+        section (str): The section of the strategy parameters to update.
+        updated_params (Dict[str, Any]): A dictionary containing the updated parameters for the section.
+
+    Returns:
+        dict: A message indicating successful update.
+
+    Raises:
+        HTTPException: If there's an error updating the database or if the strategy or section is not found.
+    """
+    # Fetch current strategy data
+    strategies = fetch_collection_data_firebase(STRATEGIES_FB_COLLECTION)
+
+    if strategy_name not in strategies:
+        raise HTTPException(
+            status_code=404, detail=f"Strategy '{strategy_name}' not found."
+        )
+
+    strategy_params = strategies[strategy_name]
+    if section not in strategy_params or section == "MarketInfoParams":
+        raise HTTPException(
+            status_code=404, detail=f"Section '{section}' not found or not editable."
+        )
+
+    # Update the database
+    update_fields_firebase(
+        STRATEGIES_FB_COLLECTION, strategy_name, {section: updated_params}
+    )
+
+    # Log changes
+    log_changes_via_webapp(updated_params, section_info=section)
+
+    # Send Discord notification
+    message = f"Params {updated_params} changed for {strategy_name} in {section}"
+    discord_admin_bot(message)
+
+    return {"message": f"{section} for {strategy_name} updated successfully!"}
+
+
+def get_strategy_params(strategy_name):
+    """
+    Fetch current parameters for a specific strategy.
+
+    This function retrieves the current parameters for a given strategy from the Firebase database.
+
+    Args:
+        strategy_name (str): The name of the strategy to fetch.
+
+    Returns:
+        dict: The current parameters for the strategy.
+
+    Raises:
+        HTTPException: If there's an error fetching from the database or if the strategy is not found.
+    """
+    strategies = fetch_collection_data_firebase(STRATEGIES_FB_COLLECTION)
+    if strategy_name not in strategies:
+        raise HTTPException(
+            status_code=404, detail=f"Strategy '{strategy_name}' not found."
+        )
+
+    strategy_params = strategies[strategy_name]
+    # Remove MarketInfoParams as it's not editable through this interface
+    strategy_params.pop("MarketInfoParams", None)
+    return strategy_params
+
+
+def get_user_risk_params(strategy, trader_numbers):
+    """
+    Fetch current risk percentage and sector/cap for a specific strategy and user.
+
+    This function retrieves the current risk percentage and sector/cap for a given strategy and user from the Firebase database.
+
+    Args:
+        strategy (str): The name of the strategy to fetch.
+        trader_numbers (Optional[List[str]]): List of trader numbers to fetch, or omit for all traders.
+
+    Returns:
+        dict: The current risk percentage and sector/cap for the strategy and user.
+
+    Raises:
+        HTTPException: If there's an error fetching from the database or if the strategy or user is not found.
+    """
+
+    active_strategies = ACTIVE_STRATEGIES
+    if strategy not in active_strategies:
+        raise HTTPException(status_code=400, detail=f"Invalid strategy: {strategy}")
+
+    strategy_active_users = fetch_users_for_strategies_from_firebase(strategy)
+    all_trader_numbers = [user["Tr_No"] for user in strategy_active_users]
+
+    if trader_numbers is None:
+        trader_numbers = all_trader_numbers
+    else:
+        invalid_traders = set(trader_numbers) - set(all_trader_numbers)
+        if invalid_traders:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid trader numbers: {', '.join(invalid_traders)}",
+            )
+
+    result = {}
+    for trader_number in trader_numbers:
+        user_data = fetch_collection_data_firebase(
+            CLIENTS_COLLECTION, document=trader_number
+        )
+        if (
+            user_data
+            and "Strategies" in user_data
+            and strategy in user_data["Strategies"]
+        ):
+            strategy_data = user_data["Strategies"][strategy]
+            result[trader_number] = {
+                "RiskPerTrade": strategy_data.get("RiskPerTrade", "N/A"),
+                "Sector": strategy_data.get("Sector", "N/A")
+                if strategy == "PyStocks"
+                else "N/A",
+                "Cap": strategy_data.get("Cap", "N/A")
+                if strategy == "PyStocks"
+                else "N/A",
+            }
+        else:
+            result[trader_number] = "No data available"
+
+    return result
+
+
+def update_user_risk_params(
+    strategy, trader_numbers, risk_percentage, sector=None, cap=None
+):
+    """
+    Update risk percentage and sector/cap for a specific strategy and user.
+
+    This function updates the risk percentage and sector/cap for a given strategy and user in the Firebase database.
+
+    Args:
+        strategy (str): The name of the strategy to update.
+        trader_numbers (List[str]): List of trader numbers to update, or ['all'] for all traders.
+        risk_percentage (float): Risk percentage to set (between 0.0 and 10.0).
+        sector (Optional[str]): Sector for PyStocks strategy.
+        cap (Optional[str]): Cap for PyStocks strategy.
+
+    Returns:
+        dict: A message indicating successful update.
+
+    Raises:
+        HTTPException: If there's an error updating the database or if the input is invalid.
+    """
+    active_strategies = ACTIVE_STRATEGIES
+    if strategy not in active_strategies:
+        raise HTTPException(status_code=400, detail=f"Invalid strategy: {strategy}")
+
+    strategy_active_users = fetch_users_for_strategies_from_firebase(strategy)
+    all_trader_numbers = [user["Tr_No"] for user in strategy_active_users]
+
+    if trader_numbers == ["all"]:
+        trader_numbers = all_trader_numbers
+    else:
+        invalid_traders = set(trader_numbers) - set(all_trader_numbers)
+        if invalid_traders:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid trader numbers: {', '.join(invalid_traders)}",
+            )
+
+    update_fields = {"RiskPerTrade": risk_percentage}
+    if strategy == "PyStocks":
+        if not sector or not cap:
+            raise HTTPException(
+                status_code=400,
+                detail="Sector and Cap are required for PyStocks strategy",
+            )
+        update_fields.update({"Sector": sector, "Cap": cap})
+
+    for trader_number in trader_numbers:
+        update_path = f"Strategies/{strategy}/"
+        update_fields_firebase(
+            CLIENTS_COLLECTION, trader_number, update_fields, update_path
+        )
+
+    message = f"Params {list(update_fields.keys())} changed for {strategy} for {trader_numbers}"
+    log_changes_via_webapp(update_fields, section_info=message)
+    discord_admin_bot(message)
+
+    return {"message": "User strategy parameters updated successfully!"}

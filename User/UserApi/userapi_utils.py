@@ -2,7 +2,8 @@ import pandas as pd
 import os, sys
 from dotenv import load_dotenv
 from babel.numbers import format_currency
-from datetime import date
+from datetime import date, datetime
+import csv
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -29,6 +30,9 @@ logger = LoggerSetup()
 ACTIVE_STRATEGIES = fetch_active_strategies_all_users()
 ADMIN_DB = os.getenv("FIREBASE_ADMIN_COLLECTION")
 CLIENTS_COLLECTION = os.getenv("FIREBASE_USER_COLLECTION")
+PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
+STRATEGIES_FB_COLLECTION = os.getenv("FIREBASE_STRATEGY_COLLECTION")
+MARKET_INFO_FB_COLLECTION = os.getenv("MARKET_INFO_FB_COLLECTION")
 
 
 def all_users_data():
@@ -62,6 +66,38 @@ def update_new_client_data_to_db(trader_number, user_dict):
     user_dict (dict): The user's data as a dictionary.
     """
     upload_new_client_data_to_firebase(trader_number, user_dict)
+
+
+def log_changes_via_webapp(updated_data, section_info=None):
+    """
+    The function `log_changes` logs updated data along with section information to a CSV file with date
+    and time stamp.
+
+    :param updated_data: The `updated_data` parameter is the data that has been updated and will be
+    logged in the CSV file. It should be provided as an argument when calling the `log_changes` function
+    :param section_info: Section_info is an optional parameter that can be passed to the log_changes
+    function. It is used to provide additional information about the section being updated in the log
+    entry. If section_info is provided, it will be included in the log entry under the "section_info"
+    column in the CSV log file
+    """
+    filename = PARAMS_UPDATE_LOG_CSV_PATH
+    headers = ["date", "updated_info", "section_info"]
+    date_str = datetime.now().strftime("%d%b%y %I:%M%p")  # Format: 23Feb24 9:43AM
+
+    with open(filename, mode="a", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
+
+        # Write headers if file is being created for the first time
+        if not os.path.isfile(filename):
+            writer.writeheader()
+
+        log_entry = {
+            "date": date_str,
+            "updated_info": str(updated_data),  # Corrected key to match header
+            "section_info": section_info if section_info else "",
+        }
+
+        writer.writerow(log_entry)
 
 
 def create_portfolio_stats(db_path):
@@ -110,145 +146,166 @@ def create_portfolio_stats(db_path):
         return None
 
 
-def get_monthly_returns_data(user_stats: pd.DataFrame) -> pd.DataFrame:
+def get_monthly_returns_data(
+    user_stats: pd.DataFrame, page: int, page_size: int
+) -> dict:
     """
-    Calculates the monthly returns for a given DataFrame of portfolio stats data.
+    Calculates the paginated monthly returns for a given DataFrame of portfolio stats data.
 
     Args:
     user_stats (pd.DataFrame): The DataFrame of portfolio stats data.
+    page: The page number.
+    page_size: The number of items per page.
 
     Returns:
-    pd.DataFrame: The DataFrame of monthly returns.
-    with the columns 'Year', 'Month', and 'Monthly Absolute Returns (Rs.)'.
+    dict: A dictionary containing the paginated DataFrame of monthly returns and the total number of items.
     """
     try:
-        # Convert 'exit_time' to datetime
         user_stats["exit_time"] = pd.to_datetime(
             user_stats["exit_time"], errors="coerce"
         )
-        user_stats = user_stats.dropna(
-            subset=["exit_time"]
-        )  # Drop rows where 'exit_time' could not be converted
+        user_stats = user_stats.dropna(subset=["exit_time"])
 
-        # Extract 'Year' and 'Month'
         user_stats["Year"] = user_stats["exit_time"].dt.year
         user_stats["Month"] = user_stats["exit_time"].dt.strftime("%B")
 
-        # Ensure 'net_pnl' is in standard float format
-        user_stats["net_pnl"] = user_stats["net_pnl"].astype(float)
+        monthly_absolute_returns = (
+            user_stats.groupby(["Year", "Month"])["net_pnl"]
+            .sum()
+            .reset_index()
+            .rename(columns={"net_pnl": "Monthly Absolute Returns (Rs.)"})
+        )
 
-        # Group by 'Year' and 'Month' and sum 'net_pnl'
-        monthly_absolute_returns = user_stats.groupby(
-            ["Year", "Month"], as_index=False
-        )["net_pnl"].sum()
-
-        # Rename columns for clarity
-        monthly_absolute_returns.columns = [
-            "Year",
-            "Month",
-            "Monthly Absolute Returns (Rs.)",
-        ]
-
-        # Apply currency formatting using Babel
         monthly_absolute_returns[
             "Monthly Absolute Returns (Rs.)"
         ] = monthly_absolute_returns["Monthly Absolute Returns (Rs.)"].apply(
             lambda x: format_currency(x, "INR", locale="en_IN")
         )
 
-        logger.debug(f"Calculated monthly returns:\n{monthly_absolute_returns}")
+        # Sort the DataFrame by Year and Month
+        month_order = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ]
+        monthly_absolute_returns["Month"] = pd.Categorical(
+            monthly_absolute_returns["Month"], categories=month_order, ordered=True
+        )
+        monthly_absolute_returns = monthly_absolute_returns.sort_values(
+            ["Year", "Month"], ascending=[False, False]
+        )
 
-        return monthly_absolute_returns
+        # Calculate total number of items
+        total_items = len(monthly_absolute_returns)
+
+        # Apply pagination
+        start_index = (page - 1) * page_size
+        end_index = start_index + page_size
+        paginated_data = monthly_absolute_returns.iloc[start_index:end_index]
+
+        return {"items": paginated_data, "total_items": total_items}
 
     except Exception as e:
         logger.error(f"Error calculating monthly returns: {e}")
-        return pd.DataFrame(columns=["Year", "Month", "Monthly Absolute Returns (Rs.)"])
+        return {
+            "items": pd.DataFrame(
+                columns=["Year", "Month", "Monthly Absolute Returns (Rs.)"]
+            ),
+            "total_items": 0,
+        }
 
 
-def get_weekly_cumulative_returns_data(user_stats: pd.DataFrame) -> pd.DataFrame:
+def get_weekly_cumulative_returns_data(
+    user_stats: pd.DataFrame, page: int, page_size: int
+) -> dict:
     """
-    Calculates the weekly cumulative returns for a given DataFrame of portfolio stats data.
+    Calculates the paginated weekly cumulative returns for a given DataFrame of portfolio stats data.
 
     Args:
-    portfolio_stats_data (pd.DataFrame): The DataFrame of portfolio stats data.
+    user_stats (pd.DataFrame): The DataFrame of portfolio stats data.
+    page: The page number.
+    page_size: The number of items per page.
 
     Returns:
-    pd.DataFrame: The DataFrame of weekly cumulative returns.
-    with the columns 'Week_Ending_Date', 'Weekly Absolute Returns' and 'Cumulative Absolute Returns (Rs.)'
+    dict: A dictionary containing the paginated DataFrame of weekly cumulative returns and the total number of items.
     """
     try:
         user_stats["Date"] = pd.to_datetime(user_stats["exit_time"])
         user_stats["Year"] = user_stats["Date"].dt.year
         user_stats["Month"] = user_stats["Date"].dt.month
-        # Calculate week ending (Saturday) date correctly and remove the time component
         user_stats["Week_Ending_Date"] = (
             user_stats["Date"]
             + pd.to_timedelta((5 - user_stats["Date"].dt.weekday) % 7, unit="d")
-        ).dt.normalize()  # This removes the time part, normalizing to midnight
+        ).dt.normalize()
 
-        # Group by Week_Ending_Date and sum net_pnl for each group
         weekly_absolute_returns = (
             user_stats.groupby("Week_Ending_Date")
             .agg(Weekly_Absolute_Returns=pd.NamedAgg(column="net_pnl", aggfunc="sum"))
             .reset_index()
         )
 
-        # Calculate cumulative returns
         weekly_absolute_returns[
             "Cumulative Absolute Returns (Rs.)"
         ] = weekly_absolute_returns["Weekly_Absolute_Returns"].cumsum()
-
-        # Sort by Week_Ending_Date for clarity
         weekly_absolute_returns = weekly_absolute_returns.sort_values(
             by="Week_Ending_Date"
         )
-
-        # Format Week_Ending_Date for readability
         weekly_absolute_returns["Week_Ending_Date"] = weekly_absolute_returns[
             "Week_Ending_Date"
         ].dt.strftime("%d%b%y")
-
-        # Rename columns appropriately
         weekly_absolute_returns.rename(
             columns={"Weekly_Absolute_Returns": "Weekly Absolute Returns (Rs.)"},
             inplace=True,
         )
 
-        # Apply Indian currency formatting to the 'Weekly Absolute Returns (Rs.)'
         weekly_absolute_returns[
             "Weekly Absolute Returns (Rs.)"
         ] = weekly_absolute_returns["Weekly Absolute Returns (Rs.)"].apply(
             lambda x: format_currency(x, "INR", locale="en_IN")
         )
-
-        # Apply Indian currency formatting to the 'Cumulative Absolute Returns (Rs.)'
         weekly_absolute_returns[
             "Cumulative Absolute Returns (Rs.)"
         ] = weekly_absolute_returns["Cumulative Absolute Returns (Rs.)"].apply(
             lambda x: format_currency(x, "INR", locale="en_IN")
         )
 
-        return weekly_absolute_returns
+        # Calculate total number of items
+        total_items = len(weekly_absolute_returns)
+
+        # Apply pagination
+        start_index = (page - 1) * page_size
+        end_index = start_index + page_size
+        paginated_data = weekly_absolute_returns.iloc[start_index:end_index]
+
+        return {"items": paginated_data, "total_items": total_items}
+
     except Exception as e:
         logger.error(f"Error calculating weekly returns: {e}")
-        return pd.DataFrame(
-            columns=["Week_Ending_Date", "Weekly Absolute Returns (Rs.)"]
-        )
+        return {
+            "items": pd.DataFrame(
+                columns=[
+                    "Week_Ending_Date",
+                    "Weekly Absolute Returns (Rs.)",
+                    "Cumulative Absolute Returns (Rs.)",
+                ]
+            ),
+            "total_items": 0,
+        }
 
 
-def get_individual_strategy_data(tr_no: str, strategy_name: str):
-    """
-    Retrieves the individual strategy data for a specific user by their user ID and strategy name.
-
-    Args:
-    user_id: The unique identifier of the user.
-    strategy_name: The name of the strategy.
-
-    Returns:
-    dict: The individual strategy data.
-    """
+def get_individual_strategy_data(
+    tr_no: str, strategy_name: str, page: int, page_size: int
+):
     try:
-        # Assume fetching user profile from a database
         USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
         users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
 
@@ -256,17 +313,37 @@ def get_individual_strategy_data(tr_no: str, strategy_name: str):
         strategies = ACTIVE_STRATEGIES + ["Holdings"]
 
         if strategy_name in strategies:
-            data = pd.read_sql_query(f"SELECT * FROM {strategy_name}", conn)
+            # Calculate the offset
+            offset = (page - 1) * page_size
+
+            # Get the total count of items
+            total_items = pd.read_sql_query(
+                f"SELECT COUNT(*) as count FROM {strategy_name}", conn
+            ).iloc[0]["count"]
+
+            # Fetch paginated data
+            data = pd.read_sql_query(
+                f"SELECT * FROM {strategy_name} LIMIT {page_size} OFFSET {offset}", conn
+            )
+
             if strategy_name == "Holdings":
-                return data
+                # Convert any potential NumPy types to Python native types
+                data = data.astype(object).where(pd.notnull(data), None)
             else:
                 data["exit_time"] = pd.to_datetime(data["exit_time"])
-                return data
+                # Convert any potential NumPy types to Python native types
+                data = data.astype(object).where(pd.notnull(data), None)
+
+            return {
+                "items": data,
+                "total_items": int(total_items),  # Ensure this is a Python int
+            }
         else:
             logger.error(f"Strategy not found: {strategy_name}")
             return None
     except Exception as e:
         logger.error(f"Error calculating individual strategy data: {e}")
+        raise
 
 
 def get_base_capital(tr_no: str):
