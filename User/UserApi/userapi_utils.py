@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from babel.numbers import format_currency
 from datetime import date, datetime
 import csv
+import numpy as np
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -344,6 +345,142 @@ def get_individual_strategy_data(
     except Exception as e:
         logger.error(f"Error calculating individual strategy data: {e}")
         raise
+
+
+def strategy_graph_data(tr_no: str, strategy_name: str):
+    """
+    Retrieves the strategy graph data for a specific user by their user ID and strategy name.
+
+    Args:
+        tr_no (str): The user's ID.
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        dict: The strategy graph data for the specified user and strategy.
+    """
+    try:
+        USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
+        users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
+
+        conn = get_db_connection(users_db_path)
+        strategies = ACTIVE_STRATEGIES + ["Holdings"]
+
+        if strategy_name in strategies:
+            # Fetch only exit_time and pnl
+            data = pd.read_sql_query(
+                f"SELECT exit_time, pnl FROM {strategy_name}", conn
+            )
+
+            data["exit_time"] = pd.to_datetime(data["exit_time"])
+
+            # Convert DataFrame to list of dictionaries
+            combined_data = data.to_dict("records")
+
+            # Convert any numpy types to Python native types
+            for item in combined_data:
+                item["exit_time"] = item["exit_time"].isoformat()
+                if isinstance(item["pnl"], np.number):
+                    item["pnl"] = float(item["pnl"])
+
+            return {"items": combined_data}
+        else:
+            logger.error(f"Strategy not found: {strategy_name}")
+            return None
+    except Exception as e:
+        logger.error(f"Error retrieving strategy graph data: {e}")
+        raise
+
+
+def calculate_strategy_statistics(df: pd.DataFrame, is_signals: bool):
+    """
+    Calculate strategy statistics from a DataFrame.
+
+    Args:
+    df: DataFrame containing strategy data.
+    is_signals: Boolean indicating if the strategy is a signals strategy.
+
+    Returns:
+    Dict: Calculated strategy statistics.
+    """
+    column_for_calc = "trade_points" if is_signals else "net_pnl"
+
+    # Basic calculations
+    positive_trades = df[df[column_for_calc] > 0]
+    negative_trades = df[df[column_for_calc] < 0]
+
+    net_trade_points = df[column_for_calc].sum()
+    num_trades = len(df)
+    num_wins = len(positive_trades)
+    num_losses = len(negative_trades)
+
+    # Consecutive wins and losses
+    df["win"] = df[column_for_calc] > 0
+    df["group"] = (df["win"] != df["win"].shift()).cumsum()
+    consecutive_wins = (
+        df[df["win"]].groupby("group").size().max() if num_wins > 0 else 0
+    )
+    consecutive_losses = (
+        df[~df["win"]].groupby("group").size().max() if num_losses > 0 else 0
+    )
+
+    # Advanced calculations
+    avg_profit_loss = df[column_for_calc].mean()
+    df["profit_percent"] = df[column_for_calc] / df["entry_price"] * 100
+    avg_profit_loss_percent = df["profit_percent"].mean()
+    max_trade_drawdown = df[column_for_calc].min()
+    cumulative_net_pnl = df[column_for_calc].cumsum()
+    max_system_drawdown = cumulative_net_pnl.min()
+
+    recovery_factor = (
+        net_trade_points / -max_system_drawdown if max_system_drawdown < 0 else 0
+    )
+
+    annual_return = 0.1  # Assume 10% annual return or replace with actual calculation
+    max_dd_percent = max_system_drawdown / df["entry_price"].iloc[0] * 100
+    car_maxdd = annual_return / -max_dd_percent if max_dd_percent < 0 else 0
+
+    std_error = df[column_for_calc].std()
+    risk_reward_ratio = avg_profit_loss / std_error if std_error != 0 else 0
+
+    drawdown = cumulative_net_pnl.cummin() - cumulative_net_pnl
+    ulcer_index = np.sqrt(np.mean(drawdown**2))
+
+    statistics = {
+        "Net Trade Points": net_trade_points,
+        "No of Trades": num_trades,
+        "No of Wins": num_wins,
+        "No of Losses": num_losses,
+        "No of Cons Win": consecutive_wins,
+        "No of Cons Loss": consecutive_losses,
+        "Avg. Profit/Loss (Expectancy Rs)": avg_profit_loss,
+        "Avg. Profit/Loss % (Expectancy %)": avg_profit_loss_percent,
+        "Max. Trade Drawdown": max_trade_drawdown,
+        "Max. System Drawdown": max_system_drawdown,
+        "Recovery Factor": recovery_factor,
+        "CAR/MaxDD": car_maxdd,
+        "Standard Error": std_error,
+        "Risk-Reward Ratio": risk_reward_ratio,
+        "Ulcer Index": ulcer_index,
+    }
+
+    # Convert numpy types to Python native types
+    formatted_stats = {}
+    for key, value in statistics.items():
+        if isinstance(value, np.integer):
+            formatted_stats[key] = int(value)
+        elif isinstance(value, np.floating):
+            formatted_stats[key] = float(value)
+        elif isinstance(value, np.ndarray):
+            formatted_stats[key] = value.tolist()
+        else:
+            formatted_stats[key] = value
+
+    # Format floats to 2 decimal places
+    for key, value in formatted_stats.items():
+        if isinstance(value, float):
+            formatted_stats[key] = f"{value:.2f}"
+
+    return formatted_stats
 
 
 def get_base_capital(tr_no: str):

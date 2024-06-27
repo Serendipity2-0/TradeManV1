@@ -220,6 +220,53 @@ def individual_strategy_performance(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app_user.get("/strategygraphdata")
+def strategy_graph_data(tr_no: str, strategy_name: str):
+    """
+    Retrieves the strategy graph data for a specific user by their user ID and strategy name.
+
+    Args:
+        tr_no (str): The user's ID.
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        dict: The strategy graph data for the specified user and strategy.
+    """
+    try:
+        graph_data = app.strategy_graph_data(tr_no, strategy_name)
+        return graph_data
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app_user.get("/strategy_statistics")
+def get_strategy_statistics(tr_no: str, strategy_name: str):
+    """
+    Endpoint to retrieve strategy statistics for a specific user's strategy.
+
+    Args:
+    tr_no: The unique identifier of the user.
+    strategy_name: The name of the strategy.
+
+    Returns:
+    dict: The calculated strategy statistics.
+    """
+    try:
+        statistics = app.strategy_statistics(tr_no, strategy_name)
+
+        if statistics is None:
+            raise HTTPException(status_code=404, detail="Strategy not found")
+
+        return statistics
+
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app_user.get("/equitytransactions")
 def equity_transactions(
     tr_no: str,
@@ -408,7 +455,7 @@ def modify_strategy_params(
         )
 
 
-@app_user.get("/user-strategy-params")
+@app_user.get("/user-strategy-risk-params")
 def get_user_risk_params(
     strategy: str = Query(..., description="The trading strategy to fetch"),
     trader_numbers: Optional[List[str]] = Query(
@@ -441,7 +488,7 @@ def get_user_risk_params(
         )
 
 
-@app_user.put("/user-strategy-params")
+@app_user.put("/user-strategy-risk-params")
 def modify_user_strategy_params(
     strategy: str = Query(..., description="The trading strategy to update"),
     trader_numbers: List[str] = Query(

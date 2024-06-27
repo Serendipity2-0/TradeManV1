@@ -2,7 +2,7 @@ import os, sys
 from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
-import json
+from typing import Dict, Any
 from fastapi import HTTPException
 
 DIR_PATH = os.getcwd()
@@ -30,6 +30,8 @@ from User.UserApi.userapi_utils import (
     get_weekly_cumulative_returns_data,
     get_individual_strategy_data,
     equity_get_broker_bank_transactions_data,
+    strategy_graph_data,
+    calculate_strategy_statistics,
     log_changes_via_webapp,
 )
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
@@ -201,6 +203,50 @@ def individual_strategy_data(tr_no: str, strategy_name: str, page: int, page_siz
     """
     strategy_data = get_individual_strategy_data(tr_no, strategy_name, page, page_size)
     return strategy_data
+
+
+def graph_data(tr_no: str, strategy_name: str):
+    """
+    Retrieves the strategy graph data for a specific user by their user ID and strategy name.
+
+    Args:
+        tr_no (str): The user's ID.
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        dict: The strategy graph data for the specified user and strategy.
+    """
+    graph_data = strategy_graph_data(tr_no, strategy_name)
+    return graph_data
+
+
+def strategy_statistics(tr_no: str, strategy_name: str) -> Dict[str, Any]:
+    """
+    Retrieves and calculates strategy statistics for a specific user's strategy.
+
+    Args:
+    tr_no: The unique identifier of the user.
+    strategy_name: The name of the strategy.
+
+    Returns:
+    Dict: The calculated strategy statistics.
+    """
+    try:
+        page = 1
+        page_size = 1000000000
+        data = get_individual_strategy_data(tr_no, strategy_name, page, page_size)
+
+        if data is None or data.get("items") is None:
+            return None
+
+        df = data["items"]
+        is_signals = strategy_name != "Holdings"
+
+        return calculate_strategy_statistics(df, is_signals)
+
+    except Exception as e:
+        # Log the error here if needed
+        raise e
 
 
 def equity_broker_bank_transactions_data(tr_no: str, from_date, to_date):
