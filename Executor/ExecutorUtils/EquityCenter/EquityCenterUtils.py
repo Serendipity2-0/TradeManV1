@@ -346,7 +346,6 @@ def store_stock_data_sqldb():
         db_path = os.getenv("equity_stock_data_db_path")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-
         for stock in stock_symbols:
             stock_data_daily = get_stock_data(stock, period="1y", duration="1d")
             stock_data_weekly = get_stock_data(stock, period="2y", duration="1wk")
@@ -553,6 +552,7 @@ def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df, ratio_df, combo_
                 "DailyMA": 0,
                 "DailyLower_band": 0,
                 "WeeklyMA": 0,
+                "AthLtpRatio":0,
                 "WeeklyLower_band": 0,
                 "Market Cap": 0,
                 "P/E Ratio": 0,
@@ -578,7 +578,7 @@ def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df, ratio_df, combo_
         return pd.DataFrame()
 
 
-def update_todaystocks_db(combined_df):
+def update_todaystocks_db(momentum_stocks_df,mean_reversion_stocks_df,ema_bb_confluence_stocks_df,ratio_stocks_df,combo_stocks_df):
     """
     Stores the combined DataFrame to a SQL database.
 
@@ -587,12 +587,21 @@ def update_todaystocks_db(combined_df):
                                  strategies.
     """
     try:
+        
+        merged_df = merge_dataframes(
+        momentum_df=momentum_stocks_df,
+        mean_reversion_df=mean_reversion_stocks_df,
+        ema_bb_df=ema_bb_confluence_stocks_df,
+        ratio_df=ratio_stocks_df,
+        combo_df=combo_stocks_df,
+    )
+
         # Connect to the TodayStocks.db database (create it if it doesn't exist)
         db_path = os.getenv("today_stock_data_db_path")
         conn = sqlite3.connect(db_path)
 
         # Write the DataFrame to a table in the SQL database
-        combined_df.to_sql("CombinedStocks", conn, if_exists="replace", index=False)
+        merged_df.to_sql("CombinedStocks", conn, if_exists="replace", index=False)
 
         # Commit and close the connection
         conn.commit()

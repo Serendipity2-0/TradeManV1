@@ -14,6 +14,7 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     indicator_rsi,
     indicator_macd,
     check_if_above_50ema,
+    read_stock_data_from_db
 )
 
 logger = LoggerSetup()
@@ -354,6 +355,9 @@ def perform_momentum_strategy(stock_data_dict):
                 daily_above_50_ema = latest_daily_data["Above_50_EMA"]
                 daily_macd = macd.iloc[-1]
                 daily_signal_line = signal_line.iloc[-1]
+                all_time_high = stock_data_daily["High"].max()
+                last_traded_price = stock_data_daily["Close"].iloc[-1]
+                ratio_ATH_LTP = all_time_high / last_traded_price
 
                 # Append to results
                 results.append(
@@ -372,6 +376,7 @@ def perform_momentum_strategy(stock_data_dict):
                         "DailyAbove_50_EMA": daily_above_50_ema,
                         "DailyMACD": daily_macd,
                         "DailySignal_Line": daily_signal_line,
+                        "AthLtpRatio": ratio_ATH_LTP,
                         "Short_Momentum": 1,
                     }
                 )
@@ -393,6 +398,7 @@ def perform_momentum_strategy(stock_data_dict):
                         "DailyAbove_50_EMA": latest_daily_data["Above_50_EMA"],
                         "DailyMACD": macd.iloc[-1],
                         "DailySignal_Line": signal_line.iloc[-1],
+                        "AthLtpRatio": ratio_ATH_LTP,
                         "Short_Momentum": 0,
                     }
                 )
@@ -415,8 +421,17 @@ def perform_momentum_strategy(stock_data_dict):
         "DailyAbove_50_EMA",
         "DailyMACD",
         "DailySignal_Line",
+        "AthLtpRatio",
         "Short_Momentum",
     ]
     results_df = pd.DataFrame(results, columns=columns)
 
     return results_df
+
+def get_shortterm_stocks_df():
+    db_path = os.getenv("equity_stock_data_db_path")
+    stock_data_dict = read_stock_data_from_db(db_path)
+    momentum_stocks_df = perform_momentum_strategy(stock_data_dict)
+    mean_reversion_stocks_df = perform_mean_reversion_strategy(stock_data_dict)
+    ema_bb_confluence_stocks_df = perform_EmaBB_Confluence_strategy(stock_data_dict)
+    return momentum_stocks_df,mean_reversion_stocks_df,ema_bb_confluence_stocks_df
