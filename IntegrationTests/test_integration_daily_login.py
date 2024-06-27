@@ -5,7 +5,6 @@ import os
 from dotenv import load_dotenv
 import sys
 
-
 # Set up paths and environment
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -19,8 +18,22 @@ DailyLogin = importlib.import_module(
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import all_broker_login
 
-# Mock data for testing
+# Modified mock data for testing
 mock_active_users = [
+    {
+        "Broker": {
+            "BrokerName": "AliceBlue",
+            "BrokerUsername": "XX0444",
+            "BrokerPassword": "SecurePass123",
+            "ApiKey": "7a1ep6vssvnmo78i",
+            "ApiSecret": "fmv3rsuod6peownuedcbv0g1hzr7lmcy",
+            "TotpAccess": "4HN3ENVF36GZREFJJWLR7DTUJXCPYTCJ",
+            "SessionId": "6j78lzQRT5fwWYBhqvk4tf8vbIj8ImHk",
+        },
+        "Active": True,
+        "Tr_No": "Tr01",
+        "Profile": {"Name": "Jane Smith"},
+    },
     {
         "Broker": {
             "BrokerName": "Zerodha",
@@ -37,20 +50,6 @@ mock_active_users = [
     },
     {
         "Broker": {
-            "BrokerName": "AliceBlue",
-            "BrokerUsername": "XX0444",
-            "BrokerPassword": "SecurePass123",
-            "ApiKey": "7a1ep6vssvnmo78i",
-            "ApiSecret": "fmv3rsuod6peownuedcbv0g1hzr7lmcy",
-            "TotpAccess": "4HN3ENVF36GZREFJJWLR7DTUJXCPYTCJ",
-            "SessionId": "6j78lzQRT5fwWYBhqvk4tf8vbIj8ImHk",
-        },
-        "Active": False,
-        "Tr_No": "Tr01",
-        "Profile": {"Name": "Jane Smith"},
-    },
-    {
-        "Broker": {
             "BrokerName": "Firstock",
             "BrokerUsername": "ZZ0555",
             "BrokerPassword": "TopSecret456",
@@ -59,7 +58,7 @@ mock_active_users = [
             "BrokerVendorCode": "VENDOR123",
             "SessionId": "7k89mzSRU6gxXZCiraw5ug9wcJj9JmJl",
         },
-        "Active": True,
+        "Active": False,
         "Tr_No": "Tr02",
         "Profile": {"Name": "Alice Johnson"},
     },
@@ -100,8 +99,11 @@ class TestIntegration(unittest.TestCase):
         mock_alice_login,
         mock_fetch_users,
     ):
+        # Filter active users from mock data
+        active_users = [user for user in mock_active_users if user["Active"]]
+
         # Set up mock return values
-        mock_fetch_users.return_value = mock_active_users
+        mock_fetch_users.return_value = active_users
         mock_kite_login.return_value = "mock_kite_session_id"
         mock_alice_login.return_value = "mock_alice_session_id"
         mock_firstock_login.return_value = "mock_firstock_session_id"
@@ -110,26 +112,26 @@ class TestIntegration(unittest.TestCase):
         mock_logger_instance = MagicMock()
         mock_logger.return_value = mock_logger_instance
 
+        # Add debug statement to ensure patching
+        print(f"Mock fetch users return value: {mock_fetch_users.return_value}")
+
         # Run the main function
         DailyLogin.main()
 
         # Assertions to check that each function was called correctly
         mock_fetch_users.assert_called_once()
-        mock_kite_login.assert_called_once_with(mock_active_users[0]["Broker"])
-        mock_alice_login.assert_called_once_with(mock_active_users[1]["Broker"])
-        mock_firstock_login.assert_called_once_with(mock_active_users[2]["Broker"])
+
+        broker_login_functions = {
+            "AliceBlue": mock_alice_login,
+            "Zerodha": mock_kite_login,
+            "Firstock": mock_firstock_login,
+        }
+
+        for user in active_users:
+            broker_name = user["Broker"]["BrokerName"]
+            broker_login_functions[broker_name].assert_called_once_with(user["Broker"])
+
         mock_discord.assert_not_called()  # No discord notification in this flow
-
-        # Verify logging was done correctly
-
-        print(f"Today's date: {len(mock_active_users)}")
-        print(
-            f"Fetching users from {os.getenv('CLIENTS_USER_FB_DB')} and {os.getenv('STRATEGY_FB_DB')} collections."
-        )
-        print(f"Total active users today: {len(mock_active_users)}")
-        print(
-            f"Active user: {mock_active_users[0]['Broker']['BrokerName']}: {mock_active_users[0]['Profile']['Name']}"
-        )
 
     @patch(
         "Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login.login_in_aliceblue"
@@ -166,26 +168,26 @@ class TestIntegration(unittest.TestCase):
 
         # Update expected session IDs for active users
         expected_users = mock_active_users[:]
-        expected_users[0]["Broker"]["SessionId"] = "mock_kite_session_id"
-        expected_users[1]["Broker"]["SessionId"] = "mock_alice_session_id"
+        expected_users[0]["Broker"]["SessionId"] = "mock_alice_session_id"
+        expected_users[1]["Broker"]["SessionId"] = "mock_kite_session_id"
         expected_users[2]["Broker"]["SessionId"] = "mock_firstock_session_id"
 
         # Assertions
-        mock_kite_login.assert_called_once_with(mock_active_users[0]["Broker"])
-        mock_alice_login.assert_called_once_with(mock_active_users[1]["Broker"])
+        mock_alice_login.assert_called_once_with(mock_active_users[0]["Broker"])
+        mock_kite_login.assert_called_once_with(mock_active_users[1]["Broker"])
         mock_firstock_login.assert_called_once_with(mock_active_users[2]["Broker"])
 
         # Check that firebase_utils.update_fields_firebase was called with correct parameters
         mock_update_firebase.assert_any_call(
             "mock_trademan_clients",
-            "Tr00",
-            {"SessionId": "mock_kite_session_id"},
+            "Tr01",
+            {"SessionId": "mock_alice_session_id"},
             "Broker",
         )
         mock_update_firebase.assert_any_call(
             "mock_trademan_clients",
-            "Tr01",
-            {"SessionId": "mock_alice_session_id"},
+            "Tr00",
+            {"SessionId": "mock_kite_session_id"},
             "Broker",
         )
         mock_update_firebase.assert_any_call(
@@ -197,12 +199,6 @@ class TestIntegration(unittest.TestCase):
 
         # Verify that session IDs are updated
         self.assertEqual(updated_users, expected_users)
-
-        # Verify logging was done correctly
-        print(f"Total active users today: {len(mock_active_users)}")
-        print(
-            f"Active user: {mock_active_users[0]['Broker']['BrokerName']}: {mock_active_users[0]['Profile']['Name']}"
-        )
 
 
 if __name__ == "__main__":
