@@ -314,6 +314,7 @@ async def firstock_place_orders_for_users(orders_to_place, users_credentials):
     product_type = calculate_product_type(product)
     if product == "CNC":
         product_type = "C"
+        segment_type = "NSE"
         trading_symbol = Instrument().get_full_format_trading_symbol_by_exchange_token(
             exchange_token, "NSE"
         )
