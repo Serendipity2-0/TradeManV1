@@ -38,6 +38,7 @@ app_fastapi.add_middleware(
 )
 
 app_user = APIRouter()
+app_admin = APIRouter()
 
 
 @app_fastapi.get("/swagger", include_in_schema=False)
@@ -77,7 +78,7 @@ def register_user(user_detail: schemas.UserDetails):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app_user.get("/profilepage")
+@app_user.get("/profile-page")
 def profile_page(tr_no: str):
     """
     Retrieves the profile page for a specific user by their user ID.
@@ -96,7 +97,7 @@ def profile_page(tr_no: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/portfoliostatsview")
+@app_user.get("/portfolio-stats-view")
 def portfolio_stats_view(tr_no: str):
     """
     Retrieves the portfolio stats view for a specific user by their user ID.
@@ -115,7 +116,7 @@ def portfolio_stats_view(tr_no: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/monthlyreturns")
+@app_user.get("/monthly-returns")
 def monthly_returns(
     tr_no: str, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100)
 ):
@@ -148,7 +149,7 @@ def monthly_returns(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/weeklycummulativereturns")
+@app_user.get("/weekly-cummulative-returns")
 def weekly_cummulative_returns(
     tr_no: str, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100)
 ):
@@ -181,7 +182,7 @@ def weekly_cummulative_returns(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/individualstrategydata")
+@app_user.get("/individual-strategy-data")
 def individual_strategy_performance(
     tr_no: str,
     strategy_name: str,
@@ -220,7 +221,7 @@ def individual_strategy_performance(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/strategygraphdata")
+@app_user.get("/strategy-graph-data")
 def strategy_graph_data(tr_no: str, strategy_name: str):
     """
     Retrieves the strategy graph data for a specific user by their user ID and strategy name.
@@ -241,7 +242,7 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/strategy_statistics")
+@app_user.get("/strategy-statistics")
 def get_strategy_statistics(tr_no: str, strategy_name: str):
     """
     Endpoint to retrieve strategy statistics for a specific user's strategy.
@@ -267,9 +268,10 @@ def get_strategy_statistics(tr_no: str, strategy_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/equitytransactions")
-def equity_transactions(
+@app_user.get("/user-broker-transactions")
+def user_broker_transactions(
     tr_no: str,
+    mode: str,
     page: int = Query(1, ge=1),
     pagesize: int = Query(10, ge=1),
     fromdate: Optional[date] = None,
@@ -280,6 +282,7 @@ def equity_transactions(
 
     Args:
         tr_no: The unique identifier of the user.
+        mode: The mode of transactions to retrieve(Debt, Equity, Derivatives).
         page: The page number of results to return.
         pagesize: The number of items per page.
         fromdate: Start date for filtering transactions (YYYY-MM-DD). Defaults to None.
@@ -289,8 +292,8 @@ def equity_transactions(
         dict: A dictionary containing the paginated transactions data and the total number of results.
     """
     try:
-        transactions_data = app.equity_broker_bank_transactions_data(
-            tr_no, fromdate, todate
+        transactions_data = app.broker_bank_transactions_data(
+            tr_no, mode, fromdate, todate
         )
         total_results = len(
             transactions_data
@@ -310,84 +313,50 @@ def equity_transactions(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.put("/market-info-params")
-def update_market_info_params(
-    updated_market_info: schemas.MarketInfoParams = Body(
-        ..., description="Updated market info parameters"
-    )
-):
+@app_user.get("/users-strategy")
+def get_strategies_for_user(tr_no: str):
     """
-    Update market info parameters.
-
-    This endpoint allows updating the market info parameters in the Firebase database.
-    It also logs the changes and sends a notification via Discord.
+    Retrieves the users associated with a specific strategy.
 
     Args:
-        updated_market_info (Dict[str, Any]): A dictionary containing the updated market info parameters.
+        tr_no (str): The user's ID.
 
     Returns:
-        dict: A message indicating successful update.
-
-    Raises:
-        HTTPException: If there's an error updating the database.
-    """
-    try:
-        app.update_market_info_params(updated_market_info)
-        return {"message": "Market info updated successfully!"}
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error updating market info: {str(e)}"
-        )
-
-
-@app_user.get("/market-info-params")
-def get_market_info_params():
-    """
-    Fetch current market info parameters.
-
-    This endpoint retrieves the current market info parameters from the Firebase database.
-
-    Returns:
-        dict: The current market info parameters.
+        list: A list of strategy names associated with the user.
 
     Raises:
         HTTPException: If there's an error fetching from the database.
     """
     try:
-        return app.get_market_info_params()
+        return app.get_strategies_for_user(tr_no)
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error fetching market info: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.put("/strategy-qty-amplifier")
-def update_strategy_qty_amplifier(
-    strategy: str = Body(..., description="Strategy name or 'all' for all strategies"),
-    amplifier: float = Body(..., description="New StrategyQtyAmplifier value"),
-):
+@app_user.get("/users-holdings")
+def get_users_holdings(tr_no: str, mode: str):
     """
-    Update StrategyQtyAmplifier for a specific strategy or all strategies.
+    Retrieves the users' equity holdings.
 
     Args:
-        strategy (str): The name of the strategy to update, or 'all' for all strategies.
-        amplifier (float): The new StrategyQtyAmplifier value.
+        tr_no (str): The user's ID.
+        mode (str): The mode of holdings to retrieve.
 
     Returns:
-        dict: A message indicating successful update.
+        list: A list of equity holdings for the user.
 
     Raises:
-        HTTPException: If there's an error updating the database.
+        HTTPException: If there's an error fetching from the database.
     """
-    try:
-        app.update_strategy_qty_amplifier(strategy, amplifier)
-        return {"message": "StrategyQtyAmplifier updated successfully!"}
 
+    try:
+        return app.get_users_holdings(tr_no, mode)
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error updating StrategyQtyAmplifier: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app_user.get("/strategy-params/{strategy_name}")
@@ -455,7 +424,87 @@ def modify_strategy_params(
         )
 
 
-@app_user.get("/user-strategy-risk-params")
+@app_admin.put("/market-info-params")
+def update_market_info_params(
+    updated_market_info: schemas.MarketInfoParams = Body(
+        ..., description="Updated market info parameters"
+    )
+):
+    """
+    Update market info parameters.
+
+    This endpoint allows updating the market info parameters in the Firebase database.
+    It also logs the changes and sends a notification via Discord.
+
+    Args:
+        updated_market_info (Dict[str, Any]): A dictionary containing the updated market info parameters.
+
+    Returns:
+        dict: A message indicating successful update.
+
+    Raises:
+        HTTPException: If there's an error updating the database.
+    """
+    try:
+        app.update_market_info_params(updated_market_info)
+        return {"message": "Market info updated successfully!"}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error updating market info: {str(e)}"
+        )
+
+
+@app_admin.get("/market-info-params")
+def get_market_info_params():
+    """
+    Fetch current market info parameters.
+
+    This endpoint retrieves the current market info parameters from the Firebase database.
+
+    Returns:
+        dict: The current market info parameters.
+
+    Raises:
+        HTTPException: If there's an error fetching from the database.
+    """
+    try:
+        return app.get_market_info_params()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching market info: {str(e)}"
+        )
+
+
+@app_admin.put("/strategy-qty-amplifier")
+def update_strategy_qty_amplifier(
+    strategy: str = Body(..., description="Strategy name or 'all' for all strategies"),
+    amplifier: float = Body(..., description="New StrategyQtyAmplifier value"),
+):
+    """
+    Update StrategyQtyAmplifier for a specific strategy or all strategies.
+
+    Args:
+        strategy (str): The name of the strategy to update, or 'all' for all strategies.
+        amplifier (float): The new StrategyQtyAmplifier value.
+
+    Returns:
+        dict: A message indicating successful update.
+
+    Raises:
+        HTTPException: If there's an error updating the database.
+    """
+    try:
+        app.update_strategy_qty_amplifier(strategy, amplifier)
+        return {"message": "StrategyQtyAmplifier updated successfully!"}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error updating StrategyQtyAmplifier: {str(e)}"
+        )
+
+
+@app_admin.get("/user-strategy-risk-params")
 def get_user_risk_params(
     strategy: str = Query(..., description="The trading strategy to fetch"),
     trader_numbers: Optional[List[str]] = Query(
@@ -488,7 +537,7 @@ def get_user_risk_params(
         )
 
 
-@app_user.put("/user-strategy-risk-params")
+@app_admin.put("/user-strategy-risk-params")
 def modify_user_strategy_params(
     strategy: str = Query(..., description="The trading strategy to update"),
     trader_numbers: List[str] = Query(
@@ -531,7 +580,8 @@ def modify_user_strategy_params(
         )
 
 
-app_fastapi.include_router(app_user, prefix="/v1/user")
+app_fastapi.include_router(app_user, prefix="/v1/user", tags=["user"])
+app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 
 
 def main_api():

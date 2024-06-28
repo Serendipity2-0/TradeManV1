@@ -29,9 +29,11 @@ from User.UserApi.userapi_utils import (
     get_monthly_returns_data,
     get_weekly_cumulative_returns_data,
     get_individual_strategy_data,
-    equity_get_broker_bank_transactions_data,
+    get_broker_bank_transactions_data,
     strategy_graph_data,
     calculate_strategy_statistics,
+    fetch_users_for_strategy,
+    get_users_db_holdings,
     log_changes_via_webapp,
 )
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
@@ -249,7 +251,7 @@ def strategy_statistics(tr_no: str, strategy_name: str) -> Dict[str, Any]:
         raise e
 
 
-def equity_broker_bank_transactions_data(tr_no: str, from_date, to_date):
+def broker_bank_transactions_data(tr_no: str, mode: str, from_date, to_date):
     """
     Retrieves the broker and bank transactions data for a specific user by their user ID.
 
@@ -260,11 +262,42 @@ def equity_broker_bank_transactions_data(tr_no: str, from_date, to_date):
     dict: The broker and bank transactions data.
     """
 
-    transaction_data = equity_get_broker_bank_transactions_data(
-        tr_no, from_date, to_date
+    transaction_data = get_broker_bank_transactions_data(
+        tr_no, mode, from_date, to_date
     )
 
     return transaction_data
+
+
+def get_strategies_for_user(tr_no: str):
+    """
+    Retrieves the users associated with a specific strategy.
+
+    Args:
+        strategy (str): The name of the strategy.
+
+    Returns:
+        list: A list of user names associated with the strategy.
+    """
+    return fetch_users_for_strategy(tr_no)
+
+
+def get_users_holdings(tr_no: str, mode: str):
+    """
+    Retrieves the users' equity holdings.
+
+    Args:
+        tr_no (str): The user's ID.
+        mode (str): The mode of holdings to retrieve.
+
+    Returns:
+        list: A list of equity holdings for the user.
+
+    Raises:
+        HTTPException: If there's an error fetching from the database.
+    """
+    holdings = get_users_db_holdings(tr_no, mode)
+    return holdings
 
 
 def update_market_info_params(updated_market_info):

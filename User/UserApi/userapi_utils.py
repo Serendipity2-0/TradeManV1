@@ -34,6 +34,7 @@ CLIENTS_COLLECTION = os.getenv("FIREBASE_USER_COLLECTION")
 PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
 STRATEGIES_FB_COLLECTION = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 MARKET_INFO_FB_COLLECTION = os.getenv("MARKET_INFO_FB_COLLECTION")
+USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
 
 
 def all_users_data():
@@ -503,8 +504,8 @@ def get_base_capital(tr_no: str):
         return 0.0
 
 
-def equity_get_broker_bank_transactions_data(
-    tr_no: str, from_date: date = None, to_date: date = None
+def get_broker_bank_transactions_data(
+    tr_no: str, mode: str, from_date: date = None, to_date: date = None
 ):
     """
     Retrieves the broker and bank transactions data for a specific user by their user ID, filtered by a date range.
@@ -517,9 +518,21 @@ def equity_get_broker_bank_transactions_data(
     Returns:
         DataFrame: The broker and bank transactions data.
     """
-    USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
-    users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
-    conn = get_db_connection(users_db_path)
+    # TODO : Change the DB paths when the DBs are ready
+    MODE_TO_DB = {
+        "Equity": ("Equity", USER_DB_FOLDER_PATH),
+        "Derivatives": ("Derivatives", USER_DB_FOLDER_PATH),
+        "Debt": ("Debt", USER_DB_FOLDER_PATH),
+    }
+
+    try:
+        db_name, folder_path = MODE_TO_DB[mode]
+        # db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db") # TODO: Uncomment this line when ready to update
+        db_path = os.path.join(folder_path, f"{tr_no}.db")
+    except KeyError:
+        raise ValueError(f"Invalid mode: {mode}")
+
+    conn = get_db_connection(db_path)
     starting_capital = get_base_capital(tr_no)
 
     # Build the query dynamically based on whether date filters are provided
@@ -578,3 +591,61 @@ def equity_get_broker_bank_transactions_data(
     conn.close()
 
     return sorted_data
+
+
+def fetch_users_for_strategy(tr_no: str):
+    """
+    Retrieves the strategies associated with a specific user.
+
+    Args:
+        tr_no (str): The user's ID.
+
+    Returns:
+        list: A list of strategy names associated with the user.
+
+    Raises:
+        HTTPException: If there's an error fetching from the database.
+    """
+
+    user = fetch_collection_data_firebase(CLIENTS_COLLECTION, document=tr_no)
+    strategies = [strategy for strategy in user["Strategies"]]
+    return strategies
+
+
+def get_users_db_holdings(tr_no: str, mode: str):
+    """
+    Retrieves the users holdings based on mode.
+
+    Args:
+        tr_no (str): The user's ID.
+        mode (str): The mode of holdings to retrieve.
+
+    Returns:
+        list: A list of equity holdings for the user.
+
+    Raises:
+        HTTPException: If there's an error fetching from the database.
+    """
+    # TODO : Change the DB paths when the DBs are ready
+    MODE_TO_DB = {
+        "Equity": ("Equity", USER_DB_FOLDER_PATH),
+        "Derivatives": ("Derivatives", USER_DB_FOLDER_PATH),
+        "Debt": ("Debt", USER_DB_FOLDER_PATH),
+    }
+
+    try:
+        db_name, folder_path = MODE_TO_DB[mode]
+        # db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db") # TODO: Uncomment this line when ready to update
+        db_path = os.path.join(folder_path, f"{tr_no}.db")
+    except KeyError:
+        raise ValueError(f"Invalid mode: {mode}")
+    conn = get_db_connection(db_path)
+    table_names = get_db_table_names(conn)
+
+    for table in table_names:
+        if table == "Holdings":
+            data = pd.read_sql_query(f"SELECT * FROM {table}", conn)
+            data = data.to_dict("records")
+            break
+    conn.close()
+    return data
