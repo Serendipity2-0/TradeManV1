@@ -662,7 +662,7 @@ def kite_modify_orders_for_users(order_details, users_credentials):
     """
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
 
-    kite = create_async_kite_obj(
+    kite = create_kite_obj(
         user_details=users_credentials
     )  # Create a KiteConnect instance with user's broker credentials
     order_id_dict = retrieve_order_id(
@@ -744,7 +744,7 @@ def kite_create_cancel_order(trade, user):
         Exception: If cancelling the order fails.
     """
     try:
-        kite = create_async_kite_obj(user_details=user["Broker"])
+        kite = create_kite_obj(user_details=user["Broker"])
         kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade["order_id"])
     except Exception as e:
         logger.error(f"Error cancelling order: {e}")
