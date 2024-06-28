@@ -514,6 +514,13 @@ def get_order_status(user_credentials, order_id):
 
 
 async def kite_place_orders_for_users(orders_to_place, users_credentials):
+    """
+    The function `kite_place_orders_for_users` places orders for users based on the provided order details and user credentials.
+
+    :param orders_to_place: The `orders_to_place` parameter is a list of dictionaries containing order details.
+    :param users_credentials: The `users_credentials` parameter is a dictionary containing user credentials.
+    :return: The function `kite_place_orders_for_users` is returning a list of dictionaries containing order details.
+    """
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
         Instrument,
         get_single_ltp,
