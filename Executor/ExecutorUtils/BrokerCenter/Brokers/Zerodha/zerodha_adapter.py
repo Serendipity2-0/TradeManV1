@@ -514,6 +514,13 @@ def get_order_status(user_credentials, order_id):
 
 
 async def kite_place_orders_for_users(orders_to_place, users_credentials):
+    """
+    The function `kite_place_orders_for_users` places orders for users based on the provided order details and user credentials.
+
+    :param orders_to_place: The `orders_to_place` parameter is a list of dictionaries containing order details.
+    :param users_credentials: The `users_credentials` parameter is a dictionary containing user credentials.
+    :return: The function `kite_place_orders_for_users` is returning a list of dictionaries containing order details.
+    """
     from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
         Instrument,
         get_single_ltp,
@@ -655,7 +662,7 @@ def kite_modify_orders_for_users(order_details, users_credentials):
     """
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
 
-    kite = create_async_kite_obj(
+    kite = create_kite_obj(
         user_details=users_credentials
     )  # Create a KiteConnect instance with user's broker credentials
     order_id_dict = retrieve_order_id(
@@ -737,7 +744,7 @@ def kite_create_cancel_order(trade, user):
         Exception: If cancelling the order fails.
     """
     try:
-        kite = create_async_kite_obj(user_details=user["Broker"])
+        kite = create_kite_obj(user_details=user["Broker"])
         kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade["order_id"])
     except Exception as e:
         logger.error(f"Error cancelling order: {e}")

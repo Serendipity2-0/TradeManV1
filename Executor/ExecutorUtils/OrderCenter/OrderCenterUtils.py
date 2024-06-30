@@ -104,9 +104,12 @@ async def place_order_for_strategy(
     strategy_users, order_details, order_qty_mode: str = None
 ):
     all_order_statuses = []
-    order_tasks = []
+
+    # Sort order_details to ensure hedge entry is first
+    order_details.sort(key=lambda x: x.get("order_mode") != "HedgeEntry")
 
     for order in order_details:
+        order_tasks = []
         for user in strategy_users:
             try:
                 user_credentials = fetch_user_credentials_firebase(
@@ -126,13 +129,9 @@ async def place_order_for_strategy(
                         ),
                     }
                 )
-
                 # Calculate tax for this specific order
                 tax = get_orders_tax(order_with_user_and_broker, user_credentials)
                 order_with_user_and_broker["tax"] = tax
-
-                if order_with_user_and_broker.get("order_type") == "Stoploss":
-                    await asyncio.sleep(1)
 
                 # Create a task for order placement
                 order_task = asyncio.create_task(
@@ -149,13 +148,19 @@ async def place_order_for_strategy(
                     f"Error preparing order for user {user['Broker']['BrokerUsername']}: {e}"
                 )
 
-    # Await all tasks and collect statuses
-    if order_tasks:
-        all_order_statuses = await asyncio.gather(*order_tasks)
+        # Await all tasks for this particular order and collect statuses
+        if order_tasks:
+            order_statuses = await asyncio.gather(*order_tasks)
+            all_order_statuses.extend(order_statuses)
+
+        # Add a 1-second delay after placing hedge entry orders
+        if order.get("order_mode") == "HedgeEntry":
+            await asyncio.sleep(1)
 
     return all_order_statuses
 
 
+# The place_order_with_tax function remains unchanged
 async def place_order_with_tax(order, user_credentials, tr_no, strategy):
     try:
         # Place the order
@@ -163,8 +168,11 @@ async def place_order_with_tax(order, user_credentials, tr_no, strategy):
 
         if status is None:
             logger.error(f"Order placement returned None for user {order['username']}")
-            # return {"message": "Order placement failed", "error": "Received None status"}
-            status["tax"] = 0
+            status = {
+                "tax": 0,
+                "message": "Order placement failed",
+                "error": "Received None status",
+            }
         else:
             # Add the tax information to the status
             status["tax"] = order.get("tax")

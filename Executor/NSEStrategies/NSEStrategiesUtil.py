@@ -738,7 +738,10 @@ def place_order_single_user(user_details, orders_to_place, order_qty_mode=None):
         place_order_for_strategy,
     )
 
-    return place_order_for_strategy(user_details, orders_to_place, order_qty_mode)
+    order_statsus = asyncio.run(
+        place_order_for_strategy(user_details, orders_to_place, order_qty_mode)
+    )
+    return order_statsus
 
 
 def update_stoploss_orders(strategy_name, orders_to_modify):
