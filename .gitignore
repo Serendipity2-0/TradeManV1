@@ -14,3 +14,4 @@ trail.py
 *.pdf
 .devcontainer/
 supervisord.conf
+.pre-commit-config.yaml
