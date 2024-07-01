@@ -14,7 +14,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-from Executor.Strategies.StrategiesUtil import StrategyBase
+from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_primary_accounts_from_firebase,
@@ -38,7 +38,20 @@ segments = ["NFO-OPT", "BFO-OPT"]
 
 instru_obj = InstrumentCenterUtils.Instrument()
 
+
 def connect_to_db(base_symbol):
+    """
+    Connect to the PostgreSQL database for the given base symbol.
+
+    Args:
+        base_symbol (str): The base symbol for which to connect to the database.
+
+    Returns:
+        connection: A psycopg2 connection object if the connection is successful.
+
+    Raises:
+        Exception: If there is an error connecting to the database.
+    """
     try:
         logger.info(f"Connecting to database {base_symbol.lower()}...")
         return psycopg2.connect(
@@ -53,6 +66,17 @@ def connect_to_db(base_symbol):
 
 
 def store_data_in_postgres(trading_symbol_list, all_data, cursor):
+    """
+    Store historical trading data in the PostgreSQL database.
+
+    Args:
+        trading_symbol_list (str): The trading symbol list to be used as the table name.
+        all_data (list): A list of dictionaries containing the historical data records.
+        cursor: A cursor object to interact with the PostgreSQL database.
+
+    Raises:
+        Exception: If there is an error while inserting records into the database.
+    """
     table_name = trading_symbol_list
 
     if " " or "(" or ")" in table_name:
@@ -81,6 +105,18 @@ def store_data_in_postgres(trading_symbol_list, all_data, cursor):
 
 
 def fetch_token_and_name(base_symbol, strike_prc, option_type, expiry_date):
+    """
+    Fetch the exchange token and trading symbol for a given set of criteria.
+
+    Args:
+        base_symbol (str): The base symbol.
+        strike_prc (int): The strike price.
+        option_type (str): The option type (e.g., "CE" or "PE").
+        expiry_date (datetime): The expiry date of the option.
+
+    Returns:
+        tuple: A tuple containing the token and name.
+    """
     exchange_token = instru_obj.get_exchange_token_by_criteria(
         base_symbol, int(strike_prc), option_type, expiry_date
     )
@@ -92,12 +128,36 @@ def fetch_token_and_name(base_symbol, strike_prc, option_type, expiry_date):
 def calculate_expiry_date(
     base_symbol, strike_prc, option_type, expiry_type="current_week"
 ):
+    """
+    Calculate the expiry date for the given criteria.
+
+    Args:
+        base_symbol (str): The base symbol.
+        strike_prc (int): The strike price.
+        option_type (str): The option type (e.g., "CE" or "PE").
+        expiry_type (str): The expiry type (e.g., "current_week" or "current_month").
+
+    Returns:
+        datetime: The calculated expiry date.
+    """
     return instru_obj.get_expiry_by_criteria(
         base_symbol, int(strike_prc), option_type, expiry_type
     )
 
 
 def fetch_and_store_historical_data(base_symbol, start_date, end_date, cursor):
+    """
+    Fetch and store historical data for a given base symbol within a specified date range.
+
+    Args:
+        base_symbol (str): The base symbol for which to fetch data.
+        start_date (str): The start date for fetching data (format: "YYYY-MM-DD").
+        end_date (str): The end date for fetching data (format: "YYYY-MM-DD").
+        cursor: A cursor object to interact with the PostgreSQL database.
+
+    Raises:
+        Exception: If there is an error while fetching or storing data.
+    """
     strike_prc = strategy_obj.calculate_current_atm_strike_prc(base_symbol)
     strike_step = strategy_obj.get_strike_step(base_symbol)
     upper_strikes = [(strike_prc + i * strike_step) for i in range(1, 9)]
@@ -149,7 +209,20 @@ def fetch_and_store_historical_data(base_symbol, start_date, end_date, cursor):
             except Exception as e:
                 logger.error(f"Error while fetching data for {name}: {e}")
 
+
 def main():
+    """
+    Main function to fetch and store historical trading data for specified base symbols.
+
+    This function performs the following steps:
+        - Checks if today is a holiday.
+        - Fetches base symbols with expiry today.
+        - Connects to the PostgreSQL database.
+        - Fetches and stores historical data for each base symbol.
+
+    Raises:
+        Exception: If there is an error while fetching or storing data.
+    """
     today = dt.datetime.today()
 
     base_symbols = []
@@ -177,7 +250,7 @@ def main():
             conn.close()
         except Exception as e:
             logger.error(f"Error while fetching data for {base_symbol}: {e}")
-            discord_bot(f"Error while fetching data for {base_symbol}: {e}","db")
+            discord_bot(f"Error while fetching data for {base_symbol}: {e}", "db")
 
     logger.info(base_symbols)
-    discord_bot(f"Fetching data for {base_symbols}...","db")
+    discord_bot(f"Fetching data for {base_symbols}...", "db")

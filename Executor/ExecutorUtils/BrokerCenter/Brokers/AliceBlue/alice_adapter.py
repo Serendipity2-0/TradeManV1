@@ -2,7 +2,9 @@ import os
 import sys
 import datetime as dt
 from dotenv import load_dotenv
+import aiohttp
 from pya3 import *
+import json
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -12,9 +14,10 @@ load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,discord_admin_bot
+    discord_bot,
+    discord_admin_bot,
 )
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_strategy_name_from_trade_id,
     get_signal_from_trade_id,
     calculate_transaction_type_sl,
@@ -22,12 +25,141 @@ from Executor.Strategies.StrategiesUtil import (
 
 logger = LoggerSetup()
 
+
+class AsyncAliceBlue(Aliceblue):
+    async def async_place_order(
+        self,
+        transaction_type,
+        instrument,
+        quantity,
+        order_type,
+        product_type,
+        price=0.0,
+        trigger_price=None,
+        stop_loss=None,
+        square_off=None,
+        trailing_sl=None,
+        is_amo=False,
+        order_tag=None,
+        is_ioc=False,
+    ):
+        if transaction_type is None:
+            raise TypeError(
+                "Required parameter transaction_type not of type TransactionType"
+            )
+
+        if instrument is None:
+            raise TypeError("Required parameter instrument not of type Instrument")
+
+        if not isinstance(quantity, int):
+            raise TypeError("Required parameter quantity not of type int")
+
+        if order_type is None:
+            raise TypeError("Required parameter order_type not of type OrderType")
+
+        if product_type is None:
+            raise TypeError("Required parameter product_type not of type ProductType")
+
+        if price is not None and not isinstance(price, float):
+            raise TypeError("Optional parameter price not of type float")
+
+        if trigger_price is not None and not isinstance(trigger_price, float):
+            raise TypeError("Optional parameter trigger_price not of type float")
+        if is_amo == True:
+            complexty = "AMO"
+        else:
+            complexty = "regular"
+        discqty = 0
+        exch = instrument.exchange
+        if (instrument.exchange == "NFO" or instrument.exchange == "MCX") and (
+            product_type.value == "CNC"
+        ):
+            pCode = "NRML"
+        else:
+            if product_type.value == "BO":
+                pCode = "MIS"
+                complexty = "BO"
+            else:
+                pCode = product_type.value
+        price = price
+        prctyp = order_type.value
+        qty = quantity
+        if is_ioc:
+            ret = "IOC"
+        else:
+            ret = "DAY"
+        trading_symbol = instrument.name
+        symbol_id = str(instrument.token)
+        transtype = transaction_type.value
+        trigPrice = trigger_price
+        # print("pCode:",instrument)
+        data = [
+            {
+                "complexty": complexty,
+                "discqty": discqty,
+                "exch": exch,
+                "pCode": pCode,
+                "price": price,
+                "prctyp": prctyp,
+                "qty": qty,
+                "ret": ret,
+                "symbol_id": symbol_id,
+                "trading_symbol": trading_symbol,
+                "transtype": transtype,
+                "stopLoss": stop_loss,
+                "target": square_off,
+                "trailing_stop_loss": trailing_sl,
+                "trigPrice": trigPrice,
+                "orderTag": order_tag,
+            }
+        ]
+        # print(data)
+        placeorderresp = await self._apost("placeorder", data)
+        if len(placeorderresp) == 1:
+            return placeorderresp[0]
+        else:
+            return placeorderresp
+
+    async def aysnc_post(self, url, json=None, headers=None, **kwargs):
+        r = dict()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                url, json=json, headers=headers, **kwargs
+            ) as response:
+                r["status"] = response.status
+                r["reason"] = response.reason
+                r["text"] = await response.text()
+                r["headers"] = response.headers
+                r["content"] = await response.content.read()
+        return r
+
+    async def _apost(self, sub_url, data=None):
+        method = self.base + self._sub_urls[sub_url]
+        req_type = "POST"
+        _headers = {
+            "X-SAS-Version": "2.0",
+            "User-Agent": self._user_agent(),
+            "Authorization": self._user_authorization(),
+        }
+        if req_type == "POST":
+            try:
+                response = await self.aysnc_post(method, json=data, headers=_headers)
+            except (aiohttp.ClientConnectionError, aiohttp.ClientTimeout) as exception:
+                return {"stat": "Not_ok", "emsg": exception, "encKey": None}
+
+            if response["status"] == 200:
+                return json.loads(response["text"])
+            else:
+                emsg = str(response["status"]) + " - " + response["reason"]
+                return {"stat": "Not_ok", "emsg": emsg, "encKey": None}
+
+
 # This function fetches the available free cash balance for a user from the Aliceblue trading platform.
 def alice_fetch_free_cash(user_details):
     """
     The function `alice_fetch_free_cash` fetches the available free cash balance for a user from
     Aliceblue brokerage platform.
-    
+
     :param user_details: The `alice_fetch_free_cash` function seems to be fetching the free cash
     available for a user from a brokerage platform using the Aliceblue API. The function takes
     `user_details` as a parameter, which likely contains information about the user's brokerage account,
@@ -49,7 +181,9 @@ def alice_fetch_free_cash(user_details):
     except Exception as e:
         logger.error(f"Error fetching free cash: {e}")
         return 0.0
-    logger.info(f"Free cash for {user_details['BrokerUsername']}: {cash_margin_available}")
+    logger.info(
+        f"Free cash for {user_details['BrokerUsername']}: {cash_margin_available}"
+    )
     return float(cash_margin_available)
 
 
@@ -112,7 +246,7 @@ def get_ins_csv_alice(user_details):
     """
     The function `get_ins_csv_alice` fetches instruments for ALICE using user details provided and
     merges the instrument CSV files.
-    
+
     :param user_details: The `get_ins_csv_alice` function seems to be fetching instruments for ALICE
     using the provided user details. The user details typically include information about the broker
     such as the username, API key, and session ID
@@ -120,7 +254,9 @@ def get_ins_csv_alice(user_details):
     after fetching instruments for NFO, BFO, and NSE using the provided user details. If an error occurs
     during the process, it will return `None`.
     """
-    logger.debug(f"Fetching instruments for ALICE using {user_details['Broker']['BrokerUsername']}")
+    logger.debug(
+        f"Fetching instruments for ALICE using {user_details['Broker']['BrokerUsername']}"
+    )
     alice = Aliceblue(
         user_id=user_details["Broker"]["BrokerUsername"],
         api_key=user_details["Broker"]["ApiKey"],
@@ -136,10 +272,11 @@ def get_ins_csv_alice(user_details):
         logger.error(f"Error fetching instruments: {e}")
         return None
 
+
 def fetch_aliceblue_holdings_value(user):
     """
     The function fetches the total invested value of holdings for a user using Aliceblue API.
-    
+
     :param user: The `fetch_aliceblue_holdings_value` function takes a `user` parameter, which is
     expected to be a dictionary containing information about the user's broker account. The user
     dictionary should have the following structure:
@@ -148,20 +285,26 @@ def fetch_aliceblue_holdings_value(user):
     0.0.
     """
     try:
-        alice = Aliceblue(user["Broker"]["BrokerUsername"], user["Broker"]["ApiKey"], session_id=user["Broker"]["SessionId"])
+        alice = Aliceblue(
+            user["Broker"]["BrokerUsername"],
+            user["Broker"]["ApiKey"],
+            session_id=user["Broker"]["SessionId"],
+        )
         holdings = alice.get_holding_positions()
 
         invested_value = 0
         if holdings.get("stat") == "Not_Ok":
             invested_value = 0
         else:
-            for stock in holdings['HoldingVal']:
-                average_price = float(stock['Price'])
-                quantity = float(stock['HUqty'])
+            for stock in holdings["HoldingVal"]:
+                average_price = float(stock["Price"])
+                quantity = float(stock["HUqty"])
                 invested_value += average_price * quantity
         return invested_value
     except Exception as e:
-        logger.error(f"Error fetching holdings for user: {user['Broker']['BrokerUsername']}: {e}")
+        logger.error(
+            f"Error fetching holdings for user: {user['Broker']['BrokerUsername']}: {e}"
+        )
         return 0.0
 
 
@@ -169,7 +312,7 @@ def simplify_aliceblue_order(detail):
     """
     The function `simplify_aliceblue_order` processes order details and returns a simplified dictionary
     representation of the order.
-    
+
     :param detail: The `simplify_aliceblue_order` function takes in a dictionary `detail` containing
     various details of an order. It processes the details and returns a simplified version of the order
     information
@@ -214,13 +357,13 @@ def create_alice_obj(user_details):
     """
     The function `create_alice_obj` creates an instance of the Aliceblue class using user details such
     as BrokerUsername, ApiKey, and SessionId.
-    
+
     :param user_details: The `user_details` parameter is expected to be a dictionary containing the
     following keys:
     :return: An Aliceblue object with the user details provided, including BrokerUsername, ApiKey, and
     SessionId.
     """
-    return Aliceblue(
+    return AsyncAliceBlue(
         user_id=user_details["BrokerUsername"],
         api_key=user_details["ApiKey"],
         session_id=user_details["SessionId"],
@@ -231,7 +374,7 @@ def aliceblue_todays_tradebook(user):
     """
     The function `aliceblue_todays_tradebook` fetches the order history for a user from an AliceBlue
     trading account, handling potential errors.
-    
+
     :param user: The `user` parameter in the `aliceblue_todays_tradebook` function is likely used to
     identify the user for whom the tradebook is being fetched. It is passed to the `create_alice_obj`
     function to create an object representing the user's account and then used to retrieve the
@@ -254,7 +397,7 @@ def aliceblue_todays_tradebook(user):
 def calculate_transaction_type(transaction_type):
     """
     The function `calculate_transaction_type` converts a string transaction type to an enum value.
-    
+
     :param transaction_type: The `calculate_transaction_type` function you provided seems to be
     converting a transaction type string ("BUY" or "SELL") into an enum value (TransactionType.Buy or
     TransactionType.Sell)
@@ -276,7 +419,7 @@ def calculate_order_type(order_type):
     """
     The function `calculate_order_type` converts a given order type string to a corresponding OrderType
     enum value.
-    
+
     :param order_type: The `calculate_order_type` function takes an `order_type` as input and converts
     it to an `OrderType` enum value based on the following conditions:
     :return: The function `calculate_order_type` is returning the corresponding `OrderType` based on the
@@ -298,7 +441,7 @@ def calculate_product_type(product_type):
     """
     The function `calculate_product_type` converts a string representation of a product type to an enum
     value.
-    
+
     :param product_type: It looks like the `calculate_product_type` function is designed to convert a
     string representation of a product type into an enum value. The function checks the input
     `product_type` string and maps it to the corresponding enum value from the `ProductType` enum
@@ -322,7 +465,7 @@ def get_order_status(alice, order_id):
     """
     The function `get_order_status` retrieves the status of an order and returns "PASS" if the status is
     not "rejected", otherwise it returns "FAIL".
-    
+
     :param alice: Alice is an object or instance of a class that has a method
     `get_order_history(order_id)` which is used to retrieve the status of a specific order identified by
     `order_id`
@@ -343,11 +486,11 @@ def get_order_status(alice, order_id):
         return "FAIL"
 
 
-def ant_place_orders_for_users(orders_to_place, users_credentials):
+async def ant_place_orders_for_users(orders_to_place, users_credentials):
     """
     The function `ant_place_orders_for_users` places orders for users based on the provided parameters
     and returns the order details.
-    
+
     :param orders_to_place: It seems like the code snippet you provided is a function named
     `ant_place_orders_for_users` that is responsible for placing orders for users based on the input
     parameters. The function takes two parameters:
@@ -359,7 +502,10 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
     information about the order placement process. The dictionary includes keys such as
     "exchange_token", "order_id", "qty", "time_stamp", "trade_id", "order_status", and "tax".
     """
-    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument,get_single_ltp
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
+        Instrument,
+        get_single_ltp,
+    )
 
     results = {
         "exchange_token": None,
@@ -370,10 +516,10 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         "message": None,
     }
 
-    alice = create_alice_obj(users_credentials)  
+    alice = create_alice_obj(users_credentials)
     strategy = orders_to_place["strategy"]
     exchange_token = orders_to_place["exchange_token"]
-    qty = orders_to_place.get("qty", 1) 
+    qty = orders_to_place.get("qty", 1)
     product = orders_to_place.get("product_type")
     transaction_type = calculate_transaction_type(
         orders_to_place.get("transaction_type")
@@ -416,19 +562,21 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         logger.debug(f"qty: {qty}")
         logger.debug(f"limit_prc: {limit_prc}")
         logger.debug(f"trigger_price: {trigger_price}")
-        logger.debug(f"instrument: {alice.get_instrument_by_token(segment, int(exchange_token))}")
+        logger.debug(
+            f"instrument: {alice.get_instrument_by_token(segment, int(exchange_token))}"
+        )
         logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
         results = {
             "exchange_token": int(exchange_token),
             "order_id": 123456789,
             "qty": qty,
             "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "trade_id": orders_to_place.get("trade_id", "")
+            "trade_id": orders_to_place.get("trade_id", ""),
         }
         return results
 
     try:
-        order_id = alice.place_order(
+        order_id = await alice.async_place_order(
             transaction_type=transaction_type,
             instrument=alice.get_instrument_by_token(segment, int(exchange_token)),
             quantity=qty,
@@ -453,24 +601,25 @@ def ant_place_orders_for_users(orders_to_place, users_credentials):
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)
         discord_bot(message, strategy)
-    
+
     results = {
-            "exchange_token": int(exchange_token),
-            "order_id": order_id["NOrdNo"],
-            "qty": qty,
-            "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "trade_id": orders_to_place.get("trade_id", ""),
-            "order_status": order_status,
-            "tax":orders_to_place.get("tax", 0)
-        }
+        "exchange_token": int(exchange_token),
+        "order_id": order_id["NOrdNo"],
+        "qty": qty,
+        "time_stamp": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "trade_id": orders_to_place.get("trade_id", ""),
+        "order_status": order_status,
+        "tax": orders_to_place.get("tax", 0),
+    }
 
     return results
+
 
 def ant_modify_orders_for_users(order_details, user_credentials):
     """
     The function `ant_modify_orders_for_users` modifies orders for a user based on the provided order
     details and user credentials.
-    
+
     :param order_details: order_details is a dictionary containing details of an order, such as
     username, strategy, exchange token, transaction type, order type, product type, segment, limit
     price, trigger price, and quantity
@@ -521,7 +670,7 @@ def ant_create_counter_order(trade, user):
     """
     The function `ant_create_counter_order` creates a counter order based on trade information extracted
     from a trade object.
-    
+
     :param trade: The `trade` parameter seems to be a dictionary containing information related to a
     trade. It includes keys such as "remarks", "token", "Trantype", "Pcode", "Qty", etc. The function
     `ant_create_counter_order` is designed to create a counter order based on the
@@ -558,7 +707,7 @@ def ant_create_hedge_counter_order(trade, user):
     """
     The function `ant_create_hedge_counter_order` creates a counter order based on trade information,
     with error handling in place.
-    
+
     :param trade: The `trade` parameter in the `ant_create_hedge_counter_order` function seems to be a
     dictionary containing information related to a trade. It likely includes the following key-value
     pairs:
@@ -594,7 +743,7 @@ def ant_create_cancel_orders(trade, user):
     """
     The function `ant_create_cancel_orders` attempts to cancel a trade order using an object created
     with user details, logging any errors encountered.
-    
+
     :param trade: The `trade` parameter seems to be a dictionary containing information related to a
     trade. It likely includes details such as the order number (`Nstordno`) that needs to be cancelled
     :param user: The `user` parameter seems to be a dictionary containing user details, and
@@ -700,7 +849,7 @@ def calculate_alice_net_values(categorized_dfs):
     """
     The function `calculate_alice_net_values` calculates the net values for each category based on the
     debit and credit values in the input categorized dataframes.
-    
+
     :param categorized_dfs: It seems like you were about to provide more information about the
     `categorized_dfs` parameter, but it seems to be missing. Could you please provide the details or the
     structure of the `categorized_dfs` parameter so that I can assist you further with the
@@ -716,11 +865,12 @@ def calculate_alice_net_values(categorized_dfs):
     }
     return net_values
 
-def fetch_open_orders(user):
+
+def fetch_alice_open_orders(user):
     """
     The function fetches open orders for a given user using an Alice object and returns the open
     positions.
-    
+
     :param user: The `fetch_open_orders` function seems to be designed to fetch open orders for a given
     user. It takes a `user` parameter as input, which likely contains information about the user, such
     as their broker details
@@ -729,19 +879,20 @@ def fetch_open_orders(user):
     the error and return `None`.
     """
     try:
-        alice = create_alice_obj(user['Broker'])
+        alice = create_alice_obj(user["Broker"])
         Net_position = alice.get_netwise_positions()
-        open_position= Alice_Wrapper.open_net_position(Net_position)
+        open_position = Alice_Wrapper.open_net_position(Net_position)
         return open_position
     except Exception as e:
         logger.error(f"Error fetching open orders: {e}")
         return None
 
+
 def get_alice_pnl(user):
     """
     The function `get_alice_pnl` retrieves the total profit and loss (PnL) for a user's positions using
     an Alice object and logs any errors encountered.
-    
+
     :param user: The `get_alice_pnl` function seems to be designed to calculate the total profit and
     loss (PnL) for a user's positions using an object called `alice` and the `get_netwise_positions`
     method. If any errors occur during the process, it logs the error and
@@ -750,14 +901,17 @@ def get_alice_pnl(user):
     occurs during the process, it logs the error and returns `None`.
     """
     try:
-        alice = create_alice_obj(user['Broker'])
+        alice = create_alice_obj(user["Broker"])
         positions = alice.get_netwise_positions()
-        total_pnl = sum(float(position['MtoM']) for position in positions)
+        total_pnl = sum(float(position["MtoM"]) for position in positions)
         return total_pnl
     except Exception as e:
-        logger.error(f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}")
+        logger.error(
+            f"Error fetching pnl for user: {user['Broker']['BrokerUsername']}: {e}"
+        )
         return None
-    
+
+
 def get_margin_utilized(user_credentials):
     """
     Calculates the required margin for an order based on the order details and user credentials.
@@ -774,6 +928,7 @@ def get_margin_utilized(user_credentials):
         Exception: If there is an error in calculating the margin.
     """
     discord_admin_bot("get_order_margin for alice blue has not been implemented yet")
+
 
 def get_broker_payin(user):
     discord_admin_bot("get_broker_payin for alice blue has not been implemented yet")

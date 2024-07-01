@@ -3,7 +3,6 @@ from datetime import datetime
 from dotenv import load_dotenv
 import pandas as pd
 from babel.numbers import format_currency
-from dotenv import load_dotenv
 from time import sleep
 
 
@@ -22,21 +21,27 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 logger = LoggerSetup()
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
-    download_json
+    download_json,
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
     fetch_active_strategies_all_users,
-    )
+)
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
     send_telegram_message,
     send_file_via_telegram,
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
-from Executor.ExecutorUtils.ReportUtils.MarketMovementData import main as fetch_market_movement_data
-from Executor.ExecutorUtils.ReportUtils.SignalMovementData import main as fetch_signal_movement_data
-from Executor.ExecutorUtils.ReportUtils.UserPnLMovementData import main as user_pnl_movement_data
+from Executor.ExecutorUtils.ReportUtils.MarketMovementData import (
+    main as fetch_market_movement_data,
+)
+from Executor.ExecutorUtils.ReportUtils.SignalMovementData import (
+    main as fetch_signal_movement_data,
+)
+from Executor.ExecutorUtils.ReportUtils.UserPnLMovementData import (
+    main as user_pnl_movement_data,
+)
 from Executor.ExecutorUtils.ReportUtils.ErrorLogData import main as fetch_errorlog_data
 from Executor.ExecutorUtils.ReportUtils.MarketInfoData import create_market_info_df
 from Executor.ExecutorUtils.ReportUtils.EodReportUtils import (
@@ -47,14 +52,22 @@ from Executor.ExecutorUtils.ReportUtils.EodReportUtils import (
     fetch_user_tables,
     calculate_account_values,
     get_today_trades,
-    update_account_keys_fb
+    update_account_keys_fb,
 )
 
-CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
+CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 today_string = datetime.now().strftime("%Y-%m-%d")
 
+
 def format_and_send_report(user, today_trades, account_values):
+    """
+    Formats and sends the end-of-day report to the user via Telegram.
+
+    :param user: A dictionary containing user details.
+    :param today_trades: A list of today's trades for the user.
+    :param account_values: A dictionary containing the user's account values.
+    """
     # User details
     user_name = user["Profile"]["Name"]
     phone_number = user["Profile"]["PhoneNumber"]
@@ -70,7 +83,7 @@ def format_and_send_report(user, today_trades, account_values):
     message += "Here are your PNLs for today:\n\n"
     message += "Today's Trades:\n"
     for trade in today_trades:
-        trade_pnl_formatted = format_currency(trade['pnl'], 'INR', locale='en_IN')
+        trade_pnl_formatted = format_currency(trade["pnl"], "INR", locale="en_IN")
         message += f"Trade ID {trade['trade_id']}: {trade_pnl_formatted}\n"
     message += f"\nGross PnL: {format_currency(gross_pnl, 'INR', locale='en_IN')}\n"
     message += f"Expected Tax: {format_currency(expected_tax, 'INR', locale='en_IN')}\n"
@@ -94,31 +107,50 @@ def format_and_send_report(user, today_trades, account_values):
     logger.debug(message)
     send_telegram_message(phone_number, message)
 
+
 def send_consolidated_report_pdf_to_telegram():
-    #create the file path of the pdf file
-    pdf_file_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
+    """
+    Sends the consolidated report PDF to the designated Telegram group.
+    """
+    # create the file path of the pdf file
+    pdf_file_path = os.path.join(
+        CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf"
+    )
     group_id = os.getenv("TELEGRAM_REPORT_GROUP_ID")
-    #send the pdf to the telegram channel
-    send_file_via_telegram(int(group_id), pdf_file_path, f"{today_string}_consolidated_report.pdf", is_group=True)
+    # send the pdf to the telegram channel
+    send_file_via_telegram(
+        int(group_id),
+        pdf_file_path,
+        f"{today_string}_consolidated_report.pdf",
+        is_group=True,
+    )
+
 
 def create_eod_report(active_users, active_strategies):
+    """
+    Creates and sends the end-of-day (EOD) report for each active user.
+
+    :param active_users: A list of active users.
+    :param active_strategies: A list of active strategies.
+    """
     for user in active_users:
         try:
             user_db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
             user_db_conn = get_db_connection(user_db_path)
             user_tables = fetch_user_tables(user_db_conn)
             # Placeholder values, replace with actual queries and Firebase fetches
-            today_trades = get_today_trades(user_tables,active_strategies)
+            today_trades = get_today_trades(user_tables, active_strategies)
             account_values = calculate_account_values(user, today_trades, user_tables)
-            update_account_keys_fb(user['Tr_No'], account_values)
+            update_account_keys_fb(user["Tr_No"], account_values)
             format_and_send_report(user, today_trades, account_values)
 
         except Exception as e:
             logger.error(f"Error in sending User Report telegram message: {e}")
 
+
 def create_consolidated_report(active_users, active_strategies):
     try:
-        #Page 1 data
+        # Page 1 data
         df_movements = fetch_market_movement_data()
 
         # #Page 2 data
@@ -126,38 +158,81 @@ def create_consolidated_report(active_users, active_strategies):
         df_market_info = create_market_info_df()
 
         # # Merge signal and market info data
-        combined_signals = pd.merge(df_signals, df_market_info, left_on='Strategy', right_on='Strategy Name', how='left')
+        combined_signals = pd.merge(
+            df_signals,
+            df_market_info,
+            left_on="Strategy",
+            right_on="Strategy Name",
+            how="left",
+        )
         # Create 'Market Info' column
-        combined_signals['Market Info'] = combined_signals.apply(lambda x: f"({x['Strategy Type']},{x['Qty Amplifier']},{x['Trade View']},{x['Strategy Amplifier']})", axis=1)
+        combined_signals["Market Info"] = combined_signals.apply(
+            lambda x: f"({x['Strategy Type']},{x['Qty Amplifier']},{x['Trade View']},{x['Strategy Amplifier']})",
+            axis=1,
+        )
         # Concatenate 'Strategy' and 'Market Info' into one column
-        combined_signals['Strategy with Info'] = combined_signals['Strategy'] + '\n' + combined_signals['Market Info']
+        combined_signals["Strategy with Info"] = (
+            combined_signals["Strategy"] + "\n" + combined_signals["Market Info"]
+        )
         # Select only the relevant columns, now including the new combined column
-        combined_signals = combined_signals[['Strategy with Info', 'Today', 'Week', 'Month', 'Year']]
+        combined_signals = combined_signals[
+            ["Strategy with Info", "Today", "Week", "Month", "Year"]
+        ]
 
-        #Page 3 data
+        # Page 3 data
         df_user_pnl = user_pnl_movement_data()
 
-        #Page 4 data
+        # Page 4 data
         today_trades = get_today_trades_for_all_users(active_users, active_strategies)
         consolidated_data = today_trades_data(active_users, today_trades)
 
-        consolidated_df = pd.DataFrame(consolidated_data, columns=["Tr_No", "Name", "Base Capital", "Current Capital", "Drawdown", "Current Week PnL", "Net PnL", "Strategy PnL"])
+        consolidated_df = pd.DataFrame(
+            consolidated_data,
+            columns=[
+                "Tr_No",
+                "Name",
+                "Base Capital",
+                "Current Capital",
+                "Drawdown",
+                "Current Week PnL",
+                "Net PnL",
+                "Strategy PnL",
+            ],
+        )
         consolidated_df = format_df_data(consolidated_df)
-        output_path = os.path.join(CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf")
+        output_path = os.path.join(
+            CONSOLIDATED_REPORT_PATH, f"{today_string}_consolidated_report.pdf"
+        )
 
-        #Page 5 data
+        # Page 5 data
         errorlog_df = fetch_errorlog_data()
         formatted_errorlog_df = format_df_data(errorlog_df)
 
-        convert_dfs_to_pdf(consolidated_df,df_movements, combined_signals, df_user_pnl, formatted_errorlog_df,output_path)
+        convert_dfs_to_pdf(
+            consolidated_df,
+            df_movements,
+            combined_signals,
+            df_user_pnl,
+            formatted_errorlog_df,
+            output_path,
+        )
         send_consolidated_report_pdf_to_telegram()
 
         logger.info(f"consolidated_data: {consolidated_data}")
     except Exception as e:
         logger.error(f"Error in generating consolidated report data: {e}")
 
+
 # Main function to generate and send the report
 def main():
+    """
+    Main function to generate and send the end-of-day and consolidated reports.
+
+    1. Downloads the latest user data from Firebase.
+    2. Creates and sends individual EOD reports for each active user.
+    3. Pauses for a brief period.
+    4. Creates and sends the consolidated report PDF.
+    """
     download_json(CLIENTS_USER_FB_DB, "before_eod_report")
     active_users = fetch_active_users_from_firebase()
     active_strategies = fetch_active_strategies_all_users()
@@ -168,6 +243,7 @@ def main():
     latest_active_users = fetch_active_users_from_firebase()
     latest_active_strategies = fetch_active_strategies_all_users()
     create_consolidated_report(latest_active_users, latest_active_strategies)
-    
+
+
 if __name__ == "__main__":
     main()

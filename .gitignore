@@ -12,3 +12,5 @@ trail.py
 *.session
 *.sh
 *.pdf
+.devcontainer/
+supervisord.conf

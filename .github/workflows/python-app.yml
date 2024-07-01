@@ -1,40 +1,146 @@
-# .github/workflows/python-app.yml
-name: Python application
+name: Python application CI
 
 on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.11
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    - name: Check formatting with black
-      run: |
-        pip install black
-        black .
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install aiohttp
 
-    # - name: Lint with flake8
-    #   run: |
-    #     pip install flake8
-    #     flake8 .
+      - name: Create Firebase Credentials File
+        run: |
+          #!/bin/bash
+          cat <<EOF >firebase_credentials.json
+          ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+          EOF
+        env:
+          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
 
-    # - name: Check documentation with pydocstyle
-    #   run: |
-    #     pip install pydocstyle
-    #     pydocstyle .
+      - name: Check Firebase Credentials File
+        run: cat ./firebase_credentials.json
 
-    - name: Test with pytest
-      run: |
-        pip install pytest
-        pytest
+      - name: Create Test Data JSON File
+        run: |
+          #!/bin/bash
+          cat <<EOF >TestData.json
+          ${{ secrets.TEST_DATA_JSON }}
+          EOF
+        env:
+          TEST_DATA_JSON: ${{ secrets.TEST_DATA_JSON }}
+
+      - name: Check Test Data JSON File
+        run: cat ./TestData.json
+
+      - name: Create ExpiryTrader Mock JSON
+        run: |
+          #!/bin/bash
+          cat <<EOF >ExpiryTrader_mock.json
+          ${{ secrets.EXPIRYTRADER_JSON }}
+          EOF
+        env:
+          EXPIRYTRADER_JSON: ${{ secrets.EXPIRYTRADER_JSON }}
+
+      - name: Create FNO Info CSV File
+        run: |
+          #!/bin/bash
+          cat <<EOF >test_fno_info.csv
+          ${{ secrets.FNO_INFO_PATH }}
+          EOF
+        env:
+          FNO_INFO_PATH: ${{ secrets.FNO_INFO_PATH }}
+
+      - name: Check FNO Info CSV File
+        run: cat ./test_fno_info.csv
+
+      - name: Ensure ERROR_LOG_PATH directory exists
+        run: mkdir -p ./Data/ErrorLogs
+
+      - name: Create TradeManError.log file
+        run: touch ./Data/ErrorLogs/TradeManError.log
+
+      - name: List directory contents
+        run: ls -la ./Data/ErrorLogs
+
+      - name: Load environment variables
+        run: |
+          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" >> $GITHUB_ENV
+          echo "FIREBASE_CREDENTIALS_PATH=./firebase_credentials.json" >> $GITHUB_ENV
+          echo "FIREBASE_CRED_PATH=./firebase_credentials.json" >> $GITHUB_ENV
+          echo "FNO_INFO_PATH=./test_fno_info.csv" >> $GITHUB_ENV
+          echo "ZERODHA_BROKER=${{ secrets.ZERODHA_BROKER }}" >> $GITHUB_ENV
+          echo "ALICEBLUE_BROKER=${{ secrets.ALICEBLUE_BROKER }}" >> $GITHUB_ENV
+          echo "FIRSTOCK_BROKER=${{ secrets.FIRSTOCK_BROKER }}" >> $GITHUB_ENV
+          echo "FIREBASE_TEST_COLLECTION=${{ secrets.FIREBASE_TEST_COLLECTION }}" >> $GITHUB_ENV
+          echo "CONSOLIDATED_REPORT_PATH=./Data/ConsolidatedReports" >> $GITHUB_ENV
+          echo "USER_SQLDB_PATH=./Data/UserSQLDB" >> $GITHUB_ENV
+          echo "FIREBASE_USER_COLLECTION=${{ secrets.FIREBASE_USER_COLLECTION }}" >> $GITHUB_ENV
+          echo "ERROR_LOG_PATH=./Data/ErrorLogs/TradeManError.log" >> $GITHUB_ENV
+          echo "DB_DIR=./Data/UserSQLDB" >> $GITHUB_ENV
+          echo "CLIENTS_TRADE_SQL_DB=${{ secrets.DB_DIR }}" >> $GITHUB_ENV
+          echo "CLIENTS_USER_FB_DB=${{ secrets.mock_trademan_clients }}" >> $GITHUB_ENV
+          echo "STRATEGY_FB_DB=${{ secrets.mock_strategy }}" >> $GITHUB_ENV
+          echo "discord_bot_token=${{ secrets.DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
+
+
+
+
+      - name: Verify environment variable
+        run: |
+          echo $CLIENTS_TRADE_SQL_DB
+          echo $CONSOLIDATED_REPORT_PATH
+          echo $ERROR_LOG_PATH
+          echo $FIREBASE_USER_COLLECTION
+
+
+
+
+      - name: Check formatting with black
+        run: |
+          pip install black
+          black .
+
+      # Uncomment and use as needed:
+      # - name: Lint with flake8
+      #   run: |
+      #     pip install flake8
+      #     flake8 .
+
+      # - name: Check documentation with pydocstyle
+      #   run: |
+      #     pip install pydocstyle
+      #     pydocstyle .
+
+      - name: Test with pytest (Unit Tests)
+        run: |
+          pip install pytest
+          pytest UnitTests -v
+
+      - name: Test with pytest (Integration Tests)
+        run: |
+          pip install pytest
+          pytest IntegrationTests -v
+
+
+
+

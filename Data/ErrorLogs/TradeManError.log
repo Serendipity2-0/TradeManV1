@@ -1,0 +1,6 @@
+2024-07-01 12:50:05.059 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-07-01 12:50:05.059 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-07-01 12:50:05.074 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-07-01 12:50:05.076 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 01-07-2024
+2024-07-01 12:50:10.110 | ERROR    | Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter:get_db_connection:32 - An error occurred while connecting to the database: unable to open database file
+2024-07-01 12:50:10.110 | ERROR    | Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils:get_ins_df:36 - An error occurred: 'NoneType' object has no attribute 'cursor'

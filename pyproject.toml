@@ -20,11 +20,16 @@ firebase-admin = "^6.5.0"
 loguru = "^0.7.2"
 python-dotenv = "^1.0.1"
 pendulum = "^3.0.0"
-
+pandas = "^1.5.3"
+reportlab = "^3.6.0"
+fastapi = "^0.99.0"
+openpyxl = "^3.1.2"
 
 [build-system]
 requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api" 
+build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 trademan = "User.main:main_api"
+celery_worker = "User.Executor.Scripts.CeleryScripts.trademan_celery_app:start_worker"
+celery_beat = "User.Executor.Scripts.CeleryScripts.trademan_celery_app:start_beat"

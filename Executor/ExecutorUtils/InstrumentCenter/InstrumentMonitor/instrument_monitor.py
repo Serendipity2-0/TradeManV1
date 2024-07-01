@@ -11,7 +11,6 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_primary_accounts_from_firebase,
 )
@@ -29,6 +28,12 @@ kite = create_kite_obj(
 
 
 def monitor():
+    """
+    Create and return an instance of InstrumentMonitor.
+
+    Returns:
+        InstrumentMonitor: The InstrumentMonitor instance.
+    """
     return InstrumentMonitor()
 
 
@@ -51,10 +56,17 @@ class InstrumentMonitor:
             self._initialized = True  # Set the initialized flag
 
     def start_monitoring(self):
+        """
+        Start the monitoring thread if it is not already running.
+
+        Returns:
+        None
+        """
         if self.monitor_thread is None or not self.monitor_thread.is_alive():
             self.monitor_thread = threading.Thread(target=self.monitor)
             self.monitor_thread.daemon = False
             self.monitor_thread.start()
+            self.monitor_thread.join()
 
     def add_token(
         self,
@@ -80,6 +92,10 @@ class InstrumentMonitor:
             )
             target = order_details.get("target")
             limit = order_details.get("limit_prc")
+            try:
+                logger.debug(f"target: {target}, limit: {limit}")
+            except Exception as e:
+                logger.error(f"Error in target and limit in line 100: {e}")
         else:
             target = None
             limit = None
@@ -113,13 +129,24 @@ class InstrumentMonitor:
         self.callback = callback
 
     def fetch_ltp(self, token):
-        """Fetch the LTP for a given token."""
-        ltp = kite.ltp(
-            token
-        )  # assuming 'kite' is accessible here or you may need to pass it
+        """Fetch the LTP for a given token.
+
+        Args:
+        token (str): The token of the instrument.
+
+        Returns:
+        float: The last traded price of the instrument.
+        """
+        ltp = kite.ltp(token)
         return ltp[str(token)]["last_price"]
 
     def monitor(self):
+        """
+        Monitor the added tokens and trigger events based on LTP and trigger points.
+
+        Returns:
+        None
+        """
         while True:
             tokens = list(self.tokens_to_monitor.keys())
             logger.info(f"Monitoring tokens: {tokens}")
@@ -134,6 +161,17 @@ class InstrumentMonitor:
             sleep(10)
 
     def _process_token(self, token, ltp, data):
+        """
+        Process a token, check trigger points, and call the callback if conditions are met.
+
+        Args:
+        token (str): The token of the instrument.
+        ltp (float): The last traded price.
+        data (dict): The data associated with the token.
+
+        Returns:
+        None
+        """
         order_details = data.get("order_details")
         trigger_points = data.get("trigger_points")
 
