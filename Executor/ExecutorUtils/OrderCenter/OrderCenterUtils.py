@@ -147,6 +147,7 @@ async def place_order_for_strategy(
                             "qty": user["Strategies"][order.get("strategy")]["Qty"],
                         }
                     )
+                orders_to_place.append(order_with_user_and_broker)
             except Exception as e:
                 logger.error(
                     f"Error updating order with user and broker: {e} : {traceback.format_exc()}"
@@ -167,10 +168,13 @@ async def place_order_for_strategy(
 
             if max_qty:
                 try:
-                    while order_qty > 0:
-                        current_qty = min(order_qty, max_qty)
-                        order_to_place = order_with_user_and_broker.copy()
-                        order_to_place["qty"] = current_qty
+                    # logger.debug(f"Order with user and broker: {order_with_user_and_broker}")
+                    max_qty = FNOInfo().get_max_order_qty_by_base_symbol(
+                        order_with_user_and_broker.get("base_symbol")
+                    )
+                    user_credentials = fetch_user_credentials_firebase(
+                        user["Broker"]["BrokerUsername"]
+                    )
 
                         order_to_place["tax"] = await asyncio.gather(
                             get_orders_tax(order_to_place, user_credentials)
