@@ -19,9 +19,13 @@ from Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils import (
 from Executor.NSEStrategies.Equity.LongTerm.LongTermUtils import (
     get_longterm_stocks_df
 )
+from Executor.NSEStrategies.Equity.MidTerm.MidTermUtils import (
+    get_midterm_stocks_df
+)
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase, update_signal_firebase
 import Executor.NSEStrategies.Equity.ShortTerm.ShortTerm as ShortTerm
+import Executor.NSEStrategies.Equity.MidTerm.MidTerm as MidTerm
 import Executor.NSEStrategies.Equity.LongTerm.LongTerm as LongTerm
 import Executor.NSEStrategies.Equity.EquityStopLoss.EquityStopLoss as StopLoss
 
@@ -84,8 +88,9 @@ def main():
     StopLoss.main()
 
     momentum_stocks_df, mean_reversion_stocks_df, ema_bb_confluence_stocks_df = get_shortterm_stocks_df()
+    tfmomentum_stocks_df, tfema_stocks_df = get_midterm_stocks_df()
     combo_stocks_df, ratio_stocks_df = get_longterm_stocks_df()
-    update_todaystocks_db(momentum_stocks_df,mean_reversion_stocks_df,ema_bb_confluence_stocks_df,ratio_stocks_df,combo_stocks_df)
+    update_todaystocks_db(momentum_stocks_df,mean_reversion_stocks_df,ema_bb_confluence_stocks_df,ratio_stocks_df,combo_stocks_df,tfmomentum_stocks_df, tfema_stocks_df)
 
     desired_start_time_str = pystocks_obj.get_entry_params().EntryTime
     start_hour, start_minute, _ = map(int, desired_start_time_str.split(":"))
@@ -109,6 +114,7 @@ def main():
 
     
     ShortTerm.main()
+    MidTerm.main()
     LongTerm.main()
 
 if __name__ == "__main__":

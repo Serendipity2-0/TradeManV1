@@ -16,6 +16,8 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
 )
 logger = LoggerSetup()
 
+financial_db_path = os.getenv("financial_db_path")
+
 def get_longterm_stocks_df():
     """
     Get long-term stocks data.
@@ -29,7 +31,6 @@ def get_longterm_stocks_df():
     stock_financial_data_df = get_financial_data(stock_codes)
     if not stock_financial_data_df.empty:
         # SQLite database path
-        financial_db_path = os.getenv("financial_db_path")
         table_name = "financials"
         try:
             conn = sqlite3.connect(financial_db_path)
