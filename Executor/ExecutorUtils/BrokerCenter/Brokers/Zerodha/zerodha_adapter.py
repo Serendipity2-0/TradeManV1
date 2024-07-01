@@ -6,7 +6,11 @@ from six.moves.urllib.parse import urljoin
 import aiohttp
 import json
 import kiteconnect.exceptions as ex
-from Executor.Strategies.StrategiesUtil import (
+
+DIR = os.getcwd()
+sys.path.append(DIR)
+
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_strategy_name_from_trade_id,
     get_signal_from_trade_id,
     calculate_transaction_type_sl,
@@ -18,11 +22,8 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-DIR = os.getcwd()
-sys.path.append(DIR)
 
-
-class aysnc_KiteConnect(KiteConnect):
+class async_KiteConnect(KiteConnect):
     async def place_order(
         self,
         variety,
@@ -50,9 +51,10 @@ class aysnc_KiteConnect(KiteConnect):
             if params[k] is None:
                 del params[k]
 
-        return await self._post(
+        order_id = await self._post(
             "order.place", url_args={"variety": variety}, params=params
-        )["order_id"]
+        )
+        return order_id["order_id"]
 
     async def _post(
         self, route, url_args=None, params=None, is_json=False, query_params=None
@@ -207,9 +209,22 @@ class aysnc_KiteConnect(KiteConnect):
 
 def create_kite_obj(user_details=None, api_key=None, access_token=None):
     if api_key and access_token:
-        return aysnc_KiteConnect(api_key=api_key, access_token=access_token)
+        return KiteConnect(api_key=api_key, access_token=access_token)
     elif user_details:
-        return aysnc_KiteConnect(
+        return KiteConnect(
+            api_key=user_details["ApiKey"], access_token=user_details["SessionId"]
+        )
+    else:
+        raise ValueError(
+            "Either user_details or api_key and access_token must be provided"
+        )
+
+
+def create_async_kite_obj(user_details=None, api_key=None, access_token=None):
+    if api_key and access_token:
+        return async_KiteConnect(api_key=api_key, access_token=access_token)
+    elif user_details:
+        return async_KiteConnect(
             api_key=user_details["ApiKey"], access_token=user_details["SessionId"]
         )
     else:
@@ -232,8 +247,9 @@ def zerodha_fetch_free_cash(user_details):
         Exception: If there is an issue fetching the balance.
     """
     logger.debug(f"Fetching free cash for {user_details['BrokerUsername']}")
-    kite = KiteConnect(api_key=user_details["ApiKey"])
-    kite.set_access_token(user_details["SessionId"])
+    kite = KiteConnect(
+        api_key=user_details["ApiKey"], access_token=user_details["SessionId"]
+    )
     try:
         # Fetch the account balance details
         balance_details = kite.margins(segment="equity")
@@ -275,8 +291,10 @@ def get_csv_kite(user_details):
         f"Fetching instruments for KITE using {user_details['Broker']['BrokerUsername']}"
     )
     try:
-        kite = KiteConnect(api_key=user_details["Broker"]["ApiKey"])
-        kite.set_access_token(user_details["Broker"]["SessionId"])
+        kite = KiteConnect(
+            api_key=user_details["Broker"]["ApiKey"],
+            access_token=user_details["Broker"]["SessionId"],
+        )
         instrument_dump = kite.instruments()
         instrument_df = pd.DataFrame(instrument_dump)
         instrument_df["exchange_token"] = instrument_df["exchange_token"].astype(str)
@@ -377,7 +395,7 @@ def zerodha_todays_tradebook(user):
         Exception: If there is an error fetching the tradebook.
     """
     try:
-        kite = create_kite_obj(api_key=user["ApiKey"], access_token=user["SessionId"])
+        kite = KiteConnect(api_key=user["ApiKey"], access_token=user["SessionId"])
         orders = kite.orders()
         if not orders:
             return None
@@ -460,63 +478,7 @@ def calculate_product_type(kite, product_type):
     return product_type
 
 
-def calculate_segment_type(kite, segment_type):
-    """
-    Determines the segment type by checking if the segment type attribute exists in the KiteConnect object.
-
-    Args:
-    kite: A KiteConnect object.
-    segment_type (str): The market segment type.
-
-    Returns:
-    str: The segment type attribute from the KiteConnect object.
-
-    Raises:
-    ValueError: If the attribute does not exist in the kite object.
-    """
-    # Prefix to indicate the exchange type
-    prefix = "EXCHANGE_"
-
-    # Construct the attribute name
-    attribute_name = prefix + segment_type
-
-    # Get the attribute from the kite object, or raise an error if it doesn't exist
-    if hasattr(kite, attribute_name):
-        return getattr(kite, attribute_name)
-    else:
-        raise ValueError(f"Invalid segment_type '{segment_type}' in order_details")
-
-
-def get_avg_prc(kite, order_id):
-    """
-    Fetches the average price for a completed order given its ID.
-
-    Args:
-    kite: A KiteConnect object.
-    order_id (int): The ID of the order.
-
-    Returns:
-    float: The average price of the completed order. Returns 0.0 if not found or an error occurs.
-
-    Raises:
-    Exception: If no order_id is provided or other general exceptions occur during API call.
-    """
-    if not order_id:
-        raise Exception("Order_id not found")
-
-    try:
-        order_history = kite.order_history(order_id=order_id)
-        for order in order_history:
-            if order.get("status") == "COMPLETE":
-                avg_prc = order.get("average_price", 0.0)
-                break
-        return avg_prc
-    except Exception as e:
-        logger.error(f"Error fetching avg_prc for order_id {order_id}: {e}")
-        return 0.0
-
-
-def get_order_status(kite, order_id):
+def get_order_status(user_credentials, order_id):
     """
     Fetches and returns the order status for a given order ID.
 
@@ -531,6 +493,10 @@ def get_order_status(kite, order_id):
     Exception: If any errors occur during the fetching of the order status.
     """
     try:
+        kite = KiteConnect(
+            api_key=user_credentials["ApiKey"],
+            access_token=user_credentials["SessionId"],
+        )
         order_history = kite.order_history(order_id=order_id)
         for order in order_history:
             if order.get("status") == "REJECTED":
@@ -545,30 +511,6 @@ def get_order_status(kite, order_id):
     except Exception as e:
         logger.error(f"Error fetching order status for order_id {order_id}: {e}")
         return "FAIL"
-
-
-def get_order_details(user):
-    """
-    Retrieves all orders for a specific user based on API key and access token.
-
-    Args:
-    user (dict): A dictionary containing user's 'api_key' and 'access_token'.
-
-    Returns:
-    list: A list of orders, or None if an error occurs.
-
-    Raises:
-    Exception: If any errors occur during the retrieval of orders.
-    """
-    try:
-        kite = create_kite_obj(
-            api_key=user["api_key"], access_token=user["access_token"]
-        )
-        orders = kite.orders()
-        return orders
-    except Exception as e:
-        logger.error(f"Error fetching orders for KITE: {e}")
-        return None
 
 
 async def kite_place_orders_for_users(orders_to_place, users_credentials):
@@ -587,7 +529,7 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
         "message": None,
     }
 
-    kite = create_kite_obj(
+    kite = create_async_kite_obj(
         user_details=users_credentials
     )  # Create a KiteConnect instance with user's broker credentials
     order_id = None
@@ -651,6 +593,8 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
         }
         return results
 
+    order_status = None
+
     try:
         order_id = await kite.place_order(
             variety=kite.VARIETY_REGULAR,
@@ -667,7 +611,7 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
 
         logger.success(f"Order placed. ID is: {order_id}")
         # #TODO: Fetch the order status of the order_id and check if it is complete
-        order_status = get_order_status(kite, order_id)
+        order_status = get_order_status(users_credentials, order_id)
         if order_status != "PASS":
             message = f"Order placement failed: {order_status} for {orders_to_place['username']}"
             discord_bot(message, strategy)
@@ -676,6 +620,7 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)
         discord_bot(message, strategy)
+        order_status = "FAIL"
 
     results = {
         "exchange_token": int(exchange_token),
@@ -710,7 +655,7 @@ def kite_modify_orders_for_users(order_details, users_credentials):
     """
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
 
-    kite = create_kite_obj(
+    kite = create_async_kite_obj(
         user_details=users_credentials
     )  # Create a KiteConnect instance with user's broker credentials
     order_id_dict = retrieve_order_id(
@@ -792,7 +737,7 @@ def kite_create_cancel_order(trade, user):
         Exception: If cancelling the order fails.
     """
     try:
-        kite = create_kite_obj(user_details=user["Broker"])
+        kite = create_async_kite_obj(user_details=user["Broker"])
         kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade["order_id"])
     except Exception as e:
         logger.error(f"Error cancelling order: {e}")
@@ -936,7 +881,7 @@ def calculate_kite_net_values(categorized_dfs):
     return net_values
 
 
-def fetch_open_orders(user_details):
+def fetch_kite_open_orders(user_details):
     """
     Fetches open orders from Kite for a given user.
 
@@ -950,7 +895,10 @@ def fetch_open_orders(user_details):
         Exception: If fetching the orders fails.
     """
     try:
-        kite = create_kite_obj(user_details["Broker"])
+        kite = KiteConnect(
+            api_key=user_details["Broker"]["ApiKey"],
+            access_token=user_details["Broker"]["SessionId"],
+        )
         positions = kite.positions()
         return positions
     except Exception as e:
@@ -972,7 +920,9 @@ def get_zerodha_pnl(user):
         Exception: If there is an error in fetching the profit and loss data.
     """
     try:
-        kite = create_kite_obj(user["Broker"])
+        kite = KiteConnect(
+            api_key=user["Broker"]["ApiKey"], access_token=user["Broker"]["SessionId"]
+        )
         positions = kite.positions()["net"]
         total_pnl = sum(position["pnl"] for position in positions)
         return total_pnl
@@ -983,7 +933,7 @@ def get_zerodha_pnl(user):
         return None
 
 
-async def get_order_tax(order, user_credentials, broker):
+def get_kite_order_tax(order, broker):
     """
     Calculates the required tax for an order based on the order details and user credentials.
 
@@ -1010,6 +960,10 @@ async def get_order_tax(order, user_credentials, broker):
     basket_order = []
     primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
 
+    # kite = create_async_kite_obj(
+    #     api_key=primary_account_session_id["Broker"]["ApiKey"],
+    #     access_token=primary_account_session_id["Broker"]["SessionId"],
+    # )
     kite = create_kite_obj(
         api_key=primary_account_session_id["Broker"]["ApiKey"],
         access_token=primary_account_session_id["Broker"]["SessionId"],
@@ -1049,7 +1003,7 @@ async def get_order_tax(order, user_credentials, broker):
         if limit_prc < 0:
             limit_prc = 1.0
     elif product == "CNC":
-        limit_prc = await get_single_ltp(exchange_token=exchange_token, segment="NSE")
+        limit_prc = get_single_ltp(exchange_token=exchange_token, segment="NSE")
     else:
         limit_prc = 0.0
 
@@ -1070,7 +1024,7 @@ async def get_order_tax(order, user_credentials, broker):
         "order_type": order_type,
     }
     basket_order.append(tax_order)
-    tax_details = await kite.basket_order_margins(basket_order, mode="compact")
+    tax_details = kite.basket_order_margins(basket_order, mode="compact")
     tax = tax_details["orders"][0]["charges"]["total"]
     tax = round(tax, 2)
     if broker.lower() == "aliceblue":

@@ -9,7 +9,7 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-DB_DIR = os.getenv("DB_DIR")
+USER_DB_DIR = os.getenv("USR_TRADELOG_DB_FOLDER")
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
@@ -72,7 +72,7 @@ def calculate_pnl_summary():
     active_users = fetch_active_users_from_firebase()
     for user in active_users:
         user_name = user["Profile"]["Name"]
-        user_db_path = os.path.join(DB_DIR, f"{user['Tr_No']}.db")
+        user_db_path = os.path.join(USER_DB_DIR, f"{user['Tr_No']}.db")
         user_db_conn = get_db_connection(user_db_path)
         user_tables = fetch_user_tables(user_db_conn)
         overall_summary = {

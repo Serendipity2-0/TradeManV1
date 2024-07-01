@@ -10,7 +10,6 @@ DIR = os.getcwd()
 sys.path.append(DIR)
 
 load_dotenv(os.path.join(DIR, "trademan.env"))
-db_dir = os.getenv("DB_DIR")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -110,130 +109,86 @@ def calculate_qty_for_strategies(
 async def place_order_for_strategy(
     strategy_users, order_details, order_qty_mode: str = None
 ):
-    all_order_statuses = []  # To store the status of all orders
+    all_order_statuses = []
+    order_tasks = []
 
     for order in order_details:
-        order_tasks = []
-
         for user in strategy_users:
-            logger.debug(f"Placing orders for user {user['Broker']['BrokerUsername']}")
-            order_with_user_and_broker = order.copy()
-
             try:
-                if order_qty_mode == "Sweep":
-                    order_with_user_and_broker.update(
-                        {
-                            "broker": user["Broker"]["BrokerName"],
-                            "username": user["Broker"]["BrokerUsername"],
-                        }
-                    )
-                elif order_qty_mode == "Holdings":
-                    qty = fetch_qty_for_holdings_sqldb(
-                        user["Tr_No"], order.get("trade_id")
-                    )
-                    logger.debug(f"Qty for trade_id {order.get('trade_id')} is {qty}")
-                    order_with_user_and_broker.update(
-                        {
-                            "broker": user["Broker"]["BrokerName"],
-                            "username": user["Broker"]["BrokerUsername"],
-                            "qty": int(qty),
-                        }
-                    )
-                else:
-                    order_with_user_and_broker.update(
-                        {
-                            "broker": user["Broker"]["BrokerName"],
-                            "username": user["Broker"]["BrokerUsername"],
-                            "qty": user["Strategies"][order.get("strategy")]["Qty"],
-                        }
-                    )
-                orders_to_place.append(order_with_user_and_broker)
-            except Exception as e:
-                logger.error(
-                    f"Error updating order with user and broker: {e} : {traceback.format_exc()}"
-                )
-                continue
-
-            try:
-                max_qty = FNOInfo().get_max_order_qty_by_base_symbol(
-                    order_with_user_and_broker.get("base_symbol")
-                )
                 user_credentials = fetch_user_credentials_firebase(
                     user["Broker"]["BrokerUsername"]
                 )
-                order_qty = int(order_with_user_and_broker["qty"])
+
+                # Create a new order dictionary for each user
+                order_with_user_and_broker = order.copy()
+                order_with_user_and_broker.update(
+                    {
+                        "broker": user["Broker"]["BrokerName"],
+                        "username": user["Broker"]["BrokerUsername"],
+                        "qty": user["Strategies"][order.get("strategy")]["Qty"]
+                        if order_qty_mode != "Holdings"
+                        else fetch_qty_for_holdings_sqldb(
+                            user["Tr_No"], order.get("trade_id")
+                        ),
+                    }
+                )
+
+                # Calculate tax for this specific order
+                tax = get_orders_tax(order_with_user_and_broker, user_credentials)
+                order_with_user_and_broker["tax"] = tax
+
+                if order_with_user_and_broker.get("order_type") == "Stoploss":
+                    await asyncio.sleep(1)
+
+                # Create a task for order placement
+                order_task = asyncio.create_task(
+                    place_order_with_tax(
+                        order_with_user_and_broker.copy(),
+                        user_credentials,
+                        user["Tr_No"],
+                        order.get("strategy"),
+                    )
+                )
+                order_tasks.append(order_task)
             except Exception as e:
-                logger.error(f"Error fetching max qty for base symbol: {e}")
-                continue
+                logger.error(
+                    f"Error preparing order for user {user['Broker']['BrokerUsername']}: {e}"
+                )
 
-            if max_qty:
-                try:
-                    # logger.debug(f"Order with user and broker: {order_with_user_and_broker}")
-                    max_qty = FNOInfo().get_max_order_qty_by_base_symbol(
-                        order_with_user_and_broker.get("base_symbol")
-                    )
-                    user_credentials = fetch_user_credentials_firebase(
-                        user["Broker"]["BrokerUsername"]
-                    )
-
-                        order_to_place["tax"] = await asyncio.gather(
-                            get_orders_tax(order_to_place, user_credentials)
-                        )
-                        order_tasks.append(
-                            place_order_for_brokers(order_to_place, user_credentials)
-                        )
-                        order_qty -= current_qty
-                except Exception as e:
-                    logger.error(
-                        f"Error splitting orders and order not placed: {e} : {traceback.format_exc()}"
-                    )
-            else:
-                try:
-                    order_to_place["tax"] = await asyncio.gather(
-                        get_orders_tax(order_to_place, user_credentials)
-                    )
-                    order_tasks.append(
-                        place_order_for_brokers(
-                            order_with_user_and_broker, user_credentials
-                        )
-                    )
-                except Exception as e:
-                    logger.error(f"Error placing order with no max_qty: {e}")
-
+    # Await all tasks and collect statuses
+    if order_tasks:
         all_order_statuses = await asyncio.gather(*order_tasks)
 
+    return all_order_statuses
+
+
+async def place_order_with_tax(order, user_credentials, tr_no, strategy):
+    try:
+        # Place the order
+        status = await place_order_for_brokers(order, user_credentials)
+
+        if status is None:
+            logger.error(f"Order placement returned None for user {order['username']}")
+            # return {"message": "Order placement failed", "error": "Received None status"}
+            status["tax"] = 0
+        else:
+            # Add the tax information to the status
+            status["tax"] = order.get("tax")
+
         # Update Firebase with order status
-        update_path = f"Strategies/{order.get('strategy')}/TradeState/orders"
-        logger.debug(f"update_path: {update_path}")
+        update_path = f"Strategies/{strategy}/TradeState/orders"
+        push_orders_firebase(CLIENTS_USER_FB_DB, tr_no, status, update_path)
 
-        if order_qty_mode == "Sweep":
-            try:
-                push_orders_firebase(
-                    CLIENTS_USER_FB_DB, user["Tr_No"], all_order_statuses, update_path
-                )
-            except Exception as e:
-                logger.error(f"Error updating firebase with order status: {e}")
-            all_order_statuses.clear()
-
-        if order_qty_mode != "Sweep":
-            try:
-                push_orders_firebase(
-                    CLIENTS_USER_FB_DB, user["Tr_No"], all_order_statuses, update_path
-                )
-            except Exception as e:
-                logger.error(f"Error updating firebase with order status: {e}")
-
-        if "Hedge" in order.get("order_mode", ""):
-            time.sleep(1)
-
-    # Send notification if any orders failed
-    for status in all_order_statuses:
         if status.get("message", "") == "Order placement failed":
             discord_bot(
-                f"Order failed for user {user['Broker']['BrokerUsername']} in strategy {order.get('strategy')}",
-                order.get("strategy"),
+                f"Order failed for user {order['username']} in strategy {strategy}",
+                strategy,
             )
-    return all_order_statuses
+
+        return status
+    except Exception as e:
+        logger.error(f"Error in place_order_with_tax: {e}")
+        return {"message": "Order placement failed", "error": str(e)}
 
 
 def modify_orders_for_strategy(strategy_users, order_details):

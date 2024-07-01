@@ -4,19 +4,22 @@ from typing import Optional
 from typing import List, Dict
 import datetime
 
+
 class Accounts_(BaseModel):
     CurrentBaseCapital: int = Field(..., example=0)
-    CurrentWeekCapital: int|None = Field(default=0, example=0)
-    Drawdown: int|None = Field(default=0, example=0)
-    NetAdditions: int|None = Field(default=0, example=0)
-    NetCharges: int|None = Field(default=0, example=0)
-    NetCommission: int|None = Field(default=0, example=0)
-    NetPnL: int|None = Field(default=0, example=0)
-    NetWithdrawals: int|None = Field(default=0, example=0)
-    PnLWithdrawals: int|None = Field(default=0, example=0)
+    CurrentWeekCapital: int | None = Field(default=0, example=0)
+    Drawdown: int | None = Field(default=0, example=0)
+    NetAdditions: int | None = Field(default=0, example=0)
+    NetCharges: int | None = Field(default=0, example=0)
+    NetCommission: int | None = Field(default=0, example=0)
+    NetPnL: int | None = Field(default=0, example=0)
+    NetWithdrawals: int | None = Field(default=0, example=0)
+    PnLWithdrawals: int | None = Field(default=0, example=0)
+
 
 class Active_(BaseModel):
     Active: bool = Field(default=False, example=False)
+
 
 class Broker_(BaseModel):
     ApiKey: str = Field(..., example="")
@@ -24,8 +27,9 @@ class Broker_(BaseModel):
     BrokerName: str = Field(..., example="Zerodha")
     BrokerPassword: str = Field(..., example="")
     BrokerUsername: str = Field(..., example="")
-    SessionId: str|None = Field(default="", example="")
+    SessionId: str | None = Field(default="", example="")
     TotpAccess: str = Field(..., example="")
+
 
 class Profile_(BaseModel):
     AadharCardNo: str = Field(..., example="")
@@ -51,10 +55,32 @@ class Strategy_(BaseModel):
 
 class UserDetails(BaseModel):
     # use this to add more schemas
-    Accounts: Accounts_ 
-    Active: Active_ 
-    Broker: Broker_ 
-    Profile: Profile_ 
-    Strategies: Dict[str, Strategy_] 
+    Accounts: Accounts_
+    Active: Active_
+    Broker: Broker_
+    Profile: Profile_
+    Strategies: Dict[str, Strategy_]
 
-    
+
+class LoginUserDetails(BaseModel):
+    Email: str
+    # Phone_Number: str
+    Password: str
+
+
+class ProfilePage(BaseModel):
+    Name: str
+    Email: str
+    Phone_Number: str
+    Date_of_Birth: str
+    Aadhar_Card_No: str
+    PAN_Card_No: str
+    Bank_Name: str
+    Bank_Account_No: str
+    BrokerName: Optional[str] = None
+    Strategies: Optional[List[str]] = None
+
+
+class ClientData(BaseModel):
+    profile: ProfilePage
+    strategies: Optional[List[str]] = None

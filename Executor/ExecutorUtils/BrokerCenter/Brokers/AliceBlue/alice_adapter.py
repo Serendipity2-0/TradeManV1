@@ -17,7 +17,7 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
     discord_admin_bot,
 )
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_strategy_name_from_trade_id,
     get_signal_from_trade_id,
     calculate_transaction_type_sl,
@@ -866,7 +866,7 @@ def calculate_alice_net_values(categorized_dfs):
     return net_values
 
 
-def fetch_open_orders(user):
+def fetch_alice_open_orders(user):
     """
     The function fetches open orders for a given user using an Alice object and returns the open
     positions.

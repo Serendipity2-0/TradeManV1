@@ -55,7 +55,7 @@ from Executor.ExecutorUtils.ReportUtils.EodReportUtils import (
     update_account_keys_fb,
 )
 
-CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
+CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 today_string = datetime.now().strftime("%Y-%m-%d")
 

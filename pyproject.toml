@@ -31,3 +31,5 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 trademan = "User.main:main_api"
+celery_worker = "User.Executor.Scripts.CeleryScripts.trademan_celery_app:start_worker"
+celery_beat = "User.Executor.Scripts.CeleryScripts.trademan_celery_app:start_beat"

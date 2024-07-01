@@ -15,7 +15,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_strategy_name_from_trade_id,
     get_signal_from_trade_id,
     calculate_transaction_type_sl,
@@ -144,7 +144,7 @@ def firstock_todays_tradebook(user_details):
         return None
 
 
-def fetch_open_orders(user):
+def fetch_firstock_open_orders(user):
     """
     The function fetches open orders for a user from a stock position book using their broker username.
 
@@ -314,6 +314,7 @@ async def firstock_place_orders_for_users(orders_to_place, users_credentials):
     product_type = calculate_product_type(product)
     if product == "CNC":
         product_type = "C"
+        segment_type = "NSE"
         trading_symbol = Instrument().get_full_format_trading_symbol_by_exchange_token(
             exchange_token, "NSE"
         )
@@ -378,6 +379,8 @@ async def firstock_place_orders_for_users(orders_to_place, users_credentials):
         logger.success(
             f"Order placed. ID is: {order_id.get('data', {}).get('orderNumber', {})}"
         )
+
+        order_status = None
         # #TODO: Fetch the order status of the order_id and check if it is complete
         order_status = get_order_status(users_credentials["BrokerUsername"], order_id)
         if order_status != "PASS":
@@ -388,6 +391,7 @@ async def firstock_place_orders_for_users(orders_to_place, users_credentials):
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)
         discord_bot(message, strategy)
+        order_status = "FAIL"
 
     results = {
         "exchange_token": int(exchange_token),

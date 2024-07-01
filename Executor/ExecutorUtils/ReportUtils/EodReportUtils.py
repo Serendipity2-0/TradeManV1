@@ -19,7 +19,7 @@ load_dotenv(ENV_PATH)
 
 CONSOLIDATED_REPORT_PATH = os.getenv("CONSOLIDATED_REPORT_PATH")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-CLIENTS_TRADE_SQL_DB = os.getenv("DB_DIR")
+CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 today_string = datetime.now().strftime("%Y-%m-%d")
 
