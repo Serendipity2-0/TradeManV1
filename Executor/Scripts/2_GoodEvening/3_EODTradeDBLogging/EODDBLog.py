@@ -604,6 +604,7 @@ def fetch_and_prepare_holdings_data():
                         "margin_utilized": margin_utilized,
                         "tax": 0.0,
                         "hedge_entry_price": avg_hedge_order_price,
+                        "setup": order.get("setup"),
                     }
 
                     all_holdings.append(holding)

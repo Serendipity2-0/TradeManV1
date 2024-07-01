@@ -26,10 +26,13 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     place_order_single_user,
     fetch_qty_amplifier,
     fetch_strategy_amplifier,
-    fetch_strategy_users
+    fetch_strategy_users,
 )
 
+
 logger = LoggerSetup()
+LONG_RATIO = os.getenv("LONG_RATIO")
+LONG_COMBO = os.getenv("LONG_COMBO")
 stock_pick_db_path = os.getenv("today_stock_data_db_path")
 
 
@@ -47,13 +50,12 @@ def get_today_stocks():
         df = pd.read_sql_query("SELECT * FROM CombinedStocks", conn)
 
         # Filter the rows where Long_Ratio or Long_Combo column is 1
-        shortterm_stocks_df = df[
-            (df['Long_Ratio'] == 1) |
-            (df['Long_Combo'] == 1)
-        ]
+        longterm_stocks_df = df[(df[LONG_RATIO] == 1) | (df[LONG_COMBO] == 1)]
 
         # Sort by AthLtpRatio in descending order and get the top 5 stocks
-        top_5_stocks_df = shortterm_stocks_df.sort_values(by='AthLtpRatio', ascending=False).head(5)
+        top_5_stocks_df = longterm_stocks_df.sort_values(
+            by="AthLtpRatio", ascending=False
+        ).head(5)
         return top_5_stocks_df
     except Exception as e:
         logger.error(f"Error getting today's stocks: {e}")
@@ -65,11 +67,21 @@ def main():
     Retrieves and processes today's top stock picks, places orders for users if needed.
     """
     from Executor.NSEStrategies.Equity.Equity import (
-    pystocks_obj, strategy_name, strategy_type, order_type, product_type, signals_to_fb
+        pystocks_obj,
+        strategy_name,
+        strategy_type,
+        order_type,
+        product_type,
+        signals_to_fb,
     )
+
     top5_stocks_df = get_today_stocks()
+    if top5_stocks_df.empty:
+        logger.info("No stocks selected for today in Longterm")
+        return
+
     symbol_list = top5_stocks_df["Symbol"].tolist()
-    
+
     # Display the filtered and sorted DataFrame
     logger.info(f"Stocks selected for today: {symbol_list}")
 
@@ -80,7 +92,9 @@ def main():
         holdings = fetch_table_from_db(user["Tr_No"], "Holdings")
         py_holdings = holdings[holdings["trade_id"].str.startswith("PS")]
         current_holdings_count = len(py_holdings)
-        logger.debug(f"Current holdings for user {user['Tr_No']}: {current_holdings_count}")
+        logger.debug(
+            f"Current holdings for user {user['Tr_No']}: {current_holdings_count}"
+        )
 
         if current_holdings_count < 5:
             needed_orders = 5 - current_holdings_count
@@ -88,13 +102,26 @@ def main():
                 if needed_orders == 0:
                     break
 
+                stock_row = top5_stocks_df[top5_stocks_df["Symbol"] == symbol].iloc[0]
+                if stock_row[LONG_RATIO] == 1:
+                    setup_name = LONG_RATIO
+                elif stock_row[LONG_COMBO] == 1:
+                    setup_name = LONG_COMBO
+                else:
+                    setup_name = "Unknown"
+
+                # Log the setup name
+                logger.info(f"Setup for {symbol}: {setup_name}")
+
                 new_base = pystocks_obj.reload_strategy(pystocks_obj.StrategyName)
                 if symbol not in trade_id_mapping:
                     trade_id_mapping[symbol] = new_base.NextTradeId
 
                 trade_id = trade_id_mapping[symbol]
 
-                exchange_token = instrument_obj().get_exchange_token_by_name(symbol, "NSE")
+                exchange_token = instrument_obj().get_exchange_token_by_name(
+                    symbol, "NSE"
+                )
                 ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
                 ltp = round(ltp * 20) / 20
                 order_details = [
@@ -109,7 +136,8 @@ def main():
                         "order_mode": "MainEntry",
                         "trade_id": trade_id,
                         "limit_prc": ltp,
-                        "trade_mode": os.getenv("TRADE_MODE")
+                        "trade_mode": os.getenv("TRADE_MODE"),
+                        "setup": setup_name,
                     }
                 ]
                 order_to_place = assign_trade_id(order_details)
@@ -138,6 +166,7 @@ def main():
                 needed_orders -= 1
 
             logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 5")
-            
-    if __name__ == "__main__":
-        main()
+
+
+if __name__ == "__main__":
+    main()

@@ -14,9 +14,13 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     get_financial_data,
     get_stock_codes,
 )
+
 logger = LoggerSetup()
+LONG_RATIO = os.getenv("LONG_RATIO")
+LONG_COMBO = os.getenv("LONG_COMBO")
 
 financial_db_path = os.getenv("financial_db_path")
+
 
 def get_longterm_stocks_df():
     """
@@ -46,7 +50,8 @@ def get_longterm_stocks_df():
         combo_stocks_df = perform_combo_strategy(db_path=financial_db_path)
         ratio_stocks_df = perform_ratio_strategy(db_path=financial_db_path)
         return combo_stocks_df, ratio_stocks_df
-    
+
+
 # Define the fundamental ratio strategy
 def perform_ratio_strategy(
     db_path,
@@ -86,14 +91,14 @@ def perform_ratio_strategy(
         df = pd.read_sql(query, conn)
 
         # Apply filtering criteria and add Long_Ratio column
-        df["Long_Ratio"] = 0
+        df[LONG_RATIO] = 0
         shortlisted_df = df[
             (df["Market Cap"] > market_cap_threshold)
             & (df["P/E Ratio"] < pe_ratio_threshold)
             & (df["P/B Ratio"] < pb_ratio_threshold)
             & (df["Dividend Yield"] > dividend_yield_threshold)
         ]
-        df.loc[shortlisted_df.index, "Long_Ratio"] = 1
+        df.loc[shortlisted_df.index, LONG_RATIO] = 1
 
         conn.close()
 
@@ -152,7 +157,7 @@ def perform_combo_strategy(
         df = pd.read_sql(query, conn)
 
         # Apply filtering criteria and add Long_Combo column
-        df["Long_Combo"] = 0
+        df[LONG_COMBO] = 0
         shortlisted_df = df[
             (df["Market Cap"] > market_cap_threshold)
             & (df["Piotroski F-Score"] >= f_score_threshold)
@@ -162,7 +167,7 @@ def perform_combo_strategy(
             & (df["Debt to Equity"] < debt_to_equity_threshold)
             & (df["Gross Profit Growth"] > gross_profit_growth_threshold)
         ]
-        df.loc[shortlisted_df.index, "Long_Combo"] = 1
+        df.loc[shortlisted_df.index, LONG_COMBO] = 1
 
         conn.close()
 
@@ -171,3 +176,7 @@ def perform_combo_strategy(
     except Exception as e:
         logger.error(f"Error in shortlisting stocks: {e}")
         return pd.DataFrame()
+
+
+if __name__ == "__main__":
+    get_longterm_stocks_df()

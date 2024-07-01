@@ -528,6 +528,7 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
 
     results = {
         "avg_prc": None,
+        "setup": None,
         "exchange_token": None,
         "order_id": None,
         "qty": None,
@@ -578,7 +579,6 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
         trigger_price = round(float(trigger_price), 2)
         if trigger_price < 0:
             trigger_price = 1.5
-
     if orders_to_place.get("trade_mode") == "PAPER":
         logger.debug("Placing paper trade order")
         logger.debug(f"transaction_type: {transaction_type}")
@@ -591,7 +591,9 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
         logger.debug(f"trigger_price: {trigger_price}")
         logger.debug(f"instrument: {trading_symbol}")
         logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
+        logger.debug(f"setup: {orders_to_place.get('setup', '')}")
         results = {
+            "setup": orders_to_place.get("setup", ""),
             "exchange_token": int(exchange_token),
             "order_id": 123456789,
             "qty": qty,
@@ -630,6 +632,7 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
         order_status = "FAIL"
 
     results = {
+        "setup": orders_to_place.get("setup", ""),
         "exchange_token": int(exchange_token),
         "order_id": order_id,
         "qty": qty,

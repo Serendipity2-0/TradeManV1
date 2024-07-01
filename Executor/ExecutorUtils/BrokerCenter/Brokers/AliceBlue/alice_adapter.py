@@ -508,6 +508,7 @@ async def ant_place_orders_for_users(orders_to_place, users_credentials):
     )
 
     results = {
+        "setup": None,
         "exchange_token": None,
         "order_id": None,
         "qty": None,
@@ -562,11 +563,13 @@ async def ant_place_orders_for_users(orders_to_place, users_credentials):
         logger.debug(f"qty: {qty}")
         logger.debug(f"limit_prc: {limit_prc}")
         logger.debug(f"trigger_price: {trigger_price}")
+        logger.debug(f"setup: {orders_to_place.get('setup', '')}")
         logger.debug(
             f"instrument: {alice.get_instrument_by_token(segment, int(exchange_token))}"
         )
         logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
         results = {
+            "setup": orders_to_place.get("setup", ""),
             "exchange_token": int(exchange_token),
             "order_id": 123456789,
             "qty": qty,
@@ -603,6 +606,7 @@ async def ant_place_orders_for_users(orders_to_place, users_credentials):
         discord_bot(message, strategy)
 
     results = {
+        "setup": orders_to_place.get("setup", ""),
         "exchange_token": int(exchange_token),
         "order_id": order_id["NOrdNo"],
         "qty": qty,

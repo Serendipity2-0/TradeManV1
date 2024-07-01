@@ -292,6 +292,7 @@ async def firstock_place_orders_for_users(orders_to_place, users_credentials):
 
     results = {
         "avg_prc": None,
+        "setup": None,
         "exchange_token": None,
         "order_id": None,
         "qty": None,
@@ -353,8 +354,10 @@ async def firstock_place_orders_for_users(orders_to_place, users_credentials):
         logger.debug(f"trigger_price: {trigger_price}")
         logger.debug(f"instrument: {trading_symbol}")
         logger.debug(f"trade_id: {orders_to_place.get('trade_id', '')}")
+        logger.debug(f"setup: {orders_to_place.get('setup', '')}")
         results = {
             "exchange_token": int(exchange_token),
+            "setup": orders_to_place.get("setup", ""),
             "order_id": 123456789,
             "qty": qty,
             "time_stamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -394,6 +397,7 @@ async def firstock_place_orders_for_users(orders_to_place, users_credentials):
         order_status = "FAIL"
 
     results = {
+        "setup": orders_to_place.get("setup", ""),
         "exchange_token": int(exchange_token),
         "order_id": order_id.get("data", {}).get("orderNumber", {}),
         "qty": qty,

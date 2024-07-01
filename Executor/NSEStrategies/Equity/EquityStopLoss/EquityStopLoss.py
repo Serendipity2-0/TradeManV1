@@ -25,6 +25,9 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     place_order_single_user,
 )
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+from Executor.NSEStrategies.Equity.EquityStopLoss.EquityStopLossUtils import (
+    calculate_sl,
+)
 
 logger = LoggerSetup()
 
@@ -106,21 +109,12 @@ def main():
             exchange_token = Instrument().get_exchange_token_by_name(symbol, "NSE")
             ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
             buy_price = float(row["entry_price"])
-            per_change = (ltp - buy_price) / buy_price * 100
-            sl = buy_price - (buy_price * stoploss_multiplier / 100)
-
+            setup_name = row["setup"]
+            sl = calculate_sl(setup_name, buy_price, stoploss_multiplier, ltp)
             trade_id = row["trade_id"]
             trade_id = trade_id.split("_")
             trade_id = trade_id[0]
 
-            if (
-                per_change // stoploss_multiplier > 0
-                and per_change // stoploss_multiplier != 1
-            ):
-                for interation in range(int(per_change // stoploss_multiplier)):
-                    sl = sl + (buy_price * stoploss_multiplier / 100)
-
-                    sl = round(sl, 1)
             logger.debug("LTP", ltp, "Buy Price", buy_price, "SL", sl)
             order_details = [
                 {
@@ -136,9 +130,13 @@ def main():
                     "trade_mode": trade_mode,
                     "limit_prc": sl,
                     "trigger_prc": sl + 0.3,
+                    "setup": setup_name,
                 }
             ]
             order_to_place = assign_trade_id(order_details)
             logger.debug(f"Orders to place: {order_to_place}")
             place_order_single_user([user], order_to_place)
 
+
+if __name__ == "__main__":
+    main()

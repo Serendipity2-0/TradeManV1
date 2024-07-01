@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import sys
 import sqlite3
+
 DIR = os.getcwd()
 sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, "trademan.env")
@@ -24,13 +25,18 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     place_order_single_user,
     fetch_qty_amplifier,
     fetch_strategy_amplifier,
-    fetch_strategy_users
+    fetch_strategy_users,
 )
 
 
 logger = LoggerSetup()
 
+SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
+SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
+SHORT_MEANREVERSION = os.getenv("SHORT_MEANREVERSION")
+
 stock_pick_db_path = os.getenv("today_stock_data_db_path")
+
 
 def get_today_stocks():
     """
@@ -47,16 +53,18 @@ def get_today_stocks():
 
         # Filter the rows where Short_Momentum, Short_EMABBConfluence, or Short_MeanReversion column is 1
         shortterm_stocks_df = df[
-            (df['Short_Momentum'] == 1) |
-            (df['Short_EMABBConfluence'] == 1) |
-            (df['Short_MeanReversion'] == 1)
+            (df[SHORT_MOMENTUM] == 1)
+            | (df[SHORT_EMABBCONFLUENCE] == 1)
+            | (df[SHORT_MEANREVERSION] == 1)
         ]
 
         # Sort by AthLtpRatio in descending order and get the top 5 stocks
-        top_5_stocks_df = shortterm_stocks_df.sort_values(by='AthLtpRatio', ascending=False).head(5)
+        top_5_stocks_df = shortterm_stocks_df.sort_values(
+            by="AthLtpRatio", ascending=False
+        ).head(5)
         return top_5_stocks_df
     except Exception as e:
-        logger.error("Error getting today's stocks")
+        logger.error(f"Error getting today's stocks{e}")
 
 
 def main():
@@ -72,15 +80,23 @@ def main():
         list: A sorted list of short term stock picks.
     """
     # Example usage
-    from Executor.NSEStrategies.Equity.Equity import pystocks_obj,strategy_name,strategy_type,order_type,product_type,signals_to_fb 
+    from Executor.NSEStrategies.Equity.Equity import (
+        pystocks_obj,
+        strategy_name,
+        strategy_type,
+        order_type,
+        product_type,
+        signals_to_fb,
+    )
+
     top5_stocks_df = get_today_stocks()
     symbol_list = top5_stocks_df["Symbol"].tolist()
-     
+
     # Display the filtered and sorted DataFrame
     logger.info(f"Stocks selected for Today:{symbol_list}")
-    
+
     trade_id_mapping = {}
-    
+
     users = fetch_strategy_users("PyStocks")
     for user in users:
         holdings = fetch_table_from_db(user["Tr_No"], "Holdings")
@@ -95,6 +111,20 @@ def main():
             for index, symbol in enumerate(symbol_list):
                 if needed_orders == 0:
                     break  # Stop processing if no more orders are needed
+                    # Determine the setup name
+
+                stock_row = top5_stocks_df[top5_stocks_df["Symbol"] == symbol].iloc[0]
+                if stock_row[SHORT_MOMENTUM] == 1:
+                    setup_name = SHORT_MOMENTUM
+                elif stock_row[SHORT_EMABBCONFLUENCE] == 1:
+                    setup_name = SHORT_EMABBCONFLUENCE
+                elif stock_row[SHORT_MEANREVERSION] == 1:
+                    setup_name = SHORT_MEANREVERSION
+                else:
+                    setup_name = "Unknown"
+
+                # Log the setup name
+                logger.info(f"Setup for {symbol}: {setup_name}")
 
                 new_base = pystocks_obj.reload_strategy(pystocks_obj.StrategyName)
                 if symbol not in trade_id_mapping:
@@ -119,7 +149,8 @@ def main():
                         "order_mode": "MainEntry",
                         "trade_id": trade_id,
                         "limit_prc": ltp,
-                        "trade_mode": os.getenv("TRADE_MODE")
+                        "trade_mode": os.getenv("TRADE_MODE"),
+                        "setup": setup_name,
                     }
                 ]
                 order_to_place = assign_trade_id(order_details)
@@ -148,9 +179,7 @@ def main():
 
                 needed_orders -= 1
 
-            logger.debug(
-                f"Updated holdings count for user {user['Tr_No']} should be 5"
-            )
+            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 5")
 
 
 if "__main__" == __name__:
