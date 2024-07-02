@@ -101,9 +101,7 @@ jobs:
           echo "CLIENTS_USER_FB_DB=${{ secrets.mock_trademan_clients }}" >> $GITHUB_ENV
           echo "STRATEGY_FB_DB=${{ secrets.mock_strategy }}" >> $GITHUB_ENV
           echo "discord_bot_token=${{ secrets.DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
-
-
-
+          echo "USR_TRADELOG_DB_FOLDER=./Data/UserSQLDB" >> $GITHUB_ENV
 
       - name: Verify environment variable
         run: |
@@ -111,9 +109,7 @@ jobs:
           echo $CONSOLIDATED_REPORT_PATH
           echo $ERROR_LOG_PATH
           echo $FIREBASE_USER_COLLECTION
-
-
-
+          echo $USR_TRADELOG_DB_FOLDER
 
       - name: Check formatting with black
         run: |
@@ -140,7 +136,3 @@ jobs:
         run: |
           pip install pytest
           pytest IntegrationTests -v
-
-
-
-
