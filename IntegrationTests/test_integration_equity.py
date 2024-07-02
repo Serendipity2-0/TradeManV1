@@ -4,7 +4,8 @@ from unittest.mock import patch, MagicMock, PropertyMock
 import shutil
 import datetime as dt
 import pandas as pd
-import os, sys
+import os
+import sys
 from dotenv import load_dotenv
 
 # Set up paths and environment
