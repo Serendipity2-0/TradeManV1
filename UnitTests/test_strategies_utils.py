@@ -17,7 +17,7 @@ load_dotenv(ENV_PATH)
 # Import the functions to test
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
-from Executor.Strategies.StrategiesUtil import (
+from Executor.NSEStrategies.NSEStrategiesUtil import (
     EntryParams,
     ExitParams,
     ExtraInformation,
