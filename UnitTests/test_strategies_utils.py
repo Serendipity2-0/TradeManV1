@@ -284,7 +284,7 @@ def test_fetch_previous_trade_id():
 def test_update_signal_firebase(mock_fetch_collection_data_firebase):
     mock_fetch_collection_data_firebase.return_value = None
     with patch(
-        "Executor.Strategies.StrategiesUtil.update_fields_firebase"
+        "Executor.NSEStrategies.NSEStrategiesUtil.update_fields_firebase"
     ) as mock_update:
         update_signal_firebase("TestStrat", {"TradeId": "MP123_LG_MO_EN"}, "MP123")
         mock_update.assert_called()
