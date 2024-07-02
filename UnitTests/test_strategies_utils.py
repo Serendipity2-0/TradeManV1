@@ -79,7 +79,7 @@ def mock_fno_info():
 @pytest.fixture
 def mock_fetch_collection_data_firebase():
     with patch(
-        "Executor.Strategies.StrategiesUtil.fetch_collection_data_firebase"
+        "Executor.NSEStrategies.NSEStrategiesUtil.fetch_collection_data_firebase"
     ) as mock:
         mock.return_value = [
             {
