@@ -58,6 +58,7 @@ def get_stock_data(stock_code, period, duration):
         data = yf.download(
             tickers=f"{stock_code}{append_exchange}", period=period, interval=duration
         )
+        data.index = pd.to_datetime(data.index)  # Ensure the index is DateTime
         return data
     except Exception as e:
         logger.error(f"Error fetching data for {stock_code}: {e}")
