@@ -70,15 +70,25 @@ def check_credentials(user_credentials: schemas.LoginUserDetails):
     return None
 
 
-def register_user(user_detail: schemas.UserDetails):
+def register_user(user_detail: Dict[str, Any]):
     """
     Registers a new user by adding the user details to the database.
 
     Args:
-        user_detail (schemas.UserDetails): An object containing the user's details.
+        user_detail (Dict[str, Any]): A dictionary containing the user's details.
     """
-    user_detail = dict(user_detail)
-    update_new_client_data_to_db(get_next_trader_number(), user_detail)
+    from pprint import pprint
+
+    # Check if user_detail is a Pydantic model or already a dictionary
+    if hasattr(user_detail, "model_dump"):
+        user_detail_dict = user_detail.model_dump()
+    elif hasattr(user_detail, "dict"):
+        user_detail_dict = user_detail.dict()
+    else:
+        user_detail_dict = user_detail  # It's already a dictionary
+
+    pprint(user_detail_dict)
+    update_new_client_data_to_db(get_next_trader_number(), user_detail_dict)
     return {"message": "User registered successfully"}
 
 
