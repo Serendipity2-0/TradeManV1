@@ -14,7 +14,7 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-# Path to the original and test database
+# Path to the original and test databases
 ORIGINAL_DB_PATH = "D:/TradeManV1/Data/stock_picks.db"
 TEST_DB_PATH = "D:/TradeManV1/Data/stock_picks_test.db"
 
