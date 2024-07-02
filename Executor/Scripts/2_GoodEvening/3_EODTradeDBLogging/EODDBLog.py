@@ -17,10 +17,12 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
-
-CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
+CLIENTS_TRADE_SQL_DERIVATIVES_DB = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
+CLIENTS_TRADE_SQL_EQUITY_DB = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
+EQUITY_STRATEGY_LIST = os.getenv("equity_strategy_list")
+DERIVATIVES_STRATEGY_LIST = os.getenv("derivatives_strategy_list")
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
@@ -51,7 +53,7 @@ def update_signal_info():
     """
     active_strategies = fetch_list_of_strategies_from_firebase()
     signal_info_db_conn = get_db_connection(
-        os.path.join(CLIENTS_TRADE_SQL_DB, "signal_info.db")
+        os.path.join(CLIENTS_TRADE_SQL_DERIVATIVES_DB, "signal_info.db")
     )
 
     for strategy_name in active_strategies:
@@ -88,21 +90,23 @@ def update_signals_firebase():
         read_strategy_table,
     )
 
-    signal_db_conn = get_db_connection(os.path.join(CLIENTS_TRADE_SQL_DB, "signal.db"))
+    signal_db_conn = get_db_connection(
+        os.path.join(CLIENTS_TRADE_SQL_DERIVATIVES_DB, "signal.db")
+    )
 
     strategy_user_dict = {}
     list_of_strategies = fetch_list_of_strategies_from_firebase()
 
     for strategy in list_of_strategies:
         users = fetch_users_for_strategies_from_firebase(strategy)
-        if len(users) > 0:  # Check if the users list is not empty
+        if users:  # Check if the users list is not empty
             selected_user = users[
                 0
             ]  # Assuming selecting the first user meets the requirement
             strategy_user_dict[strategy] = selected_user["Tr_No"]
 
     for strategy_name, user in strategy_user_dict.items():
-        db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user}.db")
+        db_path = os.path.join(CLIENTS_TRADE_SQL_DERIVATIVES_DB, f"{user}.db")
         conn = get_db_connection(db_path)
 
         try:
@@ -397,7 +401,9 @@ def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
         entry_orders = trade_data["entry_orders"]
         exit_orders = trade_data["exit_orders"]
         if not entry_orders or not exit_orders:
-            raise ValueError("Invalid trade data: entry_orders or exit_orders is empty")
+            raise ValueError(
+                "Invalid trade data: entry_orders or exit_orders are empty"
+            )
 
         hedge_orders = trade_data["hedge_orders"]
 
@@ -526,9 +532,16 @@ def fetch_and_prepare_holdings_data():
     active_users = fetch_active_users_from_firebase()
 
     for user in active_users:
-        db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
-        conn = get_db_connection(db_path)
-        all_holdings = []  # Reset for each user
+        derivatives_db_path = os.path.join(
+            CLIENTS_TRADE_SQL_DERIVATIVES_DB, f"{user['Tr_No']}.db"
+        )
+        derivatives_conn = get_db_connection(derivatives_db_path)
+        equity_db_path = os.path.join(
+            CLIENTS_TRADE_SQL_EQUITY_DB, f"{user['Tr_No']}.db"
+        )
+        equity_conn = get_db_connection(equity_db_path)
+        all_derivatives_holdings = []  # Reset for each user
+        all_equity_holdings = []  # Reset for each user
         strategies = user.get("Strategies", {})
         try:
             for strategy_name, strategy_details in strategies.items():
@@ -590,38 +603,72 @@ def fetch_and_prepare_holdings_data():
                             - option_margin_utilized
                         )
 
-                    holding = {
-                        "trade_id": order.get("trade_id"),
-                        "signal": (
-                            "Short" if "_SH_" in order.get("trade_id") else "Long"
-                        ),
-                        "trading_symbol": trading_symbol,
-                        "entry_time": datetime.strptime(
-                            order.get("time_stamp"), "%Y-%m-%d %H:%M"
-                        ),
-                        "entry_price": entry_price,
-                        "qty": qty,
-                        "margin_utilized": margin_utilized,
-                        "tax": 0.0,
-                        "hedge_entry_price": avg_hedge_order_price,
-                        "setup": order.get("setup"),
-                    }
+                    if strategy_name in EQUITY_STRATEGY_LIST:
+                        holding = {
+                            "trade_id": order.get("trade_id"),
+                            "signal": (
+                                "Short" if "_SH_" in order.get("trade_id") else "Long"
+                            ),
+                            "trading_symbol": trading_symbol,
+                            "entry_time": datetime.strptime(
+                                order.get("time_stamp"), "%Y-%m-%d %H:%M"
+                            ),
+                            "entry_price": entry_price,
+                            "qty": qty,
+                            "margin_utilized": margin_utilized,
+                            "tax": 0.0,
+                            "hedge_entry_price": avg_hedge_order_price,
+                            "setup": order.get("setup"),
+                        }
+                        all_equity_holdings.append(holding)
 
-                    all_holdings.append(holding)
+                    elif strategy_name in DERIVATIVES_STRATEGY_LIST:
+                        holding = {
+                            "trade_id": order.get("trade_id"),
+                            "signal": (
+                                "Short" if "_SH_" in order.get("trade_id") else "Long"
+                            ),
+                            "trading_symbol": trading_symbol,
+                            "entry_time": datetime.strptime(
+                                order.get("time_stamp"), "%Y-%m-%d %H:%M"
+                            ),
+                            "entry_price": entry_price,
+                            "qty": qty,
+                            "margin_utilized": margin_utilized,
+                            "tax": 0.0,
+                            "hedge_entry_price": avg_hedge_order_price,
+                        }
+                        all_derivatives_holdings.append(holding)
+                    else:
+                        logger.error(
+                            f"Strategy {strategy_name} not found in either equity or derivatives strategy list"
+                        )
 
             # Dump the holdings for the current user into the database
-            if all_holdings:
-                holdings_df = pd.DataFrame(all_holdings)
+            if all_derivatives_holdings:
+                holdings_df = pd.DataFrame(all_derivatives_holdings)
                 decimal_columns = [
                     "entry_price",
                     "hedge_entry_price",
                     "margin_utilized",
                     "tax",
                 ]
-                dump_df_to_sqlite(conn, holdings_df, "Holdings", decimal_columns)
+                dump_df_to_sqlite(
+                    derivatives_conn, holdings_df, "Holdings", decimal_columns
+                )
+            if all_equity_holdings:
+                holdings_df = pd.DataFrame(all_equity_holdings)
+                decimal_columns = [
+                    "entry_price",
+                    "hedge_entry_price",
+                    "margin_utilized",
+                    "tax",
+                ]
+                dump_df_to_sqlite(equity_conn, holdings_df, "Holdings", decimal_columns)
 
             # Optionally close the DB connection if it's not used later
-            conn.close()
+            derivatives_conn.close()
+            equity_conn.close()
         except Exception as e:
             logger.error(f"Error processing holdings data for {user['Tr_No']}: {e}")
             continue
@@ -641,10 +688,14 @@ def process_n_log_trade():
 
     for user in active_users:
         logger.debug(f"Processing trade for user: {user['Tr_No']}")
-        db_path = os.path.join(
-            CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db"
+        derivatives_db_path = os.path.join(
+            CLIENTS_TRADE_SQL_DERIVATIVES_DB, f"{user['Tr_No']}.db"
         )  # Ensure USR_TRADELOG_DB_FOLDER is defined
-        conn = get_db_connection(db_path)
+        derivatives_conn = get_db_connection(derivatives_db_path)
+        equity_db_path = os.path.join(
+            CLIENTS_TRADE_SQL_EQUITY_DB, f"{user['Tr_No']}.db"
+        )
+        equity_conn = get_db_connection(equity_db_path)
         if not user.get("Active"):
             continue
 
@@ -672,7 +723,6 @@ def process_n_log_trade():
                             f"Skipping trade {trade_prefix} due to invalid trade details."
                         )
                         continue  # Skip this trade if trade_details is invalid
-
                     # Proceed with valid trade_details
                     df = pd.DataFrame([trade_details])
                     decimal_columns = [
@@ -692,11 +742,20 @@ def process_n_log_trade():
                             f"DataFrame for {trade_prefix} does not have the expected structure, skipping..."
                         )
                         continue  # Skip appending this DataFrame to the database
+                    logger.info(decimal_columns)
 
-                    append_df_to_sqlite(conn, df, strategy_name, decimal_columns)
+                    if strategy_name in DERIVATIVES_STRATEGY_LIST:
+                        append_df_to_sqlite(
+                            derivatives_conn, df, strategy_name, decimal_columns
+                        )
+                    elif strategy_name in EQUITY_STRATEGY_LIST:
+                        append_df_to_sqlite(
+                            equity_conn, df, strategy_name, decimal_columns
+                        )
                     # Delete orders from Firebase
                     delete_orders_from_firebase(orders_group, strategy_name, user)
-            conn.close()
+            derivatives_conn.close()
+            equity_conn.close()
         except Exception as e:
             logger.error(f"Error processing and logging trade for {user['Tr_No']}: {e}")
             continue
