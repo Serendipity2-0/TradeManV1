@@ -17,8 +17,7 @@ class Accounts_(BaseModel):
     PnLWithdrawals: int | None = Field(default=0, example=0)
 
 
-class Active_(BaseModel):
-    Active: bool = Field(default=False, example=False)
+# Remove the Active_ class as it's no longer needed
 
 
 class Broker_(BaseModel):
@@ -54,9 +53,8 @@ class Strategy_(BaseModel):
 
 
 class UserDetails(BaseModel):
-    # use this to add more schemas
     Accounts: Accounts_
-    Active: Active_
+    Active: bool = Field(default=False, example=False)  # Changed to boolean
     Broker: Broker_
     Profile: Profile_
     Strategies: Dict[str, Strategy_]
