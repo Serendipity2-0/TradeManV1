@@ -35,6 +35,7 @@ from User.UserApi.userapi_utils import (
     fetch_users_for_strategy,
     get_users_db_holdings,
     log_changes_via_webapp,
+    update_next_trader_number,
 )
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
@@ -89,6 +90,7 @@ def register_user(user_detail: Dict[str, Any]):
     user_detail_dict["Active"] = bool(user_detail_dict["Active"])
     next_trader_number = get_next_trader_number()
     update_new_client_data_to_db(next_trader_number, user_detail_dict)
+    update_next_trader_number()
 
     return {"message": "User registered successfully"}
 
