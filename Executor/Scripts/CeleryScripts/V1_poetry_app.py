@@ -185,7 +185,7 @@ def amipy(self):
     redis_client.set("amipy_task_id", task_id)
     while True:
         return run_script(
-            "Executor/NSEStrategies/Derivatives/AmiPy/AmiPyLive.py", 15, amipy_logger
+            "Executor/NSEStrategies/Derivatives/AmiPy/AmiPyLive.py", 17, amipy_logger
         )
 
 
@@ -336,30 +336,12 @@ def ticker_db():
 
 @app.task
 def revoke_amipy_task():
-    task_id = redis_client.get("amipy_task_id")
-    if task_id:
-        app.control.revoke(task_id.decode("utf-8"), terminate=True)
-        message = f"Task {task_id.decode('utf-8')} has been revoked."
-        requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            data={"chat_id": CHAT_ID, "text": message},
-        )
-        return message
-    return "No task_id found to revoke."
+    subprocess.run(["pkill", "-f", "AmiPyLive.py"])
 
 
 @app.task
 def revoke_mpwizard_task():
-    task_id = redis_client.get("mpwizard_task_id")
-    if task_id:
-        app.control.revoke(task_id.decode("utf-8"), terminate=True)
-        message = f"Task {task_id.decode('utf-8')} has been revoked."
-        requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            data={"chat_id": CHAT_ID, "text": message},
-        )
-        return message
-    return "No task_id found to revoke."
+    subprocess.run(["pkill", "-f", "MPWizard.py"])
 
 
 def start_worker():

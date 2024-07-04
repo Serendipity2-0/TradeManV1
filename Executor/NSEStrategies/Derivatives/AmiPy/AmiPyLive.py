@@ -198,16 +198,16 @@ if current_time < datetime.time(9, 0):
     strike_prc = get_ltp()
     amipy_orders.place_orders(strike_prc, "Short")
 elif current_time > target_time:
-    print("Running job()...")
+    logger.info("Running job()...")
     job()
 else:
     # Wait until 09:19
-    print("Waiting for 09:19 AM...")
+    logger.info("Waiting for 09:19 AM...")
     sleep(time_until(target_time).seconds)
     get_ltp()
 
 
-print("Today's Strike Price:", strike_prc)
+logger.info("Today's Strike Price:", strike_prc)
 
 trading_tokens = get_option_tokens(strike_prc, base_symbol)
 
@@ -473,7 +473,7 @@ def updateSignalDf(last_signal, trade_state):
     :param last_signal: The last generated signal.
     :param trade_state: The current state of the trade.
     """
-    print("updateSignalDf")
+    logger.info("updateSignalDf")
     global signalsdf, signals
 
     # trade_sig_path = os.path.join("LiveCSV", "amiNF_trd_sig_liv.csv")
@@ -492,7 +492,7 @@ def updateSignalDf(last_signal, trade_state):
             trade_type = (
                 generated_signal  # update trade_type when a signal is generated
             )
-            print(f"{trade_type} is generated")
+            logger.info(f"{trade_type} is generated")
 
     if trade_type == "LongSignal" or trade_type == "ShortSignal":
         signal = {
@@ -541,10 +541,10 @@ def updateSignalDf(last_signal, trade_state):
         if trade_type is not None:  # check that a signal was generated
             signal_prc = str(last_signal["close"])
             message = f"Signal: {trade_type}\nStrikePrc: {strike_prc} \nDate: {trade_date}\nTime: {trade_time}\nClose: {signal_prc}"
-            print(message)
+            logger.info(message)
             discord_bot(message, "AmiPy")
     except Exception as e:
-        print(f"Error in sending telegram message: {e}")
+        logger.error(f"Error in sending telegram message: {e}")
 
 
 last_signal_t = None

@@ -2,8 +2,8 @@
 from celery.schedules import crontab
 
 # Redis configuration
-broker_url = "redis://localhost:6379/0"
-result_backend = "redis://localhost:6379/0"
+broker_url = "redis://127.0.0.1:6379/0"
+result_backend = "redis://127.0.0.1:6379/0"
 
 # Celery Beat Schedule
 """
@@ -14,25 +14,23 @@ This is the same format as used by the crontab command.
 beat_schedule = {
     "run_good_morning_scripts_every_day_at_830am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.good_morning_scripts",
-        "schedule": crontab(
-            hour=12, minute=30, day_of_week="1-6"
-        ),  # Monday to saturday
+        "schedule": crontab(hour=8, minute=30, day_of_week="1-6"),  # Monday to saturday
     },
     "run_amipy_every_day_at_9am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.amipy",
-        "schedule": crontab(hour=12, minute=32, day_of_week="1-5"),  # Monday to Friday
+        "schedule": crontab(hour=9, minute=00, day_of_week="1-5"),  # Monday to Friday
     },
     "run_expirytrader_every_day_at_916am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.expiry_trader",
-        "schedule": crontab(hour=12, minute=34, day_of_week="1-5"),  # Monday to Friday
+        "schedule": crontab(hour=9, minute=16, day_of_week="1-5"),  # Monday to Friday
     },
     "run_namaha_every_day_at_917am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.namaha",
-        "schedule": crontab(hour=10, minute=50, day_of_week="1-5"),  # Monday to Friday
+        "schedule": crontab(hour=9, minute=17, day_of_week="1-5"),  # Monday to Friday
     },
     "run_overnight_futures_exit_every_day_at_919am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.overnight_exit",
-        "schedule": crontab(hour=10, minute=52, day_of_week="2-5"),  # Tuesday to Friday
+        "schedule": crontab(hour=9, minute=19, day_of_week="2-5"),  # Tuesday to Friday
     },
     "run_pystocks_entry_every_day_at_920am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.pystocks_entry",
@@ -52,7 +50,7 @@ beat_schedule = {
     },
     "run_mpwizard_every_day_at_10am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.mpwizard",
-        "schedule": crontab(hour=11, minute=15, day_of_week="1-5"),  # Monday to Friday
+        "schedule": crontab(hour=10, minute=00, day_of_week="1-5"),  # Monday to Friday
     },
     "run_sweep_orders_every_day_at_313pm": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.sweep_orders",
