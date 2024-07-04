@@ -1,6 +1,7 @@
 import datetime as dt
 import os, sys
 from dotenv import load_dotenv
+import asyncio
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -52,8 +53,10 @@ def sweep_sl_order():
                 logger.debug(
                     f"placing sweep order for  with details {counter_order_detail}"
                 )
-                OrderCenterUtils.place_order_for_strategy(
-                    [user], counter_order_detail, "Sweep"
+                asyncio.run(
+                    OrderCenterUtils.place_order_for_strategy(
+                        [user], counter_order_detail, "Sweep"
+                    )
                 )
         except Exception as e:
             logger.error(
@@ -89,8 +92,10 @@ def sweep_hedge_orders():
                 logger.debug(
                     f"placing hedge order for with details {hedge_counter_order_details}"
                 )
-                OrderCenterUtils.place_order_for_strategy(
-                    [user], hedge_counter_order_details, "Sweep"
+                asyncio.run(
+                    OrderCenterUtils.place_order_for_strategy(
+                        [user], hedge_counter_order_details, "Sweep"
+                    )
                 )
         except Exception as e:
             logger.error(

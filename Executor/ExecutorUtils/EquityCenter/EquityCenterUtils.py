@@ -17,6 +17,13 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup  # noqa: E402
 
 logger = LoggerSetup()
+SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
+SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
+SHORT_MEANREVERSION = os.getenv("SHORT_MEANREVERSION")
+MID_TFMOMENTUM = os.getenv("MID_TFMOMENTUM")
+MID_TFEMA = os.getenv("MID_TFEMA")
+LONG_RATIO = os.getenv("LONG_RATIO")
+LONG_COMBO = os.getenv("LONG_COMBO")
 
 
 def get_stock_codes():
@@ -51,6 +58,7 @@ def get_stock_data(stock_code, period, duration):
         data = yf.download(
             tickers=f"{stock_code}{append_exchange}", period=period, interval=duration
         )
+        data.index = pd.to_datetime(data.index)  # Ensure the index is DateTime
         return data
     except Exception as e:
         logger.error(f"Error fetching data for {stock_code}: {e}")
@@ -138,6 +146,7 @@ def get_financial_data(stock_symbols):
                 "Debt to Equity": debt_to_equity,
                 "Gross Profit Growth": gross_profit_growth,
                 "Piotroski F-Score": f_score,
+                "Return on Equity": info.get("returnOnEquity", np.nan),
             }
 
             data.append(financials)
@@ -145,6 +154,11 @@ def get_financial_data(stock_symbols):
             logger.error(f"Error fetching financial data for {symbol}: {e}")
 
     return pd.DataFrame(data)
+
+
+def calculate_sma(data, window=20):
+    """Calculate Simple Moving Average (SMA)"""
+    return data.rolling(window=window).mean()
 
 
 def indicator_5ema(stock_data):
@@ -473,104 +487,69 @@ def read_stock_data_from_db(db_path):
         return {}
 
 
-def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df, ratio_df, combo_df):
+def merge_dataframes(
+    momentum_df,
+    mean_reversion_df,
+    ema_bb_df,
+    ratio_df,
+    combo_df,
+    tfmomentum_df,
+    tfema_df,
+):
     """
     Merge the DataFrames from different strategies into one comprehensive DataFrame.
-
-    Args:
-        momentum_df (DataFrame): DataFrame of momentum stocks.
-        mean_reversion_df (DataFrame): DataFrame of mean reversion stocks.
-        ema_bb_df (DataFrame): DataFrame of EMA-BB confluence stocks.
-        ratio_df (DataFrame): DataFrame of stocks from the ratio strategy.
-        combo_df (DataFrame): DataFrame of stocks from the combo strategy.
-
-    Returns:
-        DataFrame: Combined DataFrame with all strategies.
     """
     try:
-        # Merge momentum and mean reversion DataFrames on 'Symbol'
-        combined_df = pd.merge(
-            momentum_df,
-            mean_reversion_df,
-            on="Symbol",
-            how="outer",
-            suffixes=("", "_Drop"),
-        )
+        combined_df = pd.merge(momentum_df, mean_reversion_df, on="Symbol", how="outer")
+        combined_df = pd.merge(combined_df, ema_bb_df, on="Symbol", how="outer")
+        combined_df = pd.merge(combined_df, ratio_df, on="Symbol", how="outer")
+        combined_df = pd.merge(combined_df, combo_df, on="Symbol", how="outer")
+        combined_df = pd.merge(combined_df, tfmomentum_df, on="Symbol", how="outer")
+        combined_df = pd.merge(combined_df, tfema_df, on="Symbol", how="outer")
 
-        # Drop the '_Drop' suffix columns from the first merge
-        for col in combined_df.columns:
-            if col.endswith("_Drop"):
-                combined_df.drop(columns=[col], inplace=True)
-
-        # Merge with EMA-BB DataFrame
-        combined_df = pd.merge(
-            combined_df, ema_bb_df, on="Symbol", how="outer", suffixes=("", "_Drop")
-        )
-
-        # Drop the '_Drop' suffix columns from the second merge
-        for col in combined_df.columns:
-            if col.endswith("_Drop"):
-                combined_df.drop(columns=[col], inplace=True)
-
-        # Merge with Ratio DataFrame
-        combined_df = pd.merge(
-            combined_df, ratio_df, on="Symbol", how="outer", suffixes=("", "_Drop")
-        )
-
-        # Drop the '_Drop' suffix columns from the third merge
-        for col in combined_df.columns:
-            if col.endswith("_Drop"):
-                combined_df.drop(columns=[col], inplace=True)
-
-        # Merge with Combo DataFrame
-        combined_df = pd.merge(
-            combined_df, combo_df, on="Symbol", how="outer", suffixes=("", "_Drop")
-        )
-
-        # Drop the '_Drop' suffix columns from the fourth merge
-        for col in combined_df.columns:
-            if col.endswith("_Drop"):
-                combined_df.drop(columns=[col], inplace=True)
+        # Handle '_Drop' columns from multiple merges
+        combined_df = combined_df[
+            [col for col in combined_df.columns if not col.endswith("_Drop")]
+        ]
 
         # Fill NaN values with appropriate defaults
-        combined_df.fillna(
-            {
-                "DailyOpen": 0,
-                "DailyHigh": 0,
-                "DailyLow": 0,
-                "DailyClose": 0,
-                "WeeklyOpen": 0,
-                "WeeklyHigh": 0,
-                "WeeklyLow": 0,
-                "WeeklyClose": 0,
-                "DailyRSI": 0,
-                "DailyUpper_band": 0,
-                "DailyAbove_50_EMA": 0,
-                "DailyMACD": 0,
-                "DailySignal_Line": 0,
-                "DailyEMA_50": 0,
-                "DailyMA": 0,
-                "DailyLower_band": 0,
-                "WeeklyMA": 0,
-                "AthLtpRatio":0,
-                "WeeklyLower_band": 0,
-                "Market Cap": 0,
-                "P/E Ratio": 0,
-                "P/B Ratio": 0,
-                "Dividend Yield": 0,
-                "Piotroski F-Score": 0,
-                "Operating Profit Margin": 0,
-                "Debt to Equity": 0,
-                "Gross Profit Growth": 0,
-                "Short_Momentum": 0,
-                "Short_MeanReversion": 0,
-                "Short_EMABBConfluence": 0,
-                "Long_Ratio": 0,
-                "Long_Combo": 0,
-                # Add defaults for any new columns used in the strategies
-            },
-            inplace=True,
-        )
+        defaults = {
+            "DailyOpen": 0,
+            "DailyHigh": 0,
+            "DailyLow": 0,
+            "DailyClose": 0,
+            "WeeklyOpen": 0,
+            "WeeklyHigh": 0,
+            "WeeklyLow": 0,
+            "WeeklyClose": 0,
+            "DailyRSI": 0,
+            "DailyUpper_band": 0,
+            "DailyAbove_50_EMA": 0,
+            "DailyMACD": 0,
+            "DailySignal_Line": 0,
+            "DailyEMA_50": 0,
+            "DailyMA": 0,
+            "DailyLower_band": 0,
+            "WeeklyMA": 0,
+            "AthLtpRatio": 0,
+            "WeeklyLower_band": 0,
+            "Market Cap": 0,
+            "P/E Ratio": 0,
+            "P/B Ratio": 0,
+            "Dividend Yield": 0,
+            "Piotroski F-Score": 0,
+            "Operating Profit Margin": 0,
+            "Debt to Equity": 0,
+            "Gross Profit Growth": 0,
+            SHORT_MOMENTUM: 0,
+            SHORT_MEANREVERSION: 0,
+            SHORT_EMABBCONFLUENCE: 0,
+            LONG_RATIO: 0,
+            LONG_COMBO: 0,
+            MID_TFMOMENTUM: 0,
+            MID_TFEMA: 0,
+        }
+        combined_df.fillna(defaults, inplace=True)
 
         return combined_df
     except Exception as e:
@@ -578,7 +557,15 @@ def merge_dataframes(momentum_df, mean_reversion_df, ema_bb_df, ratio_df, combo_
         return pd.DataFrame()
 
 
-def update_todaystocks_db(momentum_stocks_df,mean_reversion_stocks_df,ema_bb_confluence_stocks_df,ratio_stocks_df,combo_stocks_df):
+def update_todaystocks_db(
+    momentum_stocks_df,
+    mean_reversion_stocks_df,
+    ema_bb_confluence_stocks_df,
+    ratio_stocks_df,
+    combo_stocks_df,
+    tfmomentum_stocks_df,
+    tfema_stocks_df,
+):
     """
     Stores the combined DataFrame to a SQL database.
 
@@ -587,15 +574,16 @@ def update_todaystocks_db(momentum_stocks_df,mean_reversion_stocks_df,ema_bb_con
                                  strategies.
     """
     try:
-        
-        merged_df = merge_dataframes(
-        momentum_df=momentum_stocks_df,
-        mean_reversion_df=mean_reversion_stocks_df,
-        ema_bb_df=ema_bb_confluence_stocks_df,
-        ratio_df=ratio_stocks_df,
-        combo_df=combo_stocks_df,
-    )
 
+        merged_df = merge_dataframes(
+            momentum_df=momentum_stocks_df,
+            mean_reversion_df=mean_reversion_stocks_df,
+            ema_bb_df=ema_bb_confluence_stocks_df,
+            ratio_df=ratio_stocks_df,
+            combo_df=combo_stocks_df,
+            tfmomentum_df=tfmomentum_stocks_df,
+            tfema_df=tfema_stocks_df,
+        )
         # Connect to the TodayStocks.db database (create it if it doesn't exist)
         db_path = os.getenv("today_stock_data_db_path")
         conn = sqlite3.connect(db_path)
@@ -612,6 +600,20 @@ def update_todaystocks_db(momentum_stocks_df,mean_reversion_stocks_df,ema_bb_con
         )
     except Exception as e:
         logger.error(f"Error updating TodayStocks DB: {e}")
+
+
+def calculate_ema(data, window):
+    """
+    Calculate Exponential Moving Average (EMA).
+
+    Args:
+        data (pandas.Series): The input data.
+        window (int): The window size for calculating EMA.
+
+    Returns:
+        pandas.Series: The EMA values.
+    """
+    return data.ewm(span=window, adjust=False).mean()
 
 
 if __name__ == "__main__":

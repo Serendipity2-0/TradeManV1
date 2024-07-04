@@ -84,3 +84,10 @@ class ProfilePage(BaseModel):
 class ClientData(BaseModel):
     profile: ProfilePage
     strategies: Optional[List[str]] = None
+
+
+class MarketInfoParams(BaseModel):
+    TradeView: str
+    EquityQtyAmplifier: float
+    OBQtyAmplifier: float
+    OSQtyAmplifier: float

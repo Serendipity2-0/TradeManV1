@@ -291,7 +291,7 @@ def tradebook_validator():
         "tradebook_validator", f"{log_dir}/tradebook_validator.log"
     )
     return run_script(
-        "Executor/Scripts/2_GoodEvening/2_DailyTradeBookValidator/TradeBookValidator.py",
+        "Executor/Scripts/2_GoodEvening/2_DailyTradeBookValidator/DailyTradebookValidator.py",
         16,
         tradebook_validator_logger,
     )

@@ -12,7 +12,6 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
-
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     fetch_sql_table_from_db as fetch_table_from_db,
 )
@@ -29,10 +28,10 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     fetch_strategy_users,
 )
 
+MID_TFMOMENTUM = os.getenv("MID_TFMOMENTUM")
+MID_TFEMA = os.getenv("MID_TFEMA")
 
 logger = LoggerSetup()
-LONG_RATIO = os.getenv("LONG_RATIO")
-LONG_COMBO = os.getenv("LONG_COMBO")
 stock_pick_db_path = os.getenv("today_stock_data_db_path")
 
 
@@ -49,11 +48,11 @@ def get_today_stocks():
         # Load the data from the identified table "CombinedStocks"
         df = pd.read_sql_query("SELECT * FROM CombinedStocks", conn)
 
-        # Filter the rows where Long_Ratio or Long_Combo column is 1
-        longterm_stocks_df = df[(df[LONG_RATIO] == 1) | (df[LONG_COMBO] == 1)]
+        # Filter the rows where Mid_tfMomentum or Mid_tfEma column is 1
+        midterm_stocks_df = df[(df[MID_TFMOMENTUM] == 1) | (df[MID_TFEMA] == 1)]
 
         # Sort by AthLtpRatio in descending order and get the top 5 stocks
-        top_5_stocks_df = longterm_stocks_df.sort_values(
+        top_5_stocks_df = midterm_stocks_df.sort_values(
             by="AthLtpRatio", ascending=False
         ).head(5)
         return top_5_stocks_df
@@ -77,7 +76,7 @@ def main():
 
     top5_stocks_df = get_today_stocks()
     if top5_stocks_df.empty:
-        logger.info("No stocks selected for today in Longterm")
+        logger.info("No stocks selected for today in Midterm")
         return
 
     symbol_list = top5_stocks_df["Symbol"].tolist()
@@ -103,10 +102,10 @@ def main():
                     break
 
                 stock_row = top5_stocks_df[top5_stocks_df["Symbol"] == symbol].iloc[0]
-                if stock_row[LONG_RATIO] == 1:
-                    setup_name = LONG_RATIO
-                elif stock_row[LONG_COMBO] == 1:
-                    setup_name = LONG_COMBO
+                if stock_row[MID_TFMOMENTUM] == 1:
+                    setup_name = MID_TFMOMENTUM
+                elif stock_row[MID_TFEMA] == 1:
+                    setup_name = MID_TFEMA
                 else:
                     setup_name = "Unknown"
 
