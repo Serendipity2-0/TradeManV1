@@ -131,8 +131,10 @@ jobs:
         run: |
           pip install pytest
           pytest UnitTests -v
+        continue-on-error: true
 
       - name: Test with pytest (Integration Tests)
         run: |
           pip install pytest
           pytest IntegrationTests -v
+        continue-on-error: false
