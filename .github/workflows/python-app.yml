@@ -111,7 +111,8 @@ jobs:
           echo $ERROR_LOG_PATH
           echo $FIREBASE_USER_COLLECTION
           echo $USR_TRADELOG_DB_FOLDER
-          echo $ADMIN_CHANNEL_ID
+          echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}"
+          echo "ADMIN_CHANNEL_ID=${{ secrets.ADMIN_CHANNEL_ID }}"
 
       - name: Check formatting with black
         run: |
