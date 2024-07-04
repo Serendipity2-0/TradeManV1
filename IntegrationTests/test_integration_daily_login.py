@@ -85,7 +85,7 @@ class TestIntegration(unittest.TestCase):
     @patch.dict(
         "os.environ",
         {
-            "CLIENTS_USER_FB_DB": "mock_trademan_clients",
+            "CLIENTS_USER_FB_DB": "temp_clients",
             "STRATEGY_FB_DB": "mock_strategy",
             "ERROR_LOG_PATH": "./Data/ErrorLogs.log",
         },
@@ -179,19 +179,19 @@ class TestIntegration(unittest.TestCase):
 
         # Check that firebase_utils.update_fields_firebase was called with correct parameters
         mock_update_firebase.assert_any_call(
-            "mock_trademan_clients",
+            "temp_clients",
             "Tr01",
             {"SessionId": "mock_alice_session_id"},
             "Broker",
         )
         mock_update_firebase.assert_any_call(
-            "mock_trademan_clients",
+            "temp_clients",
             "Tr00",
             {"SessionId": "mock_kite_session_id"},
             "Broker",
         )
         mock_update_firebase.assert_any_call(
-            "mock_trademan_clients",
+            "temp_clients",
             "Tr02",
             {"SessionId": "mock_firstock_session_id"},
             "Broker",

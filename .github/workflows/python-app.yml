@@ -102,6 +102,7 @@ jobs:
           echo "STRATEGY_FB_DB=${{ secrets.mock_strategy }}" >> $GITHUB_ENV
           echo "discord_bot_token=${{ secrets.DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
           echo "USR_TRADELOG_DB_FOLDER=./Data/UserSQLDB" >> $GITHUB_ENV
+          echo "ADMIN_CHANNEL_ID=${{ secrets.ADMIN_CHANNEL_ID }}" >> $GITHUB_ENV
 
       - name: Verify environment variable
         run: |
@@ -110,6 +111,7 @@ jobs:
           echo $ERROR_LOG_PATH
           echo $FIREBASE_USER_COLLECTION
           echo $USR_TRADELOG_DB_FOLDER
+          echo $ADMIN_CHANNEL_ID
 
       - name: Check formatting with black
         run: |
