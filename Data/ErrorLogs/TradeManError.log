@@ -4,3 +4,70 @@
 2024-07-01 12:50:05.076 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 01-07-2024
 2024-07-01 12:50:10.110 | ERROR    | Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter:get_db_connection:32 - An error occurred while connecting to the database: unable to open database file
 2024-07-01 12:50:10.110 | ERROR    | Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils:get_ins_df:36 - An error occurred: 'NoneType' object has no attribute 'cursor'
+2024-07-05 10:41:58.128 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-07-05 10:41:58.128 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-07-05 10:41:58.128 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-07-05 10:41:58.128 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 05-07-2024
+2024-07-05 10:41:59.606 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:109 - Logging in for AliceBlue for user: XX0444
+2024-07-05 10:41:59.606 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:93 - Logging in for Zerodha for user: YY0333
+2024-07-05 10:41:59.606 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:125 - Logging in for Firstock for user: ZZ0555
+2024-07-05 10:41:59.606 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:37 - Fetching users from temp_clients and temp_strategies collections.
+2024-07-05 10:41:59.606 | WARNING  | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:42 - Using Non Production Environment Using temp_clients and temp_strategies collections.
+2024-07-05 10:42:00.060 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:51 - Total active users today: 1
+2024-07-05 10:42:00.060 | DEBUG    | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:main:54 - Active user: AliceBlue: Jane Smith
+2024-07-05 10:42:00.060 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:109 - Logging in for AliceBlue for user: XX0444
+2024-07-05 10:44:24.654 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-07-05 10:44:24.654 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-07-05 10:44:24.654 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-07-05 10:44:24.656 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 05-07-2024
+2024-07-05 10:44:31.134 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-07-05 10:44:31.134 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-07-05 10:44:31.136 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-07-05 10:44:31.136 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 05-07-2024
+2024-07-05 10:44:38.891 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-07-05 10:44:38.891 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-07-05 10:44:38.891 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-07-05 10:44:38.891 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 05-07-2024
+2024-07-05 10:44:48.533 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-07-05 10:44:48.533 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-07-05 10:44:48.533 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-07-05 10:44:48.543 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 05-07-2024
+2024-07-05 10:45:27.392 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:93 - Logging in for Zerodha for user: user1
+2024-07-05 10:45:27.392 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:105 - Error while logging in for Zerodha: 'Tr_No' for user: user1
+2024-07-05 10:45:27.392 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:109 - Logging in for AliceBlue for user: user2
+2024-07-05 10:45:27.392 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:121 - Error while logging in for AliceBlue: 'Tr_No' for user: user2
+2024-07-05 10:45:27.392 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:125 - Logging in for Firstock for user: user3
+2024-07-05 10:45:27.392 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:all_broker_login:137 - Error while logging in for Firstock: 'Tr_No' for user: user3
+2024-07-05 10:45:27.392 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:fetch_freecash_for_user:243 - Fetching free cash for Zerodha for user user1
+2024-07-05 10:45:27.402 | DEBUG    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:get_today_orders_for_brokers:367 - Fetching today's orders for test_user
+2024-07-05 10:45:27.402 | INFO     | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:create_counter_order_details:463 - Created counter orders for Zerodha for user test_user for trade_id test_tag
+2024-07-05 10:45:27.402 | INFO     | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:create_hedge_counter_order_details:528 - Created hedge counter orders for Zerodha for user test_user for trade_id HO_EN
+2024-07-05 10:46:01.972 | INFO     | Executor.ExecutorUtils.ReportUtils.EodReportUtils:get_new_holdings:133 - new_holdings3000.0
+2024-07-05 10:46:01.972 | DEBUG    | Executor.ExecutorUtils.ReportUtils.EodReportUtils:update_account_keys_fb:154 - Updating account keys for test_tr_no in Firebase
+2024-07-05 11:00:47.405 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-07-05 11:00:47.410 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-07-05 11:00:47.410 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-07-05 11:00:47.410 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 05-07-2024
+2024-07-05 11:02:31.725 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:23 - Shree Ganeshaya Namaha
+2024-07-05 11:02:31.725 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:24 - Jai Hanuman
+2024-07-05 11:02:31.725 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:25 - Market is Supreme
+2024-07-05 11:02:31.725 | INFO     | Executor.Scripts.1_GoodMorning.1_Login.DailyLogin:<module>:27 - Today's date: 05-07-2024
+2024-07-05 11:04:32.686 | INFO     | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:55 - Calculating quantity for strategy with capital: 10000, risk: 1, avg_sl_points: 10, lot_size: 100
+2024-07-05 11:04:32.686 | DEBUG    | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:82 - Final adjusted quantity: 100
+2024-07-05 11:04:32.698 | INFO     | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:55 - Calculating quantity for strategy with capital: 10000, risk: 1, avg_sl_points: 10, lot_size: 100
+2024-07-05 11:04:32.698 | DEBUG    | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:82 - Final adjusted quantity: 100
+2024-07-05 11:04:32.705 | INFO     | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:55 - Calculating quantity for strategy with capital: 10000, risk: 1, avg_sl_points: 10, lot_size: 100
+2024-07-05 11:04:32.715 | DEBUG    | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:82 - Final adjusted quantity: 100
+2024-07-05 11:04:32.715 | INFO     | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:55 - Calculating quantity for strategy with capital: 10000, risk: 1, avg_sl_points: None, lot_size: 50
+2024-07-05 11:04:32.715 | DEBUG    | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:94 - Quantity calculated using default strategy without avg_sl_points: 100
+2024-07-05 11:04:32.734 | INFO     | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:55 - Calculating quantity for strategy with capital: 10000, risk: 0, avg_sl_points: 10, lot_size: 100
+2024-07-05 11:04:32.734 | DEBUG    | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:82 - Final adjusted quantity: 0
+2024-07-05 11:04:32.743 | INFO     | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:55 - Calculating quantity for strategy with capital: 10000, risk: 1, avg_sl_points: 0, lot_size: 100
+2024-07-05 11:04:32.743 | ERROR    | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:100 - Error calculating quantity for strategy due to division by zero: float division by zero
+2024-07-05 11:04:32.753 | INFO     | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:55 - Calculating quantity for strategy with capital: invalid, risk: 1, avg_sl_points: 10, lot_size: 100
+2024-07-05 11:04:32.753 | ERROR    | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:calculate_qty_for_strategies:105 - General error calculating quantity for strategy: can't multiply sequence by non-int of type 'float'
+2024-07-05 11:04:32.764 | DEBUG    | Executor.ExecutorUtils.OrderCenter.OrderCenterUtils:modify_orders_for_strategy:212 - Modifying orders for user user1
+2024-07-05 11:04:57.073 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:fetch_active_users_from_firebase:164 - Error while fetching active users from Firebase: 'NoneType' object is not iterable
+2024-07-05 11:04:57.215 | ERROR    | Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils:fetch_active_users_from_firebase:164 - Error while fetching active users from Firebase: 'NoneType' object is not iterable
+2024-07-05 11:04:57.223 | DEBUG    | Executor.NSEStrategies.NSEStrategiesUtil:calculate_multipler_stoploss:809 - stoploss: 98.0, ltp: 100, stoploss_multiplier: 0.02
+2024-07-05 11:04:57.233 | DEBUG    | Executor.NSEStrategies.NSEStrategiesUtil:calculate_multipler_stoploss:809 - stoploss: 98.0, ltp: 100, stoploss_multiplier: 0.02

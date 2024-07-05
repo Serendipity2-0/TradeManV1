@@ -253,17 +253,42 @@ def test_get_token_by_name(mock_instrument_dataframe):
     assert str(token) == str(expected_token)
 
 
-def test_get_symbols_with_expiry_today(mock_instrument_dataframe):
+def test_get_symbols_with_expiry_today():
+    # Create mock data for the test
+    data = {
+        "segment": ["BCD-FUT", "BCD-FUT", "BCD-FUT", "BCD-FUT"],
+        "expiry": [
+            datetime.now().strftime("%Y-%m-%d"),
+            datetime.now().strftime("%Y-%m-%d"),
+            "2024-07-06",
+            datetime.now().strftime("%Y-%m-%d"),
+        ],
+        "name": ["EURINR", "EURINR", "USDINR", "EURINR"],
+    }
+    mock_instrument_dataframe = pd.DataFrame(data)
+
     inst = Instrument()
     inst._dataframe = mock_instrument_dataframe
-    today = datetime.now().strftime("%Y-%m-%d")
+    segment = "BCD-FUT"
+    symbols_list = ["EURINR"]
+
     symbols_with_expiry_today = inst.get_symbols_with_expiry_today(
-        "BCD-FUT", ["EURINR"]
+        segment, symbols_list
     )
-    expected_symbols = mock_instrument_dataframe[
-        (mock_instrument_dataframe["expiry"] == today)
-        & (mock_instrument_dataframe["name"] == "EURINR")
-    ]["name"].tolist()
+
+    expected_symbols = (
+        mock_instrument_dataframe[
+            (mock_instrument_dataframe["segment"] == segment)
+            & (
+                mock_instrument_dataframe["expiry"]
+                == datetime.now().strftime("%Y-%m-%d")
+            )
+            & (mock_instrument_dataframe["name"].isin(symbols_list))
+        ]["name"]
+        .drop_duplicates()
+        .tolist()
+    )
+
     assert symbols_with_expiry_today == expected_symbols
 
 

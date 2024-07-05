@@ -323,18 +323,6 @@ def test_fetch_active_strategies_all_users(mock_env):
         assert {"status": "PENDING"} in orders
 
 
-# # Example for testing get_today_open_orders_for_brokers
-# def test_get_today_open_orders_for_brokers(mock_env):
-#     user = {"Broker": {"BrokerName": "Zerodha"}}
-
-#     with patch(
-#         "Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter.fetch_open_orders"
-#     ) as mock_open_orders:
-#         mock_open_orders.return_value = [{"order_id": "order1"}, {"order_id": "order2"}]
-#         open_orders = get_today_open_orders_for_brokers(user)
-#         assert len(open_orders) == 2
-
-
 # Example for testing create_counter_order_details
 def test_create_counter_order_details(mock_env):
     tradebook = [{"status": "TRIGGER PENDING", "product": "MIS", "tag": "test_tag"}]
@@ -469,16 +457,6 @@ def test_calculate_user_net_values(mock_env):
         assert net_values["net_value"] == 15000
 
 
-# Example for testing get_primary_account_obj
-# def test_get_primary_account_obj(mock_env):
-#     with patch(
-#         "Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter.create_kite_obj"
-#     ) as mock_obj:
-#         mock_obj.return_value = MagicMock()
-#         obj = get_primary_account_obj()
-#         assert obj is not None
-
-
 # Example for testing get_broker_pnl
 def test_get_broker_pnl(mock_env):
     user = {"Broker": {"BrokerName": "Zerodha"}}
@@ -489,21 +467,6 @@ def test_get_broker_pnl(mock_env):
         mock_pnl.return_value = {"pnl": 500}
         pnl = get_broker_pnl(user)
         assert pnl["pnl"] == 500
-
-
-# Example for testing get_orders_tax@pytest.mark.asyncio
-# @pytest.mark.asyncio
-# async def test_get_orders_tax(mock_env):
-#     orders_to_place = [{"order_id": "order1"}]
-#     user_credentials = {"BrokerName": "Zerodha"}
-
-#     with patch(
-#         "Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter.get_order_tax",
-#         new_callable=AsyncMock,
-#     ) as mock_tax:
-#         mock_tax.return_value = {"tax": 100}
-#         tax = await get_orders_tax(orders_to_place, user_credentials)
-#         assert tax["tax"] == 100
 
 
 # Example for testing get_order_margin
