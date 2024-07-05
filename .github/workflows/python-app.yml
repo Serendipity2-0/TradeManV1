@@ -103,6 +103,9 @@ jobs:
           echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
           echo "USR_TRADELOG_DB_FOLDER=./Data/UserSQLDB" >> $GITHUB_ENV
           echo "ADMIN_CHANNEL_ID=${{ secrets.ADMIN_CHANNEL_ID }}" >> $GITHUB_ENV
+          echo "SHORT_MOMENTUM=${{ secrets.SHORT_MOMENTUM }}" >> $GITHUB_ENV
+          echo "SHORT_EMABBCONFLUENCE=${{ secrets.SHORT_EMABBCONFLUENCE }}" >> $GITHUB_ENV
+          echo "SHORT_MEANREVERSION=${{ secrets.SHORT_MEANREVERSION }}" >> $GITHUB_ENV
 
       - name: Verify environment variable
         run: |
@@ -113,6 +116,9 @@ jobs:
           echo $USR_TRADELOG_DB_FOLDER
           echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}"
           echo "ADMIN_CHANNEL_ID=${{ secrets.ADMIN_CHANNEL_ID }}"
+          echo $SHORT_MOMENTUM
+          echo $SHORT_EMABBCONFLUENCE
+          echo $SHORT_MEANREVERSION
 
       - name: Check formatting with black
         run: |

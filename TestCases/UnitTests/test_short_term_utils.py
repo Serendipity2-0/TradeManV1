@@ -49,7 +49,9 @@ def stock_data_dict():
     }
 
 
-@patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_bollinger_bands")
+@patch(
+    "Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_bollinger_bands"
+)
 @patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_50ema")
 def test_perform_EmaBB_Confluence_strategy(
     mock_indicator_50ema, mock_indicator_bollinger_bands, stock_data_dict
@@ -74,7 +76,9 @@ def test_perform_EmaBB_Confluence_strategy(
 
 
 @patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_rsi")
-@patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_bollinger_bands")
+@patch(
+    "Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_bollinger_bands"
+)
 @patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.check_if_above_50ema")
 def test_perform_mean_reversion_strategy(
     mock_check_if_above_50ema,
@@ -111,7 +115,9 @@ def test_perform_mean_reversion_strategy(
 
 
 @patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_rsi")
-@patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_bollinger_bands")
+@patch(
+    "Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_bollinger_bands"
+)
 @patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.check_if_above_50ema")
 @patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.indicator_macd")
 def test_perform_momentum_strategy(
@@ -153,9 +159,15 @@ def test_perform_momentum_strategy(
 
 
 @patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.read_stock_data_from_db")
-@patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.perform_momentum_strategy")
-@patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.perform_mean_reversion_strategy")
-@patch("Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.perform_EmaBB_Confluence_strategy")
+@patch(
+    "Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.perform_momentum_strategy"
+)
+@patch(
+    "Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.perform_mean_reversion_strategy"
+)
+@patch(
+    "Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils.perform_EmaBB_Confluence_strategy"
+)
 def test_get_shortterm_stocks_df(
     mock_perform_EmaBB_Confluence_strategy,
     mock_perform_mean_reversion_strategy,
