@@ -106,6 +106,8 @@ jobs:
           echo "SHORT_MOMENTUM=${{ secrets.SHORT_MOMENTUM }}" >> $GITHUB_ENV
           echo "SHORT_EMABBCONFLUENCE=${{ secrets.SHORT_EMABBCONFLUENCE }}" >> $GITHUB_ENV
           echo "SHORT_MEANREVERSION=${{ secrets.SHORT_MEANREVERSION }}" >> $GITHUB_ENV
+          echo "LONG_RATIO=${{ secrets.LONG_RATIO }}" >> $GITHUB_ENV
+          echo "LONG_COMBO=${{ secrets.LONG_COMBO }}" >> $GITHUB_ENV
 
       - name: Verify environment variable
         run: |
@@ -119,6 +121,8 @@ jobs:
           echo $SHORT_MOMENTUM
           echo $SHORT_EMABBCONFLUENCE
           echo $SHORT_MEANREVERSION
+          echo $LONG_RATIO
+          echo $LONG_COMBO
 
       - name: Check formatting with black
         run: |

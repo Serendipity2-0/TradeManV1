@@ -23,9 +23,7 @@ from Executor.NSEStrategies.Equity.LongTerm.LongTermUtils import (
 # Mock environment variables
 os.environ["LONG_RATIO"] = "Long_Ratio"
 os.environ["LONG_COMBO"] = "Long_Combo"
-os.environ["financial_db_path"] = (
-    r"D:\TradeManV1\Data\financial_data.db"
-)
+os.environ["financial_db_path"] = r"D:\TradeManV1\Data\financial_data.db"
 
 
 @pytest.fixture
@@ -63,18 +61,20 @@ def test_get_longterm_stocks_df(
     mock_get_stock_codes,
 ):
     # Mock stock codes and financial data
-    stock_codes = ['AAPL', 'GOOGL', 'MSFT']
-    financial_data = pd.DataFrame({
-        'Symbol': ['AAPL', 'GOOGL', 'MSFT'],
-        'Market Cap': [2.5e12, 1.8e12, 2.0e12],
-        'P/E Ratio': [30.5, 27.4, 32.1],
-        'P/B Ratio': [20.1, 19.5, 21.3],
-        'Debt to Equity': [0.6, 0.5, 0.7],
-        'Gross Profit Margin': [0.40, 0.55, 0.60],
-        'Operating Profit Margin': [0.30, 0.25, 0.35],
-        'Net Profit Margin': [0.25, 0.20, 0.30],
-        'Piotroski F-Score': [7, 6, 8],
-    })
+    stock_codes = ["AAPL", "GOOGL", "MSFT"]
+    financial_data = pd.DataFrame(
+        {
+            "Symbol": ["AAPL", "GOOGL", "MSFT"],
+            "Market Cap": [2.5e12, 1.8e12, 2.0e12],
+            "P/E Ratio": [30.5, 27.4, 32.1],
+            "P/B Ratio": [20.1, 19.5, 21.3],
+            "Debt to Equity": [0.6, 0.5, 0.7],
+            "Gross Profit Margin": [0.40, 0.55, 0.60],
+            "Operating Profit Margin": [0.30, 0.25, 0.35],
+            "Net Profit Margin": [0.25, 0.20, 0.30],
+            "Piotroski F-Score": [7, 6, 8],
+        }
+    )
 
     mock_get_stock_codes.return_value = stock_codes
     mock_get_financial_data.return_value = financial_data
@@ -95,14 +95,12 @@ def test_get_longterm_stocks_df(
         )
 
         # Mock perform_combo_strategy and perform_ratio_strategy
-        mock_perform_combo_strategy.return_value = pd.DataFrame({
-            'Symbol': ['AAPL', 'GOOGL', 'MSFT'],
-            'Long_Combo': [1.0, 0.8, 0.9]
-        })
-        mock_perform_ratio_strategy.return_value = pd.DataFrame({
-            'Symbol': ['AAPL', 'GOOGL', 'MSFT'],
-            'Long_Ratio': [0.5, 0.6, 0.7]
-        })
+        mock_perform_combo_strategy.return_value = pd.DataFrame(
+            {"Symbol": ["AAPL", "GOOGL", "MSFT"], "Long_Combo": [1.0, 0.8, 0.9]}
+        )
+        mock_perform_ratio_strategy.return_value = pd.DataFrame(
+            {"Symbol": ["AAPL", "GOOGL", "MSFT"], "Long_Ratio": [0.5, 0.6, 0.7]}
+        )
 
         result_combo, result_ratio = get_longterm_stocks_df()
 
