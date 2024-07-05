@@ -23,4 +23,5 @@ pytest-mock
 pytest-asyncio
 pandas
 numpy
+yfinance
 
