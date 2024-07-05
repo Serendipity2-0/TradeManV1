@@ -54,7 +54,9 @@ def test_file_upload():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
     # Update the path to point to the correct location
-    test_json_path = os.path.join(BASE_DIR, "..", "TestCases", "TestData", "test_data.json")
+    test_json_path = os.path.join(
+        BASE_DIR, "..", "TestCases", "TestData", "test_data.json"
+    )
 
     # Ensure the file exists before proceeding
     if not os.path.exists(test_json_path):
