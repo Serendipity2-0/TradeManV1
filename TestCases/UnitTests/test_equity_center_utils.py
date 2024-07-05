@@ -9,15 +9,13 @@ import numpy as np
 
 
 
-# Add the script directory to the system path
-# Determine if the script is running locally or in a GitHub environment
-if os.path.exists(r"D:\TradeManV1\Executor\ExecutorUtils\EquityCenter"):
-    # Local path
-    SCRIPT_DIR = r"D:\TradeManV1\Executor\ExecutorUtils\EquityCenter"
-else:
-    # GitHub path (relative path)
-    SCRIPT_DIR = os.path.join(os.path.dirname(__file__), "ExecutorUtils", "EquityCenter")
+# Define the relative path
+RELATIVE_SCRIPT_DIR = r"D:\TradeManV1\Executor\ExecutorUtils\EquityCenter"
 
+# Get the absolute path
+SCRIPT_DIR = os.path.abspath(RELATIVE_SCRIPT_DIR)
+
+# Add the absolute path to the system path
 sys.path.append(SCRIPT_DIR)
 
 from EquityCenterUtils import (
