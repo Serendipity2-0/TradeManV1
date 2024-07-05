@@ -55,8 +55,9 @@ def test_file_upload():
 
     # Update the path to point to the correct location
     test_json_path = os.path.join(
-        BASE_DIR, "..", "TestCases", "TestData", "test_data.json"
+        BASE_DIR, "..", "TestData", "test_data.json"
     )
+    print(f"test_json_path: {test_json_path}")
 
     # Ensure the file exists before proceeding
     if not os.path.exists(test_json_path):
