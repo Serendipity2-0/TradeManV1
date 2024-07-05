@@ -108,6 +108,8 @@ jobs:
           echo "SHORT_MEANREVERSION=${{ secrets.SHORT_MEANREVERSION }}" >> $GITHUB_ENV
           echo "LONG_RATIO=${{ secrets.LONG_RATIO }}" >> $GITHUB_ENV
           echo "LONG_COMBO=${{ secrets.LONG_COMBO }}" >> $GITHUB_ENV
+          echo "MID_TFMOMENTUM=${{ secrets.MID_TFMOMENTUM }}" >> $GITHUB_ENV
+          echo "MID_TFEMA=${{ secrets.MID_TFEMA }}" >> $GITHUB_ENV
 
       - name: Verify environment variable
         run: |
@@ -123,6 +125,10 @@ jobs:
           echo $SHORT_MEANREVERSION
           echo $LONG_RATIO
           echo $LONG_COMBO
+          echo $MID_TFMOMENTUM
+          echo $MID_TFEMA
+
+
 
       - name: Check formatting with black
         run: |
