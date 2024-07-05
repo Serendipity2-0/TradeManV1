@@ -6,19 +6,17 @@ import sqlite3
 import yfinance as yf
 from unittest.mock import patch, MagicMock
 import numpy as np
+from dotenv import load_dotenv
 
+# Add the necessary path
+DIR_PATH = os.getcwd()
+sys.path.append(DIR_PATH)
 
+# Load environment variables
+ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
+load_dotenv(ENV_PATH)
 
-# Define the relative path
-RELATIVE_SCRIPT_DIR = r"D:\TradeManV1\Executor\ExecutorUtils\EquityCenter"
-
-# Get the absolute path
-SCRIPT_DIR = os.path.abspath(RELATIVE_SCRIPT_DIR)
-
-# Add the absolute path to the system path
-sys.path.append(SCRIPT_DIR)
-
-from EquityCenterUtils import (
+from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     get_stock_codes,
     get_stock_data,
     get_financial_data,
@@ -41,8 +39,8 @@ from EquityCenterUtils import (
 
 
 # Test for get_stock_codes
-@patch("EquityCenterUtils.pd.read_csv")
-@patch("EquityCenterUtils.os.getenv")
+@patch("Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.pd.read_csv")
+@patch("Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.os.getenv")
 def test_get_stock_codes(mock_getenv, mock_read_csv):
     mock_getenv.return_value = "mock_url"
     mock_read_csv.return_value = pd.DataFrame({"SYMBOL": ["AAPL", "GOOGL"]})
@@ -51,7 +49,7 @@ def test_get_stock_codes(mock_getenv, mock_read_csv):
 
 
 # Test for get_stock_data
-@patch("EquityCenterUtils.yf.download")
+@patch("Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.yf.download")
 def test_get_stock_data(mock_download):
     mock_download.return_value = pd.DataFrame(
         {
@@ -67,7 +65,7 @@ def test_get_stock_data(mock_download):
 
 
 # Test for get_financial_data
-@patch("EquityCenterUtils.yf.Ticker")
+@patch("Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.yf.Ticker")
 def test_get_financial_data(mock_ticker):
     mock_info = MagicMock()
     mock_info.info = {
@@ -176,9 +174,9 @@ def test_check_if_above_50ema():
     assert "Above_50_EMA" in result.columns
 
 
-@patch("EquityCenterUtils.get_stock_codes")
-@patch("EquityCenterUtils.get_stock_data")
-@patch("EquityCenterUtils.sqlite3.connect")
+@patch("Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.get_stock_codes")
+@patch("Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.get_stock_data")
+@patch("Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.sqlite3.connect")
 def test_store_stock_data_sqldb(
     mock_connect, mock_get_stock_data, mock_get_stock_codes
 ):
@@ -231,7 +229,7 @@ def test_store_stock_data_sqldb(
 
 
 # Test for read_stock_data_from_db
-@patch("EquityCenterUtils.sqlite3.connect")
+@patch("Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.sqlite3.connect")
 def test_read_stock_data_from_db(mock_connect):
     mock_conn = MagicMock()
     mock_connect.return_value = mock_conn
@@ -261,7 +259,10 @@ def test_read_stock_data_from_db(mock_connect):
         ]
     )
 
-    with patch("EquityCenterUtils.pd.read_sql_query", mock_read_sql_query):
+    with patch(
+        "Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.pd.read_sql_query",
+        mock_read_sql_query,
+    ):
         result = read_stock_data_from_db("mock_db_path")
         assert "AAPL" in result
         assert "daily_data" in result["AAPL"]
@@ -298,7 +299,7 @@ def test_merge_dataframes():
 
 
 # Test for update_todaystocks_db
-@patch("EquityCenterUtils.sqlite3.connect")
+@patch("Executor.ExecutorUtils.EquityCenter.EquityCenterUtils.sqlite3.connect")
 def test_update_todaystocks_db(mock_connect):
     mock_conn = MagicMock()
     mock_connect.return_value = mock_conn
