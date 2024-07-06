@@ -144,24 +144,6 @@ def fetch_qty_for_holdings_sqldb(Tr_No, trade_id):
     return qty
 
 
-def fetch_sql_table_from_db(Tr_No, table_name):
-    """
-    Fetch a table from the database and return it as a DataFrame.
-
-    Args:
-        Tr_No (str): The trader number.
-        table_name (str): The name of the table to fetch.
-
-    Returns:
-        pd.DataFrame: The DataFrame containing the table data.
-    """
-    db_path = os.path.join(os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{Tr_No}.db")
-    conn = get_db_connection(db_path)
-    query = f"SELECT * FROM {table_name}"
-    df = pd.read_sql(query, conn)
-    return df
-
-
 def fetch_holdings_value_for_user_sqldb(user):
     """
     Fetch the total holdings value for a user from the Holdings table in the database.

@@ -14,7 +14,8 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_users_for_strategies_from_firebase as fetch_active_users,
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
-    fetch_sql_table_from_db as fetch_table_from_db,
+    read_strategy_table as read_strategy_table,
+    get_db_connection as get_db_connection,
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
 
@@ -100,7 +101,11 @@ def main():
         logger.info("Skipping execution as today is a holiday.")
         return
     for user in users:
-        holdings = fetch_table_from_db(user["Tr_No"], "Holdings")
+        db_path = os.path.join(
+            os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{user['Tr_No']}_equity.db"
+        )
+        conn = get_db_connection(db_path)
+        holdings = read_strategy_table(conn, "Holdings")
         py_holdings = holdings[
             holdings["trade_id"].str.startswith("PS")
         ]  # TODO Remove hardcoded PS

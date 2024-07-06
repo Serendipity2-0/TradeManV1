@@ -9,21 +9,6 @@ sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
-import Executor.ExecutorUtils.ExeUtils as ExeUtils
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    fetch_users_for_strategies_from_firebase as fetch_active_users,
-)
-from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
-    fetch_sql_table_from_db as fetch_table_from_db,
-)
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import get_single_ltp
-
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-from Executor.NSEStrategies.NSEStrategiesUtil import (
-    StrategyBase,
-    assign_trade_id,
-    place_order_single_user,
-)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
@@ -88,9 +73,9 @@ def calculate_sl(setup_name, buy_price, stoploss_multiplier, ltp):
     """
     Calculates the stoploss for a given setup name, buy price, stoploss multiplier and ltp.
     """
-    if setup_name == SHORT_MOMENTUM:
+    if setup_name == SHORT_MOMENTUM or setup_name == MID_TFMOMENTUM:
         return calculate_full_trailing_sl(buy_price, stoploss_multiplier, ltp)
-    if setup_name == SHORT_EMABBCONFLUENCE:  # TODO
+    if setup_name == SHORT_EMABBCONFLUENCE or setup_name == MID_TFEMA:  # TODO
         return calculate_half_trailing_sl(buy_price, stoploss_multiplier, ltp)
     if setup_name == SHORT_MEANREVERSION:  # TODO:
         return calculate_fixed_sl(buy_price, stoploss_multiplier, ltp)

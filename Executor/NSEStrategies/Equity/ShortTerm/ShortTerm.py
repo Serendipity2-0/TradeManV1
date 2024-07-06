@@ -13,7 +13,8 @@ load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
-    fetch_sql_table_from_db as fetch_table_from_db,
+    read_strategy_table as read_strategy_table,
+    get_db_connection as get_db_connection,
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
     Instrument as instrument_obj,
@@ -99,15 +100,24 @@ def main():
 
     users = fetch_strategy_users("PyStocks")
     for user in users:
-        holdings = fetch_table_from_db(user["Tr_No"], "Holdings")
+        db_path = os.path.join(
+            os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{user['Tr_No']}_equity.db"
+        )
+        conn = get_db_connection(db_path)
+        holdings = read_strategy_table(conn, "Holdings")
         py_holdings = holdings[holdings["trade_id"].str.startswith("PS")]
-        current_holdings_count = len(py_holdings)
+        shortterm_holdings = py_holdings[
+            py_holdings["setup"].isin(
+                [SHORT_MOMENTUM, SHORT_EMABBCONFLUENCE, SHORT_MEANREVERSION]
+            )
+        ]
+        current_holdings_count = len(shortterm_holdings)
         logger.debug(
-            f"Current holdings for user {user['Tr_No']}: {current_holdings_count}"
+            f"Current holdings for user {user['Tr_No']} for Shortterm: {current_holdings_count}"
         )
 
-        if current_holdings_count < 5:
-            needed_orders = 5 - current_holdings_count
+        if current_holdings_count < 9:
+            needed_orders = 9 - current_holdings_count
             for index, symbol in enumerate(symbol_list):
                 if needed_orders == 0:
                     break  # Stop processing if no more orders are needed
@@ -166,7 +176,7 @@ def main():
                 # Should come up with a better way to check for failed orders
 
                 if os.getenv("TRADE_MODE") != "PAPER":
-                    if user["Tr_No"] == "Tr00" and any(
+                    if user["Tr_No"] == os.getenv("ZERODHA_PRIMARY_ACCOUNT") and any(
                         order["order_status"] == "FAIL" for order in order_status
                     ):
                         # Reassign the trade ID to the next symbol if there is one
@@ -179,7 +189,7 @@ def main():
 
                 needed_orders -= 1
 
-            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 5")
+            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 9")
 
 
 if "__main__" == __name__:

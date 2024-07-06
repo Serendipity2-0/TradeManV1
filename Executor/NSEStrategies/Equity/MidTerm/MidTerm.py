@@ -13,7 +13,8 @@ load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
-    fetch_sql_table_from_db as fetch_table_from_db,
+    read_strategy_table as read_strategy_table,
+    get_db_connection as get_db_connection,
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
     Instrument as instrument_obj,
@@ -88,15 +89,22 @@ def main():
 
     users = fetch_strategy_users("PyStocks")
     for user in users:
-        holdings = fetch_table_from_db(user["Tr_No"], "Holdings")
+        db_path = os.path.join(
+            os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{user['Tr_No']}_equity.db"
+        )
+        conn = get_db_connection(db_path)
+        holdings = read_strategy_table(conn, "Holdings")
         py_holdings = holdings[holdings["trade_id"].str.startswith("PS")]
-        current_holdings_count = len(py_holdings)
+        midterm_holdings = py_holdings[
+            py_holdings["setup"].isin([MID_TFMOMENTUM, MID_TFEMA])
+        ]
+        current_holdings_count = len(midterm_holdings)
         logger.debug(
-            f"Current holdings for user {user['Tr_No']}: {current_holdings_count}"
+            f"Current holdings for user {user['Tr_No']} for Midterm: {current_holdings_count}"
         )
 
-        if current_holdings_count < 5:
-            needed_orders = 5 - current_holdings_count
+        if current_holdings_count < 6:
+            needed_orders = 6 - current_holdings_count
             for index, symbol in enumerate(symbol_list):
                 if needed_orders == 0:
                     break
@@ -164,7 +172,7 @@ def main():
 
                 needed_orders -= 1
 
-            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 5")
+            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 6")
 
 
 if __name__ == "__main__":
