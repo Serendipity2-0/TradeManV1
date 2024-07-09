@@ -585,7 +585,7 @@ app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 
 
 def main_api():
-    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8002, reload=True)
+    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=False)
 
 
 if __name__ == "__main__":
