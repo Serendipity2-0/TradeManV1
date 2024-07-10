@@ -78,6 +78,7 @@ def register_user(user_detail: Dict[str, Any]):
     Args:
         user_detail (Dict[str, Any]): A dictionary containing the user's details.
     """
+
     # Check if user_detail is a Pydantic model or already a dictionary
     if hasattr(user_detail, "model_dump"):
         user_detail_dict = user_detail.model_dump()
@@ -86,12 +87,7 @@ def register_user(user_detail: Dict[str, Any]):
     else:
         user_detail_dict = user_detail  # It's already a dictionary
 
-    # Ensure the 'Active' field is a boolean
-    user_detail_dict["Active"] = bool(user_detail_dict["Active"])
-    next_trader_number = get_next_trader_number()
-    update_new_client_data_to_db(next_trader_number, user_detail_dict)
-    update_next_trader_number()
-
+    update_new_client_data_to_db(get_next_trader_number(), user_detail_dict)
     return {"message": "User registered successfully"}
 
 
