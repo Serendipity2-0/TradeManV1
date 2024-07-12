@@ -17,10 +17,6 @@ class Accounts_(BaseModel):
     PnLWithdrawals: int | None = Field(default=0, example=0)
 
 
-class Active_(BaseModel):
-    Active: bool = Field(default=False, example=False)
-
-
 class Broker_(BaseModel):
     ApiKey: str = Field(..., example="")
     ApiSecret: str = Field(..., example="")
@@ -29,6 +25,14 @@ class Broker_(BaseModel):
     BrokerUsername: str = Field(..., example="")
     SessionId: str | None = Field(default="", example="")
     TotpAccess: str = Field(..., example="")
+
+
+class RiskProfile_(BaseModel):
+    Commission: float = Field(..., example=0.05)
+    DrawdownTolerance: float = Field(..., example=0.15)
+    ExpectedHorizon: str = Field(..., example="5 years")
+    AreaOfInvestment: List[str] = Field(..., example=["Equity", "Derivatives", "Debt"])
+    WithdrawalFrequency: str = Field(..., example="Monthly")
 
 
 class Profile_(BaseModel):
@@ -42,7 +46,7 @@ class Profile_(BaseModel):
     Name: str = Field(..., example="Omkar Hegde")
     PANCardNo: str = Field(..., example="")
     PhoneNumber: str = Field(..., example="")
-    RiskProfile: dict = Field(...)
+    RiskProfile: RiskProfile_ = Field(...)
     pwd: str = Field(..., example="")
     usr: str = Field(..., example="")
 
@@ -54,9 +58,8 @@ class Strategy_(BaseModel):
 
 
 class UserDetails(BaseModel):
-    # use this to add more schemas
     Accounts: Accounts_
-    Active: Active_
+    Active: bool = Field(default=False, example=False)  # Changed to boolean
     Broker: Broker_
     Profile: Profile_
     Strategies: Dict[str, Strategy_]

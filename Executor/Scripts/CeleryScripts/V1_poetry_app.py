@@ -15,6 +15,7 @@ DIR = os.getcwd()
 sys.path.append(DIR)  # Add the current directory to the system path
 
 ENV_PATH = os.path.join(DIR, "trademan.env")
+# ENV_PATH = '/Users/traderscafe/Desktop/TradeManV1/trademan.env'
 load_dotenv(ENV_PATH)
 
 CONDA_PATH = os.getenv("CONDA_PATH")
@@ -182,9 +183,10 @@ def amipy(self):
     amipy_logger = setup_logger(AMIPY, f"{log_dir}/{AMIPY}.log")
     task_id = self.request.id
     redis_client.set("amipy_task_id", task_id)
-    return run_script(
-        "Executor/NSEStrategies/Derivatives/AmiPy/AmiPyLive.py", 15, amipy_logger
-    )
+    while True:
+        return run_script(
+            "Executor/NSEStrategies/Derivatives/AmiPy/AmiPyLive.py", 17, amipy_logger
+        )
 
 
 @app.task
@@ -258,9 +260,12 @@ def mpwizard(self):
     mpwizard_logger = setup_logger(MPWIZARD, f"{log_dir}/{MPWIZARD}.log")
     task_id = self.request.id
     redis_client.set("mpwizard_task_id", task_id)
-    return run_script(
-        "Executor/NSEStrategies/Derivatives/MPWizard/MPWizard.py", 15, mpwizard_logger
-    )
+    while True:
+        return run_script(
+            "Executor/NSEStrategies/Derivatives/MPWizard/MPWizard.py",
+            15,
+            mpwizard_logger,
+        )
 
 
 @app.task
@@ -315,7 +320,7 @@ def eod_daily_reports():
         "eod_daily_reports", f"{log_dir}/eod_daily_reports.log"
     )
     return run_script(
-        "Executor/Scripts/2_GoodEvening/4_EODDailyReports/EODReports.py",
+        "Executor/Scripts/2_GoodEvening/4_EODDailyReports/EODReport.py",
         17,
         eod_daily_reports_logger,
     )
@@ -331,30 +336,12 @@ def ticker_db():
 
 @app.task
 def revoke_amipy_task():
-    task_id = redis_client.get("amipy_task_id")
-    if task_id:
-        app.control.revoke(task_id.decode("utf-8"), terminate=True)
-        message = f"Task {task_id.decode('utf-8')} has been revoked."
-        requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            data={"chat_id": CHAT_ID, "text": message},
-        )
-        return message
-    return "No task_id found to revoke."
+    subprocess.run(["pkill", "-f", "AmiPyLive.py"])
 
 
 @app.task
 def revoke_mpwizard_task():
-    task_id = redis_client.get("mpwizard_task_id")
-    if task_id:
-        app.control.revoke(task_id.decode("utf-8"), terminate=True)
-        message = f"Task {task_id.decode('utf-8')} has been revoked."
-        requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            data={"chat_id": CHAT_ID, "text": message},
-        )
-        return message
-    return "No task_id found to revoke."
+    subprocess.run(["pkill", "-f", "MPWizard.py"])
 
 
 def start_worker():

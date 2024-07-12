@@ -57,7 +57,6 @@ def db_to_excel(db_folder_path, output_folder):
 
         # Close the connection to the database
         conn.close()
-        print(f"Exported {db_file} to {excel_file}")
 
 
 def excel_to_db(excel_folder_path, output_folder):
@@ -91,4 +90,3 @@ def excel_to_db(excel_folder_path, output_folder):
 
         # Close the connection to the database
         conn.close()
-        print(f"Converted {excel_file} to {db_file}")

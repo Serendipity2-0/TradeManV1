@@ -19,7 +19,7 @@ STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 ADMIN_DB = os.getenv("FIREBASE_ADMIN_COLLECTION")
 
 cred = credentials.Certificate(cred_filepath)
-firebase_admin.initialize_app(cred, {"databaseURL": firebase_db_url})
+app = firebase_admin.initialize_app(cred, {"databaseURL": firebase_db_url})
 
 
 def fetch_collection_data_firebase(collection, document=None):
@@ -73,7 +73,9 @@ def update_fields_firebase(collection, document, data, field_key=None):
     Returns:
         None
     """
-    if field_key is None:
+    if document is None:
+        ref = db.reference(collection)
+    elif field_key is None:
         ref = db.reference(f"{collection}/{document}")
     else:
         ref = db.reference(f"{collection}/{document}/{field_key}")
@@ -259,20 +261,3 @@ def update_collection(collection, data):
     ref = db.reference(collection)
     ref.update(data)
     return "Data updated successfully"
-
-
-def upload_new_client_data_to_firebase(trader_number, user_dict):
-    """
-    Uploads new client data to Firebase based on trader number.
-
-    Args:
-        trader_number (str): The trader number.
-        user_dict (dict): The user data to upload.
-
-    Returns:
-        str: Success message.
-    """
-    ref = db.reference(CLIENTS_DB)
-    new_ref = ref.child(trader_number)
-    new_ref.set(user_dict)
-    return "Data uploaded successfully"
