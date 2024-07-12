@@ -13,6 +13,8 @@ ALICEBLUE = os.getenv("ALICEBLUE_BROKER")
 FIRSTOCK = os.getenv("FIRSTOCK_BROKER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -176,9 +178,10 @@ def fetch_list_of_strategies_from_firebase():
         strategies = []
         acounts = fetch_active_users_from_firebase()
         for account in acounts:
-            for strategy in account["Strategies"]:
-                if strategy not in strategies:
-                    strategies.append(strategy)
+            for trade_type in ["Equity", "Derivatives"]:
+                for strategy in account["Strategies"][trade_type]:
+                    if strategy not in strategies:
+                        strategies.append(strategy)
         return strategies
     except Exception as e:
         logger.error(f"Error while fetching strategies from Firebase: {e}")
@@ -199,7 +202,15 @@ def fetch_users_for_strategies_from_firebase(strategy_name):
     users = []
     for account in accounts:
         try:
-            if strategy_name in account["Strategies"]:
+            if (
+                strategy_name in EQUITY_STRATEGY_LIST
+                and strategy_name in account["Strategies"]["Equity"]
+            ):
+                users.append(account)
+            elif (
+                strategy_name in DERIVATIVES_STRATEGY_LIST
+                and strategy_name in account["Strategies"]["Derivatives"]
+            ):
                 users.append(account)
         except Exception as e:
             logger.error(

@@ -28,6 +28,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     fetch_qty_amplifier,
     fetch_strategy_amplifier,
     fetch_strategy_users,
+    StrategyBase,
 )
 
 
@@ -35,6 +36,27 @@ logger = LoggerSetup()
 LONG_RATIO = os.getenv("LONG_RATIO")
 LONG_COMBO = os.getenv("LONG_COMBO")
 stock_pick_db_path = os.getenv("today_stock_data_db_path")
+
+
+class LongTerm(StrategyBase):
+    def get_general_params(self):
+        return self.GeneralParams
+
+    def get_entry_params(self):
+        return self.EntryParams
+
+    def get_exit_params(self):
+        return self.ExitParams
+
+    def get_raw_field(self, field_name: str):
+        return super().get_raw_field(field_name)
+
+
+longterm_obj = LongTerm.load_from_db("LongTerm")
+strategy_name = longterm_obj.StrategyName
+order_type = longterm_obj.GeneralParams.OrderType
+product_type = longterm_obj.GeneralParams.ProductType
+strategy_type = longterm_obj.GeneralParams.StrategyType
 
 
 def get_today_stocks():
@@ -67,14 +89,7 @@ def main():
     """
     Retrieves and processes today's top stock picks, places orders for users if needed.
     """
-    from Executor.NSEStrategies.Equity.Equity import (
-        pystocks_obj,
-        strategy_name,
-        strategy_type,
-        order_type,
-        product_type,
-        signals_to_fb,
-    )
+    from Executor.NSEStrategies.Equity.Equity import signals_to_fb
 
     top5_stocks_df = get_today_stocks()
     if top5_stocks_df.empty:
@@ -88,7 +103,7 @@ def main():
 
     trade_id_mapping = {}
 
-    users = fetch_strategy_users("PyStocks")
+    users = fetch_strategy_users(strategy_name)
     for user in users:
         db_path = os.path.join(
             os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{user['Tr_No']}_equity.db"
@@ -121,7 +136,7 @@ def main():
                 # Log the setup name
                 logger.info(f"Setup for {symbol}: {setup_name}")
 
-                new_base = pystocks_obj.reload_strategy(pystocks_obj.StrategyName)
+                new_base = longterm_obj.reload_strategy(longterm_obj.StrategyName)
                 if symbol not in trade_id_mapping:
                     trade_id_mapping[symbol] = new_base.NextTradeId
 
@@ -152,9 +167,9 @@ def main():
                 qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
                 strategy_amplifier = fetch_strategy_amplifier(strategy_name)
                 update_qty_user_firebase(
-                    strategy_name, ltp, 1, qty_amplifier, strategy_amplifier
+                    strategy_name, ltp, 1, qty_amplifier, strategy_amplifier, setup_name
                 )
-                signals_to_fb(order_to_place, trade_id)
+                signals_to_fb(strategy_name, order_to_place, trade_id)
                 order_status = place_order_single_user([user], order_to_place)
                 logger.debug(f"Orders placed for {symbol}: {order_to_place}")
 

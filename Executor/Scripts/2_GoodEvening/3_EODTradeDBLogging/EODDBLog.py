@@ -6,6 +6,7 @@ from time import sleep
 
 import pandas as pd
 from dotenv import load_dotenv
+import traceback
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -180,34 +181,69 @@ def clear_today_orders_firebase():
         logger.error(f"Error occurred while clearing today's orders from Firebase: {e}")
 
 
-def convert_trade_state_to_list(orders_firebase, user_TR_No):
+def convert_trade_state_to_list(
+    orders_firebase, user_TR_No, setup_name=None
+):  # TODO:Fix here
     """
     Converts the trade state of orders from a dictionary to a list format in Firebase.
 
     :param orders_firebase: A dictionary containing orders from Firebase.
     :param user_TR_No: A string representing the user's trade number.
     """
-    strategies = orders_firebase.get("Strategies", {})
-    for strategy_name, strategy_details in strategies.items():
-        orders = strategy_details.get("TradeState", {}).get("orders", [])
-        if isinstance(orders, dict):
-            orders = list(orders.values())
-            update_path = f"Strategies/{strategy_name}/TradeState/"
-            try:
-                update_fields_firebase(
-                    CLIENTS_USER_FB_DB_COLLECTION,
-                    user_TR_No,
-                    {"orders": orders},
-                    update_path,
-                )
-            except Exception as e:
-                logger.error(
-                    f"Error updating trade state for strategy {strategy_name}: {e}"
-                )
-        else:
-            logger.error(
-                f"Unexpected data structure for strategy {strategy_name} orders."
-            )
+    for trade_type in ["Derivatives", "Equity"]:
+        strategies = orders_firebase.get("Strategies", {}).get(trade_type, {})
+        for strategy_name, strategy_detail in strategies.items():
+            if trade_type == "Equity":
+                for setup_name, setup_detail in strategy_detail.items():
+                    orders = setup_detail.get("TradeState", {}).get("orders", [])
+                    if isinstance(orders, dict):
+                        orders = list(orders.values())
+                        if setup_name:
+                            update_path = f"Strategies/Equity/{strategy_name}/{setup_name}/TradeState/"
+                        else:
+                            update_path = (
+                                f"Strategies/Derivatives/{strategy_name}/TradeState/"
+                            )
+                        try:
+                            update_fields_firebase(
+                                CLIENTS_USER_FB_DB_COLLECTION,
+                                user_TR_No,
+                                {"orders": orders},
+                                update_path,
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"Error updating trade state for strategy {strategy_name}: {e}"
+                            )
+                    else:
+                        logger.error(
+                            f"Unexpected data structure for strategy {strategy_name} orders."
+                        )
+            else:
+                orders = strategy_detail.get("TradeState", {}).get("orders", [])
+                if isinstance(orders, dict):
+                    orders = list(orders.values())
+                    if setup_name:
+                        update_path = f"Strategies/Equity/{strategy_name}/{setup_name}/TradeState/"
+                    else:
+                        update_path = (
+                            f"Strategies/Derivatives/{strategy_name}/TradeState/"
+                        )
+                    try:
+                        update_fields_firebase(
+                            CLIENTS_USER_FB_DB_COLLECTION,
+                            user_TR_No,
+                            {"orders": orders},
+                            update_path,
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Error updating trade state for strategy {strategy_name}: {e}"
+                        )
+                else:
+                    logger.error(
+                        f"Unexpected data structure for strategy {strategy_name} orders."
+                    )
 
 
 def get_keys_to_delete(strategy_orders, order_ids_to_delete):
@@ -232,57 +268,55 @@ def get_keys_to_delete(strategy_orders, order_ids_to_delete):
     return keys_to_delete
 
 
-def delete_orders_from_firebase(orders, strategy_name, user):
+def delete_orders_from_firebase(orders, strategy_name, user, setup_name=None):
     """
     Deletes orders from Firebase for a given strategy and user.
 
     :param orders: A dictionary containing orders to delete.
     :param strategy_name: A string representing the strategy name.
     :param user: A dictionary containing user details.
+    :param setup_name: An optional string representing the setup name.
     """
     try:
-        entry_orders = orders["entry_orders"]
-        exit_orders = orders["exit_orders"]
-        hedge_orders = orders["hedge_orders"]
-    except KeyError as e:
-        logger.error(
-            f"Error fetching orders to delete the orders for {strategy_name}: {e}"
+        combined_orders = (
+            orders["entry_orders"] + orders["exit_orders"] + orders["hedge_orders"]
         )
+    except KeyError as e:
+        logger.error(f"Error fetching orders to delete for {strategy_name}: {e}")
         return
     except Exception as e:
         logger.error(
-            f"Error occurred while fetching orders to delete the orders for {strategy_name}: {e}"
+            f"Error occurred while fetching orders to delete for {strategy_name}: {e}"
         )
         return
 
-    if not entry_orders or not exit_orders:
+    if not combined_orders:
         logger.info("Entry or exit orders missing, skipping deletion.")
         return
 
-    combined_orders = entry_orders + exit_orders + hedge_orders
+    try:
+        orders_firebase = fetch_collection_data_firebase(
+            CLIENTS_USER_FB_DB_COLLECTION, user["Tr_No"]
+        )
+    except Exception as e:
+        logger.error(f"Error fetching Firebase data for {user['Tr_No']}: {e}")
+        return
 
-    orders_firebase = fetch_collection_data_firebase(
-        CLIENTS_USER_FB_DB_COLLECTION, user["Tr_No"]
-    )
-
-    if (
-        "Strategies" in orders_firebase
-        and strategy_name in orders_firebase["Strategies"]
-        and "TradeState" in orders_firebase["Strategies"][strategy_name]
-    ):
-        strategy_orders = orders_firebase["Strategies"][strategy_name]["TradeState"][
-            "orders"
-        ]
-    else:
+    try:
+        if setup_name:
+            strategy_orders = orders_firebase["Strategies"]["Equity"][strategy_name][
+                setup_name
+            ]["TradeState"]["orders"]
+        else:
+            strategy_orders = orders_firebase["Strategies"]["Derivatives"][
+                strategy_name
+            ]["TradeState"]["orders"]
+    except KeyError:
         logger.info(f"Strategy {strategy_name} not found or missing TradeState.")
         return
 
     order_ids_to_delete = {order["order_id"] for order in combined_orders}
-    try:
-        keys_to_delete = get_keys_to_delete(strategy_orders, order_ids_to_delete)
-    except Exception as e:
-        logger.error(f"Error getting keys to delete for {strategy_name}: {e}")
-        return
+    keys_to_delete = get_keys_to_delete(strategy_orders, order_ids_to_delete)
 
     if not keys_to_delete:
         logger.info("No matching orders found for deletion.")
@@ -290,23 +324,25 @@ def delete_orders_from_firebase(orders, strategy_name, user):
 
     for key in keys_to_delete:
         try:
-            delete_path = f"Strategies/{strategy_name}/TradeState/orders/{key}"
+            if setup_name:
+                delete_path = f"Strategies/Equity/{strategy_name}/{setup_name}/TradeState/orders/{key}"
+            else:
+                delete_path = (
+                    f"Strategies/Derivatives/{strategy_name}/TradeState/orders/{key}"
+                )
             delete_fields_firebase(
                 CLIENTS_USER_FB_DB_COLLECTION, user["Tr_No"], delete_path
             )
         except Exception as e:
-            logger.info(f"Error deleting order with key/index {key}: {e}")
+            logger.info(f"Error deleting order with ID {key}: {e}")
 
     try:
-        pending_orders_firebase = fetch_collection_data_firebase(
-            CLIENTS_USER_FB_DB_COLLECTION, user["Tr_No"]
-        )
+        fetch_collection_data_firebase(CLIENTS_USER_FB_DB_COLLECTION, user["Tr_No"])
     except Exception as e:
         logger.error(
             f"Error fetching pending orders from Firebase for {strategy_name}: {e}"
         )
         return
-    convert_trade_state_to_list(pending_orders_firebase, user["Tr_No"])
 
     logger.success("Deletion process completed.")
 
@@ -512,7 +548,7 @@ def calculate_trade_details(trade_data, strategy_name, user, multileg=False):
         }
         return trade_details
     except Exception as e:
-        logger.error(f"Error calculating trade details for {strategy_name}: {e}")
+        logger.info(f"Error calculating trade details for {strategy_name}: {e}")
         return None
 
 
@@ -535,116 +571,146 @@ def fetch_and_prepare_holdings_data():
     active_users = fetch_active_users_from_firebase()
 
     for user in active_users:
-        derivatives_conn = None
-        equity_conn = None
-        all_derivatives_holdings = []
-        all_equity_holdings = []
-        strategies = user.get("Strategies", {})
+        connections = {
+            "Derivatives": get_db_connection(
+                os.path.join(
+                    CLIENTS_TRADE_SQL_DERIVATIVES_DB, f"{user['Tr_No']}_derivatives.db"
+                )
+            ),
+            "Equity": get_db_connection(
+                os.path.join(CLIENTS_TRADE_SQL_EQUITY_DB, f"{user['Tr_No']}_equity.db")
+            ),
+        }
+
+        holdings_data = {"Equity": [], "Derivatives": []}
+        decimal_columns = ["entry_price", "hedge_entry_price", "margin_utilized", "tax"]
 
         try:
-            for strategy_name, strategy_details in strategies.items():
-                logger.debug(f"Checking the holdings for : {strategy_name}")
-                strategy_orders = strategy_details.get("TradeState", {}).get(
-                    "orders", []
-                )
-                if isinstance(strategy_orders, dict):
-                    strategy_orders = list(strategy_orders.values())
+            for trade_type in ["Derivatives", "Equity"]:
+                strategies = user.get("Strategies", {}).get(trade_type, {})
 
-                main_orders = [
-                    order
-                    for order in strategy_orders
-                    if order is not None and "MO" in order.get("trade_id", "")
-                ]
-                hedge_orders = [
-                    order
-                    for order in strategy_orders
-                    if order is not None and "HO" in order.get("trade_id", "")
-                ]
-
-                avg_hedge_order_price = (
-                    sum(float(order["avg_prc"]) for order in hedge_orders)
-                    / len(hedge_orders)
-                    if hedge_orders
-                    else 0
-                )
-
-                for order in main_orders:
-                    exchange = instru().get_exchange_by_exchange_token(
-                        str(order.get("exchange_token"))
-                    )
-                    trading_symbol = instru().get_trading_symbol_by_exchange_token(
-                        str(order.get("exchange_token")), exchange
-                    )
-
-                    entry_price = float(order["avg_prc"])
-                    qty = order.get("qty", 0)
-
-                    if order.get("trade_id", "").startswith("PS"):
-                        margin_utilized = entry_price * qty
-                    else:
-                        margin_utilized = get_order_margin([order], user["Broker"])
-
-                    holding = {
-                        "trade_id": order.get("trade_id"),
-                        "signal": "Short"
-                        if "_SH_" in order.get("trade_id")
-                        else "Long",
-                        "trading_symbol": trading_symbol,
-                        "entry_time": datetime.strptime(
-                            order.get("time_stamp"), "%Y-%m-%d %H:%M"
-                        ),
-                        "entry_price": entry_price,
-                        "qty": qty,
-                        "margin_utilized": margin_utilized,
-                        "tax": 0.0,
-                        "hedge_entry_price": avg_hedge_order_price,
-                    }
-
-                    if strategy_name in EQUITY_STRATEGY_LIST:
-                        holding["setup"] = order.get("setup")
-                        all_equity_holdings.append(holding)
-                    elif strategy_name in DERIVATIVES_STRATEGY_LIST:
-                        all_derivatives_holdings.append(holding)
-                    else:
-                        logger.error(
-                            f"Strategy {strategy_name} not found in either equity or derivatives strategy list"
+                for strategy_name, strategy_detail in strategies.items():
+                    if trade_type == "Equity":
+                        for setup_name, setup_detail in strategy_detail.items():
+                            strategy_orders = setup_detail.get("TradeState", {}).get(
+                                "orders", []
+                            )
+                            logger.debug(
+                                f"Checking the holdings for : {strategy_name} for setup : {setup_name}"
+                            )
+                            process_holdings_orders(
+                                strategy_orders,
+                                strategy_name,
+                                setup_name,
+                                trade_type,
+                                holdings_data,
+                                user,
+                            )
+                    elif trade_type == "Derivatives":  # Derivatives
+                        strategy_orders = strategy_detail.get("TradeState", {}).get(
+                            "orders", []
                         )
+                        logger.debug(f"Checking the holdings for : {strategy_name}")
+                        process_holdings_orders(
+                            strategy_orders,
+                            strategy_name,
+                            None,
+                            trade_type,
+                            holdings_data,
+                            user,
+                        )
+                    else:
+                        logger.error(f"Trade type {trade_type} not supported")
 
-            decimal_columns = [
-                "entry_price",
-                "hedge_entry_price",
-                "margin_utilized",
-                "tax",
-            ]
-
-            if all_derivatives_holdings:
-                if derivatives_conn is None:
-                    derivatives_db_path = os.path.join(
-                        CLIENTS_TRADE_SQL_DERIVATIVES_DB,
-                        f"{user['Tr_No']}_derivatives.db",
+            for type_key, connection in connections.items():
+                if holdings_data[type_key]:
+                    holdings_df = pd.DataFrame(holdings_data[type_key])
+                    dump_df_to_sqlite(
+                        connection, holdings_df, "Holdings", decimal_columns
                     )
-                    derivatives_conn = get_db_connection(derivatives_db_path)
-                holdings_df = pd.DataFrame(all_derivatives_holdings)
-                dump_df_to_sqlite(
-                    derivatives_conn, holdings_df, "Holdings", decimal_columns
-                )
-
-            if all_equity_holdings:
-                if equity_conn is None:
-                    equity_db_path = os.path.join(
-                        CLIENTS_TRADE_SQL_EQUITY_DB, f"{user['Tr_No']}_equity.db"
-                    )
-                    equity_conn = get_db_connection(equity_db_path)
-                holdings_df = pd.DataFrame(all_equity_holdings)
-                dump_df_to_sqlite(equity_conn, holdings_df, "Holdings", decimal_columns)
 
         except Exception as e:
             logger.error(f"Error processing holdings data for {user['Tr_No']}: {e}")
         finally:
-            if derivatives_conn:
-                derivatives_conn.close()
-            if equity_conn:
-                equity_conn.close()
+            # Close all connections
+            for connection in connections.values():
+                if connection:
+                    connection.close()
+
+
+def process_holdings_orders(
+    strategy_orders, strategy_name, setup_name, trade_type, holdings_data, user
+):
+    from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
+        Instrument as instru,
+    )
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import get_order_margin
+
+    # write detailed documentation for this function
+    """
+    Processes orders for holdings and appends them to the holdings data.
+
+    For each User:
+    1. Fetches the user's strategies from Firebase.
+    2. Separates main and hedge orders.
+    3. Calculates the average price of hedge orders.
+    4. Processes main orders and calculates the margin utilized.
+    5. Dumps the holdings data into the user's SQLite database.
+    """
+    try:
+        main_orders = [
+            order
+            for order in strategy_orders
+            if order and "MO" in order.get("trade_id", "")
+        ]
+        hedge_orders = [
+            order
+            for order in strategy_orders
+            if order and "HO" in order.get("trade_id", "")
+        ]
+
+        avg_hedge_order_price = (
+            sum(float(order["avg_prc"]) for order in hedge_orders) / len(hedge_orders)
+            if hedge_orders
+            else 0
+        )
+
+        for order in main_orders:
+            exchange = instru().get_exchange_by_exchange_token(
+                str(order.get("exchange_token"))
+            )
+            trading_symbol = instru().get_trading_symbol_by_exchange_token(
+                str(order.get("exchange_token")), exchange
+            )
+
+            entry_price = float(order["avg_prc"])
+            qty = order.get("qty", 0)
+            margin_utilized = (
+                entry_price * qty
+                if setup_name
+                else get_order_margin([order], user["Broker"])
+            )
+
+            holding = {
+                "trade_id": order.get("trade_id"),
+                "signal": "Short" if "_SH_" in order.get("trade_id") else "Long",
+                "trading_symbol": trading_symbol,
+                "entry_time": datetime.strptime(
+                    order.get("time_stamp"), "%Y-%m-%d %H:%M"
+                ),
+                "entry_price": entry_price,
+                "qty": qty,
+                "margin_utilized": margin_utilized,
+                "tax": 0.0,
+                "hedge_entry_price": avg_hedge_order_price,
+            }
+
+            if setup_name:
+                holding["setup"] = setup_name  # Assign setup_name only for Equity
+
+            holdings_data[trade_type].append(holding)
+    except Exception as e:
+        logger.error(f"Error processing orders for {strategy_name}: {e}")
 
 
 def process_n_log_trade():
@@ -660,88 +726,91 @@ def process_n_log_trade():
     active_users = fetch_active_users_from_firebase()
 
     for user in active_users:
-        logger.debug(f"Processing trade for user: {user['Tr_No']}")
         if not user.get("Active"):
             continue
 
-        derivatives_conn = None
-        equity_conn = None
+        logger.debug(f"Processing trade for user: {user['Tr_No']}")
+
+        connections = {
+            "Derivatives": None,
+            "Equity": None,
+        }  # Initialize connections outside the loop
 
         try:
-            strategies = user.get("Strategies", {})
-            for strategy_name, strategy_details in strategies.items():
-                strategy_orders = strategy_details.get("TradeState", {}).get(
-                    "orders", []
-                )
-                if not strategy_orders:
-                    logger.debug(f"No orders found for strategy: {strategy_name}")
-                    continue
-
-                segregated_orders = process_orders_for_strategy(strategy_orders)
-                for trade_prefix, orders_group in segregated_orders.items():
-                    multileg = StrategyBase.load_from_db(
-                        strategy_name
-                    ).ExtraInformation.MultiLeg
-                    trade_details = calculate_trade_details(
-                        orders_group, strategy_name, user, multileg
+            for trade_type in ["Derivatives", "Equity"]:
+                if connections[trade_type] is None:
+                    db_path = os.path.join(
+                        CLIENTS_TRADE_SQL_DERIVATIVES_DB
+                        if trade_type == "Derivatives"
+                        else CLIENTS_TRADE_SQL_EQUITY_DB,
+                        f"{user['Tr_No']}_{trade_type.lower()}.db",
                     )
+                    connections[trade_type] = get_db_connection(db_path)
 
-                    if trade_details is None or not any(trade_details.values()):
-                        logger.debug(
-                            f"Skipping trade {trade_prefix} due to invalid trade details."
-                        )
-                        continue
-
-                    df = pd.DataFrame([trade_details])
-                    decimal_columns = [
-                        "pnl",
-                        "tax",
-                        "entry_price",
-                        "exit_price",
-                        "hedge_entry_price",
-                        "hedge_exit_price",
-                        "trade_points",
-                        "net_pnl",
-                    ]
-
-                    if not set(decimal_columns).issubset(df.columns):
-                        logger.error(
-                            f"DataFrame for {trade_prefix} does not have the expected structure, skipping..."
-                        )
-                        continue
-
-                    logger.info(decimal_columns)
-
-                    if strategy_name in DERIVATIVES_STRATEGY_LIST:
-                        if derivatives_conn is None:
-                            derivatives_db_path = os.path.join(
-                                CLIENTS_TRADE_SQL_DERIVATIVES_DB,
-                                f"{user['Tr_No']}_derivatives.db",
+                strategies = user.get("Strategies", {}).get(trade_type, {})
+                for strategy_name, strategy_details in strategies.items():
+                    if trade_type == "Equity":
+                        for setup_name in strategy_details:
+                            process_strategy(
+                                strategy_name,
+                                strategy_details[setup_name],
+                                user,
+                                connections[trade_type],
+                                setup_name,
                             )
-                            derivatives_conn = get_db_connection(derivatives_db_path)
-                        append_df_to_sqlite(
-                            derivatives_conn, df, strategy_name, decimal_columns
+                    elif trade_type == "Derivatives":
+                        process_strategy(
+                            strategy_name,
+                            strategy_details,
+                            user,
+                            connections[trade_type],
                         )
-                    elif strategy_name in EQUITY_STRATEGY_LIST:
-                        if equity_conn is None:
-                            equity_db_path = os.path.join(
-                                CLIENTS_TRADE_SQL_EQUITY_DB,
-                                f"{user['Tr_No']}_equity.db",
-                            )
-                            equity_conn = get_db_connection(equity_db_path)
-                        append_df_to_sqlite(
-                            equity_conn, df, strategy_name, decimal_columns
-                        )
-
-                    delete_orders_from_firebase(orders_group, strategy_name, user)
 
         except Exception as e:
             logger.error(f"Error processing and logging trade for {user['Tr_No']}: {e}")
-        finally:
-            if derivatives_conn:
-                derivatives_conn.close()
-            if equity_conn:
-                equity_conn.close()
+            logger.error(traceback.format_exc())
+
+    # Close all connections after processing all users
+    for conn in connections.values():
+        if conn:
+            conn.close()
+
+
+def process_strategy(
+    strategy_name, strategy_orders_details, user, connection, setup_name=None
+):
+    strategy_orders = strategy_orders_details.get("TradeState", {}).get("orders", [])
+    segregated_orders = process_orders_for_strategy(strategy_orders)
+
+    for trade_prefix, orders_group in segregated_orders.items():
+        multileg = StrategyBase.load_from_db(strategy_name).ExtraInformation.MultiLeg
+        trade_details = calculate_trade_details(
+            orders_group, strategy_name, user, multileg
+        )
+
+        if trade_details is None or not any(trade_details.values()):
+            logger.debug(f"Skipping trade {trade_prefix} due to invalid trade details.")
+            continue
+
+        df = pd.DataFrame([trade_details])
+        decimal_columns = [
+            "pnl",
+            "tax",
+            "entry_price",
+            "exit_price",
+            "hedge_entry_price",
+            "hedge_exit_price",
+            "trade_points",
+            "net_pnl",
+        ]
+
+        if set(decimal_columns).issubset(df.columns):
+            append_df_to_sqlite(connection, df, strategy_name, decimal_columns)
+            delete_orders_from_firebase(orders_group, strategy_name, user, setup_name)
+        else:
+            logger.error(
+                f"DataFrame for {trade_prefix} does not have the expected structure, skipping..."
+            )
 
 
 def main():
@@ -761,7 +830,7 @@ def main():
     sleep(5)
     update_signals_firebase()
     update_signal_info()
-    # clear_today_orders_firebase()
+    clear_today_orders_firebase()
     sleep(5)
 
 

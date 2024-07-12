@@ -27,6 +27,9 @@ from Executor.ExecutorUtils.ExeUtils import holidays
 
 logger = LoggerSetup()
 
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):
@@ -488,8 +491,12 @@ def fetch_strategy_users(strategy_name):
         active_users = fetch_active_users_from_firebase()
         strategy_users = []
         for user in active_users:
-            if strategy_name in user["Strategies"]:
-                strategy_users.append(user)
+            if strategy_name in DERIVATIVES_STRATEGY_LIST:
+                if strategy_name in user["Strategies"]["Derivatives"]:
+                    strategy_users.append(user)
+            elif strategy_name in EQUITY_STRATEGY_LIST:
+                if strategy_name in user["Strategies"]["Equity"]:
+                    strategy_users.append(user)
         return strategy_users
     except Exception as e:
         logger.error(f"Error fetching strategy users: {e}")
@@ -518,7 +525,7 @@ def fetch_freecash_firebase(strategy_name):
         return None
 
 
-def fetch_risk_per_trade_firebase(strategy_name):
+def fetch_risk_per_trade_firebase(strategy_name, setup_name=None):
     """
     The `fetch_risk_per_trade_firebase` function retrieves the risk per trade value for each user associated with the given strategy from Firebase.
 
@@ -530,9 +537,14 @@ def fetch_risk_per_trade_firebase(strategy_name):
         users = fetch_strategy_users(strategy_name)
         risk_per_trade = {}
         for user in users:
-            risk_per_trade[user["Tr_No"]] = user["Strategies"][strategy_name][
-                "RiskPerTrade"
-            ]
+            if setup_name:
+                risk_per_trade[user["Tr_No"]] = user["Strategies"]["Equity"][
+                    strategy_name
+                ][setup_name]["RiskPerTrade"]
+            else:
+                risk_per_trade[user["Tr_No"]] = user["Strategies"]["Derivatives"][
+                    strategy_name
+                ]["RiskPerTrade"]
         return risk_per_trade
     except Exception as e:
         logger.error(f"Error fetching risk per trade: {e}")
@@ -540,21 +552,22 @@ def fetch_risk_per_trade_firebase(strategy_name):
 
 
 def update_qty_user_firebase(
-    strategy_name, avg_sl_points, lot_size, qty_amplifier=None, strategy_amplifier=None
+    strategy_name,
+    avg_sl_points,
+    lot_size,
+    qty_amplifier=None,
+    strategy_amplifier=None,
+    setup_name=None,
 ):
     """
     The `update_qty_user_firebase` function updates the quantity for each user associated with the given strategy based on their free cash and risk per trade.
 
     :param strategy_name: The name of the strategy
-    :type strategy_name: str
     :param avg_sl_points: The average stop loss points
-    :type avg_sl_points: float
     :param lot_size: The lot size
-    :type lot_size: int
     :param qty_amplifier: The quantity amplifier (optional)
-    :type qty_amplifier: float
     :param strategy_amplifier: The strategy amplifier (optional)
-    :type strategy_amplifier: float
+    :param setup_name: The setup name (optional)
     """
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
         calculate_qty_for_strategies,
@@ -562,13 +575,14 @@ def update_qty_user_firebase(
 
     strategy_users = fetch_strategy_users(strategy_name)
     free_cash_dict = fetch_freecash_firebase(strategy_name)
-    risk_per_trade = fetch_risk_per_trade_firebase(strategy_name)
-    try:
-        for user in strategy_users:
-            if user["Tr_No"] in risk_per_trade:
-                risk = risk_per_trade[user["Tr_No"]]
-            if user["Tr_No"] in free_cash_dict:
-                capital = free_cash_dict[user["Tr_No"]]
+    risk_per_trade = fetch_risk_per_trade_firebase(strategy_name, setup_name)
+
+    for user in strategy_users:
+        user_tr_no = user["Tr_No"]
+        risk = risk_per_trade.get(user_tr_no)
+        capital = free_cash_dict.get(user_tr_no)
+
+        if risk and capital:
             qty = calculate_qty_for_strategies(
                 capital,
                 risk,
@@ -577,16 +591,20 @@ def update_qty_user_firebase(
                 qty_amplifier,
                 strategy_amplifier,
             )
-            user["Strategies"][strategy_name]["Qty"] = qty
+
+            strategy_path = f"Strategies/{'Equity' if setup_name else 'Derivatives'}/{strategy_name}"
+            if setup_name:
+                strategy_path += f"/{setup_name}"
+                user["Strategies"]["Equity"][strategy_name][setup_name]["Qty"] = qty
+            else:
+                user["Strategies"]["Derivatives"][strategy_name]["Qty"] = qty
 
             update_fields_firebase(
                 user_db_collection,
-                user["Tr_No"],
+                user_tr_no,
                 {"Qty": qty},
-                f"Strategies/{strategy_name}",
+                strategy_path,
             )
-    except Exception as e:
-        logger.error(f"Error updating qty for user: {e}")
 
 
 def assign_trade_id(orders_to_place):
