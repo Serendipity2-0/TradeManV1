@@ -17,9 +17,6 @@ class Accounts_(BaseModel):
     PnLWithdrawals: int | None = Field(default=0, example=0)
 
 
-# Remove the Active_ class as it's no longer needed
-
-
 class Broker_(BaseModel):
     ApiKey: str = Field(..., example="")
     ApiSecret: str = Field(..., example="")
@@ -28,6 +25,14 @@ class Broker_(BaseModel):
     BrokerUsername: str = Field(..., example="")
     SessionId: str | None = Field(default="", example="")
     TotpAccess: str = Field(..., example="")
+
+
+class RiskProfile_(BaseModel):
+    Commission: float = Field(..., example=0.05)
+    DrawdownTolerance: float = Field(..., example=0.15)
+    ExpectedHorizon: str = Field(..., example="5 years")
+    AreaOfInvestment: List[str] = Field(..., example=["Equity", "Derivatives", "Debt"])
+    WithdrawalFrequency: str = Field(..., example="Monthly")
 
 
 class Profile_(BaseModel):
@@ -41,7 +46,7 @@ class Profile_(BaseModel):
     Name: str = Field(..., example="Omkar Hegde")
     PANCardNo: str = Field(..., example="")
     PhoneNumber: str = Field(..., example="")
-    RiskProfile: dict = Field(...)
+    RiskProfile: RiskProfile_ = Field(...)
     pwd: str = Field(..., example="")
     usr: str = Field(..., example="")
 
