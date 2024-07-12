@@ -15,6 +15,9 @@ load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
+    update_fields_firebase,
+)
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
     upload_new_client_data_to_firebase,
 )
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
@@ -68,6 +71,18 @@ def update_new_client_data_to_db(trader_number, user_dict):
     user_dict (dict): The user's data as a dictionary.
     """
     upload_new_client_data_to_firebase(trader_number, user_dict)
+
+
+def update_next_trader_number():
+    """
+    Updates the next trader number inside the admin database.
+    """
+    admin_data = fetch_collection_data_firebase(ADMIN_DB)
+    current_trader_number = admin_data.get("NextTradeManId", 0)
+    next_number = int(current_trader_number[2:]) + 1
+    next_trader_number = f"Tr{next_number}"
+    next_trader_number_dict = {"NextTradeManId": next_trader_number}
+    update_fields_firebase(ADMIN_DB, document=None, data=next_trader_number_dict)
 
 
 def log_changes_via_webapp(updated_data, section_info=None):
