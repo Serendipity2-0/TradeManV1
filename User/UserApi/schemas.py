@@ -5,16 +5,34 @@ from typing import List, Dict
 import datetime
 
 
+class Equity(BaseModel):
+    CapitalAllocation: int = Field(..., example=100)
+    Equity_FreeCash: float = Field(
+        ..., alias="11Jul24_Equity_FreeCash", example=141558.6
+    )
+    Equity_Holdings: float = Field(..., alias="11Jul24_Equity_Holdings", example=81028)
+
+
 class Accounts_(BaseModel):
-    CurrentBaseCapital: int = Field(..., example=0)
-    CurrentWeekCapital: int | None = Field(default=0, example=0)
-    Drawdown: int | None = Field(default=0, example=0)
-    NetAdditions: int | None = Field(default=0, example=0)
-    NetCharges: int | None = Field(default=0, example=0)
-    NetCommission: int | None = Field(default=0, example=0)
-    NetPnL: int | None = Field(default=0, example=0)
-    NetWithdrawals: int | None = Field(default=0, example=0)
-    PnLWithdrawals: int | None = Field(default=0, example=0)
+    Equity: Equity
+    Portfolio_AccountValue_01Jul24: float = Field(
+        ..., alias="01Jul24_Portfolio_AccountValue", example=141559
+    )
+    Portfolio_FreeCash_01Jul24: float = Field(
+        ..., alias="01Jul24_Portfolio_FreeCash", example=141558.6
+    )
+    Portfolio_Holdings_01Jul24: float = Field(
+        ..., alias="01Jul24_Portfolio_Holdings", example=81028
+    )
+    Portfolio_FreeCash_02Jul24: float = Field(
+        ..., alias="02Jul24_Portfolio_FreeCash", example=141507.7
+    )
+    Portfolio_AccountValue_02Jul24: float = Field(
+        ..., alias="02Jul24_Portfolio_AccountValue", example=141507.7
+    )
+    Portfolio_Holdings_02Jul24: float = Field(
+        ..., alias="02Jul24_Portfolio_Holdings", example=81028
+    )
 
 
 class Broker_(BaseModel):
@@ -28,33 +46,49 @@ class Broker_(BaseModel):
 
 
 class RiskProfile_(BaseModel):
-    Commission: float = Field(..., example=0.05)
-    DrawdownTolerance: float = Field(..., example=0.15)
-    ExpectedHorizon: str = Field(..., example="5 years")
-    AreaOfInvestment: List[str] = Field(..., example=["Equity", "Derivatives", "Debt"])
-    WithdrawalFrequency: str = Field(..., example="Monthly")
+    AreaOfInvestment: List[str] = Field(..., example=["Debt", "Equity", "Derivatives"])
+    Commission: str = Field(..., example="50-50")
+    DrawdownTolerance: str = Field(..., example="35")
+    Duration: str = Field(..., example="12 months")
+    WithdrawalFrequency: str = Field(..., example="OnRequest")
 
 
 class Profile_(BaseModel):
-    AadharCardNo: str = Field(..., example="")
-    AccountStartDate: str = Field(..., example="")
-    BankAccountNo: str = Field(..., example="")
+    AadharCardNo: str = Field(..., example="234")
+    AccountStartDate: str = Field(..., example="03Jul23")
+    BankAccountNo: str = Field(..., example="234")
     BankName: str = Field(..., example="State Bank of India")
-    DOB: str = Field(..., example="")
-    Email: str = Field(..., example="")
-    GmailPassword: str = Field(..., example="")
+    DOB: str = Field(..., example="25Apr90")
+    Email: str = Field(..., example="nightysky123123asdkk@gmail.com")
+    GmailPassword: str = Field(..., example="a")
     Name: str = Field(..., example="Omkar Hegde")
-    PANCardNo: str = Field(..., example="")
-    PhoneNumber: str = Field(..., example="")
+    PANCardNo: str = Field(..., example="asddfasdf")
+    PhoneNumber: str = Field(..., example="+asdfsadf")
     RiskProfile: RiskProfile_ = Field(...)
-    pwd: str = Field(..., example="")
-    usr: str = Field(..., example="")
+    pwd: str = Field(..., example="a")
+    usr: str = Field(..., example="0")
 
 
-class Strategy_(BaseModel):
-    Qty: int = Field(default=0, example=0)
-    RiskPerTrade: float = Field(..., example=0.75)
-    StrategyName: str = Field(..., example="MPWizard")
+class StrategyDetail_(BaseModel):
+    AllocationPercent: float = Field(..., example=33.33)
+    Qty: int = Field(..., example=28)
+    RiskPerTrade: float = Field(..., example=1)
+    StrategyName: str = Field(..., example="Midterm_Strategy1")
+
+
+class SubStrategy_(BaseModel):
+    AllocationPercent: int = Field(..., example=50)
+    Strategy1: StrategyDetail_
+    Strategy2: StrategyDetail_
+    Strategy3: StrategyDetail_
+
+
+class EquityStrategy_(BaseModel):
+    MidTerm: SubStrategy_
+
+
+class Strategies_(BaseModel):
+    Equity: EquityStrategy_
 
 
 class UserDetails(BaseModel):
@@ -62,7 +96,7 @@ class UserDetails(BaseModel):
     Active: bool = Field(default=False, example=False)  # Changed to boolean
     Broker: Broker_
     Profile: Profile_
-    Strategies: Dict[str, Strategy_]
+    Strategies: Strategies_
 
 
 class LoginUserDetails(BaseModel):
