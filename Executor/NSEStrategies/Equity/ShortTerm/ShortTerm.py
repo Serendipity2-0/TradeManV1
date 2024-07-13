@@ -1,9 +1,10 @@
 import pandas as pd
-import yfinance as yf
 import os
 from dotenv import load_dotenv
 import sys
 import sqlite3
+import datetime as dt
+from time import sleep
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -29,6 +30,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     fetch_strategy_users,
     StrategyBase,
 )
+import Executor.ExecutorUtils.ExeUtils as ExeUtils
 
 
 logger = LoggerSetup()
@@ -59,6 +61,8 @@ strategy_name = shortterm_obj.StrategyName
 order_type = shortterm_obj.GeneralParams.OrderType
 product_type = shortterm_obj.GeneralParams.ProductType
 strategy_type = shortterm_obj.GeneralParams.StrategyType
+desired_start_time_str = shortterm_obj.get_entry_params().EntryTime
+
 
 
 def get_today_stocks():
@@ -102,6 +106,25 @@ def main():
     Returns:
         list: A sorted list of short term stock picks.
     """
+
+    start_hour, start_minute, _ = map(int, desired_start_time_str.split(":"))
+    now = dt.datetime.now()
+
+    if now.date() in ExeUtils.holidays:
+        logger.info("Skipping execution as today is a holiday.")
+        return
+
+    if now.time() < dt.time(9, 0):
+        logger.info("Time is before 9:00 AM, Waiting to execute.")
+    else:
+        wait_time = dt.datetime(
+            now.year, now.month, now.day, start_hour, start_minute
+        ) - now
+
+        if wait_time.total_seconds() > 0:
+            logger.info(f"Waiting for {wait_time} before starting the bot")
+            sleep(wait_time.total_seconds())
+
     # Example usage
     from Executor.NSEStrategies.Equity.Equity import signals_to_fb
 

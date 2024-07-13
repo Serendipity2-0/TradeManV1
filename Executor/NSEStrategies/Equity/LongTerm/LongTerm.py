@@ -30,6 +30,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     fetch_strategy_users,
     StrategyBase,
 )
+import Executor.ExecutorUtils.ExeUtils as ExeUtils
 
 
 logger = LoggerSetup()
@@ -57,6 +58,7 @@ strategy_name = longterm_obj.StrategyName
 order_type = longterm_obj.GeneralParams.OrderType
 product_type = longterm_obj.GeneralParams.ProductType
 strategy_type = longterm_obj.GeneralParams.StrategyType
+desired_start_time_str = longterm_obj.get_entry_params().EntryTime
 
 
 def get_today_stocks():
@@ -89,6 +91,24 @@ def main():
     """
     Retrieves and processes today's top stock picks, places orders for users if needed.
     """
+    start_hour, start_minute, _ = map(int, desired_start_time_str.split(":"))
+    now = dt.datetime.now()
+
+    if now.date() in ExeUtils.holidays:
+        logger.info("Skipping execution as today is a holiday.")
+        return
+
+    if now.time() < dt.time(9, 0):
+        logger.info("Time is before 9:00 AM, Waiting to execute.")
+    else:
+        wait_time = dt.datetime(
+            now.year, now.month, now.day, start_hour, start_minute
+        ) - now
+
+        if wait_time.total_seconds() > 0:
+            logger.info(f"Waiting for {wait_time} before starting the bot")
+            sleep(wait_time.total_seconds())
+
     from Executor.NSEStrategies.Equity.Equity import signals_to_fb
 
     top5_stocks_df = get_today_stocks()
