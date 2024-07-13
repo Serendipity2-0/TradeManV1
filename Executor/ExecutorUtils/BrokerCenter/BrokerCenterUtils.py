@@ -338,7 +338,11 @@ def fetch_strategy_details_for_user(username):
         user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
         for user in user_details:
             if user_details[user]["Broker"]["BrokerUsername"] == username:
-                return user_details[user]["Strategies"]
+                equity_strategy_details = user_details[user]["Strategies"]["Equity"]
+                derivatives_strategy_details = user_details[user]["Strategies"]["Derivatives"]
+                #retun it in a dictionary
+                combined_strategy_details = {**equity_strategy_details, **derivatives_strategy_details}
+                return combined_strategy_details
     except Exception as e:
         logger.error(f"Error while fetching strategy details for user {username}: {e}")
 
@@ -355,7 +359,10 @@ def fetch_active_strategies_all_users():
         strategies = []
         for user in user_details:
             if user_details[user]["Active"] == True:
-                for strategy in user_details[user]["Strategies"]:
+                for strategy in user_details[user]["Strategies"]["Equity"]:
+                    if strategy not in strategies:
+                        strategies.append(strategy)
+                for strategy in user_details[user]["Strategies"]["Derivatives"]:
                     if strategy not in strategies:
                         strategies.append(strategy)
         return strategies
