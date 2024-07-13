@@ -155,7 +155,7 @@ def fetch_sql_table_from_db(Tr_No, table_name):
     Returns:
         pd.DataFrame: The DataFrame containing the table data.
     """
-    db_path = os.path.join(os.getenv("USR_TRADELOG_DB_FOLDER"), f"{Tr_No}.db")
+    db_path = os.path.join(os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{Tr_No}.db")
     conn = get_db_connection(db_path)
     query = f"SELECT * FROM {table_name}"
     df = pd.read_sql(query, conn)

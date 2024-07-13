@@ -14,9 +14,13 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     indicator_rsi,
     indicator_macd,
     check_if_above_50ema,
+    read_stock_data_from_db,
 )
 
 logger = LoggerSetup()
+SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
+SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
+SHORT_MEANREVERSION = os.getenv("SHORT_MEANREVERSION")
 
 
 def perform_EmaBB_Confluence_strategy(stock_data_dict):
@@ -99,7 +103,7 @@ def perform_EmaBB_Confluence_strategy(stock_data_dict):
                             "DailyEMA_50": daily_ema_50,
                             "DailyMA": daily_ma,
                             "DailyLower_band": daily_lower_band,
-                            "Short_EMABBConfluence": 1,
+                            SHORT_EMABBCONFLUENCE: 1,
                         }
                     )
             else:
@@ -118,7 +122,7 @@ def perform_EmaBB_Confluence_strategy(stock_data_dict):
                         "DailyEMA_50": latest_daily_data["EMA_50"],
                         "DailyMA": latest_daily_data["MA"],
                         "DailyLower_band": latest_daily_data["Lower_band"],
-                        "Short_EMABBConfluence": 0,
+                        SHORT_EMABBCONFLUENCE: 0,
                     }
                 )
         except Exception as e:
@@ -140,7 +144,7 @@ def perform_EmaBB_Confluence_strategy(stock_data_dict):
         "DailyEMA_50",
         "DailyMA",
         "DailyLower_band",
-        "Short_EMABBConfluence",
+        SHORT_EMABBCONFLUENCE,
     ]
     results_df = pd.DataFrame(results, columns=columns)
 
@@ -236,7 +240,7 @@ def perform_mean_reversion_strategy(stock_data_dict):
                         "DailyAbove_50_EMA": daily_above_50_ema,
                         "WeeklyMA": weekly_ma,
                         "WeeklyLower_band": weekly_lower_band,
-                        "Short_MeanReversion": 1,
+                        SHORT_MEANREVERSION: 1,
                     }
                 )
             else:
@@ -257,7 +261,7 @@ def perform_mean_reversion_strategy(stock_data_dict):
                         "DailyAbove_50_EMA": latest_daily_data["Above_50_EMA"],
                         "WeeklyMA": latest_weekly_data["MA"],
                         "WeeklyLower_band": latest_weekly_data["Lower_band"],
-                        "Short_MeanReversion": 0,
+                        SHORT_MEANREVERSION: 0,
                     }
                 )
         except Exception as e:
@@ -279,7 +283,7 @@ def perform_mean_reversion_strategy(stock_data_dict):
         "DailyAbove_50_EMA",
         "WeeklyMA",
         "WeeklyLower_band",
-        "Short_MeanReversion",
+        SHORT_MEANREVERSION,
     ]
     results_df = pd.DataFrame(results, columns=columns)
 
@@ -354,6 +358,9 @@ def perform_momentum_strategy(stock_data_dict):
                 daily_above_50_ema = latest_daily_data["Above_50_EMA"]
                 daily_macd = macd.iloc[-1]
                 daily_signal_line = signal_line.iloc[-1]
+                all_time_high = stock_data_daily["High"].max()
+                last_traded_price = stock_data_daily["Close"].iloc[-1]
+                ratio_ATH_LTP = all_time_high / last_traded_price
 
                 # Append to results
                 results.append(
@@ -372,7 +379,8 @@ def perform_momentum_strategy(stock_data_dict):
                         "DailyAbove_50_EMA": daily_above_50_ema,
                         "DailyMACD": daily_macd,
                         "DailySignal_Line": daily_signal_line,
-                        "Short_Momentum": 1,
+                        "AthLtpRatio": ratio_ATH_LTP,
+                        SHORT_MOMENTUM: 1,
                     }
                 )
             else:
@@ -393,7 +401,8 @@ def perform_momentum_strategy(stock_data_dict):
                         "DailyAbove_50_EMA": latest_daily_data["Above_50_EMA"],
                         "DailyMACD": macd.iloc[-1],
                         "DailySignal_Line": signal_line.iloc[-1],
-                        "Short_Momentum": 0,
+                        "AthLtpRatio": ratio_ATH_LTP,
+                        SHORT_MOMENTUM: 0,
                     }
                 )
         except Exception as e:
@@ -415,8 +424,18 @@ def perform_momentum_strategy(stock_data_dict):
         "DailyAbove_50_EMA",
         "DailyMACD",
         "DailySignal_Line",
-        "Short_Momentum",
+        "AthLtpRatio",
+        SHORT_MOMENTUM,
     ]
     results_df = pd.DataFrame(results, columns=columns)
 
     return results_df
+
+
+def get_shortterm_stocks_df():
+    db_path = os.getenv("equity_stock_data_db_path")
+    stock_data_dict = read_stock_data_from_db(db_path)
+    momentum_stocks_df = perform_momentum_strategy(stock_data_dict)
+    mean_reversion_stocks_df = perform_mean_reversion_strategy(stock_data_dict)
+    ema_bb_confluence_stocks_df = perform_EmaBB_Confluence_strategy(stock_data_dict)
+    return momentum_stocks_df, mean_reversion_stocks_df, ema_bb_confluence_stocks_df

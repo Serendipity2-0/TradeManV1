@@ -2,6 +2,7 @@ from loguru import logger
 import os, sys
 from dotenv import load_dotenv
 
+# Load environment variables
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
@@ -15,7 +16,7 @@ class LoggerSetup:
 
     This class ensures that only one instance of the logger is created and configured
     with the specified settings. The logger writes logs to the file specified in the
-    environment variable "ERROR_LOG_PATH".
+    environment variable "ERROR_LOG_PATH" or a relative path if not specified.
 
     Attributes:
         _instance (LoggerSetup): Singleton instance of LoggerSetup.
@@ -35,6 +36,7 @@ class LoggerSetup:
     @staticmethod
     def _setup_logger():
         ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+
         if ERROR_LOG_PATH:
             try:
                 logger.add(
@@ -53,8 +55,23 @@ class LoggerSetup:
                 )
                 logger.warning("Logging will proceed with standard error output.")
         else:
-            # Fallback to console logging if ERROR_LOG_PATH is not set
-            logger.add(sys.stderr, level="WARNING")
-            logger.warning(
-                "ERROR_LOG_PATH is not set. Logging will proceed with standard error output."
-            )
+            # Fallback to relative path logging
+            RELATIVE_LOG_PATH = os.path.join(DIR_PATH, "relative_error.log")
+            try:
+                logger.add(
+                    RELATIVE_LOG_PATH,
+                    level="TRACE",
+                    rotation="00:00",
+                    enqueue=True,
+                    backtrace=True,
+                    diagnose=True,
+                )
+                logger.info(
+                    f"ERROR_LOG_PATH is not set. Logging to relative path: {RELATIVE_LOG_PATH}"
+                )
+            except Exception as e:
+                logger.add(sys.stderr, level="WARNING")
+                logger.warning(
+                    f"Failed to add file logger at {RELATIVE_LOG_PATH}: {str(e)}"
+                )
+                logger.warning("Logging will proceed with standard error output.")
