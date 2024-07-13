@@ -24,7 +24,7 @@ MID_TFMOMENTUM = os.getenv("MID_TFMOMENTUM")
 MID_TFEMA = os.getenv("MID_TFEMA")
 LONG_RATIO = os.getenv("LONG_RATIO")
 LONG_COMBO = os.getenv("LONG_COMBO")
-
+financial_db_path = os.getenv("financial_db_path")
 
 def get_stock_codes():
     """
@@ -349,12 +349,13 @@ def check_if_above_50ema(stock_data):
         return stock_data
 
 
-def store_stock_data_sqldb():
+def store_ohlcv_stock_data_sqldb():
     """
     Fetches stock data and selects top picks based on various strategies.
     Exports selected stocks to CSV files for short term, mid term, and long term picks.
     """
     try:
+        logger.info("Fetching and storing OHLCV data...")
         stock_symbols = get_stock_codes()
 
         db_path = os.getenv("equity_stock_data_db_path")
@@ -418,6 +419,29 @@ def store_stock_data_sqldb():
         logger.info("Stock data has been successfully stored in the database.")
     except Exception as e:
         logger.error(f"Error storing stock data in SQLite DB: {e}")
+
+
+def store_financial_data_sqldb():
+    """
+    Fetches stock data and selects top picks based on various strategies.
+    Exports selected stocks to CSV files for short term, mid term, and long term picks.
+    """
+    logger.info("Fetching and storing financial data...")
+    stock_codes = get_stock_codes()
+    stock_financial_data_df = get_financial_data(stock_codes)
+    if not stock_financial_data_df.empty:
+        # SQLite database path
+        table_name = "financials"
+        try:
+            conn = sqlite3.connect(financial_db_path)
+            stock_financial_data_df.to_sql(
+                table_name, conn, if_exists="replace", index=False
+            )
+            logger.debug(f"Data uploaded to {table_name} table in {financial_db_path}")
+        except Exception as e:
+            logger.error(f"Error uploading data to SQLite: {e}")
+        finally:
+            conn.close()
 
 
 def read_stock_data_from_db(db_path):
@@ -615,6 +639,3 @@ def calculate_ema(data, window):
     """
     return data.ewm(span=window, adjust=False).mean()
 
-
-if __name__ == "__main__":
-    store_stock_data_sqldb()
