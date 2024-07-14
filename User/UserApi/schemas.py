@@ -2,36 +2,63 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 from typing import Optional
 from typing import List, Dict
-import datetime
+from datetime import datetime
+
+# Dynamic date format for alias fields
+today_date = datetime.now().strftime("%d%b%y")
 
 
 class Equity(BaseModel):
     CapitalAllocation: int = Field(..., example=100)
     Equity_FreeCash: float = Field(
-        ..., alias="11Jul24_Equity_FreeCash", example=141558.6
+        ..., alias=f"{today_date}_Equity_FreeCash", example=141558.6
     )
-    Equity_Holdings: float = Field(..., alias="11Jul24_Equity_Holdings", example=81028)
+    Equity_Holdings: float = Field(
+        ..., alias=f"{today_date}_Equity_Holdings", example=81028
+    )
+    Equity_AccountValue: float = Field(
+        ..., alias=f"{today_date}_Equity_AccountValue", example=141558.6
+    )
+
+
+class Debt(BaseModel):
+    CapitalAllocation: int = Field(..., example=50)
+    Debt_FreeCash: float = Field(
+        ..., alias=f"{today_date}_Debt_FreeCash", example=50000.0
+    )
+    Debt_Holdings: float = Field(
+        ..., alias=f"{today_date}_Debt_Holdings", example=25000
+    )
+    Debt_AccountValue: float = Field(
+        ..., alias=f"{today_date}_Debt_AccountValue", example=100000.0
+    )
+
+
+class Derivatives(BaseModel):
+    CapitalAllocation: int = Field(..., example=150)
+    Derivatives_FreeCash: float = Field(
+        ..., alias=f"{today_date}_Derivatives_FreeCash", example=75000.0
+    )
+    Derivatives_Holdings: float = Field(
+        ..., alias=f"{today_date}_Derivatives_Holdings", example=30000
+    )
+    Derivatives_AccountValue: float = Field(
+        ..., alias=f"{today_date}_Derivatives_AccountValue", example=100000.0
+    )
 
 
 class Accounts_(BaseModel):
-    Equity: Equity
-    Portfolio_AccountValue_01Jul24: float = Field(
-        ..., alias="01Jul24_Portfolio_AccountValue", example=141559
+    Equity: Optional[Equity]
+    Debt: Optional[Debt]
+    Derivatives: Optional[Derivatives]
+    Portfolio_FreeCash: float = Field(
+        ..., alias=f"{today_date}_Portfolio_FreeCash", example=141507.7
     )
-    Portfolio_FreeCash_01Jul24: float = Field(
-        ..., alias="01Jul24_Portfolio_FreeCash", example=141558.6
+    Portfolio_AccountValue: float = Field(
+        ..., alias=f"{today_date}_Portfolio_AccountValue", example=141507.7
     )
-    Portfolio_Holdings_01Jul24: float = Field(
-        ..., alias="01Jul24_Portfolio_Holdings", example=81028
-    )
-    Portfolio_FreeCash_02Jul24: float = Field(
-        ..., alias="02Jul24_Portfolio_FreeCash", example=141507.7
-    )
-    Portfolio_AccountValue_02Jul24: float = Field(
-        ..., alias="02Jul24_Portfolio_AccountValue", example=141507.7
-    )
-    Portfolio_Holdings_02Jul24: float = Field(
-        ..., alias="02Jul24_Portfolio_Holdings", example=81028
+    Portfolio_Holdings: float = Field(
+        ..., alias=f"{today_date}_Portfolio_Holdings", example=81028
     )
 
 
@@ -41,7 +68,7 @@ class Broker_(BaseModel):
     BrokerName: str = Field(..., example="Zerodha")
     BrokerPassword: str = Field(..., example="")
     BrokerUsername: str = Field(..., example="")
-    SessionId: str | None = Field(default="", example="")
+    SessionId: Optional[str] = Field(default="", example="")
     TotpAccess: str = Field(..., example="")
 
 
@@ -69,31 +96,15 @@ class Profile_(BaseModel):
     usr: str = Field(..., example="0")
 
 
-class StrategyDetail_(BaseModel):
-    AllocationPercent: float = Field(..., example=33.33)
-    Qty: int = Field(..., example=28)
-    RiskPerTrade: float = Field(..., example=1)
-    StrategyName: str = Field(..., example="Midterm_Strategy1")
-
-
-class SubStrategy_(BaseModel):
-    AllocationPercent: int = Field(..., example=50)
-    Strategy1: StrategyDetail_
-    Strategy2: StrategyDetail_
-    Strategy3: StrategyDetail_
-
-
-class EquityStrategy_(BaseModel):
-    MidTerm: SubStrategy_
-
-
 class Strategies_(BaseModel):
-    Equity: EquityStrategy_
+    Equity: Optional[Dict]
+    Debt: Optional[Dict]
+    Derivatives: Optional[Dict]
 
 
 class UserDetails(BaseModel):
     Accounts: Accounts_
-    Active: bool = Field(default=False, example=False)  # Changed to boolean
+    Active: bool = Field(default=False, example=False)
     Broker: Broker_
     Profile: Profile_
     Strategies: Strategies_
@@ -101,7 +112,6 @@ class UserDetails(BaseModel):
 
 class LoginUserDetails(BaseModel):
     Email: str
-    # Phone_Number: str
     Password: str
 
 
