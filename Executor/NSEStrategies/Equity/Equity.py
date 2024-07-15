@@ -69,6 +69,9 @@ def main():
         None
     """
 
+    store_ohlcv_stock_data_sqldb()
+    store_financial_data_sqldb()
+
     StopLoss.main()
     store_ohlcv_stock_data_sqldb()
     store_financial_data_sqldb()

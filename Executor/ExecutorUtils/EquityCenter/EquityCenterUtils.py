@@ -30,6 +30,7 @@ EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
 TODAY_STOCK_DATA_DB_PATH = os.getenv("TODAY_STOCK_DATA_DB_PATH")
 
 
+
 def get_stock_codes():
     """
     Fetch stock codes from a CSV file specified in the environment variables.
@@ -515,6 +516,14 @@ def read_stock_data_from_db(db_path):
         return {}
 
 
+def safe_merge(df1, df2, on, how):
+    if df1 is None:
+        return df2
+    if df2 is None:
+        return df1
+    return pd.merge(df1, df2, on=on, how=how)
+
+
 def merge_dataframes(
     momentum_df,
     mean_reversion_df,
@@ -528,12 +537,14 @@ def merge_dataframes(
     Merge the DataFrames from different strategies into one comprehensive DataFrame.
     """
     try:
-        combined_df = pd.merge(momentum_df, mean_reversion_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, ema_bb_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, ratio_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, combo_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, tfmomentum_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, tfema_df, on="Symbol", how="outer")
+        combined_df = safe_merge(
+            momentum_df, mean_reversion_df, on="Symbol", how="outer"
+        )
+        combined_df = safe_merge(combined_df, ema_bb_df, on="Symbol", how="outer")
+        combined_df = safe_merge(combined_df, ratio_df, on="Symbol", how="outer")
+        combined_df = safe_merge(combined_df, combo_df, on="Symbol", how="outer")
+        combined_df = safe_merge(combined_df, tfmomentum_df, on="Symbol", how="outer")
+        combined_df = safe_merge(combined_df, tfema_df, on="Symbol", how="outer")
 
         # Handle '_Drop' columns from multiple merges
         combined_df = combined_df[
@@ -589,10 +600,10 @@ def update_todaystocks_db(
     momentum_stocks_df,
     mean_reversion_stocks_df,
     ema_bb_confluence_stocks_df,
-    ratio_stocks_df,
-    combo_stocks_df,
-    tfmomentum_stocks_df,
-    tfema_stocks_df,
+    ratio_stocks_df=None,
+    combo_stocks_df=None,
+    tfmomentum_stocks_df=None,
+    tfema_stocks_df=None,
 ):
     """
     Stores the combined DataFrame to a SQL database.
