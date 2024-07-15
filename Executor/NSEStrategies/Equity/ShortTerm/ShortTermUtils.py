@@ -336,6 +336,27 @@ def perform_momentum_strategy(stock_data_dict):
             latest_daily_data = stock_data_daily.iloc[-1]
             latest_weekly_data = stock_data_weekly.iloc[-1]
 
+            # Collect today's OHLC for daily data
+            daily_open = latest_daily_data["Open"]
+            daily_high = latest_daily_data["High"]
+            daily_low = latest_daily_data["Low"]
+            daily_close = latest_daily_data["Close"]
+
+            # Collect this week's OHLC for weekly data
+            weekly_open = latest_weekly_data["Open"]
+            weekly_high = latest_weekly_data["High"]
+            weekly_low = latest_weekly_data["Low"]
+            weekly_close = latest_weekly_data["Close"]
+
+            # Collect indicator values for daily data
+            daily_rsi = rsi_values.iloc[-1]
+            daily_upper_band = latest_daily_data["Upper_band"]
+            daily_above_50_ema = latest_daily_data["Above_50_EMA"]
+            daily_macd = macd.iloc[-1]
+            daily_signal_line = signal_line.iloc[-1]
+            all_time_high = stock_data_daily["High"].max()
+            last_traded_price = stock_data_daily["Close"].iloc[-1]
+            ratio_ATH_LTP = all_time_high / last_traded_price
             # Check the momentum strategy condition
             if (
                 rsi_values.iloc[-1] > 50
@@ -343,28 +364,6 @@ def perform_momentum_strategy(stock_data_dict):
                 and latest_daily_data["Upper_band"] < latest_daily_data["Close"]
                 and macd.iloc[-1] > signal_line.iloc[-1]
             ):
-                # Collect today's OHLC for daily data
-                daily_open = latest_daily_data["Open"]
-                daily_high = latest_daily_data["High"]
-                daily_low = latest_daily_data["Low"]
-                daily_close = latest_daily_data["Close"]
-
-                # Collect this week's OHLC for weekly data
-                weekly_open = latest_weekly_data["Open"]
-                weekly_high = latest_weekly_data["High"]
-                weekly_low = latest_weekly_data["Low"]
-                weekly_close = latest_weekly_data["Close"]
-
-                # Collect indicator values for daily data
-                daily_rsi = rsi_values.iloc[-1]
-                daily_upper_band = latest_daily_data["Upper_band"]
-                daily_above_50_ema = latest_daily_data["Above_50_EMA"]
-                daily_macd = macd.iloc[-1]
-                daily_signal_line = signal_line.iloc[-1]
-                all_time_high = stock_data_daily["High"].max()
-                last_traded_price = stock_data_daily["Close"].iloc[-1]
-                ratio_ATH_LTP = all_time_high / last_traded_price
-
                 # Append to results
                 results.append(
                     {
