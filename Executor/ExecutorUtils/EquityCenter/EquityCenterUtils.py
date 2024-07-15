@@ -17,14 +17,18 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup  # noqa: E402
 
 logger = LoggerSetup()
-SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
-SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
-SHORT_MEANREVERSION = os.getenv("SHORT_MEANREVERSION")
-MID_TFMOMENTUM = os.getenv("MID_TFMOMENTUM")
-MID_TFEMA = os.getenv("MID_TFEMA")
-LONG_RATIO = os.getenv("LONG_RATIO")
-LONG_COMBO = os.getenv("LONG_COMBO")
-financial_db_path = os.getenv("financial_db_path")
+SHORT_MOMENTUM = "Short_Momentum"
+SHORT_EMABBCONFLUENCE = "Short_EMABBConfluence"
+SHORT_MEANREVERSION = "Short_MeanReversion"
+MID_TFMOMENTUM = "Mid_tfMomentum"
+MID_TFEMA = "Mid_tfEma"
+LONG_RATIO = "Long_Ratio"
+LONG_COMBO = "Long_Combo"
+FINANCIAL_DB_PATH = os.getenv("FINANCIAL_DB_PATH")
+TICKERS_URL = os.getenv("TICKERS_URL")
+EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
+TODAY_STOCK_DATA_DB_PATH = os.getenv("TODAY_STOCK_DATA_DB_PATH")
+
 
 def get_stock_codes():
     """
@@ -34,7 +38,7 @@ def get_stock_codes():
         list: A list of stock symbols.
     """
     try:
-        url = os.getenv("tickers_url")
+        url = TICKERS_URL
         return list(pd.read_csv(url)["SYMBOL"].values)
     except Exception as e:
         logger.error(f"Error fetching stock codes: {e}")
@@ -358,7 +362,7 @@ def store_ohlcv_stock_data_sqldb():
         logger.info("Fetching and storing OHLCV data...")
         stock_symbols = get_stock_codes()
 
-        db_path = os.getenv("equity_stock_data_db_path")
+        db_path = EQUITY_STOCK_DATA_DB_PATH
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         for stock in stock_symbols:
@@ -433,11 +437,11 @@ def store_financial_data_sqldb():
         # SQLite database path
         table_name = "financials"
         try:
-            conn = sqlite3.connect(financial_db_path)
+            conn = sqlite3.connect(FINANCIAL_DB_PATH)
             stock_financial_data_df.to_sql(
                 table_name, conn, if_exists="replace", index=False
             )
-            logger.debug(f"Data uploaded to {table_name} table in {financial_db_path}")
+            logger.debug(f"Data uploaded to {table_name} table in {FINANCIAL_DB_PATH}")
         except Exception as e:
             logger.error(f"Error uploading data to SQLite: {e}")
         finally:
@@ -609,7 +613,7 @@ def update_todaystocks_db(
             tfema_df=tfema_stocks_df,
         )
         # Connect to the TodayStocks.db database (create it if it doesn't exist)
-        db_path = os.getenv("today_stock_data_db_path")
+        db_path = TODAY_STOCK_DATA_DB_PATH
         conn = sqlite3.connect(db_path)
 
         # Write the DataFrame to a table in the SQL database
@@ -638,4 +642,3 @@ def calculate_ema(data, window):
         pandas.Series: The EMA values.
     """
     return data.ewm(span=window, adjust=False).mean()
-

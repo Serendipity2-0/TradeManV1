@@ -31,11 +31,11 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 )
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 
-MID_TFMOMENTUM = os.getenv("MID_TFMOMENTUM")
-MID_TFEMA = os.getenv("MID_TFEMA")
+MID_TFMOMENTUM = "Mid_tfMomentum"
+MID_TFEMA = "Mid_tfEma"
 
 logger = LoggerSetup()
-stock_pick_db_path = os.getenv("today_stock_data_db_path")
+TODAY_STOCK_DATA_DB_PATH = os.getenv("TODAY_STOCK_DATA_DB_PATH")
 
 
 class MidTerm(StrategyBase):
@@ -68,7 +68,7 @@ def get_today_stocks():
         pandas.DataFrame: DataFrame containing today's stocks.
     """
     try:
-        conn = sqlite3.connect(stock_pick_db_path)
+        conn = sqlite3.connect(TODAY_STOCK_DATA_DB_PATH)
 
         # Load the data from the identified table "CombinedStocks"
         df = pd.read_sql_query("SELECT * FROM CombinedStocks", conn)
@@ -101,9 +101,9 @@ def main():
     if now.time() < dt.time(9, 0):
         logger.info("Time is before 9:00 AM, Waiting to execute.")
     else:
-        wait_time = dt.datetime(
-            now.year, now.month, now.day, start_hour, start_minute
-        ) - now
+        wait_time = (
+            dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
+        )
 
         if wait_time.total_seconds() > 0:
             logger.info(f"Waiting for {wait_time} before starting the bot")

@@ -14,7 +14,8 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     update_todaystocks_db,
-    store_stock_data_sqldb,
+    store_ohlcv_stock_data_sqldb,
+    store_financial_data_sqldb,
 )
 from Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils import (
     get_shortterm_stocks_df,
@@ -32,7 +33,7 @@ import Executor.NSEStrategies.Equity.LongTerm.LongTerm as LongTerm
 import Executor.NSEStrategies.Equity.EquityStopLoss.EquityStopLoss as StopLoss
 
 logger = LoggerSetup()
-stock_pick_db_path = os.getenv("today_stock_data_db_path")
+stock_pick_db_path = os.getenv("TODAY_STOCK_DATA_DB_PATH")
 
 
 def signals_to_fb(strategy_name, order_to_place, next_trade_prefix):
@@ -69,6 +70,8 @@ def main():
     """
 
     StopLoss.main()
+    store_ohlcv_stock_data_sqldb()
+    store_financial_data_sqldb()
 
     (
         momentum_stocks_df,
@@ -77,6 +80,7 @@ def main():
     ) = get_shortterm_stocks_df()
     tfmomentum_stocks_df, tfema_stocks_df = get_midterm_stocks_df()
     combo_stocks_df, ratio_stocks_df = get_longterm_stocks_df()
+
     update_todaystocks_db(
         momentum_stocks_df,
         mean_reversion_stocks_df,

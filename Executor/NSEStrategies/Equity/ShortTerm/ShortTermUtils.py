@@ -1,9 +1,11 @@
 import pandas as pd
 import yfinance as yf
-import os
+import os, sys
 from dotenv import load_dotenv
 
 DIR = os.getcwd()
+sys.path.append(DIR)
+
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
@@ -17,6 +19,7 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     read_stock_data_from_db,
 )
 
+EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
 logger = LoggerSetup()
 SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
 SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
@@ -433,7 +436,7 @@ def perform_momentum_strategy(stock_data_dict):
 
 
 def get_shortterm_stocks_df():
-    db_path = os.getenv("equity_stock_data_db_path")
+    db_path = EQUITY_STOCK_DATA_DB_PATH
     stock_data_dict = read_stock_data_from_db(db_path)
     momentum_stocks_df = perform_momentum_strategy(stock_data_dict)
     mean_reversion_stocks_df = perform_mean_reversion_strategy(stock_data_dict)

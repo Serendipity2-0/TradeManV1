@@ -16,7 +16,7 @@ logger = LoggerSetup()
 LONG_RATIO = os.getenv("LONG_RATIO")
 LONG_COMBO = os.getenv("LONG_COMBO")
 
-financial_db_path = os.getenv("financial_db_path")
+FINANCIAL_DB_PATH = os.getenv("FINANCIAL_DB_PATH")
 
 
 def get_longterm_stocks_df():
@@ -28,8 +28,8 @@ def get_longterm_stocks_df():
             pandas.DataFrame: Stock financial data.
             pandas.DataFrame: Stock ratio data.
     """
-    combo_stocks_df = perform_combo_strategy(db_path=financial_db_path)
-    ratio_stocks_df = perform_ratio_strategy(db_path=financial_db_path)
+    combo_stocks_df = perform_combo_strategy(db_path=FINANCIAL_DB_PATH)
+    ratio_stocks_df = perform_ratio_strategy(db_path=FINANCIAL_DB_PATH)
     return combo_stocks_df, ratio_stocks_df
 
 

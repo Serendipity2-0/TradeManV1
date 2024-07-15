@@ -35,11 +35,7 @@ import Executor.ExecutorUtils.ExeUtils as ExeUtils
 
 logger = LoggerSetup()
 
-SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
-SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
-SHORT_MEANREVERSION = os.getenv("SHORT_MEANREVERSION")
-
-stock_pick_db_path = os.getenv("today_stock_data_db_path")
+stock_pick_db_path = os.getenv("TODAY_STOCK_DATA_DB_PATH")
 
 
 class ShortTerm(StrategyBase):
@@ -63,6 +59,14 @@ product_type = shortterm_obj.GeneralParams.ProductType
 strategy_type = shortterm_obj.GeneralParams.StrategyType
 desired_start_time_str = shortterm_obj.get_entry_params().EntryTime
 
+# SHORT_MOMENTUM = shortterm_obj.get_raw_field("ExtraInformation").get("ShortMomentum")
+# SHORT_EMABBCONFLUENCE = shortterm_obj.get_raw_field("ExtraInformation").get("ShortEmabbConfluence")
+# SHORT_MEANREVERSION = shortterm_obj.get_raw_field("ExtraInformation").get("ShortMeanRevision")
+
+
+SHORT_MOMENTUM = "Short_Momentum"
+SHORT_EMABBCONFLUENCE = "Short_EMABBConfluence"
+SHORT_MEANREVERSION = "Short_MeanReversion"
 
 
 def get_today_stocks():
@@ -117,9 +121,9 @@ def main():
     if now.time() < dt.time(9, 0):
         logger.info("Time is before 9:00 AM, Waiting to execute.")
     else:
-        wait_time = dt.datetime(
-            now.year, now.month, now.day, start_hour, start_minute
-        ) - now
+        wait_time = (
+            dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
+        )
 
         if wait_time.total_seconds() > 0:
             logger.info(f"Waiting for {wait_time} before starting the bot")
