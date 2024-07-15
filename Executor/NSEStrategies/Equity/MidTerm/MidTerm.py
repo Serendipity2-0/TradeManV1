@@ -115,8 +115,9 @@ def main():
     if top5_stocks_df.empty:
         logger.info("No stocks selected for today in Midterm")
         return
-
-    symbol_list = top5_stocks_df["Symbol"].tolist()
+    else:
+        symbol_list = top5_stocks_df["Symbol"].tolist()
+        logger.info(f"Stocks selected for today for Midterm: {symbol_list}")
 
     # Display the filtered and sorted DataFrame
     logger.info(f"Stocks selected for today: {symbol_list}")

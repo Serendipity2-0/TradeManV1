@@ -135,8 +135,12 @@ def main():
     top5_stocks_df = get_today_stocks()
     symbol_list = top5_stocks_df["Symbol"].tolist()
 
-    # Display the filtered and sorted DataFrame
-    logger.info(f"Stocks selected for Today:{symbol_list}")
+    if symbol_list == []:
+        logger.info("No stocks selected for today in ShortTerm")
+        return
+    else:
+        # Display the filtered and sorted DataFrame
+        logger.info(f"Stocks selected for Today for ShortTerm:{symbol_list}")
 
     trade_id_mapping = {}
 
