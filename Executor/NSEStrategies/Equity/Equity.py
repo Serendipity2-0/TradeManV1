@@ -14,7 +14,8 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     update_todaystocks_db,
-    store_stock_data_sqldb,
+    store_ohlcv_stock_data_sqldb,
+    store_financial_data_sqldb,
 )
 from Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils import (
     get_shortterm_stocks_df,
@@ -68,6 +69,9 @@ def main():
         None
     """
 
+    store_ohlcv_stock_data_sqldb()
+    store_financial_data_sqldb()
+
     StopLoss.main()
 
     (
@@ -77,6 +81,7 @@ def main():
     ) = get_shortterm_stocks_df()
     tfmomentum_stocks_df, tfema_stocks_df = get_midterm_stocks_df()
     combo_stocks_df, ratio_stocks_df = get_longterm_stocks_df()
+
     update_todaystocks_db(
         momentum_stocks_df,
         mean_reversion_stocks_df,
