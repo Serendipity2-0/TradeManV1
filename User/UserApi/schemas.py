@@ -62,6 +62,10 @@ class Accounts_(BaseModel):
     )
 
 
+class Active_(BaseModel):
+    Active: bool = Field(default=False, example=False)
+
+
 class Broker_(BaseModel):
     ApiKey: str = Field(..., example="")
     ApiSecret: str = Field(..., example="")
@@ -100,14 +104,6 @@ class Strategies_(BaseModel):
     Equity: Optional[Dict]
     Debt: Optional[Dict]
     Derivatives: Optional[Dict]
-
-
-class UserDetails(BaseModel):
-    Accounts: Accounts_
-    Active: bool = Field(default=False, example=False)
-    Broker: Broker_
-    Profile: Profile_
-    Strategies: Strategies_
 
 
 class LoginUserDetails(BaseModel):

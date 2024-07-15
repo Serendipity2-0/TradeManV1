@@ -13,6 +13,7 @@ sys.path.append(DIR_PATH)
 
 import User.UserApi.schemas as schemas
 import User.UserApi.app as app
+from User.UserApi.userapi_utils import get_next_trader_number
 
 """
 This is the main API for the user application.
@@ -66,14 +67,90 @@ def login(user_credentials: schemas.LoginUserDetails):
 
 
 @app_user.post("/register")
-def register_user(user_detail: schemas.UserDetails):
+def register_user():
     """
     This is the route for registering a new user.
     It takes a UserDetails object as input and returns a response.
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
     try:
-        return app.register_user(user_detail)
+        user_id = get_next_trader_number()
+        return app.merge_and_register_user(user_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app_user.post("/register/accounts")
+def register_accounts(account_details: schemas.Accounts_):
+    """
+    This is the route for storing the accounts data for a new user.
+    It takes the account values and the segments as input and stores them in the user_data_collection dictionary.
+    We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
+    """
+    try:
+        user_id = get_next_trader_number()
+        app.store_accounts_data(user_id, account_details.dict())
+        return {"message": "Accounts updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app_user.post("/register/active")
+def update_active_status(active_details: schemas.Active_):
+    """
+    This is the route for updating the active status of a user.
+    It takes the active status as input and stores it in the user_data_collection dictionary.
+    We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
+    """
+    try:
+        user_id = get_next_trader_number()
+        app.store_active_status(user_id, active_details.dict())
+        return {"message": "Active status updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app_user.post("/register/profile")
+def register_profile(profile_details: schemas.Profile_):
+    """
+    This is the route for storing the profile data for a new user.
+    It takes the profile values as input and stores them in the user_data_collection dictionary.
+    We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
+    """
+    try:
+        user_id = get_next_trader_number()
+        app.store_profile_data(user_id, profile_details.dict())
+        return {"message": "Profile updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app_user.post("/register/broker")
+def register_broker(broker_details: schemas.Broker_):
+    """
+    This is the route for storing the broker data for a new user.
+    It takes the broker values as input and stores them in the user_data_collection dictionary.
+    We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
+    """
+    try:
+        user_id = get_next_trader_number()
+        app.store_broker_data(user_id, broker_details.dict())
+        return {"message": "Broker updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app_user.post("/register/strategies")
+def update_strategies(strategy_details: schemas.Strategies_):
+    """
+    This is the route for updating the strategies data for a new user.
+    It takes the strategies values as input and stores them in the user_data_collection dictionary.
+    We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
+    """
+    try:
+        user_id = get_next_trader_number()
+        app.store_strategies_data(user_id, strategy_details.dict())
+        return {"message": "Strategies updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
