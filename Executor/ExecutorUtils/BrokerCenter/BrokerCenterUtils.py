@@ -859,33 +859,6 @@ def get_broker_pnl(user):
         return None
 
 
-# async def get_orders_tax(orders_to_place, user_credentials):
-#     """
-#     Fetches the order tax for a user based on their broker.
-
-#     Args:
-#         orders_to_place (list): List of orders to place.
-#         user_credentials (dict): User credentials.
-
-#     Returns:
-#         dict: Order tax details.
-#     """
-#     if user_credentials["BrokerName"] == ZERODHA:
-#         return await zerodha_adapter.get_kite_order_tax(
-#             orders_to_place, user_credentials["BrokerName"]
-#         )
-#     elif user_credentials["BrokerName"] == ALICEBLUE:
-#         return await zerodha_adapter.get_kite_order_tax(
-#             orders_to_place, user_credentials["BrokerName"]
-#         )
-#     elif user_credentials["BrokerName"] == FIRSTOCK:
-#         return await zerodha_adapter.get_kite_order_tax(
-#             orders_to_place, user_credentials["BrokerName"]
-#         )
-#     else:
-#         return None
-
-
 def get_orders_tax(orders_to_place, user_credentials):
     """
     Fetches the order tax for a user based on their broker.

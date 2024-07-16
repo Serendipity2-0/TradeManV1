@@ -47,19 +47,23 @@ class Derivatives(BaseModel):
     )
 
 
+class Portfolio_(BaseModel):
+    Portfolio_FreeCash: float = Field(
+        ..., alias=f"{today_date}_Derivatives_FreeCash", example=75000.0
+    )
+    Portfolio_Holdings: float = Field(
+        ..., alias=f"{today_date}_Derivatives_Holdings", example=30000
+    )
+    Portfolio_AccountValue: float = Field(
+        ..., alias=f"{today_date}_Derivatives_AccountValue", example=100000.0
+    )
+
+
 class Accounts_(BaseModel):
     Equity: Optional[Equity]
     Debt: Optional[Debt]
     Derivatives: Optional[Derivatives]
-    Portfolio_FreeCash: float = Field(
-        ..., alias=f"{today_date}_Portfolio_FreeCash", example=141507.7
-    )
-    Portfolio_AccountValue: float = Field(
-        ..., alias=f"{today_date}_Portfolio_AccountValue", example=141507.7
-    )
-    Portfolio_Holdings: float = Field(
-        ..., alias=f"{today_date}_Portfolio_Holdings", example=81028
-    )
+    Portfolio: Portfolio_
 
 
 class Active_(BaseModel):
