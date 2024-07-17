@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from pydantic.fields import Field
 from typing import Optional
 from typing import List, Dict
@@ -8,7 +8,7 @@ from datetime import datetime
 today_date = datetime.now().strftime("%d%b%y")
 
 
-class Equity(BaseModel):
+class Equity_(BaseModel):
     CapitalAllocation: int = Field(..., example=100)
     Equity_FreeCash: float = Field(
         ..., alias=f"{today_date}_Equity_FreeCash", example=141558.6
@@ -21,7 +21,7 @@ class Equity(BaseModel):
     )
 
 
-class Debt(BaseModel):
+class Debt_(BaseModel):
     CapitalAllocation: int = Field(..., example=50)
     Debt_FreeCash: float = Field(
         ..., alias=f"{today_date}_Debt_FreeCash", example=50000.0
@@ -34,7 +34,7 @@ class Debt(BaseModel):
     )
 
 
-class Derivatives(BaseModel):
+class Derivatives_(BaseModel):
     CapitalAllocation: int = Field(..., example=150)
     Derivatives_FreeCash: float = Field(
         ..., alias=f"{today_date}_Derivatives_FreeCash", example=75000.0
@@ -60,14 +60,38 @@ class Portfolio_(BaseModel):
 
 
 class Accounts_(BaseModel):
-    Equity: Optional[Equity]
-    Debt: Optional[Debt]
-    Derivatives: Optional[Derivatives]
+    Equity: Optional[Equity_] = Field(
+        default=None,
+        example={
+            "CapitalAllocation": 100,
+            f"{today_date}_Equity_FreeCash": 141558.6,
+            f"{today_date}_Equity_Holdings": 81028,
+            f"{today_date}_Equity_AccountValue": 141558.6,
+        },
+    )
+    Debt: Optional[Debt_] = Field(
+        default=None,
+        example={
+            "CapitalAllocation": 50,
+            f"{today_date}_Debt_FreeCash": 50000.0,
+            f"{today_date}_Debt_Holdings": 25000,
+            f"{today_date}_Debt_AccountValue": 100000.0,
+        },
+    )
+    Derivatives: Optional[Derivatives_] = Field(
+        default=None,
+        example={
+            "CapitalAllocation": 150,
+            f"{today_date}_Derivatives_FreeCash": 75000.0,
+            f"{today_date}_Derivatives_Holdings": 30000,
+            f"{today_date}_Derivatives_AccountValue": 100000.0,
+        },
+    )
     Portfolio: Portfolio_
 
 
-class Active_(BaseModel):
-    Active: bool = Field(default=False, example=False)
+class Active_(RootModel[bool]):
+    pass
 
 
 class Broker_(BaseModel):
