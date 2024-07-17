@@ -71,6 +71,99 @@ def check_credentials(user_credentials: schemas.LoginUserDetails):
     return None
 
 
+user_data_collection = {}
+
+
+def store_accounts_data(user_id, data):
+    """
+    This function stores the accounts data for a user in the user_data_collection dictionary.
+
+    Args:
+    user_id (str): The user ID.
+    data (dict): The accounts data to be stored.
+    """
+    if user_id not in user_data_collection:
+        user_data_collection[user_id] = {}
+    user_data_collection[user_id]["Accounts"] = data
+
+
+def store_profile_data(user_id, data):
+    """
+    This function stores the profile data for a user in the user_data_collection dictionary.
+
+    Args:
+    user_id (str): The user ID.
+    data (dict): The profile data to be stored.
+    """
+    if user_id not in user_data_collection:
+        user_data_collection[user_id] = {}
+    user_data_collection[user_id]["Profile"] = data
+
+
+def store_broker_data(user_id, data):
+    """
+    This function stores the broker data for a user in the user_data_collection dictionary.
+
+    Args:
+    user_id (str): The user ID.
+    data (dict): The broker data to be stored.
+    """
+    if user_id not in user_data_collection:
+        user_data_collection[user_id] = {}
+    user_data_collection[user_id]["Broker"] = data
+
+
+def store_strategies_data(user_id, data):
+    """
+    This function stores the strategies data for a user in the user_data_collection dictionary.
+
+    Args:
+    user_id (str): The user ID.
+    data (dict): The strategies data to be stored.
+    """
+    if user_id not in user_data_collection:
+        user_data_collection[user_id] = {}
+    user_data_collection[user_id]["Strategies"] = data
+    print(user_data_collection)
+
+
+def store_active_status(user_id, data):
+    """
+    This function stores the active status for a user in the user_data_collection dictionary.
+
+    Args:
+    user_id (str): The user ID.
+    data (dict): The active status data to be stored.
+    """
+    if user_id not in user_data_collection:
+        user_data_collection[user_id] = {}
+    user_data_collection[user_id] = data
+
+
+def merge_and_register_user(user_id):
+    """
+    This function merges the user data from the user_data_collection dictionary and registers the user.
+
+    Args:
+    user_id (str): The user ID.
+
+    Returns:
+    dict: A dictionary containing the user details and the response from the register_user function.
+    """
+    if user_id in user_data_collection:
+        user_detail = user_data_collection.pop(
+            user_id
+        )  # Retrieve and remove from temporary storage
+        try:
+            # Assuming register_user is a function that takes the complete user details and saves them to the DB
+            response = register_user(user_detail)
+            return {"message": "User registered successfully", "details": response}
+        except Exception as e:
+            raise Exception(f"Failed to register user: {e}")
+    else:
+        raise Exception("User data not found for registration")
+
+
 def register_user(user_detail: Dict[str, Any]):
     """
     Registers a new user by adding the user details to the database.
@@ -88,6 +181,7 @@ def register_user(user_detail: Dict[str, Any]):
         user_detail_dict = user_detail  # It's already a dictionary
 
     update_new_client_data_to_db(get_next_trader_number(), user_detail_dict)
+    update_next_trader_number()
     return {"message": "User registered successfully"}
 
 
