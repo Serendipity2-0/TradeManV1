@@ -85,6 +85,7 @@ def store_accounts_data(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Accounts"] = data
+    return user_data_collection[user_id]
 
 
 def store_profile_data(user_id, data):
@@ -98,6 +99,7 @@ def store_profile_data(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Profile"] = data
+    return user_data_collection[user_id]
 
 
 def store_broker_data(user_id, data):
@@ -111,6 +113,7 @@ def store_broker_data(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Broker"] = data
+    return user_data_collection[user_id]
 
 
 def store_strategies_data(user_id, data):
@@ -124,7 +127,7 @@ def store_strategies_data(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Strategies"] = data
-    print(user_data_collection)
+    return user_data_collection[user_id]
 
 
 def store_active_status(user_id, data):
@@ -137,7 +140,8 @@ def store_active_status(user_id, data):
     """
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
-    user_data_collection[user_id] = data
+    user_data_collection[user_id]["Active"] = data
+    return user_data_collection[user_id]
 
 
 def merge_and_register_user(user_id):
@@ -180,9 +184,22 @@ def register_user(user_detail: Dict[str, Any]):
     else:
         user_detail_dict = user_detail  # It's already a dictionary
 
-    update_new_client_data_to_db(get_next_trader_number(), user_detail_dict)
-    update_next_trader_number()
-    return {"message": "User registered successfully"}
+    try:
+        # check if user_detail_dict has Accounts, Profile, Broker, Strategies keys
+        if (
+            "Accounts"
+            and "Active"
+            and "Profile"
+            and "Broker"
+            and "Strategies" in user_detail_dict
+        ):
+            update_new_client_data_to_db(get_next_trader_number(), user_detail_dict)
+            update_next_trader_number()
+            return {"message": "User registered successfully"}
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail=str("Fields missing in user detail")
+        )
 
 
 def get_user_profile(tr_no: str):
