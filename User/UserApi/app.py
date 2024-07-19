@@ -699,3 +699,55 @@ def update_user_risk_params(
     discord_admin_bot(message)
 
     return {"message": "User strategy parameters updated successfully!"}
+
+
+def get_user_list_from_db():
+    """
+    Fetch user list from the database.
+
+    Args:
+        None
+
+    Returns:
+        list: A list of user names.
+    """
+    user_list = fetch_collection_data_firebase(CLIENTS_COLLECTION)
+    user_names = [
+        profile["Profile"]["Name"]
+        for profile in user_list.values()
+        if profile["Profile"]["Name"]
+    ]
+    return user_names
+
+
+def fetch_user_details_by_username(username: str):
+    """
+    Fetch user details by username from the database.
+
+    Args:
+        username (str): The username of the user.
+
+    Returns:
+        list: A list of user details.
+    """
+    user_list = fetch_collection_data_firebase(CLIENTS_COLLECTION)
+    user_details = [
+        profile
+        for profile in user_list.values()
+        if profile["Profile"]["Name"] == username
+    ]
+    return user_details
+
+
+def update_user_details(user_details):
+    """
+    Update user details by replacing the existing details with the new details.
+
+    Args:
+        user_details : The new user details.
+
+    Returns:
+        str: A message indicating successful update.
+    """
+    update_fields_firebase(CLIENTS_COLLECTION, user_details.get("Tr_No"), user_details)
+    return "Updated Successfully"

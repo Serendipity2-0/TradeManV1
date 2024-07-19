@@ -666,6 +666,62 @@ def modify_user_strategy_params(
         )
 
 
+@app_admin.get("/user-list")
+def get_user_list_from_db():
+    """
+    Fetches the list of users from the database.
+
+    Returns:
+        list: A list of user names.
+    """
+
+    try:
+        userslist = app.get_user_list()
+        return userslist
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching user list: {str(e)}"
+        )
+
+
+@app_admin.get("/user-details-username")
+def get_user_details_by_username(username: str):
+    """
+    Fetches the details of a user by username.
+
+    Args:
+        username (str): The username of the user.
+
+    Returns:
+        list: A list of user details.
+    """
+    try:
+        return app.fetch_user_details_by_username(username)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching user details: {str(e)}"
+        )
+
+
+@app_admin.post("/update-user-details")
+def update_user_details(user_details):
+    """
+    Update user details.
+
+    Args:
+        user_details (dict): The new user details.
+
+    Returns:
+        str: A message indicating successful update.
+    """
+    try:
+        return app.update_user_details(user_details)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error updating user details: {str(e)}"
+        )
+
+
 app_fastapi.include_router(app_user, prefix="/v1/user", tags=["user"])
 app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 
