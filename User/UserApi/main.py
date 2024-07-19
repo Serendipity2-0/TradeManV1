@@ -676,7 +676,7 @@ def get_user_list_from_db():
     """
 
     try:
-        userslist = app.get_user_list()
+        userslist = app.get_user_list_from_db()
         return userslist
     except Exception as e:
         raise HTTPException(
