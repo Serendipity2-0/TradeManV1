@@ -2,11 +2,20 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
-from scipy.stats import norm
 
 
 # Function to calculate additional columns
 def calculate_columns(df, start_capital):
+    """
+    Calculate various financial columns based on the provided DataFrame and starting capital.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing trading data with columns 'NetTradePoints' and 'TradeEntryPrice'.
+        start_capital (float): The initial capital amount.
+
+    Returns:
+        tuple: A tuple containing lists of Margin_utilized, Lots, Qty, PnL, Taxes, NetPnL, and Capital.
+    """
     Margin_utilized = []
     Lots = []
     Qty = []
@@ -41,6 +50,12 @@ def calculate_columns(df, start_capital):
 
 
 def load_data():
+    """
+    Load and preprocess the trading data from a CSV file.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the preprocessed trading data with an added 'Trade_No' column.
+    """
     df = pd.read_csv(
         r"C:\Users\user\Desktop\GroundUp_Trading\NiftyStrategy\Strategies\OvernightNF\backtest_results.csv"
     )

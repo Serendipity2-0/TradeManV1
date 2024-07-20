@@ -10,6 +10,15 @@ logbook_file_path = (
 
 # Read and preprocess tradebook
 def process_tradebook(file_path):
+    """
+    Reads and preprocesses the tradebook CSV file.
+
+    This function reads the tradebook from the specified CSV file path, converts the 'trade_date'
+    and 'order_execution_time' columns to datetime format, and returns the preprocessed DataFrame.
+
+    :param file_path: The path to the tradebook CSV file.
+    :return: A preprocessed DataFrame containing the tradebook data.
+    """
     df = pd.read_csv(file_path)
     df["trade_date"] = pd.to_datetime(df["trade_date"])
     df["order_execution_time"] = pd.to_datetime(df["order_execution_time"])
@@ -18,6 +27,17 @@ def process_tradebook(file_path):
 
 # Read and preprocess logbook
 def process_logbook(file_path, sheet_names):
+    """
+    Reads and preprocesses the logbook Excel file from multiple sheets.
+
+    This function reads the logbook from the specified Excel file path, converts the 'entry_time'
+    and 'exit_time' columns to datetime format for each specified sheet, and combines the data
+    from all sheets into a single DataFrame.
+
+    :param file_path: The path to the logbook Excel file.
+    :param sheet_names: A list of sheet names to be read from the Excel file.
+    :return: A combined DataFrame containing the logbook data from all specified sheets.
+    """
     all_data = []
     for sheet in sheet_names:
         df = pd.read_excel(file_path, sheet_name=sheet)
@@ -29,6 +49,17 @@ def process_logbook(file_path, sheet_names):
 
 # Matching trades
 def match_trades(tradebook_df, logbook_df):
+    """
+    Matches trades between the tradebook and logbook DataFrames.
+
+    This function iterates through the tradebook DataFrame and attempts to match trades with the logbook
+    DataFrame based on the 'order_execution_time' within a 1-minute window and matching quantities.
+    Matched trades are collected, and unmatched trades are identified for both tradebook and logbook.
+
+    :param tradebook_df: A DataFrame containing the tradebook data.
+    :param logbook_df: A DataFrame containing the logbook data.
+    :return: A tuple containing the matched trades, unmatched tradebook entries, and unmatched logbook entries.
+    """
     matched_trades = []
     unmatched_tradebook = tradebook_df.copy()
     unmatched_logbook = logbook_df.copy()
@@ -67,6 +98,16 @@ def match_trades(tradebook_df, logbook_df):
 
 # Main function to process trades
 def process_trades(tradebook_path, logbook_path):
+    """
+    Processes trades by reading tradebook and logbook files, matching trades, and saving results.
+
+    This function reads the tradebook and logbook files, preprocesses them, matches trades between
+    the tradebook and logbook, and saves the matched trades to an Excel file and unmatched trades
+    to CSV files.
+
+    :param tradebook_path: The path to the tradebook CSV file.
+    :param logbook_path: The path to the logbook Excel file.
+    """
     tradebook_df = process_tradebook(tradebook_path)
     sheet_names = [
         "AmiPy",

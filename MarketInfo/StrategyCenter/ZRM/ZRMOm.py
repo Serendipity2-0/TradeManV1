@@ -3,7 +3,6 @@ import csv
 import os
 import argparse
 from csv import writer
-import time
 from datetime import datetime
 import pandas as pd
 import psycopg2
@@ -27,10 +26,20 @@ class Algo:
     result_csv = ""
 
     def __init__(self, csv, zone_width):
+        """
+        Initialize the Algo class with the result CSV file path and zone width.
+
+        Args:
+            csv (str): Path to the CSV file for storing results.
+            zone_width (int): Width of the zone for trade logic.
+        """
         self.result_csv = csv
         self.zone_width = zone_width
 
     def reinit(self):
+        """
+        Reinitialize the Algo class attributes to start a new trade cycle.
+        """
         self.base_entry_price = 0
         self.is_trade_cycle_done = False
         self.long_entry = False
@@ -43,6 +52,12 @@ class Algo:
         self.one_print = False
 
     def write_results_csv(self, file):
+        """
+        Write the order book details to a specified CSV file.
+
+        Args:
+            file (str): Path to the CSV file for storing results.
+        """
         with open(file, "a", newline="", encoding="UTF8") as f_object:
             # Pass this file object to csv.writer() and get a writer object
             writer_object = writer(f_object)
@@ -77,6 +92,21 @@ class Algo:
         is_order_closed,
         quantity,
     ):
+        """
+        Add a trade entry to the order book.
+
+        Args:
+            trade_cycle (int): Trade cycle number.
+            order_type (str): Type of order ('Long' or 'Short').
+            entry_point (str): Entry point identifier.
+            entry_price (float): Entry price.
+            entry_time (str): Entry time.
+            exit_time (str): Exit time.
+            exit_price (float): Exit price.
+            exit_point (str): Exit point identifier.
+            is_order_closed (bool): Indicates if the order is closed.
+            quantity (int): Quantity of the trade.
+        """
         self.order_book.append(
             {
                 "trade_cycle": trade_cycle,
@@ -93,6 +123,14 @@ class Algo:
         )
 
     def exit_all_open_orders(self, point, tick_price, tick_time):
+        """
+        Exit all open orders and log the details.
+
+        Args:
+            point (str): Identifier for the exit point.
+            tick_price (float): Current price at the time of exit.
+            tick_time (str): Timestamp of the exit.
+        """
         try:
             for idx, item in enumerate(self.order_book):
                 if self.order_book[idx]["order_type"] == "long":
@@ -117,10 +155,18 @@ class Algo:
                 self.open_order_counts -= 1
                 self.is_trade_cycle_done = True
             self.trade_cycle_count += 1
-        except:
+        except Exception as e:
+            print(e)
             pass
 
     def run(self, tick_price, tick_time):
+        """
+        Execute the trading logic based on the provided tick data.
+
+        Args:
+            tick_price (float): Current price of the asset.
+            tick_time (float): Timestamp of the tick data in milliseconds.
+        """
         if self.init_timer is None:
             self.init_timer = tick_time / 1000
         elif (tick_time / 1000) - self.init_timer >= 60:
@@ -248,7 +294,13 @@ class Algo:
 
 
 def main(zone_width):
-    order_open = False
+    """
+    Initialize the Algo class and prepare the CSV file for logging results.
+
+    Args:
+        zone_width (int): Width of the zone for trade logic.
+    """
+    # order_open = False
 
     # open the file in the write mode
     header = [
@@ -273,10 +325,16 @@ def main(zone_width):
         writer = csv.writer(f)
         writer.writerow(header)
 
-    objalgo = Algo(file_path, zone_width)
+    # objalgo = Algo(file_path, zone_width)
 
 
 def add_pnl_column(input_csv):
+    """
+    Add a PnL (Profit and Loss) column to the CSV file based on trade details.
+
+    Args:
+        input_csv (str): Path to the input CSV file with trade details.
+    """
     margin_per_lot = 40000 / 25
     df = pd.read_csv(input_csv)
     df["PnL"] = df.apply(
@@ -305,6 +363,14 @@ def add_pnl_column(input_csv):
 
 
 def process_csv_data(file_path, zone_width, tokenName):
+    """
+    Process historical CSV data and execute the trading algorithm.
+
+    Args:
+        file_path (str): Path to the CSV file with historical data.
+        zone_width (int): Width of the zone for trade logic.
+        tokenName (str): Name of the token/asset being processed.
+    """
     header = [
         "trace_cycle",
         "order_type",
@@ -337,6 +403,13 @@ def process_csv_data(file_path, zone_width, tokenName):
 
 
 def process_tsdb_data(token, zone_width):
+    """
+    Process data from a time-series database and execute the trading algorithm.
+
+    Args:
+        token (int): Token/asset identifier.
+        zone_width (int): Width of the zone for trade logic.
+    """
     connection = psycopg2.connect(
         dbname="ohlc_token",
         user="postgres",
@@ -384,7 +457,7 @@ def process_tsdb_data(token, zone_width):
 
 if __name__ == "__main__":
 
-    from datetime import timedelta, date, datetime
+    from datetime import timedelta, date
 
     cmdLineParser = argparse.ArgumentParser("ZRMticks Trade Engine - ")
     cmdLineParser.add_argument(
@@ -426,6 +499,16 @@ if __name__ == "__main__":
     args = cmdLineParser.parse_args()
 
     def date_range(date1, date2):
+        """
+        Generate a range of dates from date1 to date2.
+
+        Args:
+            date1 (datetime.date): Start date.
+            date2 (datetime.date): End date.
+
+        Yields:
+            datetime.date: The next date in the range.
+        """
         for n in range(int((date2 - date1).days) + 2):
             yield date1 + timedelta(n)
 

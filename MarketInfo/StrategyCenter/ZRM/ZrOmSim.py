@@ -6,7 +6,6 @@ from csv import writer
 from ZrOm_calc import get_option_tokens
 from place_order import *
 import json
-import csv
 import os
 import argparse
 from kiteconnect import KiteConnect
@@ -34,14 +33,35 @@ class Algo:
     result_csv = ""
 
     def __init__(self, csv, zone_width):
+        """
+        Initializes the Algo class.
+
+        Args:
+            csv (str): Path to the result CSV file.
+            zone_width (int): Width of the zone for trade logic.
+        """
         self.result_csv = csv
         self.zone_width = zone_width
 
     def is_trade_complete(self):
+        """
+        Checks if the trade cycle is complete.
+
+        Returns:
+            bool: True if the trade cycle is complete, False otherwise.
+        """
         return self.is_trade_cycle_done
 
     # Same existing functions here
     def exit_all_open_orders(self, point, tick_price, tick_time):
+        """
+        Exits all open orders and logs the details.
+
+        Args:
+            point (str): Identifier for the exit point.
+            tick_price (float): Current price at the time of exit.
+            tick_time (str): Timestamp of the exit.
+        """
         try:
             for idx, item in enumerate(self.order_book):
                 if self.order_book[idx]["order_type"] == "long":
@@ -66,7 +86,8 @@ class Algo:
                 self.open_order_counts -= 1
                 self.is_trade_cycle_done = True
             self.trade_cycle_count += 1
-        except:
+        except Exception as e:
+            print(e)
             pass
 
     def add_item_order_book(
@@ -82,6 +103,21 @@ class Algo:
         is_order_closed,
         quantity,
     ):
+        """
+        Adds a trade entry to the order book.
+
+        Args:
+            trade_cycle (int): Trade cycle number.
+            order_type (str): Type of order ('Long' or 'Short').
+            entry_point (str): Entry point identifier.
+            entry_price (float): Entry price.
+            entry_time (str): Entry time.
+            exit_time (str): Exit time.
+            exit_price (float): Exit price.
+            exit_point (str): Exit point identifier.
+            is_order_closed (bool): Indicates if the order is closed.
+            quantity (int): Quantity of the trade.
+        """
         self.order_book.append(
             {
                 "trade_cycle": trade_cycle,
@@ -98,6 +134,12 @@ class Algo:
         )
 
     def write_results_csv(self, file):
+        """
+        Writes the order book details to a specified CSV file.
+
+        Args:
+            file (str): Path to the CSV file for storing results.
+        """
         with open(file, "a") as f_object:
             # Pass this file object to csv.writer()
             # and get a writer object
@@ -122,6 +164,13 @@ class Algo:
             f_object.close()
 
     def run(self, tick_price, tick_time):
+        """
+        Executes the trading logic based on the provided tick data.
+
+        Args:
+            tick_price (float): Current price of the asset.
+            tick_time (float): Timestamp of the tick data in milliseconds.
+        """
         expiry_date = "2023-07-13"
         # Get the simulated current time from the tick_time
         current_time = dt.fromtimestamp(tick_time).time()
@@ -181,12 +230,14 @@ class Algo:
                     elif point == "L2":
                         q = self.quantity * 12
                     str_prc = round(tick_price / 100) * 100
-                    tokens, trading_symbol, trading_symbol_aliceblue = (
-                        get_option_tokens("BANKNIFTY", expiry_date, str_prc, "CE")
-                    )
-                    order_id = place_zerodha_order(
-                        trading_symbol, "BUY", point, q, str_prc, "BANKNIFTY"
-                    )
+                    (
+                        tokens,
+                        trading_symbol,
+                        trading_symbol_aliceblue,
+                    ) = get_option_tokens("BANKNIFTY", expiry_date, str_prc, "CE")
+                    # order_id = place_zerodha_order(
+                    #     trading_symbol, "BUY", point, q, str_prc, "BANKNIFTY"
+                    # )
                     # place CE orders here
                     self.add_item_order_book(
                         self.trade_cycle_count,
@@ -222,12 +273,14 @@ class Algo:
                     elif point == "S1":
                         q = self.quantity * 6
                     str_prc = round(tick_price / 100) * 100
-                    tokens, trading_symbol, trading_symbol_aliceblue = (
-                        get_option_tokens("BANKNIFTY", expiry_date, str_prc, "PE")
-                    )
-                    order_id = place_zerodha_order(
-                        trading_symbol, "BUY", point, q, str_prc, "BANKNIFTY"
-                    )
+                    (
+                        tokens,
+                        trading_symbol,
+                        trading_symbol_aliceblue,
+                    ) = get_option_tokens("BANKNIFTY", expiry_date, str_prc, "PE")
+                    # order_id = place_zerodha_order(
+                    #     trading_symbol, "BUY", point, q, str_prc, "BANKNIFTY"
+                    # )
                     # print("trade symbol is {}".format(trading_symbol))
                     # place PE orders here
                     self.add_item_order_book(

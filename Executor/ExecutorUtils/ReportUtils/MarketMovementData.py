@@ -1,4 +1,4 @@
-import os,sys
+import os, sys
 import pandas as pd
 import datetime
 from dotenv import load_dotenv
@@ -14,7 +14,9 @@ CONSOLIDATED_REPORT_PATH = os.getenv("CONSOLIDATED_REPORT_PATH")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import get_primary_account_obj
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+    get_primary_account_obj,
+)
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 
 instrument_obj = InstrumentCenterUtils.Instrument()
@@ -22,25 +24,47 @@ instrument_obj = InstrumentCenterUtils.Instrument()
 logger = LoggerSetup()
 kite_obj = get_primary_account_obj()
 
+
 def fetch_historical_data(instrument_token, from_date, to_date):
+    """
+    Fetch historical data for a given instrument token within a specified date range.
+
+    Args:
+        instrument_token (int): The instrument token.
+        from_date (datetime.date): The start date for fetching historical data.
+        to_date (datetime.date): The end date for fetching historical data.
+
+    Returns:
+        list: A list of dictionaries containing historical data.
+    """
     global kite_obj
     data = kite_obj.historical_data(instrument_token, from_date, to_date, "day")
     return data
 
 
 def calculate_movement(data):
+    """
+    Calculate the movement range and percentage movement based on historical data.
+
+    Args:
+        data (list): A list of dictionaries containing historical data.
+
+    Returns:
+        tuple: A tuple containing the movement range and percentage movement.
+    """
     if data:  # Check if data is not empty
-        opening_price = data[0]['open']
-        closing_price = data[-1]['close']
+        opening_price = data[0]["open"]
+        closing_price = data[-1]["close"]
         movement_range = closing_price - opening_price
         percentage_movement = (movement_range / opening_price) * 100
         return movement_range, percentage_movement
     return 0, 0  # Return 0,0 if data is empty
 
+
 # Initialize an empty list for storing data
 data_dict = {}
 
-base_symbols = ['NIFTY', 'BANKNIFTY', 'FINNIFTY', 'SENSEX', 'MIDCPNIFTY']
+base_symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "SENSEX", "MIDCPNIFTY"]
 today = datetime.date.today()
 last_week = today - datetime.timedelta(weeks=1)
 last_month = today - datetime.timedelta(days=30)
@@ -54,18 +78,27 @@ for symbol in base_symbols:
         "Today": fetch_historical_data(token, today, today),
         "Week": fetch_historical_data(token, last_week, today),
         "Month": fetch_historical_data(token, last_month, today),
-        "Year": fetch_historical_data(token, last_year, today)
+        "Year": fetch_historical_data(token, last_year, today),
     }
     for period_name, period_data in periods.items():
         movement_range, percentage_movement = calculate_movement(period_data)
         # Store the range along with the percentage movement for the period
-        data_dict[token][period_name] = f"{movement_range:.2f} ({percentage_movement:.2f}%)"
+        data_dict[token][
+            period_name
+        ] = f"{movement_range:.2f} ({percentage_movement:.2f}%)"
+
 
 def main():
+    """
+    Main function to fetch and calculate movement data for base symbols and convert it to a DataFrame.
+
+    Returns:
+        DataFrame: DataFrame containing movement data for base symbols.
+    """
     # Convert the dictionary to a DataFrame
     df = pd.DataFrame(list(data_dict.values()))
 
     # Reordering DataFrame columns to match the requested format
-    df = df[['Token', 'Today', 'Week', 'Month', 'Year']]
+    df = df[["Token", "Today", "Week", "Month", "Year"]]
 
     return df

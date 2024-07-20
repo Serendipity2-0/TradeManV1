@@ -12,3 +12,16 @@ requests
 python-dotenv
 pendulum
 fastapi
+reportlab
+psutil
+aiohttp
+telethon
+openpyxl
+nest_asyncio
+pytest
+pytest-mock
+pytest-asyncio
+pandas
+numpy
+yfinance
+
