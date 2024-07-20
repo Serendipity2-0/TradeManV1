@@ -30,7 +30,7 @@ mock_active_users = [
             "TotpAccess": "4HN3ENVF36GZREFJJWLR7DTUJXCPYTCJ",
             "SessionId": "6j78lzQRT5fwWYBhqvk4tf8vbIj8ImHk",
         },
-        "Active": True,
+        "Active": False,
         "Tr_No": "Tr01",
         "Profile": {"Name": "Jane Smith"},
     },
