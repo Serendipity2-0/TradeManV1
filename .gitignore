@@ -12,3 +12,5 @@ trail.py
 *.session
 *.sh
 *.pdf
+supervisord.conf
+.pre-commit-config.yaml
