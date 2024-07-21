@@ -472,11 +472,14 @@ def get_previous_dates(num_dates):
     return dates
 
 
-def fetch_strategy_users(strategy_name):
+def fetch_strategy_users(strategy_name, asset_segment=None, asset_term=None):
     """
     The `fetch_strategy_users` function retrieves the list of users associated with the given strategy from Firebase.
 
     :param strategy_name: The name of the strategy
+    :param asset_class: The asset class of the strategy(Equity, Derivatives)
+    :param asset_term: The asset term of the strategy(Long, Short or strategy in derviatives)
+    :param asset_type: The asset type of the strategy(Strategy in equity)
     :type strategy_name: str
     :return: A list of users associated with the strategy
     """
@@ -488,7 +491,11 @@ def fetch_strategy_users(strategy_name):
         active_users = fetch_active_users_from_firebase()
         strategy_users = []
         for user in active_users:
-            if strategy_name in user["Strategies"]:
+            if asset_segment is not None:
+                path = user["Strategies"][asset_segment]
+            if asset_term is not None:
+                path = path[asset_term]
+            if strategy_name in path:
                 strategy_users.append(user)
         return strategy_users
     except Exception as e:
@@ -496,95 +503,95 @@ def fetch_strategy_users(strategy_name):
         return None
 
 
-def fetch_freecash_firebase(strategy_name):
-    """
-    The `fetch_freecash_firebase` function retrieves the free cash available for each user associated with the given strategy from Firebase.
-
-    :param strategy_name: The name of the strategy
-    :type strategy_name: str
-    :return: A dictionary with user transaction numbers as keys and free cash values as values
-    """
-    try:
-        accounts = fetch_strategy_users(
-            strategy_name
-        )  # Assuming there is a function to fetch accounts from Firebase
-        freecash_dict = {}
-        freecash_key = dt.datetime.now().strftime("%d%b%y") + "_FreeCash"
-        for account in accounts:
-            freecash_dict[account["Tr_No"]] = account["Accounts"][freecash_key]
-        return freecash_dict
-    except Exception as e:
-        logger.error(f"Error fetching free cash: {e}")
-        return None
-
-
-def fetch_risk_per_trade_firebase(strategy_name):
-    """
-    The `fetch_risk_per_trade_firebase` function retrieves the risk per trade value for each user associated with the given strategy from Firebase.
-
-    :param strategy_name: The name of the strategy
-    :type strategy_name: str
-    :return: A dictionary with user transaction numbers as keys and risk per trade values as values
-    """
-    try:
-        users = fetch_strategy_users(strategy_name)
-        risk_per_trade = {}
-        for user in users:
-            risk_per_trade[user["Tr_No"]] = user["Strategies"][strategy_name][
-                "RiskPerTrade"
-            ]
-        return risk_per_trade
-    except Exception as e:
-        logger.error(f"Error fetching risk per trade: {e}")
-        return None
-
-
 def update_qty_user_firebase(
-    strategy_name, avg_sl_points, lot_size, qty_amplifier=None, strategy_amplifier=None
+    strategy_name: str,
+    avg_sl_points_or_ltp: float,
+    lot_size: int = None,
+    asset_segment: str = None,
+    asset_term: str = None,
+    qty_amplifier: float = None,
+    strategy_amplifier: float = None,
 ):
     """
     The `update_qty_user_firebase` function updates the quantity for each user associated with the given strategy based on their free cash and risk per trade.
 
     :param strategy_name: The name of the strategy
-    :type strategy_name: str
+    :param asset_segment: The asset segment (e.g., "Equity", "Derivatives")
+    :param asset_term: The asset term (e.g., "Mid Term")
     :param avg_sl_points: The average stop loss points
-    :type avg_sl_points: float
     :param lot_size: The lot size
-    :type lot_size: int
     :param qty_amplifier: The quantity amplifier (optional)
-    :type qty_amplifier: float
     :param strategy_amplifier: The strategy amplifier (optional)
-    :type strategy_amplifier: float
     """
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
-        calculate_qty_for_strategies,
+        calculate_qty_for_derivatives,
+        calculate_qty_for_equity,
     )
 
-    strategy_users = fetch_strategy_users(strategy_name)
-    free_cash_dict = fetch_freecash_firebase(strategy_name)
-    risk_per_trade = fetch_risk_per_trade_firebase(strategy_name)
     try:
-        for user in strategy_users:
-            if user["Tr_No"] in risk_per_trade:
-                risk = risk_per_trade[user["Tr_No"]]
-            if user["Tr_No"] in free_cash_dict:
-                capital = free_cash_dict[user["Tr_No"]]
-            qty = calculate_qty_for_strategies(
-                capital,
-                risk,
-                avg_sl_points,
-                lot_size,
-                qty_amplifier,
-                strategy_amplifier,
-            )
-            user["Strategies"][strategy_name]["Qty"] = qty
+        strategy_users = fetch_strategy_users(strategy_name, asset_segment, asset_term)
 
-            update_fields_firebase(
-                user_db_collection,
-                user["Tr_No"],
-                {"Qty": qty},
-                f"Strategies/{strategy_name}",
-            )
+        for user in strategy_users:
+            strategies = user["Strategies"]
+            if asset_segment == "Equity":
+                equity_free_cash = user["Accounts"]["Equity"]["Equity_FreeCash"]
+                term_data = strategies["Equity"].get(asset_term, {})
+                term_allocation = term_data.get("AllocationPercent", 0) / 100
+                term_free_cash = equity_free_cash * term_allocation
+
+                for strat, strat_data in term_data.items():
+                    if (
+                        isinstance(strat_data, dict)
+                        and "AllocationPercent" in strat_data
+                    ):
+                        if strat == strategy_name:
+                            strat_allocation = strat_data["AllocationPercent"] / 100
+                            strat_free_cash = term_free_cash * strat_allocation
+                            qty = calculate_qty_for_equity(
+                                strat_free_cash, avg_sl_points_or_ltp
+                            )
+
+                            # Update the quantity for the specific strategy
+                            strat_data["Qty"] = qty
+                            logger.info(f"Updated quantity for {strat}: {qty}")
+
+                            # Update the user data in Firebase
+                            update_fields_firebase(
+                                user_db_collection,
+                                user["Tr_No"],
+                                {"Qty": qty},
+                                f"Strategies/Equity/{asset_term}/{strategy_name}",
+                            )
+                            break  # Exit the loop after updating the specific strategy
+
+            elif asset_segment == "Derivatives":
+                derivative_free_cash = user["Accounts"]["Derivatives"][
+                    "Derivatives_FreeCash"
+                ]
+                asset_data = strategies["Derivatives"]
+                if strategy_name in asset_data:
+                    asset_free_cash = derivative_free_cash * (
+                        asset_data[strategy_name].get("AllocationPercent", 0) / 100
+                    )
+                    qty = calculate_qty_for_derivatives(
+                        asset_free_cash,
+                        asset_data[strategy_name]["RiskPerTrade"],
+                        avg_sl_points_or_ltp,
+                        lot_size,
+                        qty_amplifier,
+                        strategy_amplifier,
+                    )
+                    asset_data[strategy_name]["Qty"] = qty
+                    logger.info(f"Updated quantity for {strategy_name}: {qty}")
+
+                    # Update the user data in Firebase
+                    update_fields_firebase(
+                        user_db_collection,
+                        user["Tr_No"],
+                        {"Qty": qty},
+                        f"Strategies/Derivatives/{strategy_name}",
+                    )
+
     except Exception as e:
         logger.error(f"Error updating qty for user: {e}")
 
