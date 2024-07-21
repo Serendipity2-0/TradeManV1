@@ -34,6 +34,9 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     fetch_qty_for_holdings_sqldb,
 )
 
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+
 
 def calculate_qty_for_equity(free_cash: float, ltp: float) -> int:
     """
@@ -116,17 +119,42 @@ async def place_order_for_strategy(
 
                 # Create a new order dictionary for each user
                 order_with_user_and_broker = order.copy()
-                order_with_user_and_broker.update(
-                    {
-                        "broker": user["Broker"]["BrokerName"],
-                        "username": user["Broker"]["BrokerUsername"],
-                        "qty": user["Strategies"][order.get("strategy")]["Qty"]
-                        if order_qty_mode != "Holdings"
+
+                strategy_type = (
+                    "Equity"
+                    if order.get("strategy") in EQUITY_STRATEGY_LIST
+                    else "Derivatives"
+                    if order.get("strategy") in DERIVATIVES_STRATEGY_LIST
+                    else None
+                )
+
+                if strategy_type:
+                    qty = (
+                        user["Strategies"][strategy_type][order.get("strategy")][
+                            order.get("setup")
+                        ]["Qty"]
+                        if strategy_type == "Equity" and order_qty_mode != "Holdings"
+                        else user["Strategies"][strategy_type][order.get("strategy")][
+                            "Qty"
+                        ]
+                        if strategy_type == "Derivatives"
+                        and order_qty_mode != "Holdings"
                         else fetch_qty_for_holdings_sqldb(
                             user["Tr_No"], order.get("trade_id")
-                        ),
-                    }
-                )
+                        )
+                    )
+
+                    order_with_user_and_broker.update(
+                        {
+                            "broker": user["Broker"]["BrokerName"],
+                            "username": user["Broker"]["BrokerUsername"],
+                            "qty": qty,
+                        }
+                    )
+
+                else:
+                    logger.error(f"Unknown strategy: {order.get('strategy')}")
+
                 # Calculate tax for this specific order
                 tax = get_orders_tax(order_with_user_and_broker, user_credentials)
                 order_with_user_and_broker["tax"] = tax
@@ -175,8 +203,15 @@ async def place_order_with_tax(order, user_credentials, tr_no, strategy):
             # Add the tax information to the status
             status["tax"] = order.get("tax")
 
-        # Update Firebase with order status
-        update_path = f"Strategies/{strategy}/TradeState/orders"
+        if strategy in EQUITY_STRATEGY_LIST:
+            update_path = (
+                f"Strategies/Equity/{strategy}/{order.get('setup')}/TradeState/orders"
+            )
+        elif strategy in DERIVATIVES_STRATEGY_LIST:
+            update_path = f"Strategies/Derivatives/{strategy}/TradeState/orders"
+        else:
+            logger.error(f"Unknown strategy: {strategy}")
+
         push_orders_firebase(CLIENTS_USER_FB_DB, tr_no, status, update_path)
 
         if status.get("message", "") == "Order placement failed":

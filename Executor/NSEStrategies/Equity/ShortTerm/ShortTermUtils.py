@@ -1,9 +1,11 @@
 import pandas as pd
 import yfinance as yf
-import os
+import os, sys
 from dotenv import load_dotenv
 
 DIR = os.getcwd()
+sys.path.append(DIR)
+
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
@@ -17,6 +19,7 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     read_stock_data_from_db,
 )
 
+EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
 logger = LoggerSetup()
 SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
 SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
@@ -333,6 +336,27 @@ def perform_momentum_strategy(stock_data_dict):
             latest_daily_data = stock_data_daily.iloc[-1]
             latest_weekly_data = stock_data_weekly.iloc[-1]
 
+            # Collect today's OHLC for daily data
+            daily_open = latest_daily_data["Open"]
+            daily_high = latest_daily_data["High"]
+            daily_low = latest_daily_data["Low"]
+            daily_close = latest_daily_data["Close"]
+
+            # Collect this week's OHLC for weekly data
+            weekly_open = latest_weekly_data["Open"]
+            weekly_high = latest_weekly_data["High"]
+            weekly_low = latest_weekly_data["Low"]
+            weekly_close = latest_weekly_data["Close"]
+
+            # Collect indicator values for daily data
+            daily_rsi = rsi_values.iloc[-1]
+            daily_upper_band = latest_daily_data["Upper_band"]
+            daily_above_50_ema = latest_daily_data["Above_50_EMA"]
+            daily_macd = macd.iloc[-1]
+            daily_signal_line = signal_line.iloc[-1]
+            all_time_high = stock_data_daily["High"].max()
+            last_traded_price = stock_data_daily["Close"].iloc[-1]
+            ratio_ATH_LTP = all_time_high / last_traded_price
             # Check the momentum strategy condition
             if (
                 rsi_values.iloc[-1] > 50
@@ -340,28 +364,6 @@ def perform_momentum_strategy(stock_data_dict):
                 and latest_daily_data["Upper_band"] < latest_daily_data["Close"]
                 and macd.iloc[-1] > signal_line.iloc[-1]
             ):
-                # Collect today's OHLC for daily data
-                daily_open = latest_daily_data["Open"]
-                daily_high = latest_daily_data["High"]
-                daily_low = latest_daily_data["Low"]
-                daily_close = latest_daily_data["Close"]
-
-                # Collect this week's OHLC for weekly data
-                weekly_open = latest_weekly_data["Open"]
-                weekly_high = latest_weekly_data["High"]
-                weekly_low = latest_weekly_data["Low"]
-                weekly_close = latest_weekly_data["Close"]
-
-                # Collect indicator values for daily data
-                daily_rsi = rsi_values.iloc[-1]
-                daily_upper_band = latest_daily_data["Upper_band"]
-                daily_above_50_ema = latest_daily_data["Above_50_EMA"]
-                daily_macd = macd.iloc[-1]
-                daily_signal_line = signal_line.iloc[-1]
-                all_time_high = stock_data_daily["High"].max()
-                last_traded_price = stock_data_daily["Close"].iloc[-1]
-                ratio_ATH_LTP = all_time_high / last_traded_price
-
                 # Append to results
                 results.append(
                     {
@@ -433,7 +435,7 @@ def perform_momentum_strategy(stock_data_dict):
 
 
 def get_shortterm_stocks_df():
-    db_path = os.getenv("equity_stock_data_db_path")
+    db_path = EQUITY_STOCK_DATA_DB_PATH
     stock_data_dict = read_stock_data_from_db(db_path)
     momentum_stocks_df = perform_momentum_strategy(stock_data_dict)
     mean_reversion_stocks_df = perform_mean_reversion_strategy(stock_data_dict)

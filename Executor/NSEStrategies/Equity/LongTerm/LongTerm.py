@@ -14,7 +14,8 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
-    fetch_sql_table_from_db as fetch_table_from_db,
+    read_strategy_table as read_strategy_table,
+    get_db_connection,
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
     Instrument as instrument_obj,
@@ -27,13 +28,37 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     fetch_qty_amplifier,
     fetch_strategy_amplifier,
     fetch_strategy_users,
+    StrategyBase,
 )
+import Executor.ExecutorUtils.ExeUtils as ExeUtils
 
 
 logger = LoggerSetup()
-LONG_RATIO = os.getenv("LONG_RATIO")
-LONG_COMBO = os.getenv("LONG_COMBO")
-stock_pick_db_path = os.getenv("today_stock_data_db_path")
+LONG_RATIO = "Long_Ratio"
+LONG_COMBO = "Long_Combo"
+TODAY_STOCK_DATA_DB_PATH = os.getenv("TODAY_STOCK_DATA_DB_PATH")
+
+
+class LongTerm(StrategyBase):
+    def get_general_params(self):
+        return self.GeneralParams
+
+    def get_entry_params(self):
+        return self.EntryParams
+
+    def get_exit_params(self):
+        return self.ExitParams
+
+    def get_raw_field(self, field_name: str):
+        return super().get_raw_field(field_name)
+
+
+longterm_obj = LongTerm.load_from_db("LongTerm")
+strategy_name = longterm_obj.StrategyName
+order_type = longterm_obj.GeneralParams.OrderType
+product_type = longterm_obj.GeneralParams.ProductType
+strategy_type = longterm_obj.GeneralParams.StrategyType
+desired_start_time_str = longterm_obj.get_entry_params().EntryTime
 
 
 def get_today_stocks():
@@ -44,7 +69,7 @@ def get_today_stocks():
         pandas.DataFrame: DataFrame containing today's stocks.
     """
     try:
-        conn = sqlite3.connect(stock_pick_db_path)
+        conn = sqlite3.connect(TODAY_STOCK_DATA_DB_PATH)
 
         # Load the data from the identified table "CombinedStocks"
         df = pd.read_sql_query("SELECT * FROM CombinedStocks", conn)
@@ -66,38 +91,57 @@ def main():
     """
     Retrieves and processes today's top stock picks, places orders for users if needed.
     """
-    from Executor.NSEStrategies.Equity.Equity import (
-        pystocks_obj,
-        strategy_name,
-        strategy_type,
-        order_type,
-        product_type,
-        signals_to_fb,
-    )
+    start_hour, start_minute, _ = map(int, desired_start_time_str.split(":"))
+    now = dt.datetime.now()
+
+    if now.date() in ExeUtils.holidays:
+        logger.info("Skipping execution as today is a holiday.")
+        return
+
+    if now.time() < dt.time(9, 0):
+        logger.info("Time is before 9:00 AM, Waiting to execute.")
+    else:
+        wait_time = (
+            dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
+        )
+
+        if wait_time.total_seconds() > 0:
+            logger.info(f"Waiting for {wait_time} before starting the bot")
+            sleep(wait_time.total_seconds())
+
+    from Executor.NSEStrategies.Equity.Equity import signals_to_fb
 
     top5_stocks_df = get_today_stocks()
     if top5_stocks_df.empty:
         logger.info("No stocks selected for today in Longterm")
         return
-
-    symbol_list = top5_stocks_df["Symbol"].tolist()
+    else:
+        symbol_list = top5_stocks_df["Symbol"].tolist()
+        logger.info(f"Stocks selected for today for Longterm: {symbol_list}")
 
     # Display the filtered and sorted DataFrame
     logger.info(f"Stocks selected for today: {symbol_list}")
 
     trade_id_mapping = {}
 
-    users = fetch_strategy_users("PyStocks")
+    users = fetch_strategy_users(strategy_name)
     for user in users:
-        holdings = fetch_table_from_db(user["Tr_No"], "Holdings")
+        db_path = os.path.join(
+            os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{user['Tr_No']}_equity.db"
+        )
+        conn = get_db_connection(db_path)
+        holdings = read_strategy_table(conn, "Holdings")
         py_holdings = holdings[holdings["trade_id"].str.startswith("PS")]
-        current_holdings_count = len(py_holdings)
+        longterm_holdings = py_holdings[
+            py_holdings["setup"].isin([LONG_RATIO, LONG_COMBO])
+        ]
+        current_holdings_count = len(longterm_holdings)
         logger.debug(
-            f"Current holdings for user {user['Tr_No']}: {current_holdings_count}"
+            f"Current holdings for user {user['Tr_No']} for Longterm: {current_holdings_count}"
         )
 
-        if current_holdings_count < 5:
-            needed_orders = 5 - current_holdings_count
+        if current_holdings_count < 6:
+            needed_orders = 6 - current_holdings_count
             for index, symbol in enumerate(symbol_list):
                 if needed_orders == 0:
                     break
@@ -113,7 +157,7 @@ def main():
                 # Log the setup name
                 logger.info(f"Setup for {symbol}: {setup_name}")
 
-                new_base = pystocks_obj.reload_strategy(pystocks_obj.StrategyName)
+                new_base = longterm_obj.reload_strategy(longterm_obj.StrategyName)
                 if symbol not in trade_id_mapping:
                     trade_id_mapping[symbol] = new_base.NextTradeId
 
@@ -144,9 +188,9 @@ def main():
                 qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
                 strategy_amplifier = fetch_strategy_amplifier(strategy_name)
                 update_qty_user_firebase(
-                    strategy_name, ltp, 1, qty_amplifier, strategy_amplifier
+                    strategy_name, ltp, 1, qty_amplifier, strategy_amplifier, setup_name
                 )
-                signals_to_fb(order_to_place, trade_id)
+                signals_to_fb(strategy_name, order_to_place, trade_id)
                 order_status = place_order_single_user([user], order_to_place)
                 logger.debug(f"Orders placed for {symbol}: {order_to_place}")
 
@@ -165,7 +209,7 @@ def main():
 
                 needed_orders -= 1
 
-            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 5")
+            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 6")
 
 
 if __name__ == "__main__":

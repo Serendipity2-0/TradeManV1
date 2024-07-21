@@ -27,6 +27,9 @@ from Executor.ExecutorUtils.ExeUtils import holidays
 
 logger = LoggerSetup()
 
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+
 
 # Sub-models for various parameter types
 class EntryParams(BaseModel):

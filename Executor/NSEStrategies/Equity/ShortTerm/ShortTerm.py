@@ -1,9 +1,10 @@
 import pandas as pd
-import yfinance as yf
 import os
 from dotenv import load_dotenv
 import sys
 import sqlite3
+import datetime as dt
+from time import sleep
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -13,7 +14,8 @@ load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
-    fetch_sql_table_from_db as fetch_table_from_db,
+    read_strategy_table as read_strategy_table,
+    get_db_connection as get_db_connection,
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
     Instrument as instrument_obj,
@@ -26,16 +28,45 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     fetch_qty_amplifier,
     fetch_strategy_amplifier,
     fetch_strategy_users,
+    StrategyBase,
 )
+import Executor.ExecutorUtils.ExeUtils as ExeUtils
 
 
 logger = LoggerSetup()
 
-SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
-SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
-SHORT_MEANREVERSION = os.getenv("SHORT_MEANREVERSION")
+stock_pick_db_path = os.getenv("TODAY_STOCK_DATA_DB_PATH")
 
-stock_pick_db_path = os.getenv("today_stock_data_db_path")
+
+class ShortTerm(StrategyBase):
+    def get_general_params(self):
+        return self.GeneralParams
+
+    def get_entry_params(self):
+        return self.EntryParams
+
+    def get_exit_params(self):
+        return self.ExitParams
+
+    def get_raw_field(self, field_name: str):
+        return super().get_raw_field(field_name)
+
+
+shortterm_obj = ShortTerm.load_from_db("ShortTerm")
+strategy_name = shortterm_obj.StrategyName
+order_type = shortterm_obj.GeneralParams.OrderType
+product_type = shortterm_obj.GeneralParams.ProductType
+strategy_type = shortterm_obj.GeneralParams.StrategyType
+desired_start_time_str = shortterm_obj.get_entry_params().EntryTime
+
+# SHORT_MOMENTUM = shortterm_obj.get_raw_field("ExtraInformation").get("ShortMomentum")
+# SHORT_EMABBCONFLUENCE = shortterm_obj.get_raw_field("ExtraInformation").get("ShortEmabbConfluence")
+# SHORT_MEANREVERSION = shortterm_obj.get_raw_field("ExtraInformation").get("ShortMeanRevision")
+
+
+SHORT_MOMENTUM = "Short_Momentum"
+SHORT_EMABBCONFLUENCE = "Short_EMABBConfluence"
+SHORT_MEANREVERSION = "Short_MeanReversion"
 
 
 def get_today_stocks():
@@ -79,35 +110,60 @@ def main():
     Returns:
         list: A sorted list of short term stock picks.
     """
+
+    start_hour, start_minute, _ = map(int, desired_start_time_str.split(":"))
+    now = dt.datetime.now()
+
+    if now.date() in ExeUtils.holidays:
+        logger.info("Skipping execution as today is a holiday.")
+        return
+
+    if now.time() < dt.time(9, 0):
+        logger.info("Time is before 9:00 AM, Waiting to execute.")
+    else:
+        wait_time = (
+            dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
+        )
+
+        if wait_time.total_seconds() > 0:
+            logger.info(f"Waiting for {wait_time} before starting the bot")
+            sleep(wait_time.total_seconds())
+
     # Example usage
-    from Executor.NSEStrategies.Equity.Equity import (
-        pystocks_obj,
-        strategy_name,
-        strategy_type,
-        order_type,
-        product_type,
-        signals_to_fb,
-    )
+    from Executor.NSEStrategies.Equity.Equity import signals_to_fb
 
     top5_stocks_df = get_today_stocks()
     symbol_list = top5_stocks_df["Symbol"].tolist()
 
-    # Display the filtered and sorted DataFrame
-    logger.info(f"Stocks selected for Today:{symbol_list}")
+    if symbol_list == []:
+        logger.info("No stocks selected for today in ShortTerm")
+        return
+    else:
+        # Display the filtered and sorted DataFrame
+        logger.info(f"Stocks selected for Today for ShortTerm:{symbol_list}")
 
     trade_id_mapping = {}
 
-    users = fetch_strategy_users("PyStocks")
+    users = fetch_strategy_users(strategy_name)
     for user in users:
-        holdings = fetch_table_from_db(user["Tr_No"], "Holdings")
+        db_path = os.path.join(
+            os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{user['Tr_No']}_equity.db"
+        )
+        conn = get_db_connection(db_path)
+        holdings = read_strategy_table(conn, "Holdings")
         py_holdings = holdings[holdings["trade_id"].str.startswith("PS")]
-        current_holdings_count = len(py_holdings)
+        shortterm_holdings = py_holdings[
+            py_holdings["setup"].isin(
+                [SHORT_MOMENTUM, SHORT_EMABBCONFLUENCE, SHORT_MEANREVERSION]
+            )
+        ]
+        current_holdings_count = len(shortterm_holdings)
         logger.debug(
-            f"Current holdings for user {user['Tr_No']}: {current_holdings_count}"
+            f"Current holdings for user {user['Tr_No']} for Shortterm: {current_holdings_count}"
         )
 
-        if current_holdings_count < 5:
-            needed_orders = 5 - current_holdings_count
+        if current_holdings_count < 9:
+            needed_orders = 9 - current_holdings_count
             for index, symbol in enumerate(symbol_list):
                 if needed_orders == 0:
                     break  # Stop processing if no more orders are needed
@@ -126,7 +182,7 @@ def main():
                 # Log the setup name
                 logger.info(f"Setup for {symbol}: {setup_name}")
 
-                new_base = pystocks_obj.reload_strategy(pystocks_obj.StrategyName)
+                new_base = shortterm_obj.reload_strategy(shortterm_obj.StrategyName)
                 if symbol not in trade_id_mapping:
                     trade_id_mapping[symbol] = new_base.NextTradeId
 
@@ -157,16 +213,16 @@ def main():
                 qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
                 strategy_amplifier = fetch_strategy_amplifier(strategy_name)
                 update_qty_user_firebase(
-                    strategy_name, ltp, 1, qty_amplifier, strategy_amplifier
+                    strategy_name, ltp, 1, qty_amplifier, strategy_amplifier, setup_name
                 )
-                signals_to_fb(order_to_place, trade_id)
+                signals_to_fb(strategy_name, order_to_place, trade_id)
                 order_status = place_order_single_user([user], order_to_place)
                 logger.debug(f"Orders placed for {symbol}: {order_to_place}")
 
                 # Should come up with a better way to check for failed orders
 
                 if os.getenv("TRADE_MODE") != "PAPER":
-                    if user["Tr_No"] == "Tr00" and any(
+                    if user["Tr_No"] == os.getenv("ZERODHA_PRIMARY_ACCOUNT") and any(
                         order["order_status"] == "FAIL" for order in order_status
                     ):
                         # Reassign the trade ID to the next symbol if there is one
@@ -179,7 +235,7 @@ def main():
 
                 needed_orders -= 1
 
-            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 5")
+            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 9")
 
 
 if "__main__" == __name__:

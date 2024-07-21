@@ -21,8 +21,11 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
 
 # Initialize logger
 logger = LoggerSetup()
-MID_TFMOMENTUM = os.getenv("MID_TFMOMENTUM")
-MID_TFEMA = os.getenv("MID_TFEMA")
+MID_TFMOMENTUM = "Mid_tfMomentum"
+MID_TFEMA = "Mid_tfEma"
+
+EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
+FINANCIAL_DB_PATH = os.getenv("FINANCIAL_DB_PATH")
 
 
 def get_midterm_stocks_df():
@@ -36,15 +39,8 @@ def perform_tfmomentum_strategy():
     Main function to orchestrate the fetching and processing of stock data.
     """
     try:
-        # Define paths to the databases
-        stock_db_path = os.getenv(
-            "equity_stock_data_db_path"
-        )  # Path to stock data database
-        financial_db_path = os.getenv(
-            "financial_db_path"
-        )  # Path to financial data database
         # Fetch stock data from the database
-        stock_data_dict = read_stock_data_from_db(stock_db_path)
+        stock_data_dict = read_stock_data_from_db(EQUITY_STOCK_DATA_DB_PATH)
         if not stock_data_dict:
             logger.error("Failed to retrieve stock data from the database.")
             return pd.DataFrame()
@@ -52,7 +48,7 @@ def perform_tfmomentum_strategy():
         all_stock_df = []
         for stock_code, stock_data in stock_data_dict.items():
             # Establish connection to the SQLite database
-            conn = sqlite3.connect(financial_db_path)
+            conn = sqlite3.connect(FINANCIAL_DB_PATH)
             query = f"SELECT * FROM financials WHERE Symbol = '{stock_code}'"
             financial_data = pd.read_sql_query(query, conn)
             conn.close()
@@ -105,15 +101,8 @@ def perform_tfema_strategy():
     Apply a strategy based on multiple EMA filters and other financial metrics.
     """
     try:
-        stock_db_path = os.getenv(
-            "equity_stock_data_db_path"
-        )  # Path to stock data database
-        financial_db_path = os.getenv(
-            "financial_db_path"
-        )  # Path to financial data database
-
         # Fetch stock data
-        stock_data_dict = read_stock_data_from_db(stock_db_path)
+        stock_data_dict = read_stock_data_from_db(EQUITY_STOCK_DATA_DB_PATH)
         if not stock_data_dict:
             logger.error("Failed to retrieve stock data from the database.")
             return pd.DataFrame()
@@ -121,7 +110,7 @@ def perform_tfema_strategy():
         all_stock_df = []
         for stock_code, stock_data in stock_data_dict.items():
             # Fetch financial data
-            conn = sqlite3.connect(financial_db_path)
+            conn = sqlite3.connect(FINANCIAL_DB_PATH)
             query = f"SELECT * FROM financials WHERE Symbol = '{stock_code}'"
             financial_data = pd.read_sql_query(query, conn)
             conn.close()
