@@ -21,9 +21,9 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
 
 EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
 logger = LoggerSetup()
-SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
-SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
-SHORT_MEANREVERSION = os.getenv("SHORT_MEANREVERSION")
+SHORT_MOMENTUM = "Short_Momentum"
+SHORT_EMABBCONFLUENCE = "Short_EMABBConfluence"
+SHORT_MEANREVERSION = "Short_MeanReversion"
 
 
 def perform_EmaBB_Confluence_strategy(stock_data_dict):

@@ -13,8 +13,8 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 
 logger = LoggerSetup()
-LONG_RATIO = os.getenv("LONG_RATIO")
-LONG_COMBO = os.getenv("LONG_COMBO")
+LONG_RATIO = "Long_Ratio"
+LONG_COMBO = "Long_Combo"
 
 FINANCIAL_DB_PATH = os.getenv("FINANCIAL_DB_PATH")
 
