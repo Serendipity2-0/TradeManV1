@@ -3,6 +3,8 @@ import undetected_chromedriver as uc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from time import sleep
 import pyotp
@@ -17,7 +19,7 @@ def login_in_zerodha(user_details):
     """
     The function `login_in_zerodha` logs in a user to Zerodha trading platform using their API key, API
     secret, username, password, and TOTP key.
-    
+
     :param user_details: user_details:
     :return: The function `login_in_zerodha` returns the `kite_access_token`, which is the access token
     generated after successfully logging in and authorizing the user with the Zerodha API using the
@@ -31,8 +33,10 @@ def login_in_zerodha(user_details):
     totp_key = user_details["TotpAccess"]
 
     global request_token, kite_access_token
-    driver = webdriver.Chrome(ChromeDriverManager().install())
-    # driver  = webdriver.Chrome()
+    chrome_options = Options()
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()), options=chrome_options
+    )
 
     driver.get(f"https://kite.trade/connect/login?api_key={api_key}&v=3")
 
