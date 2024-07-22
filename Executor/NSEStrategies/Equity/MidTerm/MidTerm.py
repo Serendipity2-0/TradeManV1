@@ -15,6 +15,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     read_strategy_table as read_strategy_table,
     get_db_connection as get_db_connection,
+    create_holding_strategy_table,
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
     Instrument as instrument_obj,
@@ -58,6 +59,7 @@ order_type = midterm_obj.GeneralParams.OrderType
 product_type = midterm_obj.GeneralParams.ProductType
 strategy_type = midterm_obj.GeneralParams.StrategyType
 desired_start_time_str = midterm_obj.get_entry_params().EntryTime
+midterm_prefix = midterm_obj.StrategyPrefix
 
 
 def get_today_stocks():
@@ -73,16 +75,16 @@ def get_today_stocks():
         # Load the data from the identified table "CombinedStocks"
         df = pd.read_sql_query("SELECT * FROM CombinedStocks", conn)
 
-        # Filter the rows where Mid_tfMomentum or Mid_tfEma column is 1
-        midterm_stocks_df = df[(df[MID_TFMOMENTUM] == 1) | (df[MID_TFEMA] == 1)]
+        # Filter the rows where any column name starting with "Mid_" is equal to 1
+        midterm_stocks_df = df[df.filter(regex="Mid_").eq(1).any(axis=1)]
 
         # Sort by AthLtpRatio in descending order and get the top 5 stocks
-        top_5_stocks_df = midterm_stocks_df.sort_values(
+        midterm_stocks = midterm_stocks_df.sort_values(
             by="AthLtpRatio", ascending=False
-        ).head(5)
-        return top_5_stocks_df
+        )
+        return midterm_stocks
     except Exception as e:
-        logger.error(f"Error getting today's stocks: {e}")
+        logger.error(f"Error getting today's stocks{e}")
         return pd.DataFrame()
 
 
@@ -111,106 +113,124 @@ def main():
 
     from Executor.NSEStrategies.Equity.Equity import signals_to_fb
 
-    top5_stocks_df = get_today_stocks()
-    if top5_stocks_df.empty:
+    selected_stocks_df = get_today_stocks()
+    symbol_list = selected_stocks_df["Symbol"].tolist()
+
+    mid_term_setups = [
+        col for col in selected_stocks_df.columns if col.startswith("Mid_")
+    ]
+    logger.info(f"Midterm setups: {mid_term_setups}")
+
+    if symbol_list == []:
         logger.info("No stocks selected for today in Midterm")
         return
     else:
-        symbol_list = top5_stocks_df["Symbol"].tolist()
-        logger.info(f"Stocks selected for today for Midterm: {symbol_list}")
-
-    # Display the filtered and sorted DataFrame
-    logger.info(f"Stocks selected for today: {symbol_list}")
+        logger.info(f"Stocks selected for today for MidTerm: {symbol_list}")
 
     trade_id_mapping = {}
 
-    users = fetch_strategy_users(strategy_name)
-    for user in users:
-        db_path = os.path.join(
-            os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{user['Tr_No']}_equity.db"
-        )
-        conn = get_db_connection(db_path)
-        holdings = read_strategy_table(conn, "Holdings")
-        py_holdings = holdings[holdings["trade_id"].str.startswith("PS")]
-        midterm_holdings = py_holdings[
-            py_holdings["setup"].isin([MID_TFMOMENTUM, MID_TFEMA])
-        ]
-        current_holdings_count = len(midterm_holdings)
-        logger.debug(
-            f"Current holdings for user {user['Tr_No']} for Midterm: {current_holdings_count}"
-        )
+    for setup_name in mid_term_setups:
+        setup_symbol_list = selected_stocks_df[selected_stocks_df[setup_name] == 1][
+            "Symbol"
+        ].tolist()
+        logger.debug(f"Stocks for {setup_name}: {setup_symbol_list}")
+        users = fetch_strategy_users(
+            setup_name.upper(), "Equity", "MidTerm"
+        )  # TODO refactor the name
+        for user in users:
+            db_path = os.path.join(
+                os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{user['Tr_No']}_equity.db"
+            )
+            conn = get_db_connection(db_path)
+            try:
+                holdings = read_strategy_table(conn, "Holdings")
+            except Exception:
+                # create a new table
+                create_holding_strategy_table(conn, "Holdings")
+            holdings = read_strategy_table(conn, "Holdings")
+            midterm_holdings = holdings[
+                holdings["trade_id"].str.startswith(midterm_prefix)
+            ]
+            setup_holdings = midterm_holdings[
+                midterm_holdings["setup"].isin([setup_name])
+            ]
+            current_holdings_count = len(setup_holdings)
+            logger.debug(
+                f"Current holdings for user {user['Tr_No']} for Midterm for {setup_name}: {current_holdings_count}"
+            )
 
-        if current_holdings_count < 6:
-            needed_orders = 6 - current_holdings_count
-            for index, symbol in enumerate(symbol_list):
-                if needed_orders == 0:
-                    break
+            if current_holdings_count < 3:
+                needed_orders = 3 - current_holdings_count
+                for index, symbol in enumerate(setup_symbol_list):
+                    if needed_orders == 0:
+                        break  # Stop processing if no more orders are needed
 
-                stock_row = top5_stocks_df[top5_stocks_df["Symbol"] == symbol].iloc[0]
-                if stock_row[MID_TFMOMENTUM] == 1:
-                    setup_name = MID_TFMOMENTUM
-                elif stock_row[MID_TFEMA] == 1:
-                    setup_name = MID_TFEMA
-                else:
-                    setup_name = "Unknown"
+                    logger.info(f"Setup for {symbol}: {setup_name}")
+                    new_base = midterm_obj.reload_strategy(strategy_name)
+                    if symbol not in trade_id_mapping:
+                        trade_id_mapping[symbol] = new_base.NextTradeId
 
-                # Log the setup name
-                logger.info(f"Setup for {symbol}: {setup_name}")
+                    trade_id = trade_id_mapping[symbol]
 
-                new_base = midterm_obj.reload_strategy(midterm_obj.StrategyName)
-                if symbol not in trade_id_mapping:
-                    trade_id_mapping[symbol] = new_base.NextTradeId
+                    exchange_token = instrument_obj().get_exchange_token_by_name(
+                        symbol, "NSE"
+                    )
+                    ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+                    ltp = round(ltp * 20) / 20
+                    order_details = [
+                        {
+                            "strategy": strategy_name,
+                            "signal": "Long",
+                            "base_symbol": symbol,
+                            "exchange_token": exchange_token,
+                            "transaction_type": "BUY",
+                            "order_type": order_type,
+                            "product_type": product_type,
+                            "order_mode": "MainEntry",
+                            "trade_id": trade_id,
+                            "limit_prc": ltp,
+                            "trade_mode": os.getenv("TRADE_MODE"),
+                            "setup": setup_name.upper(),
+                        }
+                    ]
+                    order_to_place = assign_trade_id(order_details)
+                    qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
+                    strategy_amplifier = fetch_strategy_amplifier(strategy_name)
+                    update_qty_user_firebase(
+                        strategy_name=setup_name.upper(),
+                        avg_sl_points_or_ltp=ltp,
+                        qty_amplifier=qty_amplifier,
+                        strategy_amplifier=strategy_amplifier,
+                        asset_segment="Equity",
+                        asset_term="MidTerm",
+                    )
+                    logger.info(order_to_place)
+                    signals_to_fb(strategy_name, order_to_place, trade_id)
+                    order_status = place_order_single_user([user], order_to_place)
+                    logger.debug(f"Orders placed for {symbol}: {order_to_place}")
 
-                trade_id = trade_id_mapping[symbol]
+                    # Should come up with a better way to check for failed orders
 
-                exchange_token = instrument_obj().get_exchange_token_by_name(
-                    symbol, "NSE"
+                    if os.getenv("TRADE_MODE") != "PAPER":
+                        if user["Tr_No"] == os.getenv(
+                            "ZERODHA_PRIMARY_ACCOUNT"
+                        ) and any(
+                            order["order_status"] == "FAIL" for order in order_status
+                        ):
+                            # Reassign the trade ID to the next symbol if there is one
+                            if index + 1 < len(symbol_list):
+                                next_symbol = symbol_list[index + 1]
+                                trade_id_mapping[next_symbol] = trade_id
+                                logger.debug(
+                                    f"Trade ID {trade_id} reassigned from {symbol} to {next_symbol}"
+                                )
+
+                    needed_orders -= 1
+
+                logger.debug(
+                    f"Updated holdings count for user {user['Tr_No']} should be 3"
                 )
-                ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
-                ltp = round(ltp * 20) / 20
-                order_details = [
-                    {
-                        "strategy": strategy_name,
-                        "signal": "Long",
-                        "base_symbol": symbol,
-                        "exchange_token": exchange_token,
-                        "transaction_type": "BUY",
-                        "order_type": order_type,
-                        "product_type": product_type,
-                        "order_mode": "MainEntry",
-                        "trade_id": trade_id,
-                        "limit_prc": ltp,
-                        "trade_mode": os.getenv("TRADE_MODE"),
-                        "setup": setup_name,
-                    }
-                ]
-                order_to_place = assign_trade_id(order_details)
-                qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
-                strategy_amplifier = fetch_strategy_amplifier(strategy_name)
-                update_qty_user_firebase(
-                    strategy_name, ltp, 1, qty_amplifier, strategy_amplifier, setup_name
-                )
-                signals_to_fb(strategy_name, order_to_place, trade_id)
-                order_status = place_order_single_user([user], order_to_place)
-                logger.debug(f"Orders placed for {symbol}: {order_to_place}")
-
-                # Should come up with a better way to check for failed orders
-                if os.getenv("TRADE_MODE") != "PAPER":
-                    if user["Tr_No"] == "Tr00" and any(
-                        order["order_status"] == "FAIL" for order in order_status
-                    ):
-                        # Reassign the trade ID to the next symbol if there is one
-                        if index + 1 < len(symbol_list):
-                            next_symbol = symbol_list[index + 1]
-                            trade_id_mapping[next_symbol] = trade_id
-                            logger.debug(
-                                f"Trade ID {trade_id} reassigned from {symbol} to {next_symbol}"
-                            )
-
-                needed_orders -= 1
-
-            logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 6")
 
 
-if __name__ == "__main__":
+if "__main__" == __name__:
     main()

@@ -121,6 +121,35 @@ def read_strategy_table(conn, strategy_name):
     return df
 
 
+def create_holding_strategy_table(conn, table_name):
+    """
+    Create a new table in the database.
+
+    Parameters:
+    conn (sqlite3.Connection): SQLite connection object
+    table_name (str): The name of the table to create
+    """
+    try:
+        query = f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
+            trade_id TEXT PRIMARY KEY,
+            trading_symbol TEXT,
+            signal TEXT,
+            qty INTEGER,
+            margin_utilized REAL,
+            entry_time TEXT,
+            entry_prc REAL,
+            tax REAL,
+            setup TEXT
+        )
+        """
+        cursor = conn.cursor()
+        cursor.execute(query)
+        conn.commit()
+    except Exception as e:
+        logger.error(f"An error occurred while creating the table {table_name}: {e}")
+
+
 def fetch_qty_for_holdings_sqldb(Tr_No, trade_id):
     """
     Fetch the quantity from the Holdings table that matches the first part of the trade_id.
