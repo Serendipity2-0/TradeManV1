@@ -739,7 +739,7 @@ def fetch_user_details_by_username(username: str):
     return user_details
 
 
-def update_user_details(user_details):
+def update_user_section(user_id: str, section: str, details: dict):
     """
     Update user details by replacing the existing details with the new details.
 
@@ -749,5 +749,6 @@ def update_user_details(user_details):
     Returns:
         str: A message indicating successful update.
     """
-    update_fields_firebase(CLIENTS_COLLECTION, user_details.get("Tr_No"), user_details)
+    path = f"{user_id}/{section}"
+    update_fields_firebase(CLIENTS_COLLECTION, path, details)
     return "Updated Successfully"
