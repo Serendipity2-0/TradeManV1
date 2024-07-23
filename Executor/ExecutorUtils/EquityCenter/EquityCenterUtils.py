@@ -30,7 +30,6 @@ EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
 TODAY_STOCK_DATA_DB_PATH = os.getenv("TODAY_STOCK_DATA_DB_PATH")
 
 
-
 def get_stock_codes():
     """
     Fetch stock codes from a CSV file specified in the environment variables.
@@ -86,6 +85,9 @@ def get_financial_data(stock_symbols):
             stock = yf.Ticker(f"{symbol}.NS")
             info = stock.info
 
+            if info is None or info == {}:
+                logger.warning(f"No financial data found for {symbol}")
+                continue
             # Extract necessary financial information
             total_revenue = info.get("totalRevenue", np.nan)
             operating_cashflow = info.get(
@@ -95,7 +97,15 @@ def get_financial_data(stock_symbols):
             book_value_per_share = info.get("bookValue", np.nan)
             shares_outstanding = info.get("sharesOutstanding", np.nan)
             revenue_growth = info.get("revenueGrowth", np.nan)
-
+            if (
+                total_revenue is np.nan
+                or operating_cashflow is np.nan
+                or total_debt is np.nan
+                or book_value_per_share is np.nan
+                or shares_outstanding is np.nan
+            ):
+                logger.warning(f"No financial data found for {symbol}")
+                continue
             # Calculate Operating Profit Margin
             operating_profit_margin = (
                 (operating_cashflow / total_revenue)
@@ -370,53 +380,57 @@ def store_ohlcv_stock_data_sqldb():
             stock_data_daily = get_stock_data(stock, period="1y", duration="1d")
             stock_data_weekly = get_stock_data(stock, period="2y", duration="1wk")
 
-            if stock_data_daily is not None and stock_data_weekly is not None:
-                combined_data = pd.DataFrame(
-                    {
-                        "Date": stock_data_daily.index.date,
-                        "DailyOpen": stock_data_daily["Open"],
-                        "DailyHigh": stock_data_daily["High"],
-                        "DailyLow": stock_data_daily["Low"],
-                        "DailyClose": stock_data_daily["Close"],
-                        "DailyVolume": stock_data_daily["Volume"],
-                        "WeeklyOpen": stock_data_weekly["Open"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                        "WeeklyHigh": stock_data_weekly["High"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                        "WeeklyLow": stock_data_weekly["Low"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                        "WeeklyClose": stock_data_weekly["Close"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                        "WeeklyVolume": stock_data_weekly["Volume"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                    }
-                )
+            if (stock_data_daily is None or stock_data_daily.empty) or (
+                stock_data_weekly is None or stock_data_weekly.empty
+            ):
+                logger.warning(f"No OHLCV data found for {stock}")
+                continue
+            combined_data = pd.DataFrame(
+                {
+                    "Date": stock_data_daily.index.date,
+                    "DailyOpen": stock_data_daily["Open"],
+                    "DailyHigh": stock_data_daily["High"],
+                    "DailyLow": stock_data_daily["Low"],
+                    "DailyClose": stock_data_daily["Close"],
+                    "DailyVolume": stock_data_daily["Volume"],
+                    "WeeklyOpen": stock_data_weekly["Open"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                    "WeeklyHigh": stock_data_weekly["High"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                    "WeeklyLow": stock_data_weekly["Low"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                    "WeeklyClose": stock_data_weekly["Close"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                    "WeeklyVolume": stock_data_weekly["Volume"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                }
+            )
 
-                table_name = stock.replace(".", "_")
-                cursor.execute(
-                    f"""
-                    CREATE TABLE IF NOT EXISTS "{table_name}" (
-                        Date TEXT,
-                        DailyOpen REAL,
-                        DailyHigh REAL,
-                        DailyLow REAL,
-                        DailyClose REAL,
-                        DailyVolume INTEGER,
-                        WeeklyOpen REAL,
-                        WeeklyHigh REAL,
-                        WeeklyLow REAL,
-                        WeeklyClose REAL,
-                        WeeklyVolume INTEGER
-                    )
-                    """
+            table_name = stock.replace(".", "_")
+            cursor.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS "{table_name}" (
+                    Date TEXT,
+                    DailyOpen REAL,
+                    DailyHigh REAL,
+                    DailyLow REAL,
+                    DailyClose REAL,
+                    DailyVolume INTEGER,
+                    WeeklyOpen REAL,
+                    WeeklyHigh REAL,
+                    WeeklyLow REAL,
+                    WeeklyClose REAL,
+                    WeeklyVolume INTEGER
                 )
+                """
+            )
 
-                combined_data.to_sql(table_name, conn, if_exists="replace", index=False)
+            combined_data.to_sql(table_name, conn, if_exists="replace", index=False)
 
         conn.commit()
         conn.close()
