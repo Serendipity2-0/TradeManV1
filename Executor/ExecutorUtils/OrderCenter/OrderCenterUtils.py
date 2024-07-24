@@ -34,75 +34,70 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     fetch_qty_for_holdings_sqldb,
 )
 
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 
-def calculate_qty_for_strategies(
-    capital, risk, avg_sl_points, lot_size, qty_amplifier=None, strategy_amplifier=None
-):
+
+def calculate_qty_for_equity(free_cash: float, ltp: float) -> int:
+    """
+    Calculate the quantity for equity based on free cash and last traded price.
+
+    :param free_cash: Available free cash for the strategy
+    :param ltp: Last traded price of the instrument
+    :return: Calculated quantity as an integer
+    """
+    try:
+        qty = int(free_cash / ltp)
+        return max(qty, 0)  # Ensure non-negative quantity
+    except Exception as e:
+        logger.error(f"Error calculating quantity for equity: {e}")
+        return 0
+
+
+def calculate_qty_for_derivatives(
+    capital: float,
+    risk: float,
+    avg_sl_points: float,
+    lot_size: int,
+    qty_amplifier: float = None,
+    strategy_amplifier: float = None,
+) -> int:
     """
     Calculate the quantity for a trading strategy based on various parameters.
 
-    Args:
-        capital (float): The capital available for trading.
-        risk (float): The percentage of capital to be risked.
-        avg_sl_points (float): The average stop-loss points for the strategy.
-        lot_size (int): The lot size of the instrument.
-        qty_amplifier (float, optional): The quantity amplifier percentage. Defaults to None.
-        strategy_amplifier (float, optional): The strategy amplifier percentage. Defaults to None.
-
-    Returns:
-        int: The calculated quantity for the strategy.
+    :param capital: The capital available for trading.
+    :param risk: The percentage of capital to be risked.
+    :param avg_sl_points: The average stop-loss points for the strategy.
+    :param lot_size: The lot size of the instrument.
+    :param qty_amplifier: The quantity amplifier percentage. Defaults to None.
+    :param strategy_amplifier: The strategy amplifier percentage. Defaults to None.
+    :return: The calculated quantity for the strategy.
     """
     logger.info(
-        f"Calculating quantity for strategy with capital: {capital}, risk: {risk}, avg_sl_points: {avg_sl_points}, lot_size: {lot_size}"
+        f"Calculating quantity for strategy with capital: {capital}, risk: {risk}, "
+        f"avg_sl_points: {avg_sl_points}, lot_size: {lot_size}"
     )
     try:
-        # Set default multipliers if amplifiers are not provided
-        qty_multiplier = (
-            1 + (qty_amplifier / 100) if qty_amplifier is not None else 1
-        )  # qty_multiplier is fetched from the marketinfo
+        qty_multiplier = 1 + (qty_amplifier / 100) if qty_amplifier is not None else 1
         strategy_multiplier = (
             1 + (strategy_amplifier / 100) if strategy_amplifier is not None else 1
-        )  # strategy_multiplier is fetched from the strategy
+        )
 
-        if avg_sl_points is not None:
-            # Calculate the base raw quantity
+        if avg_sl_points:
             raw_quantity = ((risk / 100) * capital) / avg_sl_points
-
-            # Adjust raw quantity with multipliers
             raw_quantity *= qty_multiplier * strategy_multiplier
-
-            # Calculate the number of lots
-            number_of_lots = raw_quantity / lot_size
-
-            # Round up to the nearest whole number of lots
-            number_of_lots = math.ceil(number_of_lots)
-
-            # Calculate the final quantity as a multiple of lot size
+            number_of_lots = math.ceil(raw_quantity / lot_size)
             quantity = int(number_of_lots * lot_size)
-            logger.debug(f"Final adjusted quantity: {quantity}")
         else:
-            # Adjusted risk to take into account multipliers
             adjusted_risk_percentage = risk / (qty_multiplier * strategy_multiplier)
             capital_at_risk = capital * (adjusted_risk_percentage / 100)
-
-            # Calculate the number of effective lots that can be bought
             effective_lots = capital_at_risk / lot_size
-
-            # Final quantity is the number of lots times the lot size, rounded up to the nearest lot
             quantity = math.ceil(effective_lots) * lot_size
 
-            logger.debug(
-                f"Quantity calculated using default strategy without avg_sl_points: {quantity}"
-            )
-
+        logger.debug(f"Final calculated quantity: {quantity}")
         return quantity
-    except ZeroDivisionError as e:
-        logger.error(
-            f"Error calculating quantity for strategy due to division by zero: {e}"
-        )
-        return 0
     except Exception as e:
-        logger.error(f"General error calculating quantity for strategy: {e}")
+        logger.error(f"Error calculating quantity for strategy: {e}")
         return 0
 
 
@@ -124,17 +119,42 @@ async def place_order_for_strategy(
 
                 # Create a new order dictionary for each user
                 order_with_user_and_broker = order.copy()
-                order_with_user_and_broker.update(
-                    {
-                        "broker": user["Broker"]["BrokerName"],
-                        "username": user["Broker"]["BrokerUsername"],
-                        "qty": user["Strategies"][order.get("strategy")]["Qty"]
-                        if order_qty_mode != "Holdings"
+
+                strategy_type = (
+                    "Equity"
+                    if order.get("strategy") in EQUITY_STRATEGY_LIST
+                    else "Derivatives"
+                    if order.get("strategy") in DERIVATIVES_STRATEGY_LIST
+                    else None
+                )
+
+                if strategy_type:
+                    qty = (
+                        user["Strategies"][strategy_type][order.get("strategy")][
+                            order.get("setup")
+                        ]["Qty"]
+                        if strategy_type == "Equity" and order_qty_mode != "Holdings"
+                        else user["Strategies"][strategy_type][order.get("strategy")][
+                            "Qty"
+                        ]
+                        if strategy_type == "Derivatives"
+                        and order_qty_mode != "Holdings"
                         else fetch_qty_for_holdings_sqldb(
                             user["Tr_No"], order.get("trade_id")
-                        ),
-                    }
-                )
+                        )
+                    )
+
+                    order_with_user_and_broker.update(
+                        {
+                            "broker": user["Broker"]["BrokerName"],
+                            "username": user["Broker"]["BrokerUsername"],
+                            "qty": qty,
+                        }
+                    )
+
+                else:
+                    logger.error(f"Unknown strategy: {order.get('strategy')}")
+
                 # Calculate tax for this specific order
                 tax = get_orders_tax(order_with_user_and_broker, user_credentials)
                 order_with_user_and_broker["tax"] = tax
@@ -183,8 +203,15 @@ async def place_order_with_tax(order, user_credentials, tr_no, strategy):
             # Add the tax information to the status
             status["tax"] = order.get("tax")
 
-        # Update Firebase with order status
-        update_path = f"Strategies/{strategy}/TradeState/orders"
+        if strategy in EQUITY_STRATEGY_LIST:
+            update_path = (
+                f"Strategies/Equity/{strategy}/{order.get('setup')}/TradeState/orders"
+            )
+        elif strategy in DERIVATIVES_STRATEGY_LIST:
+            update_path = f"Strategies/Derivatives/{strategy}/TradeState/orders"
+        else:
+            logger.error(f"Unknown strategy: {strategy}")
+
         push_orders_firebase(CLIENTS_USER_FB_DB, tr_no, status, update_path)
 
         if status.get("message", "") == "Order placement failed":

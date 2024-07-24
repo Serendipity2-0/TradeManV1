@@ -17,7 +17,7 @@ load_dotenv(ENV_PATH)
 
 # Import functions from the module
 from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import (
-    calculate_qty_for_strategies,
+    calculate_qty_for_derivatives,
     modify_orders_for_strategy,
     retrieve_order_id,
 )
@@ -61,7 +61,7 @@ def sample_data():
 
 def test_calculate_qty_basic():
     # Test with basic input values
-    result = calculate_qty_for_strategies(
+    result = calculate_qty_for_derivatives(
         capital=10000, risk=1, avg_sl_points=10, lot_size=100
     )
     assert result == 100  # Expected quantity for basic scenario
@@ -69,7 +69,7 @@ def test_calculate_qty_basic():
 
 def test_calculate_qty_with_qty_amplifier():
     # Test with a quantity amplifier
-    result = calculate_qty_for_strategies(
+    result = calculate_qty_for_derivatives(
         capital=10000, risk=1, avg_sl_points=10, lot_size=100, qty_amplifier=10
     )
     expected_quantity = math.ceil(((10000 * 0.01) / 10) * 1.1 / 100) * 100
@@ -78,7 +78,7 @@ def test_calculate_qty_with_qty_amplifier():
 
 def test_calculate_qty_with_strategy_amplifier():
     # Test with a strategy amplifier
-    result = calculate_qty_for_strategies(
+    result = calculate_qty_for_derivatives(
         capital=10000, risk=1, avg_sl_points=10, lot_size=100, strategy_amplifier=20
     )
     expected_quantity = math.ceil(((10000 * 0.01) / 10) * 1.2 / 100) * 100
@@ -92,7 +92,7 @@ def test_calculate_qty_no_avg_sl_points():
     lot_size = 50  # Size of each lot
 
     # Call the function
-    result = calculate_qty_for_strategies(
+    result = calculate_qty_for_derivatives(
         capital=capital, risk=risk, avg_sl_points=None, lot_size=lot_size
     )
 
@@ -122,7 +122,7 @@ def test_calculate_qty_no_avg_sl_points():
 
 def test_calculate_qty_division_by_zero():
     # Test to handle division by zero
-    result = calculate_qty_for_strategies(
+    result = calculate_qty_for_derivatives(
         capital=10000, risk=0, avg_sl_points=10, lot_size=100
     )
     assert result == 0  # Division by zero should return 0
@@ -130,7 +130,7 @@ def test_calculate_qty_division_by_zero():
 
 def test_calculate_qty_zero_avg_sl_points():
     # Test with zero avg_sl_points to simulate division by zero
-    result = calculate_qty_for_strategies(
+    result = calculate_qty_for_derivatives(
         capital=10000, risk=1, avg_sl_points=0, lot_size=100
     )
     assert result == 0  # Division by zero should return 0
@@ -138,7 +138,7 @@ def test_calculate_qty_zero_avg_sl_points():
 
 def test_calculate_qty_general_error():
     # Test with invalid input causing a general error
-    result = calculate_qty_for_strategies(
+    result = calculate_qty_for_derivatives(
         capital="invalid", risk=1, avg_sl_points=10, lot_size=100
     )
     assert result == 0  # Invalid input should cause general error and return 0
