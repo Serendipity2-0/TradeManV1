@@ -538,19 +538,24 @@ def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
     kite.set_access_token(
         access_token=primary_account_session_id["Broker"]["SessionId"]
     )
-
-    if exchange_token:
-        if segment:
-            kite_token = Instrument().get_kite_token_by_exchange_token(
-                exchange_token, segment
-            )
+    try:
+        if exchange_token:
+            if segment:
+                kite_token = Instrument().get_kite_token_by_exchange_token(
+                    exchange_token, segment
+                )
+            else:
+                kite_token = Instrument().get_kite_token_by_exchange_token(
+                    exchange_token
+                )
+            ltp = kite.ltp(kite_token)
+            return ltp[str(kite_token)]["last_price"]
         else:
-            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
-        ltp = kite.ltp(kite_token)
-        return ltp[str(kite_token)]["last_price"]
-    else:
-        ltp = kite.ltp(kite_token)
-        return ltp[str(kite_token)]["last_price"]
+            ltp = kite.ltp(kite_token)
+            return ltp[str(kite_token)]["last_price"]
+    except Exception as e:
+        logger.error(f"An error occurred while fetching LTP: {e}")
+        return None
 
 
 def get_single_quote(kite_token=None, exchange_token=None, segment=None):

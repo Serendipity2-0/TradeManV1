@@ -14,7 +14,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 logger = LoggerSetup()
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
-    download_json,
+    download_firebase_json,
 )
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import CLIENTS_USER_FB_DB
@@ -44,14 +44,13 @@ def sweep_sl_order():
 
     active_users = fetch_active_users_from_firebase()
     logger.debug(f"Sweeping SL orders for {len(active_users)} users.")
-
     for user in active_users:
         try:
             tradebook = get_today_orders_for_brokers(user)
             counter_order_detail = create_counter_order_details(tradebook, user)
             if counter_order_detail:
                 logger.debug(
-                    f"placing sweep order for  with details {counter_order_detail}"
+                    f"placing sweep order for with details {counter_order_detail}"
                 )
                 asyncio.run(
                     OrderCenterUtils.place_order_for_strategy(
@@ -110,7 +109,7 @@ def main():
     2. Calls the function to sweep stop-loss orders for all active users.
     3. Calls the function to sweep hedge orders for all active users.
     """
-    download_json(CLIENTS_USER_FB_DB, "before_sweep_orders")
+    download_firebase_json(CLIENTS_USER_FB_DB, "before_sweep_orders")
     sweep_sl_order()
     sweep_hedge_orders()
 

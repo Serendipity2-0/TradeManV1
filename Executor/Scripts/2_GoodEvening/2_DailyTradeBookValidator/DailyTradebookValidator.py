@@ -19,7 +19,7 @@ CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
-    download_json,
+    download_firebase_json,
 )
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
@@ -265,7 +265,7 @@ def main():
     2. Calls the function to validate the tradebook for all active users.
     3. Calls the function to clear extra orders from Firebase.
     """
-    download_json(CLIENTS_USER_FB_DB, "before_daily_tradebook_validator")
+    download_firebase_json(CLIENTS_USER_FB_DB, "before_daily_tradebook_validator")
     daily_tradebook_validator()
     clear_extra_orders_firebase()
 

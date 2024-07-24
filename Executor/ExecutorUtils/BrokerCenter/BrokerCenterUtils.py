@@ -176,12 +176,13 @@ def fetch_list_of_strategies_from_firebase():
     """
     try:
         strategies = []
-        acounts = fetch_active_users_from_firebase()
-        for account in acounts:
+        accounts = fetch_active_users_from_firebase()
+        for account in accounts:
             for trade_type in ["Equity", "Derivatives"]:
-                for strategy in account["Strategies"][trade_type]:
-                    if strategy not in strategies:
-                        strategies.append(strategy)
+                if trade_type in account.get("Strategies", {}):
+                    for strategy in account["Strategies"][trade_type]:
+                        if strategy not in strategies:
+                            strategies.append(strategy)
         return strategies
     except Exception as e:
         logger.error(f"Error while fetching strategies from Firebase: {e}")

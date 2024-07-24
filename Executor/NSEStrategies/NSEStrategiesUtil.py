@@ -480,9 +480,8 @@ def fetch_strategy_users(strategy_name, asset_segment=None, asset_term=None):
     The `fetch_strategy_users` function retrieves the list of users associated with the given strategy from Firebase.
 
     :param strategy_name: The name of the strategy
-    :param asset_class: The asset class of the strategy(Equity, Derivatives)
-    :param asset_term: The asset term of the strategy(Long, Short or strategy in derviatives)
-    :param asset_type: The asset type of the strategy(Strategy in equity)
+    :param asset_segment: The asset segment (e.g., "Equity", "Derivatives")
+    :param asset_term: The asset term (e.g., "Mid Term")
     :type strategy_name: str
     :return: A list of users associated with the strategy
     """
@@ -495,9 +494,9 @@ def fetch_strategy_users(strategy_name, asset_segment=None, asset_term=None):
         strategy_users = []
         for user in active_users:
             if asset_segment is not None:
-                path = user["Strategies"][asset_segment]
+                path = user["Strategies"].get(asset_segment, {})
             if asset_term is not None:
-                path = path[asset_term]
+                path = path.get(asset_term, {})
             if strategy_name in path:
                 strategy_users.append(user)
         return strategy_users
