@@ -707,6 +707,7 @@ def get_user_details_by_username(username: str):
 def update_user_section(user_id: str, section: str, details: dict):
     """
     Update a specific section of user details.
+    NOTE: If the section is at the root level we need to send the section as root.
 
     Args:
         user_id (str): The ID of the user to update.

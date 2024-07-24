@@ -755,11 +755,28 @@ def update_user_section(user_id: str, section: str, details: dict):
     Update user details by replacing the existing details with the new details.
 
     Args:
-        user_details : The new user details.
+        user_id (str): The ID of the user to update.
+        section (str): The section to update. Use "" for root-level updates.
+        details (dict): The new details to update.
 
     Returns:
         str: A message indicating successful update.
     """
-    path = f"{user_id}/{section}"
+
+    if section == "root":
+        logger.info("Updating at root level")
+        path = user_id
+    else:
+        logger.info(f"Updating section: {section}")
+        path = f"{user_id}/{section}"
+
+    # Ensure boolean values are correctly parsed
+    for key, value in details.items():
+        if isinstance(value, str):
+            if value.lower() == "true":
+                details[key] = True
+            elif value.lower() == "false":
+                details[key] = False
+
     update_fields_firebase(CLIENTS_COLLECTION, path, details)
     return "Updated Successfully"
