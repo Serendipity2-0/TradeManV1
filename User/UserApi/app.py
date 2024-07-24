@@ -711,13 +711,24 @@ def get_user_list_from_db():
     Returns:
         list: A list of user names.
     """
-    user_list = fetch_collection_data_firebase(CLIENTS_COLLECTION)
-    user_names = [
-        profile["Profile"]["Name"]
-        for profile in user_list.values()
-        if profile["Profile"]["Name"]
-    ]
-    return user_names
+    try:
+        user_list = fetch_collection_data_firebase(CLIENTS_COLLECTION)
+        user_names = []
+        for (
+            key,
+            profile,
+        ) in user_list.items():  # Changed to items() to get both key and value
+            if "Profile" in profile and "Name" in profile["Profile"]:
+                user_names.append(profile["Profile"]["Name"])
+            else:
+                # Raising ValueError including the key of the profile
+                raise ValueError(
+                    f"Missing 'Name' or 'Profile' key in user data {key}: {profile}"
+                )
+        return user_names
+    except Exception as e:
+        # Catching all exceptions and raising HTTPException with the error message
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def fetch_user_details_by_username(username: str):
