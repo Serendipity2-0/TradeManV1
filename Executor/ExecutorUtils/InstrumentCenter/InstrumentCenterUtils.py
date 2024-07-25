@@ -395,7 +395,10 @@ class Instrument:
         Returns:
             pd.DataFrame: The filtered DataFrame.
         """
-        return self._dataframe[self._dataframe["Symbol"] == name]
+        filtered_data = self._dataframe[self._dataframe["Symbol"] == name]
+        if filtered_data.empty:
+            filtered_data = self._dataframe[self._dataframe["Trading Symbol"] == name]
+        return filtered_data
 
     def get_exchange_token_by_name(self, name, segment=None):
         """
