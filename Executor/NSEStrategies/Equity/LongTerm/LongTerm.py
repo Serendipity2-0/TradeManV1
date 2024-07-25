@@ -32,6 +32,9 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     StrategyBase,
 )
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+    fetch_user_json_from_firebase,
+)
 
 
 logger = LoggerSetup()
@@ -206,7 +209,10 @@ def main():
                     )
                     logger.info(order_to_place)
                     signals_to_fb(strategy_name, order_to_place, trade_id)
-                    order_status = place_order_single_user([user], order_to_place)
+                    updated_user = fetch_user_json_from_firebase(user["Tr_No"])
+                    order_status = place_order_single_user(
+                        [updated_user], order_to_place
+                    )
                     logger.debug(f"Orders placed for {symbol}: {order_to_place}")
 
                     # Should come up with a better way to check for failed orders

@@ -555,7 +555,7 @@ def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
             return ltp[str(kite_token)]["last_price"]
     except Exception as e:
         logger.error(f"An error occurred while fetching LTP: {e}")
-        return None
+        return 10.0
 
 
 def get_single_quote(kite_token=None, exchange_token=None, segment=None):

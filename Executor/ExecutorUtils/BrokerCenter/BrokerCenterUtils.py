@@ -304,6 +304,22 @@ def fetch_holdings_value_for_user_broker(user):
         return firstock_adapter.fetch_firstock_holdings_value(user)
 
 
+def fetch_user_json_from_firebase(tr_no):
+    """
+    Fetches user details from Firebase based on the Tr_No.
+
+    Args:
+        tr_no (str): The Tr_No of the user.
+
+    Returns:
+        dict: User details for the specified Tr_No.
+    """
+    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
+    for user in user_details:
+        if user_details[user]["Tr_No"] == tr_no:
+            return user_details[user]
+
+
 def fetch_user_credentials_firebase(broker_user_name):
     """
     Fetches user credentials from Firebase based on the broker username.
