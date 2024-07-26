@@ -1,5 +1,4 @@
 import os
-import sqlite3
 import sys
 from datetime import datetime
 from time import sleep
@@ -399,28 +398,47 @@ def process_orders_for_strategy(strategy_orders):
     :return: A dictionary containing processed trades organized by trade prefix.
     """
     processed_trades = {}
-    for order in strategy_orders:
+
+    # Convert to list if input is a dictionary
+    if isinstance(strategy_orders, dict):
+        orders_to_process = list(strategy_orders.values())
+    elif isinstance(strategy_orders, list):
+        orders_to_process = strategy_orders
+    else:
+        raise TypeError("strategy_orders must be either a dictionary or a list")
+
+    for order in orders_to_process:
+        if not isinstance(order, dict) or "trade_id" not in order:
+            logger.warning(f"Skipping invalid order: {order}")
+            continue
+
         try:
-            if order is None:
-                continue
-            logger.debug(f"order[trade_id] : {order['trade_id']}")
-            trade_prefix = order["trade_id"].split("_")[0]
+            trade_id = order["trade_id"]
+            logger.debug(f"Processing order with trade_id: {trade_id}")
+
+            trade_prefix = trade_id.split("_")[0]
+
             if trade_prefix not in processed_trades:
                 processed_trades[trade_prefix] = {
                     "entry_orders": [],
                     "exit_orders": [],
                     "hedge_orders": [],
                 }
-            if "EN" in order["trade_id"] and "HO" not in order["trade_id"]:
-                processed_trades[trade_prefix]["entry_orders"].append(order)
-            elif "EX" in order["trade_id"] and "HO" not in order["trade_id"]:
-                processed_trades[trade_prefix]["exit_orders"].append(order)
-            elif "HO" in order["trade_id"]:
+
+            if "HO" in trade_id:
                 processed_trades[trade_prefix]["hedge_orders"].append(order)
+            elif "EN" in trade_id:
+                processed_trades[trade_prefix]["entry_orders"].append(order)
+            elif "EX" in trade_id:
+                processed_trades[trade_prefix]["exit_orders"].append(order)
+            else:
+                logger.warning(f"Unrecognized order type in trade_id: {trade_id}")
+
         except Exception as e:
             logger.error(f"Error processing order: {e}")
-            continue
-    logger.debug(f"processed_trades: {processed_trades}")
+            logger.error(traceback.format_exc())
+
+    logger.debug(f"Processed trades: {processed_trades}")
     return processed_trades
 
 
@@ -662,16 +680,24 @@ def process_holdings_orders(
     5. Dumps the holdings data into the user's SQLite database.
     """
     try:
-        main_orders = [
-            order
-            for order in strategy_orders
-            if order and "MO" in order.get("trade_id", "")
-        ]
-        hedge_orders = [
-            order
-            for order in strategy_orders
-            if order and "HO" in order.get("trade_id", "")
-        ]
+        if isinstance(strategy_orders, dict):
+            orders_to_filter = strategy_orders.values()
+        elif isinstance(strategy_orders, list):
+            orders_to_filter = strategy_orders
+        else:
+            raise TypeError("strategy_orders must be either a dictionary or a list")
+
+        main_orders = []
+        hedge_orders = []
+
+        for order in orders_to_filter:
+            if not isinstance(order, dict):
+                continue
+            trade_id = order.get("trade_id", "")
+            if "MO" in trade_id:
+                main_orders.append(order)
+            elif "HO" in trade_id:
+                hedge_orders.append(order)
 
         avg_hedge_order_price = (
             sum(float(order["avg_prc"]) for order in hedge_orders) / len(hedge_orders)
@@ -715,6 +741,7 @@ def process_holdings_orders(
             holdings_data[trade_type].append(holding)
     except Exception as e:
         logger.error(f"Error processing orders for {strategy_name}: {e}")
+        logger.error(traceback.format_exc())
 
 
 def process_n_log_trade():
