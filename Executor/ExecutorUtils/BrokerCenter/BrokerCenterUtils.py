@@ -176,12 +176,13 @@ def fetch_list_of_strategies_from_firebase():
     """
     try:
         strategies = []
-        acounts = fetch_active_users_from_firebase()
-        for account in acounts:
+        accounts = fetch_active_users_from_firebase()
+        for account in accounts:
             for trade_type in ["Equity", "Derivatives"]:
-                for strategy in account["Strategies"][trade_type]:
-                    if strategy not in strategies:
-                        strategies.append(strategy)
+                if trade_type in account.get("Strategies", {}):
+                    for strategy in account["Strategies"][trade_type]:
+                        if strategy not in strategies:
+                            strategies.append(strategy)
         return strategies
     except Exception as e:
         logger.error(f"Error while fetching strategies from Firebase: {e}")
@@ -301,6 +302,22 @@ def fetch_holdings_value_for_user_broker(user):
         return alice_adapter.fetch_aliceblue_holdings_value(user)
     elif user["Broker"]["BrokerName"] == FIRSTOCK:
         return firstock_adapter.fetch_firstock_holdings_value(user)
+
+
+def fetch_user_json_from_firebase(tr_no):
+    """
+    Fetches user details from Firebase based on the Tr_No.
+
+    Args:
+        tr_no (str): The Tr_No of the user.
+
+    Returns:
+        dict: User details for the specified Tr_No.
+    """
+    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
+    for user in user_details:
+        if user_details[user]["Tr_No"] == tr_no:
+            return user_details[user]
 
 
 def fetch_user_credentials_firebase(broker_user_name):

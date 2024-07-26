@@ -21,7 +21,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 logger = LoggerSetup()
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
-    download_json,
+    download_firebase_json,
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
@@ -233,7 +233,7 @@ def main():
     3. Pauses for a brief period.
     4. Creates and sends the consolidated report PDF.
     """
-    download_json(CLIENTS_USER_FB_DB, "before_eod_report")
+    download_firebase_json(CLIENTS_USER_FB_DB, "before_eod_report")
     active_users = fetch_active_users_from_firebase()
     active_strategies = fetch_active_strategies_all_users()
 

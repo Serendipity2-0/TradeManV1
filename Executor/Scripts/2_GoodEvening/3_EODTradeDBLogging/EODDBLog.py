@@ -41,7 +41,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
     update_fields_firebase,
 )
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
-    download_json,
+    download_firebase_json,
 )
 
 from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
@@ -195,6 +195,8 @@ def convert_trade_state_to_list(
         for strategy_name, strategy_detail in strategies.items():
             if trade_type == "Equity":
                 for setup_name, setup_detail in strategy_detail.items():
+                    if setup_name == "AllocationPercent":
+                        continue
                     orders = setup_detail.get("TradeState", {}).get("orders", [])
                     if isinstance(orders, dict):
                         orders = list(orders.values())
@@ -592,6 +594,8 @@ def fetch_and_prepare_holdings_data():
                 for strategy_name, strategy_detail in strategies.items():
                     if trade_type == "Equity":
                         for setup_name, setup_detail in strategy_detail.items():
+                            if setup_name == "AllocationPercent":
+                                continue
                             strategy_orders = setup_detail.get("TradeState", {}).get(
                                 "orders", []
                             )
@@ -751,6 +755,8 @@ def process_n_log_trade():
                 for strategy_name, strategy_details in strategies.items():
                     if trade_type == "Equity":
                         for setup_name in strategy_details:
+                            if setup_name == "AllocationPercent":
+                                continue
                             process_strategy(
                                 strategy_name,
                                 strategy_details[setup_name],

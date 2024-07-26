@@ -12,13 +12,13 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
-SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
-SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
-SHORT_MEANREVERSION = os.getenv("SHORT_MEANREVERSION")
-MID_TFMOMENTUM = os.getenv("MID_TFMOMENTUM")
-MID_TFEMA = os.getenv("MID_TFEMA")
-LONG_RATIO = os.getenv("LONG_RATIO")
-LONG_COMBO = os.getenv("LONG_COMBO")
+SHORT_MOMENTUM = "SHORT_MOMENTUM"
+SHORT_EMABBCONFLUENCE = "SHORT_EMABBCONFLUENCE"
+SHORT_MEANREVERSION = "SHORT_MEANREVERSION"
+MID_TFMOMENTUM = "MID_TFMOMENTUM"
+MID_TFEMA = "MID_TFEMA"
+LONG_RATIO = "LONG_RATIO"
+LONG_COMBO = "LONG_COMBO"
 
 
 def calculate_full_trailing_sl(buy_price, stoploss_multiplier, ltp):
@@ -28,14 +28,13 @@ def calculate_full_trailing_sl(buy_price, stoploss_multiplier, ltp):
     try:
         per_change = (ltp - buy_price) / buy_price * 100
         sl = buy_price - (buy_price * stoploss_multiplier / 100)
-        if (
-            per_change // stoploss_multiplier > 0
-            and per_change // stoploss_multiplier != 1
-        ):
-            for interation in range(int(per_change // stoploss_multiplier)):
-                sl = sl + (buy_price * stoploss_multiplier / 100)
-                sl = round(sl, 1)
-                return sl
+
+        if per_change > stoploss_multiplier:
+            adjustments = int(per_change // stoploss_multiplier)
+            sl += (buy_price * stoploss_multiplier / 100) * adjustments
+            sl = round(sl, 1)
+
+        return sl
     except Exception as e:
         logger.error(f"Error in calculate_full_trailing_sl: {e}")
         return None

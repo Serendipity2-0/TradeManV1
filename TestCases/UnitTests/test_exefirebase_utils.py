@@ -30,7 +30,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
     file_upload,
     update_fields_firebase,
-    download_json,
+    download_firebase_json,
 )
 
 # Set up the logger
@@ -54,9 +54,7 @@ def test_file_upload():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
     # Update the path to point to the correct location
-    test_json_path = os.path.join(
-        BASE_DIR, "..", "TestData", "test_data.json"
-    )
+    test_json_path = os.path.join(BASE_DIR, "..", "TestData", "test_data.json")
     print(f"test_json_path: {test_json_path}")
 
     # Ensure the file exists before proceeding
@@ -83,7 +81,7 @@ def test_update_fields_firebase():
 def test_download_json():
     test_path = "testPath"
     test_status = "testStatus"
-    download_json(test_path, test_status)
+    download_firebase_json(test_path, test_status)
     print(
         f"Downloaded data from {test_path} in Firebase and saved as JSON with status {test_status}."
     )
