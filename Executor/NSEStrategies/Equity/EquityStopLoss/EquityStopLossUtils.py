@@ -47,10 +47,11 @@ def calculate_half_trailing_sl(buy_price, stoploss_multiplier, ltp):
     try:
         per_change = (ltp - buy_price) / buy_price * 100
         sl = buy_price - (buy_price * stoploss_multiplier / 100)
-        if (per_change / 2) // (stoploss_multiplier / 2) > 0:
-            sl = sl + (buy_price * (stoploss_multiplier / 2) / 100)
-            sl = round(sl, 1)
-            return sl
+        if (per_change) // (stoploss_multiplier / 2) > 0:
+            adjustments = int(per_change // (stoploss_multiplier / 2))
+            sl += (buy_price * ((stoploss_multiplier / 2) / 100)) * adjustments
+        sl = round(sl, 1)
+        return sl
     except Exception as e:
         logger.error(f"Error in calculate_half_trailing_sl: {e}")
         return None
