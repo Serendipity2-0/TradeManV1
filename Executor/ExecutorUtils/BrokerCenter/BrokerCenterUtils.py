@@ -380,16 +380,33 @@ def fetch_active_strategies_all_users():
         user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
         strategies = []
         for user in user_details:
-            if user_details[user]["Active"] == True:
-                for strategy in user_details[user]["Strategies"]["Equity"]:
-                    if strategy not in strategies:
-                        strategies.append(strategy)
-                for strategy in user_details[user]["Strategies"]["Derivatives"]:
-                    if strategy not in strategies:
-                        strategies.append(strategy)
+            if user_details[user].get("Active", False):
+                user_strategies = user_details[user].get("Strategies", {})
+
+                # Handle Equity strategies
+                equity_strategies = user_strategies.get("Equity", [])
+                strategies.extend(
+                    [
+                        strategy
+                        for strategy in equity_strategies
+                        if strategy not in strategies
+                    ]
+                )
+
+                # Handle Derivatives strategies
+                derivatives_strategies = user_strategies.get("Derivatives", [])
+                strategies.extend(
+                    [
+                        strategy
+                        for strategy in derivatives_strategies
+                        if strategy not in strategies
+                    ]
+                )
+
         return strategies
     except Exception as e:
         logger.error(f"Error while fetching active strategies for all users: {e}")
+        return []
 
 
 def get_today_orders_for_brokers(user):
