@@ -699,3 +699,86 @@ def update_user_risk_params(
     discord_admin_bot(message)
 
     return {"message": "User strategy parameters updated successfully!"}
+
+
+def get_user_list_from_db():
+    """
+    Fetch user list from the database.
+
+    Args:
+        None
+
+    Returns:
+        list: A list of user names.
+    """
+    try:
+        user_list = fetch_collection_data_firebase(CLIENTS_COLLECTION)
+        user_names = []
+        for (
+            key,
+            profile,
+        ) in user_list.items():  # Changed to items() to get both key and value
+            if "Profile" in profile and "Name" in profile["Profile"]:
+                user_names.append(
+                    {"username": profile["Profile"]["Name"], "tr_no": profile["Tr_No"]}
+                )
+            else:
+                # Raising ValueError including the key of the profile
+                raise ValueError(
+                    f"Missing 'Name' or 'Profile' key in user data {key}: {profile}"
+                )
+        return user_names
+    except Exception as e:
+        # Catching all exceptions and raising HTTPException with the error message
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def fetch_user_details_by_username(username: str):
+    """
+    Fetch user details by username from the database.
+
+    Args:
+        username (str): The username of the user.
+
+    Returns:
+        list: A list of user details.
+    """
+    user_list = fetch_collection_data_firebase(CLIENTS_COLLECTION)
+    user_details = [
+        profile
+        for profile in user_list.values()
+        if profile["Profile"]["Name"] == username
+    ]
+    return user_details
+
+
+def update_user_section(user_id: str, section: str, details: dict):
+    """
+    Update user details by replacing the existing details with the new details.
+
+    Args:
+        user_id (str): The ID of the user to update.
+        section (str): The section to update. Use "" for root-level updates.
+        details (dict): The new details to update.
+
+    Returns:
+        str: A message indicating successful update.
+    """
+
+    if section == "root":
+        logger.info("Updating at root level")
+        path = user_id
+    else:
+        logger.info(f"Updating section: {section}")
+        path = f"{user_id}/{section}"
+
+    # Ensure boolean values are correctly parsed
+    for key, value in details.items():
+        if isinstance(value, str):
+            if value.lower() == "true":
+                details[key] = True
+            elif value.lower() == "false":
+                details[key] = False
+
+    update_fields_firebase(CLIENTS_COLLECTION, path, details)
+    return "Updated Successfully"

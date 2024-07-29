@@ -666,6 +666,71 @@ def modify_user_strategy_params(
         )
 
 
+@app_admin.get("/user-list")
+def get_user_list_from_db():
+    """
+    Fetches the list of users from the database.
+
+    Returns:
+        list: A list of user names.
+    """
+
+    try:
+        userslist = app.get_user_list_from_db()
+        return userslist
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching user list: {str(e)}"
+        )
+
+
+@app_admin.get("/user-details-username")
+def get_user_details_by_username(username: str):
+    """
+    Fetches the details of a user by username.
+
+    Args:
+        username (str): The username of the user.
+
+    Returns:
+        list: A list of user details.
+    """
+    try:
+        return app.fetch_user_details_by_username(username)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching user details: {str(e)}"
+        )
+
+
+@app_admin.post("/update-user-section")
+def update_user_section(user_id: str, section: str, details: dict):
+    """
+    Update a specific section of user details.
+    NOTE: If the section is at the root level we need to send the section as root.
+
+    Args:
+        user_id (str): The ID of the user to update.
+        section (UserSection): The section of user details to update.
+        details (dict): The new details for the specified section.
+
+    Returns:
+        dict: A message indicating successful update and the updated section.
+    """
+    try:
+        # Assume app.update_user_section is a method that handles the update logic
+        updated_section = app.update_user_section(user_id, section, details)
+        return {
+            "message": f"Successfully updated {section} for user {user_id}",
+            "updated_section": updated_section,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error updating {section} for user {user_id}: {str(e)}",
+        )
+
+
 app_fastapi.include_router(app_user, prefix="/v1/user", tags=["user"])
 app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 
