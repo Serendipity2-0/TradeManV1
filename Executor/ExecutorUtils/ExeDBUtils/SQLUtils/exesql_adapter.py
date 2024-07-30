@@ -150,7 +150,7 @@ def create_holding_strategy_table(conn, table_name):
         logger.error(f"An error occurred while creating the table {table_name}: {e}")
 
 
-def fetch_qty_for_holdings_sqldb(Tr_No, trade_id):
+def fetch_qty_for_holdings_sqldb(Tr_No, trade_id, strategy_type):
     """
     Fetch the quantity from the Holdings table that matches the first part of the trade_id.
 
@@ -161,16 +161,18 @@ def fetch_qty_for_holdings_sqldb(Tr_No, trade_id):
     Returns:
         int: The quantity from the Holdings table.
     """
-    trade_id = trade_id.split("_")[0]
-    db_path = os.path.join(os.getenv("USR_TRADELOG_DB_FOLDER"), f"{Tr_No}.db")
+    # check the strategy type and accordingly change the db path
+    db_folder = os.getenv(f"USR_TRADELOG_{strategy_type.upper()}_DB_FOLDER")
+    db_path = os.path.join(db_folder, f"{Tr_No}_{strategy_type.lower()}.db")
     conn = get_db_connection(db_path)
+    trade_id = trade_id.split("_")[0]
     query = f"SELECT * FROM Holdings WHERE trade_id LIKE '{trade_id}%'"
     df = pd.read_sql(query, conn)
     if not df.empty:
         qty = df["qty"].values[0]
     else:
         qty = 0
-    return qty
+    return int(qty)
 
 
 def fetch_holdings_value_for_user_sqldb(user):

@@ -140,7 +140,7 @@ async def place_order_for_strategy(
                         if strategy_type == "Derivatives"
                         and order_qty_mode != "Holdings"
                         else fetch_qty_for_holdings_sqldb(
-                            user["Tr_No"], order.get("trade_id")
+                            user["Tr_No"], order.get("trade_id"), strategy_type
                         )
                     )
 
@@ -173,6 +173,7 @@ async def place_order_for_strategy(
                 logger.error(
                     f"Error preparing order for user {user['Broker']['BrokerUsername']}: {e}"
                 )
+                logger.error(traceback.format_exc())
 
         # Await all tasks for this particular order and collect statuses
         if order_tasks:
