@@ -513,6 +513,7 @@ def update_qty_user_firebase(
     asset_term: str = None,
     qty_amplifier: float = None,
     strategy_amplifier: float = None,
+    num_stocks: int = None,
 ):
     """
     The `update_qty_user_firebase` function updates the quantity for each user associated with the given strategy based on their free cash and risk per trade.
@@ -549,6 +550,8 @@ def update_qty_user_firebase(
                         if strat == strategy_name:
                             strat_allocation = strat_data["AllocationPercent"] / 100
                             strat_free_cash = term_free_cash * strat_allocation
+                            if num_stocks is not None:
+                                strat_free_cash = strat_free_cash / num_stocks
                             qty = calculate_qty_for_equity(
                                 strat_free_cash, avg_sl_points_or_ltp
                             )
