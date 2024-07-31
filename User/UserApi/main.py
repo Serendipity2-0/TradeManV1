@@ -445,7 +445,7 @@ def get_users_holdings(tr_no: str, mode: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/strategy-params/{strategy_name}")
+@app_admin.get("/strategy-params/{strategy_name}")
 def get_strategy_params(
     strategy_name: str = Path(..., description="Name of the strategy"),
 ):
@@ -473,7 +473,7 @@ def get_strategy_params(
         )
 
 
-@app_user.put("/strategy-params/{strategy_name}/{section}")
+@app_admin.put("/strategy-params/{strategy_name}/{section}")
 def modify_strategy_params(
     strategy_name: str = Path(..., description="Name of the strategy"),
     section: str = Path(
