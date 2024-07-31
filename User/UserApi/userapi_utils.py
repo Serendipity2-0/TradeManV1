@@ -608,7 +608,7 @@ def get_broker_bank_transactions_data(
     return sorted_data
 
 
-def fetch_users_for_strategy(tr_no: str):
+def fetch_strategies_for_user(tr_no: str):
     """
     Retrieves the strategies associated with a specific user.
 
@@ -616,14 +616,23 @@ def fetch_users_for_strategy(tr_no: str):
         tr_no (str): The user's ID.
 
     Returns:
-        list: A list of strategy names associated with the user.
+        dict: A dictionary containing lists of strategy names for 'Equity' and 'Derivatives'.
 
     Raises:
         HTTPException: If there's an error fetching from the database.
     """
 
     user = fetch_collection_data_firebase(CLIENTS_COLLECTION, document=tr_no)
-    strategies = [strategy for strategy in user["Strategies"]]
+    strategies = []
+
+    if "Strategies" in user:
+        if "Equity" in user["Strategies"]:
+            strategies.extend([strategy for strategy in user["Strategies"]["Equity"]])
+        if "Derivatives" in user["Strategies"]:
+            strategies.extend(
+                [strategy for strategy in user["Strategies"]["Derivatives"]]
+            )
+
     return strategies
 
 

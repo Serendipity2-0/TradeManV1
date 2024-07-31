@@ -32,7 +32,7 @@ from User.UserApi.userapi_utils import (
     get_broker_bank_transactions_data,
     strategy_graph_data,
     calculate_strategy_statistics,
-    fetch_users_for_strategy,
+    fetch_strategies_for_user,
     get_users_db_holdings,
     log_changes_via_webapp,
     update_next_trader_number,
@@ -399,7 +399,7 @@ def get_strategies_for_user(tr_no: str):
     Returns:
         list: A list of user names associated with the strategy.
     """
-    return fetch_users_for_strategy(tr_no)
+    return fetch_strategies_for_user(tr_no)
 
 
 def get_users_holdings(tr_no: str, mode: str):
