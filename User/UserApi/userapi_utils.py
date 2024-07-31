@@ -38,6 +38,15 @@ PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
 STRATEGIES_FB_COLLECTION = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 MARKET_INFO_FB_COLLECTION = os.getenv("MARKET_INFO_FB_COLLECTION")
 USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
+USER_DB_EQUITY_PATH = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
+USER_DB_DERIVATIVES_PATH = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+MODE_TO_DB = {
+    "Equity": ("equity", USER_DB_FOLDER_PATH),
+    "Derivatives": ("derivatives", USER_DB_FOLDER_PATH),
+    "Debt": ("debt", USER_DB_FOLDER_PATH),
+}
 
 
 def all_users_data():
@@ -322,11 +331,28 @@ def get_weekly_cumulative_returns_data(
 def get_individual_strategy_data(
     tr_no: str, strategy_name: str, page: int, page_size: int
 ):
-    try:
-        USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
-        users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
+    """
+    Retrieves the paginated data for a specific strategy for a given user.
 
-        conn = get_db_connection(users_db_path)
+    Args:
+        tr_no (str): The user's ID.
+        strategy_name (str): The name of the strategy.
+        page (int): The page number.
+        page_size (int): The number of items per page.
+
+    Returns:
+        dict: A dictionary containing the paginated DataFrame of strategy data and the total number of items.
+    """
+    try:
+        if strategy_name in EQUITY_STRATEGY_LIST:
+            db_name, folder_path = MODE_TO_DB["Equity"]
+        elif strategy_name in DERIVATIVES_STRATEGY_LIST:
+            db_name, folder_path = MODE_TO_DB["Derivatives"]
+        else:
+            db_name, folder_path = MODE_TO_DB["Equity"]
+        db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db")
+
+        conn = get_db_connection(db_path)
         strategies = ACTIVE_STRATEGIES + ["Holdings"]
 
         if strategy_name in strategies:
@@ -375,10 +401,15 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
         dict: The strategy graph data for the specified user and strategy.
     """
     try:
-        USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
-        users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
+        if strategy_name in EQUITY_STRATEGY_LIST:
+            db_name, folder_path = MODE_TO_DB["Equity"]
+        elif strategy_name in DERIVATIVES_STRATEGY_LIST:
+            db_name, folder_path = MODE_TO_DB["Derivatives"]
+        else:
+            db_name, folder_path = MODE_TO_DB["Equity"]
+        db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db")
 
-        conn = get_db_connection(users_db_path)
+        conn = get_db_connection(db_path)
         strategies = ACTIVE_STRATEGIES + ["Holdings"]
 
         if strategy_name in strategies:
@@ -650,13 +681,6 @@ def get_users_db_holdings(tr_no: str, mode: str):
     Raises:
         HTTPException: If there's an error fetching from the database.
     """
-    # TODO : Change the DB paths when the DBs are ready
-    MODE_TO_DB = {
-        "Equity": ("equity", USER_DB_FOLDER_PATH),
-        "Derivatives": ("derivatives", USER_DB_FOLDER_PATH),
-        "Debt": ("debt", USER_DB_FOLDER_PATH),
-    }
-
     try:
         db_name, folder_path = MODE_TO_DB[mode]
         db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db")
