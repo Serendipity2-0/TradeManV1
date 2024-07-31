@@ -643,15 +643,14 @@ def get_users_db_holdings(tr_no: str, mode: str):
     """
     # TODO : Change the DB paths when the DBs are ready
     MODE_TO_DB = {
-        "Equity": ("Equity", USER_DB_FOLDER_PATH),
-        "Derivatives": ("Derivatives", USER_DB_FOLDER_PATH),
-        "Debt": ("Debt", USER_DB_FOLDER_PATH),
+        "Equity": ("equity", USER_DB_FOLDER_PATH),
+        "Derivatives": ("derivatives", USER_DB_FOLDER_PATH),
+        "Debt": ("debt", USER_DB_FOLDER_PATH),
     }
 
     try:
         db_name, folder_path = MODE_TO_DB[mode]
-        # db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db") # TODO: Uncomment this line when ready to update
-        db_path = os.path.join(folder_path, f"{tr_no}.db")
+        db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db")
     except KeyError:
         raise ValueError(f"Invalid mode: {mode}")
     conn = get_db_connection(db_path)

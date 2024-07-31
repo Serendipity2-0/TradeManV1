@@ -428,7 +428,7 @@ def get_users_holdings(tr_no: str, mode: str):
 
     Args:
         tr_no (str): The user's ID.
-        mode (str): The mode of holdings to retrieve.
+        mode (str): The mode of holdings to retrieve.(Equity, Debt, Derivatives)
 
     Returns:
         list: A list of equity holdings for the user.
