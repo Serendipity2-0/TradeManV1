@@ -696,3 +696,20 @@ def get_users_db_holdings(tr_no: str, mode: str):
             break
     conn.close()
     return data
+
+
+def parse_value(value):
+    """Parse string values to appropriate types."""
+    if isinstance(value, str):
+        if value.lower() == "true":
+            return True
+        elif value.lower() == "false":
+            return False
+        try:
+            return int(value)
+        except ValueError:
+            try:
+                return float(value)
+            except ValueError:
+                return value
+    return value
