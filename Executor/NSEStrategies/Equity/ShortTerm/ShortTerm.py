@@ -63,6 +63,7 @@ product_type = shortterm_obj.GeneralParams.ProductType
 strategy_type = shortterm_obj.GeneralParams.StrategyType
 desired_start_time_str = shortterm_obj.get_entry_params().EntryTime
 shortterm_prefix = shortterm_obj.StrategyPrefix
+num_stocks = shortterm_obj.ExtraInformation.StocksPerStrategy
 
 
 def get_today_stocks():
@@ -217,6 +218,7 @@ def main():
                         strategy_amplifier=strategy_amplifier,
                         asset_segment="Equity",
                         asset_term="ShortTerm",
+                        num_stocks=num_stocks,
                     )
                     logger.info(order_to_place)
                     signals_to_fb(strategy_name, order_to_place, trade_id)

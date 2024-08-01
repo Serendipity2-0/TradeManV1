@@ -31,16 +31,17 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 )
 from Executor.NSEStrategies.Equity.ShortTerm.ShortTerm import shortterm_obj
 from Executor.NSEStrategies.Equity.MidTerm.MidTerm import midterm_obj
-from Executor.NSEStrategies.Equity.LongTerm.LongTerm import longterm_obj
+
+# in future if we decide to add sl for longterm, import longterm_obj
 
 # Initialize logger
 logger = LoggerSetup()
 
 # Strategy configurations
+# in future if we decide to add sl for longterm, add this (longterm_obj, "LongTerm") after midterm_obj
 strategies = [
     (shortterm_obj, "ShortTerm"),
     (midterm_obj, "MidTerm"),
-    (longterm_obj, "LongTerm"),
 ]
 
 trade_mode = os.getenv("TRADE_MODE")
@@ -71,6 +72,7 @@ def main():
 
 def process_holdings(strategy_obj, holdings, user):
     strategy_name = strategy_obj.StrategyName
+    risk_per_trade = strategy_obj.ExitParams.RiskPerTrade
     transaction_type = strategy_obj.get_raw_field("GeneralParams").get(
         "SlTransactionType"
     )
@@ -83,9 +85,7 @@ def process_holdings(strategy_obj, holdings, user):
         ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
         buy_price = float(row["entry_price"])
         setup_name = row["setup"]
-        sl = calculate_sl(
-            setup_name, buy_price, strategy_obj.EntryParams.SLMultiplier, ltp
-        )
+        sl = calculate_sl(setup_name, buy_price, risk_per_trade, ltp)
         trade_id = row["trade_id"].split("_")[0]
 
         logger.debug("LTP", ltp, "Buy Price", buy_price, "SL", sl)
@@ -108,7 +108,7 @@ def process_holdings(strategy_obj, holdings, user):
         ]
         order_to_place = assign_trade_id(order_details)
         logger.debug(f"Orders to place: {order_to_place}")
-        place_order_single_user([user], order_to_place)
+        place_order_single_user([user], order_to_place, "Holdings")
 
 
 if __name__ == "__main__":

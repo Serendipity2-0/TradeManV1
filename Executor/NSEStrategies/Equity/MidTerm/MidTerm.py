@@ -63,6 +63,7 @@ product_type = midterm_obj.GeneralParams.ProductType
 strategy_type = midterm_obj.GeneralParams.StrategyType
 desired_start_time_str = midterm_obj.get_entry_params().EntryTime
 midterm_prefix = midterm_obj.StrategyPrefix
+num_stocks = midterm_obj.ExtraInformation.StocksPerStrategy
 
 
 def get_today_stocks():
@@ -206,6 +207,7 @@ def main():
                         strategy_amplifier=strategy_amplifier,
                         asset_segment="Equity",
                         asset_term="MidTerm",
+                        num_stocks=num_stocks,
                     )
                     logger.info(order_to_place)
                     signals_to_fb(strategy_name, order_to_place, trade_id)

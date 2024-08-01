@@ -22,7 +22,6 @@ from Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils import (
 )
 from Executor.NSEStrategies.Equity.LongTerm.LongTermUtils import get_longterm_stocks_df
 from Executor.NSEStrategies.Equity.MidTerm.MidTermUtils import get_midterm_stocks_df
-import Executor.ExecutorUtils.ExeUtils as ExeUtils
 from Executor.NSEStrategies.NSEStrategiesUtil import (
     StrategyBase,
     update_signal_firebase,
@@ -30,7 +29,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 import Executor.NSEStrategies.Equity.ShortTerm.ShortTerm as ShortTerm
 import Executor.NSEStrategies.Equity.MidTerm.MidTerm as MidTerm
 import Executor.NSEStrategies.Equity.LongTerm.LongTerm as LongTerm
-import Executor.NSEStrategies.Equity.EquityStopLoss.EquityStopLoss as StopLoss
+
 
 logger = LoggerSetup()
 stock_pick_db_path = os.getenv("TODAY_STOCK_DATA_DB_PATH")
@@ -71,8 +70,6 @@ def main():
 
     store_ohlcv_stock_data_sqldb()
     store_financial_data_sqldb()
-
-    StopLoss.main()
 
     (
         momentum_stocks_df,
