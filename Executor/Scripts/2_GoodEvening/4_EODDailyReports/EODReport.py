@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import pandas as pd
 from babel.numbers import format_currency
 from time import sleep
-
+import traceback
 
 # Define constants and load environment variables
 DIR = os.getcwd()
@@ -21,7 +21,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 logger = LoggerSetup()
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
-    download_json,
+    download_firebase_json,
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
@@ -53,10 +53,15 @@ from Executor.ExecutorUtils.ReportUtils.EodReportUtils import (
     calculate_account_values,
     get_today_trades,
     update_account_keys_fb,
+    aggregate_account_values,
 )
 
 CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
+CLIENTS_TRADE_SQL_DB_EQUITY = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
+CLIENTS_TRADE_SQL_DB_DERIVATIVES = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
 today_string = datetime.now().strftime("%Y-%m-%d")
 
 
@@ -74,7 +79,6 @@ def format_and_send_report(user, today_trades, account_values):
 
     # Formatting today's date for the report
     today_fb_format = datetime.now().strftime("%d%b%y")
-    previous_trading_day_fb_format = get_previous_trading_day(datetime.now().date())
     gross_pnl = sum(float(trade["pnl"]) for trade in today_trades)
     expected_tax = sum(float(trade["tax"]) for trade in today_trades)
 
@@ -91,13 +95,10 @@ def format_and_send_report(user, today_trades, account_values):
         additions = account_values["additions"]
         message += f"\nAdditions: {format_currency(additions, 'INR', locale='en_IN')}\n"
     message += "\nFree Cash:\n"
-    message += f"{previous_trading_day_fb_format} Free Cash: {format_currency(account_values['previous_free_cash'], 'INR', locale='en_IN')}\n"
     message += f"{today_fb_format} Free Cash: {format_currency(account_values['new_free_cash'], 'INR', locale='en_IN')}\n\n"
     message += "Holdings:\n"
-    message += f"{previous_trading_day_fb_format} Holdings: {format_currency(account_values['previous_holdings'], 'INR', locale='en_IN')}\n"
     message += f"{today_fb_format} Holdings: {format_currency(account_values['new_holdings'], 'INR', locale='en_IN')}\n\n"
     message += "Account:\n"
-    message += f"{previous_trading_day_fb_format} Account: {format_currency(user['Accounts'][f'{previous_trading_day_fb_format}_AccountValue'], 'INR', locale='en_IN')}\n"
     message += f"{today_fb_format} Account: {format_currency(account_values['new_account_value'], 'INR', locale='en_IN')}\n"
     message += f"\nNet Change: {format_currency(account_values['net_change'], 'INR', locale='en_IN')} ({account_values['net_change_percentage']:.2f}%)\n"
     message += f"Drawdown: {format_currency(account_values['drawdown'], 'INR', locale='en_IN')} ({account_values['drawdown_percentage']:.2f}%)\n\n"
@@ -128,24 +129,70 @@ def send_consolidated_report_pdf_to_telegram():
 
 def create_eod_report(active_users, active_strategies):
     """
-    Creates and sends the end-of-day (EOD) report for each active user.
+    Creates and sends the end-of-day (EOD) report for each active user,
+    handling separate equity and derivatives segments based on user accounts.
 
     :param active_users: A list of active users.
     :param active_strategies: A list of active strategies.
     """
     for user in active_users:
         try:
-            user_db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
-            user_db_conn = get_db_connection(user_db_path)
-            user_tables = fetch_user_tables(user_db_conn)
-            # Placeholder values, replace with actual queries and Firebase fetches
-            today_trades = get_today_trades(user_tables, active_strategies)
-            account_values = calculate_account_values(user, today_trades, user_tables)
-            update_account_keys_fb(user["Tr_No"], account_values)
-            format_and_send_report(user, today_trades, account_values)
+            equity_db_conn = None
+            derivatives_db_conn = None
+            equity_trades = []
+            derivatives_trades = []
+            equity_account_values = {}
+            derivatives_account_values = {}
+
+            # Check if user has equity account
+            if "Equity" in user["Accounts"]:
+                equity_db_path = os.path.join(
+                    CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}_equity.db"
+                )
+                equity_db_conn = get_db_connection(equity_db_path)
+                equity_tables = fetch_user_tables(equity_db_conn)
+                equity_trades = get_today_trades(equity_tables, active_strategies)
+                equity_account_values = calculate_account_values(
+                    user, equity_trades, equity_tables, segment="Equity"
+                )
+
+            # Check if user has derivatives account
+            if "Derivatives" in user["Accounts"]:
+                derivatives_db_path = os.path.join(
+                    CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}_derivatives.db"
+                )
+                derivatives_db_conn = get_db_connection(derivatives_db_path)
+                derivatives_tables = fetch_user_tables(derivatives_db_conn)
+                derivatives_trades = get_today_trades(
+                    derivatives_tables, active_strategies
+                )
+                derivatives_account_values = calculate_account_values(
+                    user, derivatives_trades, derivatives_tables, segment="Derivatives"
+                )
+
+            # Combine account values with type conversion
+            combined_account_values = {
+                "Equity": equity_account_values,
+                "Derivatives": derivatives_account_values,
+            }
+            acc_values = aggregate_account_values(combined_account_values)
+
+            # Update Firebase with separate keys for equity and derivatives
+            update_account_keys_fb(user["Tr_No"], combined_account_values)
+
+            today_trades = equity_trades + derivatives_trades
+
+            # # Format and send the report with separate sections for equity and derivatives
+            format_and_send_report(user, today_trades, acc_values)
 
         except Exception as e:
             logger.error(f"Error in sending User Report telegram message: {e}")
+        finally:
+            # Close database connections if they were opened
+            if equity_db_conn:
+                equity_db_conn.close()
+            if derivatives_db_conn:
+                derivatives_db_conn.close()
 
 
 def create_consolidated_report(active_users, active_strategies):
@@ -233,7 +280,7 @@ def main():
     3. Pauses for a brief period.
     4. Creates and sends the consolidated report PDF.
     """
-    download_json(CLIENTS_USER_FB_DB, "before_eod_report")
+    download_firebase_json(CLIENTS_USER_FB_DB, "before_eod_report")
     active_users = fetch_active_users_from_firebase()
     active_strategies = fetch_active_strategies_all_users()
 

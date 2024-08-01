@@ -65,7 +65,7 @@ def fetch_freecash_all_brokers(active_users):
     return broker_free_cash
 
 
-def fetch_freecash_all_db(active_users):  # pass active_users['Accounts'] as argument
+def fetch_freecash_all_db(active_users):
     """
     This function fetches free cash data for active users from a Firebase database based on the previous
     trading day.
@@ -81,10 +81,12 @@ def fetch_freecash_all_db(active_users):  # pass active_users['Accounts'] as arg
         f"Fetching free cash no of users from Firebase DB: {len(active_users)}"
     )
     previous_trading_day_fb_format = get_previous_freecash(dt.date.today())
-    previous_day_key = previous_trading_day_fb_format + "_" + "FreeCash"
+    previous_day_key = previous_trading_day_fb_format + "_" + "Portfolio_FreeCash"
     for user in active_users:
         try:
-            db_free_cash[user["Tr_No"]] = user["Accounts"][previous_day_key]
+            db_free_cash[user["Tr_No"]] = user["Accounts"]["Portfolio"][
+                previous_day_key
+            ]
         except KeyError:
             logger.error(f"Free cash for {user['Tr_No']} not found in Firebase DB")
             db_free_cash[user["Tr_No"]] = 0
@@ -106,36 +108,33 @@ def delete_old_free_cash(active_users):
     """
     # delete all the keys which have _FreeCash , _Holdings and _AccountValue and are older than 2 days
     for user in active_users:
-        for key in user["Accounts"]:
+        for key in user["Accounts"]["Portfolio"]:
             if "_FreeCash" in key or "_Holdings" in key or "_AccountValue" in key:
                 second = get_second_previous_trading_day(dt.date.today())
                 second = dt.datetime.strptime(second, "%d%b%y")
                 if dt.datetime.strptime(key.split("_")[0], "%d%b%y") <= second:
                     logger.info(f"Deleting old key {key} for user {user['Tr_No']}")
                     delete_fields_firebase(
-                        CLIENTS_USER_FB_DB, user["Tr_No"], f"Accounts/{key}"
+                        CLIENTS_USER_FB_DB, user["Tr_No"], f"Accounts/Portfolio/{key}"
                     )
 
 
 def compare_freecash(broker_free_cash, db_free_cash):
     """
-    The function compares free cash values from brokers and the database, sends notifications if
-    there are discrepancies, and updates the database with the latest free cash values if the
-    values match within a tolerable difference.
+    Compares and Updates the Portfolio FreeCash from the broker and the Firebase DB and
+    If the difference is more than the tolerable difference we get a discord notification.
 
-    :param broker_free_cash: A dictionary containing the free cash values fetched from different
-    brokers for active users. The keys are the user's transaction numbers (Tr_No), and the values
-    are the respective free cash amounts.
-    :param db_free_cash: A dictionary containing the free cash values fetched from the Firebase
-    database for active users. The keys are the user's transaction numbers (Tr_No), and the values
-    are the respective free cash amounts.
+    Args:
+        broker_free_cash (dict): Free cash from the broker
+        db_free_cash (dict): Free cash from the Firebase DB
+
+
     """
     from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
         discord_admin_bot,
     )
 
     tolerable_difference = os.getenv("ACC_DIFF_TOLERANCE")
-
     discord_admin_bot(f"Today's number of users = {len(broker_free_cash)}")
 
     for user in broker_free_cash:
@@ -147,34 +146,35 @@ def compare_freecash(broker_free_cash, db_free_cash):
             logger.error(f"Trader Number - {user} : Free cash not found in DB")
             discord_admin_bot(f"Trader Number - {user} : Free cash not found in DB")
 
-    for user in broker_free_cash:
-        logger.info(f"Comparing free cash for {user}")
-        # check if the difference is more than 1%
-        try:
-            if (
-                abs(broker_free_cash[user] - db_free_cash[user])
-                > float(tolerable_difference) * db_free_cash[user]
-            ):
-                logger.error(f"Free cash for {user} is not matching")
-                discord_admin_bot(
-                    f"Free cash for {user} is not matching, BrokerFreeCash - {round(broker_free_cash[user],2)}, DBFreeCash - {round(db_free_cash[user],2)}"
-                )
-            else:
-                logger.info(f"Free cash for {user} is matching")
+        if (
+            abs(broker_free_cash[user] - db_free_cash[user])
+            > float(tolerable_difference) * db_free_cash[user]
+        ):
+            logger.error(f"Free cash for {user} is not matching")
+            discord_admin_bot(
+                f"Free cash for {user} is not matching, BrokerFreeCash - {round(broker_free_cash[user],2)}, DBFreeCash - {round(db_free_cash[user],2)}"
+            )
+        else:
+            logger.info(f"Free cash for {user} is matching")
+
+        user_data = next(
+            (
+                active_user
+                for active_user in active_users
+                if active_user["Tr_No"] == user
+            ),
+            None,
+        )
+        if user_data:
+            today_key = dt.datetime.now().strftime("%d%b%y")
             update_fields_firebase(
                 CLIENTS_USER_FB_DB,
                 user,
-                {
-                    dt.datetime.now().strftime("%d%b%y")
-                    + "_FreeCash": broker_free_cash[user]
-                },
-                "Accounts",
+                {f"{today_key}_Portfolio_FreeCash": broker_free_cash[user]},
+                "Accounts/Portfolio",
             )
-        except Exception as e:
-            logger.error(f"Error while comparing free cash for {user} with error: {e}")
-            discord_admin_bot(
-                f"Error while comparing free cash for {user} with error: {e}"
-            )
+        else:
+            logger.error(f"User data not found for {user}")
 
 
 def main():

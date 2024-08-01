@@ -19,7 +19,7 @@ CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
-    download_json,
+    download_firebase_json,
 )
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
@@ -30,6 +30,16 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
     append_df_to_sqlite,
     get_db_connection,
 )
+from TradebookValidatorUtils import (
+    check_strategy_path,
+    check_strategy_orders,
+)
+
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+EQUITY_STRATEGY_LIST = EQUITY_STRATEGY_LIST.split(",")
+
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = DERIVATIVES_STRATEGY_LIST.split(",")
 
 
 def get_todays_date():
@@ -84,17 +94,35 @@ def get_update_path(order_id, strategies):
 
     :param order_id: A string representing the order ID.
     :param strategies: A dictionary containing strategy details.
-    :return: A string representing the update path for the order.
+    :return: A string representing the update path for the order, or None if not found.
     """
     try:
-        for strategy_key, strategy_data in strategies.items():
-            trade_state = strategy_data.get("TradeState", {})
-            orders_from_firebase = trade_state.get("orders", [])
-            for i, order in enumerate(orders_from_firebase):
-                if str(order["order_id"]) == order_id:
-                    return f"Strategies/{strategy_key}/TradeState/orders/{i}"
+        for asset_class, asset_data in strategies.items():
+            if asset_class == "Equity":
+                for term in asset_data.keys():
+                    if term in asset_data:
+                        for strategy_key, strategy_data in asset_data[term].items():
+                            path = check_strategy_path(
+                                asset_class, term, strategy_key, strategy_data, order_id
+                            )
+                            if path:
+                                return path
+            elif asset_class == "Derivatives":
+                for strategy in DERIVATIVES_STRATEGY_LIST:
+                    if strategy in asset_data:
+                        path = check_strategy_path(
+                            asset_class, None, strategy, asset_data[strategy], order_id
+                        )
+                        if path:
+                            return path
+            else:
+                logger.info(f"Unsupported asset class: {asset_class}")
+
+        logger.info(f"No matching order found for order_id: {order_id}")
+        return None
     except Exception as e:
         logger.error(f"Error in get_update_path: {e}")
+        return None
 
 
 def get_order_ids_from_strategies(user, strategies):
@@ -109,27 +137,52 @@ def get_order_ids_from_strategies(user, strategies):
     order_ids = set()
     logger.debug(f"Getting order ids for user: {user['Broker']['BrokerUsername']}")
     try:
-        for strategy_key, strategy_data in strategies.items():
-            trade_state = strategy_data.get("TradeState", {})
-            orders_from_firebase = trade_state.get("orders", [])
+        for asset_class, asset_data in strategies.items():
 
-            if not orders_from_firebase:
-                logger.error(
-                    f"No orders found for user: {user['Broker']['BrokerUsername']} for strategy: {strategy_key}"
-                )
-                continue
+            if asset_class == "Equity":
+                for term, term_data in asset_data.items():
+                    logger.debug(f"Processing term: {term}")
+                    for strategy_key, strategy_data in term_data.items():
+                        order_ids.update(
+                            check_strategy_orders(
+                                user,
+                                asset_class,
+                                term,
+                                strategy_key,
+                                strategy_data,
+                                today,
+                            )
+                        )
+            elif asset_class == "Derivatives":
+                for strategy_key, strategy_data in asset_data.items():
+                    if strategy_key in DERIVATIVES_STRATEGY_LIST:
+                        order_ids.update(
+                            check_strategy_orders(
+                                user,
+                                asset_class,
+                                None,
+                                strategy_key,
+                                strategy_data,
+                                today,
+                            )
+                        )
+            else:
+                logger.info(f"Unsupported asset class: {asset_class}")
 
-            for order in orders_from_firebase:
-                if order is not None:
-                    order_id_str = str(order["order_id"])
-                    order_date_timestamp = order.get("time_stamp", "").split(" ")[0]
-                    if order_date_timestamp == today:
-                        order_ids.add(order_id_str)
+        if not order_ids:
+            logger.info(
+                f"No orders found today for user: {user['Broker']['BrokerUsername']}"
+            )
+        else:
+            logger.info(
+                f"Found {len(order_ids)} orders for user: {user['Broker']['BrokerUsername']}"
+            )
         return order_ids
     except Exception as e:
         logger.error(
             f"Error in get_order_ids_from_strategies for user: {user['Broker']['BrokerUsername']}. Error: {e}"
         )
+        return set()
 
 
 def daily_tradebook_validator():
@@ -159,6 +212,12 @@ def daily_tradebook_validator():
         order_ids = get_order_ids_from_strategies(user, strategies)
 
         try:
+            if not user_tradebook:
+                logger.info(
+                    f"No tradebook found for user: {user['Broker']['BrokerUsername']}"
+                )
+                continue
+
             for trade in user_tradebook:
                 avg_price_key = BrokerCenterUtils.get_avg_prc_broker_key(
                     user["Broker"]["BrokerName"]
@@ -172,6 +231,9 @@ def daily_tradebook_validator():
                 if trade_order_id in order_ids:
                     avg_prc = trade[avg_price_key]
                     update_path = get_update_path(trade_order_id, strategies)
+                    logger.debug(
+                        f"Updating order: {trade_order_id} with avg_prc: {avg_prc} at path: {update_path}"
+                    )
                     update_fields_firebase(
                         BrokerCenterUtils.CLIENTS_USER_FB_DB,
                         user["Tr_No"],
@@ -265,7 +327,7 @@ def main():
     2. Calls the function to validate the tradebook for all active users.
     3. Calls the function to clear extra orders from Firebase.
     """
-    download_json(CLIENTS_USER_FB_DB, "before_daily_tradebook_validator")
+    download_firebase_json(CLIENTS_USER_FB_DB, "before_daily_tradebook_validator")
     daily_tradebook_validator()
     clear_extra_orders_firebase()
 

@@ -17,13 +17,17 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup  # noqa: E402
 
 logger = LoggerSetup()
-SHORT_EMABBCONFLUENCE = os.getenv("SHORT_EMABBCONFLUENCE")
-SHORT_MOMENTUM = os.getenv("SHORT_MOMENTUM")
-SHORT_MEANREVERSION = os.getenv("SHORT_MEANREVERSION")
-MID_TFMOMENTUM = os.getenv("MID_TFMOMENTUM")
-MID_TFEMA = os.getenv("MID_TFEMA")
-LONG_RATIO = os.getenv("LONG_RATIO")
-LONG_COMBO = os.getenv("LONG_COMBO")
+SHORT_MOMENTUM = "Short_Momentum"
+SHORT_EMABBCONFLUENCE = "Short_EMABBConfluence"
+SHORT_MEANREVERSION = "Short_MeanReversion"
+MID_TFMOMENTUM = "Mid_tfMomentum"
+MID_TFEMA = "Mid_tfEma"
+LONG_RATIO = "Long_Ratio"
+LONG_COMBO = "Long_Combo"
+FINANCIAL_DB_PATH = os.getenv("FINANCIAL_DB_PATH")
+TICKERS_URL = os.getenv("TICKERS_URL")
+EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
+TODAY_STOCK_DATA_DB_PATH = os.getenv("TODAY_STOCK_DATA_DB_PATH")
 
 
 def get_stock_codes():
@@ -34,7 +38,7 @@ def get_stock_codes():
         list: A list of stock symbols.
     """
     try:
-        url = os.getenv("tickers_url")
+        url = TICKERS_URL
         return list(pd.read_csv(url)["SYMBOL"].values)
     except Exception as e:
         logger.error(f"Error fetching stock codes: {e}")
@@ -81,6 +85,9 @@ def get_financial_data(stock_symbols):
             stock = yf.Ticker(f"{symbol}.NS")
             info = stock.info
 
+            if info is None or info == {}:
+                logger.warning(f"No financial data found for {symbol}")
+                continue
             # Extract necessary financial information
             total_revenue = info.get("totalRevenue", np.nan)
             operating_cashflow = info.get(
@@ -90,7 +97,15 @@ def get_financial_data(stock_symbols):
             book_value_per_share = info.get("bookValue", np.nan)
             shares_outstanding = info.get("sharesOutstanding", np.nan)
             revenue_growth = info.get("revenueGrowth", np.nan)
-
+            if (
+                total_revenue is np.nan
+                or operating_cashflow is np.nan
+                or total_debt is np.nan
+                or book_value_per_share is np.nan
+                or shares_outstanding is np.nan
+            ):
+                logger.warning(f"No financial data found for {symbol}")
+                continue
             # Calculate Operating Profit Margin
             operating_profit_margin = (
                 (operating_cashflow / total_revenue)
@@ -349,68 +364,73 @@ def check_if_above_50ema(stock_data):
         return stock_data
 
 
-def store_stock_data_sqldb():
+def store_ohlcv_stock_data_sqldb():
     """
     Fetches stock data and selects top picks based on various strategies.
     Exports selected stocks to CSV files for short term, mid term, and long term picks.
     """
     try:
+        logger.info("Fetching and storing OHLCV data...")
         stock_symbols = get_stock_codes()
 
-        db_path = os.getenv("equity_stock_data_db_path")
+        db_path = EQUITY_STOCK_DATA_DB_PATH
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         for stock in stock_symbols:
             stock_data_daily = get_stock_data(stock, period="1y", duration="1d")
             stock_data_weekly = get_stock_data(stock, period="2y", duration="1wk")
 
-            if stock_data_daily is not None and stock_data_weekly is not None:
-                combined_data = pd.DataFrame(
-                    {
-                        "Date": stock_data_daily.index.date,
-                        "DailyOpen": stock_data_daily["Open"],
-                        "DailyHigh": stock_data_daily["High"],
-                        "DailyLow": stock_data_daily["Low"],
-                        "DailyClose": stock_data_daily["Close"],
-                        "DailyVolume": stock_data_daily["Volume"],
-                        "WeeklyOpen": stock_data_weekly["Open"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                        "WeeklyHigh": stock_data_weekly["High"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                        "WeeklyLow": stock_data_weekly["Low"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                        "WeeklyClose": stock_data_weekly["Close"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                        "WeeklyVolume": stock_data_weekly["Volume"].reindex(
-                            stock_data_daily.index, method="ffill"
-                        ),
-                    }
-                )
+            if (stock_data_daily is None or stock_data_daily.empty) or (
+                stock_data_weekly is None or stock_data_weekly.empty
+            ):
+                logger.warning(f"No OHLCV data found for {stock}")
+                continue
+            combined_data = pd.DataFrame(
+                {
+                    "Date": stock_data_daily.index.date,
+                    "DailyOpen": stock_data_daily["Open"],
+                    "DailyHigh": stock_data_daily["High"],
+                    "DailyLow": stock_data_daily["Low"],
+                    "DailyClose": stock_data_daily["Close"],
+                    "DailyVolume": stock_data_daily["Volume"],
+                    "WeeklyOpen": stock_data_weekly["Open"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                    "WeeklyHigh": stock_data_weekly["High"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                    "WeeklyLow": stock_data_weekly["Low"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                    "WeeklyClose": stock_data_weekly["Close"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                    "WeeklyVolume": stock_data_weekly["Volume"].reindex(
+                        stock_data_daily.index, method="ffill"
+                    ),
+                }
+            )
 
-                table_name = stock.replace(".", "_")
-                cursor.execute(
-                    f"""
-                    CREATE TABLE IF NOT EXISTS "{table_name}" (
-                        Date TEXT,
-                        DailyOpen REAL,
-                        DailyHigh REAL,
-                        DailyLow REAL,
-                        DailyClose REAL,
-                        DailyVolume INTEGER,
-                        WeeklyOpen REAL,
-                        WeeklyHigh REAL,
-                        WeeklyLow REAL,
-                        WeeklyClose REAL,
-                        WeeklyVolume INTEGER
-                    )
-                    """
+            table_name = stock.replace(".", "_")
+            cursor.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS "{table_name}" (
+                    Date TEXT,
+                    DailyOpen REAL,
+                    DailyHigh REAL,
+                    DailyLow REAL,
+                    DailyClose REAL,
+                    DailyVolume INTEGER,
+                    WeeklyOpen REAL,
+                    WeeklyHigh REAL,
+                    WeeklyLow REAL,
+                    WeeklyClose REAL,
+                    WeeklyVolume INTEGER
                 )
+                """
+            )
 
-                combined_data.to_sql(table_name, conn, if_exists="replace", index=False)
+            combined_data.to_sql(table_name, conn, if_exists="replace", index=False)
 
         conn.commit()
         conn.close()
@@ -418,6 +438,29 @@ def store_stock_data_sqldb():
         logger.info("Stock data has been successfully stored in the database.")
     except Exception as e:
         logger.error(f"Error storing stock data in SQLite DB: {e}")
+
+
+def store_financial_data_sqldb():
+    """
+    Fetches stock data and selects top picks based on various strategies.
+    Exports selected stocks to CSV files for short term, mid term, and long term picks.
+    """
+    logger.info("Fetching and storing financial data...")
+    stock_codes = get_stock_codes()
+    stock_financial_data_df = get_financial_data(stock_codes)
+    if not stock_financial_data_df.empty:
+        # SQLite database path
+        table_name = "financials"
+        try:
+            conn = sqlite3.connect(FINANCIAL_DB_PATH)
+            stock_financial_data_df.to_sql(
+                table_name, conn, if_exists="replace", index=False
+            )
+            logger.debug(f"Data uploaded to {table_name} table in {FINANCIAL_DB_PATH}")
+        except Exception as e:
+            logger.error(f"Error uploading data to SQLite: {e}")
+        finally:
+            conn.close()
 
 
 def read_stock_data_from_db(db_path):
@@ -487,6 +530,14 @@ def read_stock_data_from_db(db_path):
         return {}
 
 
+def safe_merge(df1, df2, on, how):
+    if df1 is None:
+        return df2
+    if df2 is None:
+        return df1
+    return pd.merge(df1, df2, on=on, how=how)
+
+
 def merge_dataframes(
     momentum_df,
     mean_reversion_df,
@@ -500,12 +551,14 @@ def merge_dataframes(
     Merge the DataFrames from different strategies into one comprehensive DataFrame.
     """
     try:
-        combined_df = pd.merge(momentum_df, mean_reversion_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, ema_bb_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, ratio_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, combo_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, tfmomentum_df, on="Symbol", how="outer")
-        combined_df = pd.merge(combined_df, tfema_df, on="Symbol", how="outer")
+        combined_df = safe_merge(
+            momentum_df, mean_reversion_df, on="Symbol", how="outer"
+        )
+        combined_df = safe_merge(combined_df, ema_bb_df, on="Symbol", how="outer")
+        combined_df = safe_merge(combined_df, ratio_df, on="Symbol", how="outer")
+        combined_df = safe_merge(combined_df, combo_df, on="Symbol", how="outer")
+        combined_df = safe_merge(combined_df, tfmomentum_df, on="Symbol", how="outer")
+        combined_df = safe_merge(combined_df, tfema_df, on="Symbol", how="outer")
 
         # Handle '_Drop' columns from multiple merges
         combined_df = combined_df[
@@ -561,10 +614,10 @@ def update_todaystocks_db(
     momentum_stocks_df,
     mean_reversion_stocks_df,
     ema_bb_confluence_stocks_df,
-    ratio_stocks_df,
-    combo_stocks_df,
-    tfmomentum_stocks_df,
-    tfema_stocks_df,
+    ratio_stocks_df=None,
+    combo_stocks_df=None,
+    tfmomentum_stocks_df=None,
+    tfema_stocks_df=None,
 ):
     """
     Stores the combined DataFrame to a SQL database.
@@ -585,7 +638,7 @@ def update_todaystocks_db(
             tfema_df=tfema_stocks_df,
         )
         # Connect to the TodayStocks.db database (create it if it doesn't exist)
-        db_path = os.getenv("today_stock_data_db_path")
+        db_path = TODAY_STOCK_DATA_DB_PATH
         conn = sqlite3.connect(db_path)
 
         # Write the DataFrame to a table in the SQL database
@@ -614,7 +667,3 @@ def calculate_ema(data, window):
         pandas.Series: The EMA values.
     """
     return data.ewm(span=window, adjust=False).mean()
-
-
-if __name__ == "__main__":
-    store_stock_data_sqldb()

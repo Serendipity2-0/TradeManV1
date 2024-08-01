@@ -12,7 +12,7 @@ trail.py
 *.session
 *.sh
 *.pdf
+*.yaml
 .devcontainer/
 supervisord.conf
 .pre-commit-config.yaml
-

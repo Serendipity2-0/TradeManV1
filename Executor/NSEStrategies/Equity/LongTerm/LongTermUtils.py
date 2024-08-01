@@ -10,16 +10,13 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
-from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
-    get_financial_data,
-    get_stock_codes,
-)
+
 
 logger = LoggerSetup()
-LONG_RATIO = os.getenv("LONG_RATIO")
-LONG_COMBO = os.getenv("LONG_COMBO")
+LONG_RATIO = "Long_Ratio"
+LONG_COMBO = "Long_Combo"
 
-financial_db_path = os.getenv("financial_db_path")
+FINANCIAL_DB_PATH = os.getenv("FINANCIAL_DB_PATH")
 
 
 def get_longterm_stocks_df():
@@ -31,25 +28,9 @@ def get_longterm_stocks_df():
             pandas.DataFrame: Stock financial data.
             pandas.DataFrame: Stock ratio data.
     """
-    stock_codes = get_stock_codes()
-    stock_financial_data_df = get_financial_data(stock_codes)
-    if not stock_financial_data_df.empty:
-        # SQLite database path
-        table_name = "financials"
-        try:
-            conn = sqlite3.connect(financial_db_path)
-            stock_financial_data_df.to_sql(
-                table_name, conn, if_exists="replace", index=False
-            )
-            logger.debug(f"Data uploaded to {table_name} table in {financial_db_path}")
-        except Exception as e:
-            logger.error(f"Error uploading data to SQLite: {e}")
-        finally:
-            conn.close()
-
-        combo_stocks_df = perform_combo_strategy(db_path=financial_db_path)
-        ratio_stocks_df = perform_ratio_strategy(db_path=financial_db_path)
-        return combo_stocks_df, ratio_stocks_df
+    combo_stocks_df = perform_combo_strategy(db_path=FINANCIAL_DB_PATH)
+    ratio_stocks_df = perform_ratio_strategy(db_path=FINANCIAL_DB_PATH)
+    return combo_stocks_df, ratio_stocks_df
 
 
 # Define the fundamental ratio strategy

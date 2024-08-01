@@ -138,7 +138,7 @@ def get_new_holdings(user_tables):
         return round(new_holdings)
 
 
-def update_account_keys_fb(tr_no, account_values):
+def update_account_keys_fb(tr_no, combined_account_values):
     """
     Update account keys in Firebase.
 
@@ -153,22 +153,26 @@ def update_account_keys_fb(tr_no, account_values):
     try:
         logger.debug(f"Updating account keys for {tr_no} in Firebase")
         # use this method to update the account keys in the firebase update_fields_firebase(collection, document, data, field_key=None)
-        update_fields_firebase(
-            CLIENTS_USER_FB_DB,
-            tr_no,
-            {
-                f"{account_values['today_fb_format']}_AccountValue": account_values[
-                    "new_account_value"
-                ],
-                f"{account_values['today_fb_format']}_FreeCash": account_values[
-                    "new_free_cash"
-                ],
-                f"{account_values['today_fb_format']}_Holdings": account_values[
-                    "new_holdings"
-                ],
-            },
-            "Accounts",
-        )
+        account_types = ["Equity", "Derivatives"]
+        fields = ["FreeCash", "Holdings", "AccountValue"]
+
+        for account_type in account_types:
+            if account_type in combined_account_values:
+                # check if combined_account_values[account_type] is not empty
+                if combined_account_values[account_type]:
+                    update_data = {
+                        f"{account_type}_{field}": combined_account_values[
+                            account_type
+                        ][field]
+                        for field in fields
+                    }
+
+                    update_fields_firebase(
+                        CLIENTS_USER_FB_DB,
+                        tr_no,
+                        update_data,
+                        f"Accounts/{account_type}",
+                    )
     except Exception as e:
         logger.error(f"Error in update_account_keys_fb: {e}")
 
@@ -197,7 +201,7 @@ def fetch_user_tables(user_db_conn):
     return user_tables
 
 
-def calculate_account_values(user, today_trades, user_tables):
+def calculate_account_values(user, today_trades, user_tables, segment=None):
     """
     Calculate account values based on today's trades and user data.
 
@@ -223,29 +227,24 @@ def calculate_account_values(user, today_trades, user_tables):
         send_message_to_group(int(group_id), message)
 
     today_fb_format = datetime.now().strftime("%d%b%y")
-    previous_trading_day_fb_format = get_previous_trading_day(datetime.now().date())
 
-    previous_free_cash = user["Accounts"][f"{today_fb_format}_FreeCash"]
-    previous_holdings = user["Accounts"][f"{previous_trading_day_fb_format}_Holdings"]
-    previous_account_value = user["Accounts"][
-        f"{previous_trading_day_fb_format}_AccountValue"
-    ]
+    if segment:
+        AccountValue = user["Accounts"][segment][f"{segment}_AccountValue"]
 
     # Assuming no additions or withdrawals for simplicity
     broker_payin = get_broker_payin(user)
     broker_payout = 0  # As of now only zerodha is providing broker payout
 
-    new_free_cash = previous_free_cash + gross_pnl - expected_tax + broker_payin
-    # Placeholder for new holdings calculation; you might need additional info for this
     new_holdings = get_new_holdings(user_tables)
+    new_free_cash = (
+        AccountValue + gross_pnl - expected_tax + broker_payin - new_holdings
+    )
 
     new_account_value = round(
-        previous_account_value + gross_pnl - expected_tax + broker_payin + broker_payout
+        AccountValue + gross_pnl - expected_tax + broker_payin + broker_payout
     )
-    net_change = new_account_value - previous_account_value
-    net_change_percentage = (
-        (net_change / previous_account_value * 100) if previous_account_value else 0
-    )
+    net_change = new_account_value - AccountValue
+    net_change_percentage = (net_change / AccountValue * 100) if AccountValue else 0
 
     # Calculate drawdown, which is a placeholder here; you might need additional data for an accurate calculation
     drawdown = min(new_account_value - user["Accounts"]["CurrentBaseCapital"], 0)
@@ -258,11 +257,9 @@ def calculate_account_values(user, today_trades, user_tables):
 
     account_values = {
         "today_fb_format": today_fb_format,
-        "previous_free_cash": previous_free_cash,
-        "previous_holdings": previous_holdings,
-        "new_free_cash": new_free_cash,
-        "new_holdings": new_holdings,
-        "new_account_value": new_account_value,
+        "FreeCash": new_free_cash,
+        "Holdings": new_holdings,
+        "AccountValue": new_account_value,
         "net_change": net_change,
         "net_change_percentage": net_change_percentage,
         "drawdown": drawdown,
@@ -391,6 +388,58 @@ def today_trades_data(active_users, today_trades):
         )
 
     return consolidated_data
+
+
+def aggregate_account_values(combined_account_values):
+    equity = combined_account_values.get("Equity", {})
+    derivatives = combined_account_values.get("Derivatives", {})
+
+    today_fb_format = equity.get("today_fb_format") or derivatives.get(
+        "today_fb_format"
+    )
+
+    total_free_cash = equity.get("FreeCash", 0) + derivatives.get("FreeCash", 0)
+    total_holdings = equity.get("Holdings", 0) + derivatives.get("Holdings", 0)
+    total_account_value = equity.get("AccountValue", 0) + derivatives.get(
+        "AccountValue", 0
+    )
+
+    net_changes = [equity.get("net_change", 0), derivatives.get("net_change", 0)]
+    avg_net_change = sum(net_changes) / len(net_changes) if net_changes else 0
+
+    net_change_percentage = [
+        equity.get("net_change_percentage", 0),
+        derivatives.get("net_change_percentage", 0),
+    ]
+    avg_net_change_percentage = (
+        sum(net_change_percentage) / len(net_change_percentage)
+        if net_change_percentage
+        else 0
+    )
+
+    drawdowns = [equity.get("drawdown", 0), derivatives.get("drawdown", 0)]
+    avg_drawdown = sum(drawdowns) / len(drawdowns) if drawdowns else 0
+
+    drawdown_percentages = [
+        equity.get("drawdown_percentage", 0),
+        derivatives.get("drawdown_percentage", 0),
+    ]
+    avg_drawdown_percentage = (
+        sum(drawdown_percentages) / len(drawdown_percentages)
+        if drawdown_percentages
+        else 0
+    )
+
+    return {
+        "today_fb_format": today_fb_format,
+        "new_free_cash": total_free_cash,
+        "new_holdings": total_holdings,
+        "new_account_value": total_account_value,
+        "net_change": avg_net_change,
+        "net_change_percentage": avg_net_change_percentage,
+        "drawdown": avg_drawdown,
+        "drawdown_percentage": avg_drawdown_percentage,
+    }
 
 
 # Define constants for the document layout

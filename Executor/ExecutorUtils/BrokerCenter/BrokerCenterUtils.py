@@ -13,6 +13,8 @@ ALICEBLUE = os.getenv("ALICEBLUE_BROKER")
 FIRSTOCK = os.getenv("FIRSTOCK_BROKER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -174,11 +176,13 @@ def fetch_list_of_strategies_from_firebase():
     """
     try:
         strategies = []
-        acounts = fetch_active_users_from_firebase()
-        for account in acounts:
-            for strategy in account["Strategies"]:
-                if strategy not in strategies:
-                    strategies.append(strategy)
+        accounts = fetch_active_users_from_firebase()
+        for account in accounts:
+            for trade_type in ["Equity", "Derivatives"]:
+                if trade_type in account.get("Strategies", {}):
+                    for strategy in account["Strategies"][trade_type]:
+                        if strategy not in strategies:
+                            strategies.append(strategy)
         return strategies
     except Exception as e:
         logger.error(f"Error while fetching strategies from Firebase: {e}")
@@ -199,7 +203,15 @@ def fetch_users_for_strategies_from_firebase(strategy_name):
     users = []
     for account in accounts:
         try:
-            if strategy_name in account["Strategies"]:
+            if (
+                strategy_name in EQUITY_STRATEGY_LIST
+                and strategy_name in account["Strategies"]["Equity"]
+            ):
+                users.append(account)
+            elif (
+                strategy_name in DERIVATIVES_STRATEGY_LIST
+                and strategy_name in account["Strategies"]["Derivatives"]
+            ):
                 users.append(account)
         except Exception as e:
             logger.error(
@@ -292,6 +304,22 @@ def fetch_holdings_value_for_user_broker(user):
         return firstock_adapter.fetch_firstock_holdings_value(user)
 
 
+def fetch_user_json_from_firebase(tr_no):
+    """
+    Fetches user details from Firebase based on the Tr_No.
+
+    Args:
+        tr_no (str): The Tr_No of the user.
+
+    Returns:
+        dict: User details for the specified Tr_No.
+    """
+    user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
+    for user in user_details:
+        if user_details[user]["Tr_No"] == tr_no:
+            return user_details[user]
+
+
 def fetch_user_credentials_firebase(broker_user_name):
     """
     Fetches user credentials from Firebase based on the broker username.
@@ -327,7 +355,16 @@ def fetch_strategy_details_for_user(username):
         user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
         for user in user_details:
             if user_details[user]["Broker"]["BrokerUsername"] == username:
-                return user_details[user]["Strategies"]
+                equity_strategy_details = user_details[user]["Strategies"]["Equity"]
+                derivatives_strategy_details = user_details[user]["Strategies"][
+                    "Derivatives"
+                ]
+                # retun it in a dictionary
+                combined_strategy_details = {
+                    **equity_strategy_details,
+                    **derivatives_strategy_details,
+                }
+                return combined_strategy_details
     except Exception as e:
         logger.error(f"Error while fetching strategy details for user {username}: {e}")
 

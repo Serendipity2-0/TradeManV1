@@ -121,7 +121,36 @@ def read_strategy_table(conn, strategy_name):
     return df
 
 
-def fetch_qty_for_holdings_sqldb(Tr_No, trade_id):
+def create_holding_strategy_table(conn, table_name):
+    """
+    Create a new table in the database.
+
+    Parameters:
+    conn (sqlite3.Connection): SQLite connection object
+    table_name (str): The name of the table to create
+    """
+    try:
+        query = f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
+            trade_id TEXT PRIMARY KEY,
+            trading_symbol TEXT,
+            signal TEXT,
+            qty INTEGER,
+            margin_utilized REAL,
+            entry_time TEXT,
+            entry_prc REAL,
+            tax REAL,
+            setup TEXT
+        )
+        """
+        cursor = conn.cursor()
+        cursor.execute(query)
+        conn.commit()
+    except Exception as e:
+        logger.error(f"An error occurred while creating the table {table_name}: {e}")
+
+
+def fetch_qty_for_holdings_sqldb(Tr_No, trade_id, strategy_type):
     """
     Fetch the quantity from the Holdings table that matches the first part of the trade_id.
 
@@ -132,34 +161,18 @@ def fetch_qty_for_holdings_sqldb(Tr_No, trade_id):
     Returns:
         int: The quantity from the Holdings table.
     """
-    trade_id = trade_id.split("_")[0]
-    db_path = os.path.join(os.getenv("USR_TRADELOG_DB_FOLDER"), f"{Tr_No}.db")
+    # check the strategy type and accordingly change the db path
+    db_folder = os.getenv(f"USR_TRADELOG_{strategy_type.upper()}_DB_FOLDER")
+    db_path = os.path.join(db_folder, f"{Tr_No}_{strategy_type.lower()}.db")
     conn = get_db_connection(db_path)
+    trade_id = trade_id.split("_")[0]
     query = f"SELECT * FROM Holdings WHERE trade_id LIKE '{trade_id}%'"
     df = pd.read_sql(query, conn)
     if not df.empty:
         qty = df["qty"].values[0]
     else:
         qty = 0
-    return qty
-
-
-def fetch_sql_table_from_db(Tr_No, table_name):
-    """
-    Fetch a table from the database and return it as a DataFrame.
-
-    Args:
-        Tr_No (str): The trader number.
-        table_name (str): The name of the table to fetch.
-
-    Returns:
-        pd.DataFrame: The DataFrame containing the table data.
-    """
-    db_path = os.path.join(os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{Tr_No}.db")
-    conn = get_db_connection(db_path)
-    query = f"SELECT * FROM {table_name}"
-    df = pd.read_sql(query, conn)
-    return df
+    return int(qty)
 
 
 def fetch_holdings_value_for_user_sqldb(user):
