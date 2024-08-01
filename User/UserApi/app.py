@@ -32,10 +32,11 @@ from User.UserApi.userapi_utils import (
     get_broker_bank_transactions_data,
     strategy_graph_data,
     calculate_strategy_statistics,
-    fetch_users_for_strategy,
+    fetch_strategies_for_user,
     get_users_db_holdings,
     log_changes_via_webapp,
     update_next_trader_number,
+    parse_value,
 )
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
@@ -399,7 +400,7 @@ def get_strategies_for_user(tr_no: str):
     Returns:
         list: A list of user names associated with the strategy.
     """
-    return fetch_users_for_strategy(tr_no)
+    return fetch_strategies_for_user(tr_no)
 
 
 def get_users_holdings(tr_no: str, mode: str):
@@ -509,23 +510,24 @@ def update_strategy_qty_amplifier(strategy, amplifier):
 
 def modify_strategy_params(strategy_name, section, updated_params):
     """
-    Modify parameters for a specific section of a strategy.
+    Modify strategy parameters for a specific strategy.
 
-    This function allows updating the parameters of a specific section for a given strategy.
-    It also logs the changes and sends a notification via Discord.
+    This function modifies the parameters for a given strategy in the Firebase database.
+    NOTE: 1. For variables that are lists, the response should be sent as a list.
+    For example, if the section is "Instruments", the response should be sent as a list of instruments.
+    2. If the section is "MarketInfoParams", the response should be sent as a dictionary.
+    3. If the section is "Root-level values", the response should be sent as a dictionary.
+    Example: section : Description and request body should be like this {"Description": "New Description"}
 
     Args:
-        strategy_name (str): The name of the strategy to update.
-        section (str): The section of the strategy parameters to update.
-        updated_params (Dict[str, Any]): A dictionary containing the updated parameters for the section.
+        strategy_name (str): The name of the strategy to modify.
+        section (str): The section of the strategy to modify.
+        updated_params (dict): The updated parameters for the strategy.
+
 
     Returns:
         dict: A message indicating successful update.
-
-    Raises:
-        HTTPException: If there's an error updating the database or if the strategy or section is not found.
     """
-    # Fetch current strategy data
     strategies = fetch_collection_data_firebase(STRATEGIES_FB_COLLECTION)
 
     if strategy_name not in strategies:
@@ -534,12 +536,31 @@ def modify_strategy_params(strategy_name, section, updated_params):
         )
 
     strategy_params = strategies[strategy_name]
+
+    # Handle root-level values
+    root_level_fields = ["Description", "NextTradeId", "StrategyName", "StrategyPrefix"]
+    if section in root_level_fields:
+        update_fields_firebase(STRATEGIES_FB_COLLECTION, strategy_name, updated_params)
+        log_changes_via_webapp({section: updated_params})
+        discord_admin_bot(f"{section} updated for {strategy_name}")
+        return {"message": f"{section} for {strategy_name} updated successfully!"}
+
+    # Handle the Instruments list
+    if section == "Instruments":
+        if not isinstance(updated_params["Instruments"], list):
+            raise HTTPException(status_code=400, detail="Instruments must be a list.")
+        update_fields_firebase(STRATEGIES_FB_COLLECTION, strategy_name, updated_params)
+        log_changes_via_webapp({"Instruments": updated_params})
+        discord_admin_bot(f"Instruments list updated for {strategy_name}")
+        return {"message": f"Instruments for {strategy_name} updated successfully!"}
+
+    # Handle nested objects
     if section not in strategy_params or section == "MarketInfoParams":
         raise HTTPException(
             status_code=404, detail=f"Section '{section}' not found or not editable."
         )
 
-    # Update the database
+    # Update the nested object
     update_fields_firebase(
         STRATEGIES_FB_COLLECTION, strategy_name, {section: updated_params}
     )
@@ -758,27 +779,29 @@ def update_user_section(user_id: str, section: str, details: dict):
 
     Args:
         user_id (str): The ID of the user to update.
-        section (str): The section to update. Use "" for root-level updates.
+        section (str): The section to update.
         details (dict): The new details to update.
 
     Returns:
-        str: A message indicating successful update.
+        dict: A message indicating successful update.
     """
+    root_level_fields = ["Tr_No", "Active"]
 
-    if section == "root":
-        logger.info("Updating at root level")
-        path = user_id
-    else:
-        logger.info(f"Updating section: {section}")
-        path = f"{user_id}/{section}"
+    if section in root_level_fields:
+        # Handle root-level updates
+        update_fields_firebase(CLIENTS_COLLECTION, user_id, parse_value(details))
+        log_changes_via_webapp({section: details})
+        discord_admin_bot(f"{section} updated for user {user_id}")
+        return {"message": f"{section} for user {user_id} updated successfully!"}
 
-    # Ensure boolean values are correctly parsed
-    for key, value in details.items():
-        if isinstance(value, str):
-            if value.lower() == "true":
-                details[key] = True
-            elif value.lower() == "false":
-                details[key] = False
+    # Handle nested dictionary updates
+    if section not in ["Accounts", "Broker", "Profile", "Strategies"]:
+        raise ValueError(f"Invalid section: {section}")
 
-    update_fields_firebase(CLIENTS_COLLECTION, path, details)
-    return "Updated Successfully"
+    # Parse values in the details dictionary
+    parsed_details = {key: parse_value(value) for key, value in details.items()}
+
+    update_fields_firebase(CLIENTS_COLLECTION, f"{user_id}/{section}", parsed_details)
+    log_changes_via_webapp({section: parsed_details})
+    discord_admin_bot(f"Section {section} updated for user {user_id}")
+    return {"message": f"{section} for user {user_id} updated successfully!"}

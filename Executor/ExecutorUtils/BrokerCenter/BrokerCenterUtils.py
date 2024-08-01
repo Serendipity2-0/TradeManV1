@@ -371,39 +371,21 @@ def fetch_strategy_details_for_user(username):
 
 def fetch_active_strategies_all_users():
     """
-    Fetches a list of all active strategies from Firebase.
+    Fetches a list of all unique active strategies from Firebase.
 
     Returns:
-        list: A list of active strategies for all users.
+        list: A list of unique active strategies across all active users.
     """
     try:
         user_details = firebase_utils.fetch_collection_data_firebase(CLIENTS_USER_FB_DB)
-        strategies = []
+        strategies = set()
         for user in user_details:
             if user_details[user].get("Active", False):
                 user_strategies = user_details[user].get("Strategies", {})
-
-                # Handle Equity strategies
-                equity_strategies = user_strategies.get("Equity", [])
-                strategies.extend(
-                    [
-                        strategy
-                        for strategy in equity_strategies
-                        if strategy not in strategies
-                    ]
-                )
-
-                # Handle Derivatives strategies
-                derivatives_strategies = user_strategies.get("Derivatives", [])
-                strategies.extend(
-                    [
-                        strategy
-                        for strategy in derivatives_strategies
-                        if strategy not in strategies
-                    ]
-                )
-
-        return strategies
+                for category in ["Equity", "Derivatives"]:
+                    if category in user_strategies:
+                        strategies.update(user_strategies[category])
+        return list(strategies)
     except Exception as e:
         logger.error(f"Error while fetching active strategies for all users: {e}")
         return []

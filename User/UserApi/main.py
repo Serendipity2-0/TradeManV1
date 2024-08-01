@@ -428,7 +428,7 @@ def get_users_holdings(tr_no: str, mode: str):
 
     Args:
         tr_no (str): The user's ID.
-        mode (str): The mode of holdings to retrieve.
+        mode (str): The mode of holdings to retrieve.(Equity, Debt, Derivatives)
 
     Returns:
         list: A list of equity holdings for the user.
@@ -445,7 +445,7 @@ def get_users_holdings(tr_no: str, mode: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/strategy-params/{strategy_name}")
+@app_admin.get("/strategy-params/{strategy_name}")
 def get_strategy_params(
     strategy_name: str = Path(..., description="Name of the strategy"),
 ):
@@ -473,7 +473,7 @@ def get_strategy_params(
         )
 
 
-@app_user.put("/strategy-params/{strategy_name}/{section}")
+@app_admin.put("/strategy-params/{strategy_name}/{section}")
 def modify_strategy_params(
     strategy_name: str = Path(..., description="Name of the strategy"),
     section: str = Path(
@@ -485,6 +485,15 @@ def modify_strategy_params(
 ):
     """
     Modify parameters for a specific section of a strategy.
+    NOTE:
+    1. For variables that are lists, the response should be sent as a list.
+        For example, if the section is "Instruments", the response should be sent as a list of instruments.
+        {"Instruments": ["NSE", "BSE"]}
+    2. If the section is "MarketInfoParams", the response should be sent as a dictionary.
+        {"EntryParams": {"EntryTime": "09:15", "ExitTime": "15:30"}}
+    3. If the section is "Root-level values", the response should be sent as a dictionary.
+        Example: section : Description and request body should be like this
+        {"Description": "New Description"}
 
     This endpoint allows updating the parameters of a specific section for a given strategy.
     It also logs the changes and sends a notification via Discord.
@@ -502,6 +511,7 @@ def modify_strategy_params(
     """
     try:
         app.modify_strategy_params(strategy_name, section, updated_params)
+        return {"message": "Strategy parameters updated successfully!"}
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -707,7 +717,7 @@ def get_user_details_by_username(username: str):
 def update_user_section(user_id: str, section: str, details: dict):
     """
     Update a specific section of user details.
-    NOTE: If the section is at the root level we need to send the section as root.
+    NOTE: For fields Active and Tr_No, the request should be sent as dict like this {"Active": True} or {"Tr_No": "Tr1"}
 
     Args:
         user_id (str): The ID of the user to update.
@@ -718,7 +728,6 @@ def update_user_section(user_id: str, section: str, details: dict):
         dict: A message indicating successful update and the updated section.
     """
     try:
-        # Assume app.update_user_section is a method that handles the update logic
         updated_section = app.update_user_section(user_id, section, details)
         return {
             "message": f"Successfully updated {section} for user {user_id}",
