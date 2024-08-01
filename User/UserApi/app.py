@@ -754,6 +754,16 @@ def get_user_list_from_db():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def get_strategy_list():
+    """
+    Fetches the list of strategies from the database.
+
+    Returns:
+        list: A list of strategy names.
+    """
+    return ACTIVE_STRATEGIES
+
+
 def fetch_user_details_by_username(username: str):
     """
     Fetch user details by username from the database.

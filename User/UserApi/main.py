@@ -694,6 +694,22 @@ def get_user_list_from_db():
         )
 
 
+@app_admin.get("/strategy-list")
+def get_strategy_list():
+    """
+    Fetches the list of strategies from the database.
+
+    Returns:
+        list: A list of strategy names.
+    """
+    try:
+        return app.get_strategy_list()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching strategy list: {str(e)}"
+        )
+
+
 @app_admin.get("/user-details-username")
 def get_user_details_by_username(username: str):
     """

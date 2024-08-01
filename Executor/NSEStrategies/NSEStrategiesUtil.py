@@ -537,7 +537,10 @@ def update_qty_user_firebase(
         for user in strategy_users:
             strategies = user["Strategies"]
             if asset_segment == "Equity":
-                equity_free_cash = user["Accounts"]["Equity"]["Equity_FreeCash"]
+                base_capital = user["Accounts"]["CurrentBaseCapital"]
+                equity_free_cash = base_capital * (
+                    user["Accounts"]["Equity"]["CapitalAllocation"] / 100
+                )
                 term_data = strategies["Equity"].get(asset_term, {})
                 term_allocation = term_data.get("AllocationPercent", 0) / 100
                 term_free_cash = equity_free_cash * term_allocation
