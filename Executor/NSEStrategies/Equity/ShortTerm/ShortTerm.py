@@ -165,7 +165,7 @@ def main():
                 holdings["trade_id"].str.startswith(shortterm_prefix)
             ]
             setup_holdings = shortterm_holdings[
-                shortterm_holdings["setup"].isin([setup_name])
+                shortterm_holdings["setup"].isin([setup_name.upper()])
             ]
             current_holdings_count = len(setup_holdings)
             logger.debug(
