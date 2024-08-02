@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any
 from fastapi import HTTPException
+from datetime import datetime
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -22,27 +23,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_admin_bot,
 )
-from User.UserApi.userapi_utils import (
-    ACTIVE_STRATEGIES,
-    CLIENTS_COLLECTION,
-    MARKET_INFO_FB_COLLECTION,
-    STRATEGIES_FB_COLLECTION,
-    get_next_trader_number,
-    update_new_client_data_to_db,
-    all_users_data,
-    create_portfolio_stats,
-    get_monthly_returns_data,
-    get_weekly_cumulative_returns_data,
-    get_individual_strategy_data,
-    get_broker_bank_transactions_data,
-    strategy_graph_data,
-    calculate_strategy_statistics,
-    fetch_strategies_for_user,
-    get_users_db_holdings,
-    log_changes_via_webapp,
-    update_next_trader_number,
-    parse_value,
-)
+from User.UserApi.userapi_utils import *
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
     update_collection,
@@ -50,8 +31,17 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_users_for_strategies_from_firebase,
+    fetch_user_json_from_firebase,
 )
-from Executor.NSEStrategies.NSEStrategiesUtil import fetch_strategy_users
+from Executor.NSEStrategies.NSEStrategiesUtil import (
+    fetch_strategy_users,
+    StrategyBase,
+    place_order_single_user,
+)
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
+    Instrument as instrument_obj,
+    get_single_ltp,
+)
 
 logger = LoggerSetup()
 
@@ -852,3 +842,94 @@ def get_order_modes():
         list: A list of order modes.
     """
     return ["Complete Order", "Repair Order"]
+
+
+def get_qty_calculation_mode():
+    """
+    Fetches the qty calculation mode.
+
+    Returns:
+        list: A list of qty calculation modes.
+    """
+    return ["Auto", "Manual"]
+
+
+def process_complete_order(strategy_name: str):
+    """
+    Process complete order.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        list: A list of today's orders.
+    """
+    strategy_params = get_strategy_params(strategy_name)
+    today_orders_list = []
+    if strategy_params.get("TodayOrders"):
+        today_orders = strategy_params.get("TodayOrders")
+        for order_id, order_details in today_orders.items():
+            if order_details.get("EntryTime").split(" ")[0] == datetime.now().strftime(
+                "%Y-%m-%d"
+            ):
+                today_orders_list.append(order_details)
+        return today_orders_list
+    else:
+        return {"message": "Today's orders not processed yet!"}
+
+
+def place_complete_order(
+    strategy_name: str,
+    users: list,
+    symbols: list,
+    qty_calculation_mode: str,
+    qty: float,
+    trade_id: str,
+    setup_name: str,
+):
+    """
+    Places orders for the order mode "Complete Order".
+
+    Args:
+        strategy_name (str): The name of the strategy.
+        users (list): The list of users.
+        symbols (list): The list of symbols.
+        qty_calculation_mode (str): The qty calculation mode.
+        qty (float): The quantity.
+        trade_id (str): The trade id.
+        setup_name (str): The setup name.
+    """
+    for user in users:
+        for symbol in symbols:
+            exchange_token = instrument_obj().get_exchange_token_by_name(symbol, "NSE")
+            strategy_obj = StrategyBase.load_from_db(strategy_name)
+            order_type = strategy_obj.GeneralParams.OrderType
+            product_type = strategy_obj.GeneralParams.ProductType
+            strategy_type = strategy_obj.GeneralParams.StrategyType
+            num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
+
+            ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+            ltp = round(ltp * 20) / 20
+
+            update_strategy_qty(
+                strategy_name,
+                user,
+                qty_calculation_mode,
+                qty,
+                setup_name,
+                ltp,
+                strategy_type,
+                num_stocks,
+            )
+            order_details = prepare_order_details(
+                strategy_name,
+                symbol,
+                exchange_token,
+                order_type,
+                product_type,
+                trade_id,
+                setup_name,
+                ltp,
+            )
+            user_details = fetch_user_json_from_firebase(user)
+            place_order_single_user([user_details], order_details)

@@ -12,20 +12,7 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
-from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
-    update_todaystocks_db,
-    store_ohlcv_stock_data_sqldb,
-    store_financial_data_sqldb,
-)
-from Executor.NSEStrategies.Equity.ShortTerm.ShortTermUtils import (
-    get_shortterm_stocks_df,
-)
-from Executor.NSEStrategies.Equity.LongTerm.LongTermUtils import get_longterm_stocks_df
-from Executor.NSEStrategies.Equity.MidTerm.MidTermUtils import get_midterm_stocks_df
-from Executor.NSEStrategies.NSEStrategiesUtil import (
-    StrategyBase,
-    update_signal_firebase,
-)
+from Executor.NSEStrategies.NSEStrategiesUtil import update_signal_firebase
 import Executor.NSEStrategies.Equity.ShortTerm.ShortTerm as ShortTerm
 import Executor.NSEStrategies.Equity.MidTerm.MidTerm as MidTerm
 import Executor.NSEStrategies.Equity.LongTerm.LongTerm as LongTerm
@@ -50,12 +37,15 @@ def signals_to_fb(strategy_name, order_to_place, next_trade_prefix):
         signals_to_log = {
             "TradeId": order["trade_id"],
             "Signal": "Long",
+            "Symbol": order["base_symbol"],
             "EntryTime": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "StrategyInfo": {
                 "Direction": "Bullish",
             },
             "Status": "Open",
         }
+        if order["setup"]:
+            signals_to_log["Setup"] = order["setup"]
         update_signal_firebase(strategy_name, signals_to_log, next_trade_prefix)
     return signals_to_log
 
@@ -67,46 +57,6 @@ def main():
     Returns:
         None
     """
-
-    store_ohlcv_stock_data_sqldb()
-    store_financial_data_sqldb()
-
-    (
-        momentum_stocks_df,
-        mean_reversion_stocks_df,
-        ema_bb_confluence_stocks_df,
-    ) = get_shortterm_stocks_df()
-    tfmomentum_stocks_df, tfema_stocks_df = get_midterm_stocks_df()
-    combo_stocks_df, ratio_stocks_df = get_longterm_stocks_df()
-
-    update_todaystocks_db(
-        momentum_stocks_df,
-        mean_reversion_stocks_df,
-        ema_bb_confluence_stocks_df,
-        ratio_stocks_df,
-        combo_stocks_df,
-        tfmomentum_stocks_df,
-        tfema_stocks_df,
-    )
-
-    # desired_start_time_str = pystocks_obj.get_entry_params().EntryTime
-    # start_hour, start_minute, _ = map(int, desired_start_time_str.split(":"))
-    # now = dt.datetime.now()
-
-    # if now.date() in ExeUtils.holidays:
-    #     logger.info("Skipping execution as today is a holiday.")
-    #     return
-
-    # if now.time() < dt.time(9, 0):
-    #     logger.info("Time is before 9:00 AM, Waiting to execute.")
-    # else:
-    #     wait_time = dt.datetime(
-    #         now.year, now.month, now.day, start_hour, start_minute
-    #     ) - now
-
-    #     if wait_time.total_seconds() > 0:
-    #         logger.info(f"Waiting for {wait_time} before starting the bot")
-    #         sleep(wait_time.total_seconds())
 
     ShortTerm.main()
     MidTerm.main()

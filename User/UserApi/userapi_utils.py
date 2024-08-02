@@ -26,7 +26,11 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_utils import get_db_table_names
-
+from Executor.NSEStrategies.NSEStrategiesUtil import (
+    update_qty_user_firebase,
+    fetch_qty_amplifier,
+    fetch_strategy_amplifier,
+)
 
 logger = LoggerSetup()
 
@@ -47,6 +51,8 @@ MODE_TO_DB = {
     "Derivatives": ("derivatives", USER_DB_FOLDER_PATH),
     "Debt": ("debt", USER_DB_FOLDER_PATH),
 }
+EQUITY = "Equity"
+DERIVATIVES = "Derivatives"
 
 
 def all_users_data():
@@ -713,3 +719,92 @@ def parse_value(value):
             except ValueError:
                 return value
     return value
+
+
+def fetch_segment_from_strategy(strategy_name: str):
+    """
+    Fetches the segment from the strategy name.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        str: The segment of the strategy.
+    """
+    if strategy_name in EQUITY_STRATEGY_LIST:
+        return EQUITY
+    elif strategy_name in DERIVATIVES_STRATEGY_LIST:
+        return DERIVATIVES
+    else:
+        return None
+
+
+def update_strategy_qty(
+    strategy_name: str,
+    user: str,
+    qty_calculation_mode: str,
+    qty: int,
+    setup_name: str,
+    ltp: float,
+    strategy_type: str,
+    num_stocks: int,
+):
+    """
+    Updates the quantity of the strategy.
+    """
+    if num_stocks is None:
+        num_stocks = 1
+
+    qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
+    strategy_amplifier = fetch_strategy_amplifier(strategy_name)
+    segment = fetch_segment_from_strategy(strategy_name)
+
+    if qty_calculation_mode == "Auto":
+        update_qty_user_firebase(
+            strategy_name=setup_name.upper(),
+            avg_sl_points_or_ltp=ltp,
+            qty_amplifier=qty_amplifier,
+            strategy_amplifier=strategy_amplifier,
+            asset_segment=segment,
+            asset_term=strategy_name,
+            num_stocks=num_stocks,
+        )
+    elif qty_calculation_mode == "Manual":
+        update_fields_firebase(
+            CLIENTS_COLLECTION,
+            user,
+            {"Qty": qty},
+            f"Strategies/{segment}/{strategy_name}/{setup_name}",
+        )
+
+
+def prepare_order_details(
+    strategy_name: str,
+    symbol: str,
+    exchange_token: str,
+    order_type: str,
+    product_type: str,
+    trade_id: str,
+    setup_name: str,
+    ltp: float,
+):
+    """
+    Prepares the order details for the strategy.
+    """
+    order_details = [
+        {
+            "strategy": strategy_name,
+            "signal": "Long",
+            "base_symbol": symbol,
+            "exchange_token": exchange_token,
+            "transaction_type": "BUY",
+            "order_type": order_type,
+            "product_type": product_type,
+            "order_mode": "MainEntry",
+            "trade_id": trade_id,
+            "limit_prc": ltp,
+            "trade_mode": os.getenv("TRADE_MODE"),
+            "setup": setup_name.upper(),
+        }
+    ]
+    return order_details

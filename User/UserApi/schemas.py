@@ -162,3 +162,7 @@ class MarketInfoParams(BaseModel):
     EquityQtyAmplifier: float
     OBQtyAmplifier: float
     OSQtyAmplifier: float
+
+
+class OrderChoice(BaseModel):
+    choice: str
