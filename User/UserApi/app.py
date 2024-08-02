@@ -11,6 +11,11 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
+# Constants
+EQUITY = "Equity"
+DERIVATIVES = "Derivatives"
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 # importing packages
 import User.UserApi.schemas as schemas
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
@@ -46,6 +51,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_users_for_strategies_from_firebase,
 )
+from Executor.NSEStrategies.NSEStrategiesUtil import fetch_strategy_users
 
 logger = LoggerSetup()
 
@@ -815,3 +821,34 @@ def update_user_section(user_id: str, section: str, details: dict):
     log_changes_via_webapp({section: parsed_details})
     discord_admin_bot(f"Section {section} updated for user {user_id}")
     return {"message": f"{section} for user {user_id} updated successfully!"}
+
+
+def fetch_users_for_strategy(strategy_name: str):
+    """
+    Fetches the list of users who have opted for a specific strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        list: A list of users who have opted for the strategy.
+    """
+    try:
+        if strategy_name in EQUITY_STRATEGY_LIST:
+            return fetch_strategy_users(strategy_name, asset_segment=EQUITY)
+        elif strategy_name in DERIVATIVES_STRATEGY_LIST:
+            return fetch_strategy_users(strategy_name, asset_segment=DERIVATIVES)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching users for strategy: {str(e)}"
+        )
+
+
+def get_order_modes():
+    """
+    Fetches the list of order modes.
+
+    Returns:
+        list: A list of order modes.
+    """
+    return ["Complete Order", "Repair Order"]

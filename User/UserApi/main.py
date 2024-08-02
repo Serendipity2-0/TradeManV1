@@ -756,6 +756,44 @@ def update_user_section(user_id: str, section: str, details: dict):
         )
 
 
+@app_admin.get("/fetch-users-for-strategy")
+def fetch_users_for_strategy(strategy: str):
+    """
+    Retrieve users who have opted for a specific strategy.
+
+    Args:
+        strategy (str): The name of the strategy.
+
+    Returns:
+        UserResponse: A list of dicts containing user details who have opted for the strategy.
+
+    Raises:
+        HTTPException: If there's an error fetching the users or if the strategy is not found.
+    """
+    try:
+        return app.fetch_users_for_strategy(strategy)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching users for strategy: {str(e)}"
+        )
+
+
+@app_admin.get("/order-modes")
+def get_order_modes():
+    """
+    Fetches the list of order modes.
+
+    Returns:
+        OrderModeResponse: A list of order modes. i.e [Complete order or Repair order]
+    """
+    try:
+        return app.get_order_modes()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching order modes: {str(e)}"
+        )
+
+
 app_fastapi.include_router(app_user, prefix="/v1/user", tags=["user"])
 app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 

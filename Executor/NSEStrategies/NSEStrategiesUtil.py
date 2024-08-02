@@ -475,7 +475,7 @@ def get_previous_dates(num_dates):
     return dates
 
 
-def fetch_strategy_users(strategy_name, asset_segment=None, asset_term=None):
+def fetch_strategy_users(strategy_name, asset_segment, asset_term=None):
     """
     The `fetch_strategy_users` function retrieves the list of users associated with the given strategy from Firebase.
 
@@ -493,8 +493,9 @@ def fetch_strategy_users(strategy_name, asset_segment=None, asset_term=None):
         active_users = fetch_active_users_from_firebase()
         strategy_users = []
         for user in active_users:
+            path = user["Strategies"]
             if asset_segment is not None:
-                path = user["Strategies"].get(asset_segment, {})
+                path = path.get(asset_segment, {})
             if asset_term is not None:
                 path = path.get(asset_term, {})
             if strategy_name in path:
