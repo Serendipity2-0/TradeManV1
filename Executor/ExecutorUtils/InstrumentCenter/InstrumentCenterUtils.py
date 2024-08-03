@@ -359,6 +359,17 @@ class Instrument:
         else:
             return None
 
+    def get_segment_by_symbol(self, symbol):
+        """
+        Get the segment by the symbol.
+        """
+        filtered_data = self._filter_data_by_name(symbol)
+        filtered_data = filtered_data[filtered_data["exchange"] != "CDS"]
+        if not filtered_data.empty:
+            return filtered_data.iloc[0]["segment"]
+        else:
+            return None
+
     def _filter_data_by_token(self, token):
         """Filter the dataframe based on the given instrument token.
 

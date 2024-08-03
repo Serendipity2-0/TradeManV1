@@ -475,7 +475,7 @@ def get_previous_dates(num_dates):
     return dates
 
 
-def fetch_strategy_users(strategy_name, asset_segment=None, asset_term=None):
+def fetch_strategy_users(strategy_name, asset_segment, asset_term=None):
     """
     The `fetch_strategy_users` function retrieves the list of users associated with the given strategy from Firebase.
 
@@ -493,8 +493,9 @@ def fetch_strategy_users(strategy_name, asset_segment=None, asset_term=None):
         active_users = fetch_active_users_from_firebase()
         strategy_users = []
         for user in active_users:
+            path = user["Strategies"]
             if asset_segment is not None:
-                path = user["Strategies"].get(asset_segment, {})
+                path = path.get(asset_segment, {})
             if asset_term is not None:
                 path = path.get(asset_term, {})
             if strategy_name in path:
@@ -998,3 +999,51 @@ def fetch_strategy_amplifier(strategy_name):
             f"Error fetching strategy amplifier for strategy {strategy_name}: {e}"
         )
         return 1
+
+
+def get_order_mode(trade_id: str):
+    """
+    Fetches the order mode from the trade_id.
+
+    Args:
+        trade_id (str): The trade_id.
+
+    Returns:
+        str: The order mode.
+    """
+    if "MO_EN" in trade_id:
+        return "MainEntry"
+    elif "MO_EX" in trade_id:
+        return "MainExit"
+    elif "HO_EN" in trade_id:
+        return "HedgeEntry"
+    elif "HO_EX" in trade_id:
+        return "HedgeExit"
+    else:
+        return None
+
+
+def get_transaction_type(trade_id):
+    """
+    Fetches the transaction type from the trade_id.
+
+    Args:
+        trade_id (str): The trade_id.
+
+    Returns:
+        str: The transaction type.
+    """
+    if "LG_MO_EN" in trade_id:
+        return "BUY"
+    elif "LG_MO_EX" in trade_id:
+        return "SELL"
+    elif "SH_MO_EN" in trade_id:
+        return "SELL"
+    elif "SH_MO_EX" in trade_id:
+        return "BUY"
+    elif "HO_EN" in trade_id:
+        return "BUY"
+    elif "HO_EX" in trade_id:
+        return "SELL"
+    else:
+        return "unknown"

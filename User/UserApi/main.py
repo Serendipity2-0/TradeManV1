@@ -756,6 +756,147 @@ def update_user_section(user_id: str, section: str, details: dict):
         )
 
 
+@app_admin.get("/fetch-users-for-strategy")
+def fetch_users_for_strategy(strategy: str):
+    """
+    Retrieve users who have opted for a specific strategy.
+
+    Args:
+        strategy (str): The name of the strategy.
+
+    Returns:
+        UserResponse: A list of dicts containing user details who have opted for the strategy.
+
+    Raises:
+        HTTPException: If there's an error fetching the users or if the strategy is not found.
+    """
+    try:
+        return app.fetch_users_for_strategy(strategy)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching users for strategy: {str(e)}"
+        )
+
+
+@app_admin.get("/order-modes")
+def get_order_modes():
+    """
+    Fetches the list of order modes.
+
+    Returns:
+        OrderModeResponse: A list of order modes. i.e [Complete order or Repair order]
+    """
+    try:
+        return app.get_order_modes()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching order modes: {str(e)}"
+        )
+
+
+@app_admin.get("qty-calculation-mode")
+def get_qty_calculation_mode():
+    """
+    Fetches the qty calculation mode.
+
+    Returns:
+        list: A list of qty calculation modes.
+    """
+    try:
+        return app.get_qty_calculation_mode()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching qty calculation mode: {str(e)}"
+        )
+
+
+@app_admin.get("/fetch-complete-order")
+def fetch_complete_order_symbols(strategy_name: str):
+    """
+    Fetch complete order symbols.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        list: A list of today's orders.
+    """
+    try:
+        return app.fetch_today_order(strategy_name)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error processing complete order: {str(e)}"
+        )
+
+
+@app_admin.post("/place-complete-order")
+def place_complete_order(
+    strategy_name: str,
+    users: list,
+    symbols: list,
+    qty_calculation_mode: str,
+    trade_id: str,
+    qty: float = None,
+    setup_name: str = None,
+):
+    """_summary_
+
+    Args:
+        strategy_name (str): The name of the strategy.(Ex: ExpiryTrader, LongTerm)
+        users (list): The list of users.
+        symbols (list): The list of symbols.
+        qty_calculation_mode (str): _description_
+        trade_id (str): The trade id of the stock.
+        qty (float, optional): The quantity of the stock. Defaults to None.
+
+    Raises:
+        HTTPException: If there's an error processing the complete order.
+
+    Returns:
+        dict: A message indicating successful update.
+    """
+    try:
+        return app.place_complete_order(
+            strategy_name=strategy_name,
+            users=users,
+            symbols=symbols,
+            qty_calculation_mode=qty_calculation_mode,
+            trade_id=trade_id,
+            qty=qty,
+            setup_name=setup_name,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error processing complete order: {str(e)}"
+        )
+
+
+@app_admin.post("/place-repair-order")
+def place_repair_order(
+    strategy_name: str,
+    users: list,
+    symbols: list,
+    qty_calculation_mode: str,
+    trade_id: str,
+    qty: float = None,
+    setup_name: str = None,
+):
+    try:
+        return app.place_repair_order(
+            strategy_name=strategy_name,
+            users=users,
+            symbols=symbols,
+            qty_calculation_mode=qty_calculation_mode,
+            trade_id=trade_id,
+            qty=qty,
+            setup_name=setup_name,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error processing repair order: {str(e)}"
+        )
+
+
 app_fastapi.include_router(app_user, prefix="/v1/user", tags=["user"])
 app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 
