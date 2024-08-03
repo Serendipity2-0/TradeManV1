@@ -15,6 +15,7 @@ CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
 DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+ADMIN_FB_DB = os.getenv("FIREBASE_ADMIN_COLLECTION")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -76,12 +77,16 @@ def modify_order_for_brokers(order_details, user_credentials):
         )
 
 
-def all_broker_login(active_users):
+import traceback
+
+
+def all_broker_login(active_users, account_type):
     """
     Logs in all active users to their respective brokers.
 
     Args:
         active_users (list): List of active user accounts.
+        account_type (str): Type of account to login (Primary or Client).
 
     Returns:
         list: List of active user accounts after login attempt.
@@ -91,59 +96,79 @@ def all_broker_login(active_users):
     import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_login as firstock
 
     for user in active_users:
-        if user["Broker"]["BrokerName"] == ZERODHA:
-            logger.debug(
-                f"Logging in for Zerodha for user: {user['Broker']['BrokerUsername']}"
-            )
+        broker_name = (
+            user["BrokerName"]
+            if account_type == "Primary"
+            else user["Broker"]["BrokerName"]
+        )
+        broker_username = (
+            user["BrokerUsername"]
+            if account_type == "Primary"
+            else user["Broker"]["BrokerUsername"]
+        )
+
+        if broker_name == ZERODHA:
+            logger.debug(f"Logging in for Zerodha for user: {broker_username}")
             try:
-                session_id = zerodha.login_in_zerodha(user["Broker"])
-                firebase_utils.update_fields_firebase(
-                    CLIENTS_USER_FB_DB,
-                    user["Tr_No"],
-                    {"SessionId": session_id},
-                    "Broker",
+                session_id = zerodha.login_in_zerodha(
+                    user if account_type == "Primary" else user["Broker"]
                 )
+                update_session_id(user, session_id, account_type)
             except Exception as e:
                 logger.error(
-                    f"Error while logging in for Zerodha: {e} for user: {user['Broker']['BrokerUsername']}"
+                    f"Error while logging in for Zerodha: {e} for user: {broker_username}"
                 )
-        elif user["Broker"]["BrokerName"] == ALICEBLUE:
-            logger.debug(
-                f"Logging in for AliceBlue for user: {user['Broker']['BrokerUsername']}"
-            )
+                logger.error(traceback.format_exc())
+        elif broker_name == ALICEBLUE:
+            logger.debug(f"Logging in for AliceBlue for user: {broker_username}")
             try:
-                session_id = alice_blue.login_in_aliceblue(user["Broker"])
-                firebase_utils.update_fields_firebase(
-                    CLIENTS_USER_FB_DB,
-                    user["Tr_No"],
-                    {"SessionId": session_id},
-                    "Broker",
+                session_id = alice_blue.login_in_aliceblue(
+                    user if account_type == "Primary" else user["Broker"]
                 )
+                update_session_id(user, session_id, account_type)
             except Exception as e:
                 logger.error(
-                    f"Error while logging in for AliceBlue: {e} for user: {user['Broker']['BrokerUsername']}"
+                    f"Error while logging in for AliceBlue: {e} for user: {broker_username}"
                 )
-        elif user["Broker"]["BrokerName"] == FIRSTOCK:
-            logger.debug(
-                f"Logging in for Firstock for user: {user['Broker']['BrokerUsername']}"
-            )
+        elif broker_name == FIRSTOCK:
+            logger.debug(f"Logging in for Firstock for user: {broker_username}")
             try:
-                session_id = firstock.login_in_firstock(user["Broker"])
-                firebase_utils.update_fields_firebase(
-                    CLIENTS_USER_FB_DB,
-                    user["Tr_No"],
-                    {"SessionId": session_id},
-                    "Broker",
+                session_id = firstock.login_in_firstock(
+                    user if account_type == "Primary" else user["Broker"]
                 )
+                update_session_id(user, session_id, account_type)
             except Exception as e:
                 logger.error(
-                    f"Error while logging in for Firstock: {e} for user: {user['Broker']['BrokerUsername']}"
+                    f"Error while logging in for Firstock: {e} for user: {broker_username}"
                 )
         else:
-            logger.error(
-                f"Broker not supported for user: {user['Broker']['BrokerUsername']}"
-            )
+            logger.error(f"Broker not supported for user: {broker_username}")
     return active_users
+
+
+def update_session_id(user, session_id, account_type):
+    """
+    Updates the session ID in Firebase based on the account type.
+
+    Args:
+        user (dict): User information.
+        session_id (str): The session ID to update.
+        account_type (str): Type of account (Primary or Client).
+    """
+    if account_type == "Client":
+        firebase_utils.update_fields_firebase(
+            CLIENTS_USER_FB_DB,
+            user["Tr_No"],
+            {"SessionId": session_id},
+            "Broker",
+        )
+    elif account_type == "Primary":
+        firebase_utils.update_fields_firebase(
+            ADMIN_FB_DB,
+            "primary_accounts",
+            {"SessionId": session_id},
+            user["BrokerName"],
+        )
 
 
 def fetch_active_users_from_firebase():
@@ -220,23 +245,19 @@ def fetch_users_for_strategies_from_firebase(strategy_name):
     return users
 
 
-def fetch_primary_accounts_from_firebase(primary_account):
+def fetch_primary_accounts_from_firebase():
     """
-    Fetches the primary account details from Firebase.
-
-    Args:
-        primary_account (str): The primary account identifier.
+    Fetches the primary account details from Admin collection of Firebase.
 
     Returns:
-        dict: Details of the primary account.
+        dict: Details of the primary account for the available brokers.
     """
     try:
-        account_details = firebase_utils.fetch_collection_data_firebase(
-            CLIENTS_USER_FB_DB
-        )
-        for account in account_details:
-            if account_details[account]["Tr_No"] == primary_account:
-                return account_details[account]
+        account_details = firebase_utils.fetch_collection_data_firebase(ADMIN_FB_DB)
+        primary_accounts = []
+        for broker in account_details["primary_accounts"]:
+            primary_accounts.append(account_details["primary_accounts"][broker])
+        return primary_accounts
     except Exception as e:
         logger.error(f"Error while fetching primary account from Firebase: {e}")
 
