@@ -854,7 +854,7 @@ def get_qty_calculation_mode():
     return ["Auto", "Manual"]
 
 
-def process_complete_order(strategy_name: str):
+def fetch_today_order(strategy_name: str):
     """
     Process complete order.
 
@@ -883,12 +883,74 @@ def place_complete_order(
     users: list,
     symbols: list,
     qty_calculation_mode: str,
-    qty: float,
     trade_id: str,
-    setup_name: str,
+    qty: float = None,
+    setup_name: str = None,
 ):
     """
     Places orders for the order mode "Complete Order".
+
+    Args:
+        strategy_name (str): The name of the strategy.(Ex: ExpiryTrader, LONG_RATIO)
+        users (list): The list of users.
+        symbols (list): The list of symbols.
+        qty_calculation_mode (str): The qty calculation mode.
+        qty (float): The quantity.
+        trade_id (str): The trade id.
+        setup_name (str): The setup name.
+    """
+    for user in users:
+        for symbol in symbols:
+            exchange = instrument_obj().get_segment_by_symbol(symbol)
+            exchange_token = instrument_obj().get_exchange_token_by_name(
+                symbol, exchange
+            )
+            strategy_obj = StrategyBase.load_from_db(strategy_name)
+            order_type = strategy_obj.GeneralParams.OrderType
+            product_type = strategy_obj.GeneralParams.ProductType
+            strategy_type = strategy_obj.GeneralParams.StrategyType
+            num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
+            if num_stocks is None:
+                num_stocks = 1
+
+            ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
+            ltp = round(ltp * 20) / 20
+
+            update_strategy_qty(
+                strategy_name=strategy_name,
+                user=user,
+                qty_calculation_mode=qty_calculation_mode,
+                qty=qty,
+                ltp=ltp,
+                strategy_type=strategy_type,
+                num_stocks=num_stocks,
+                setup_name=setup_name,
+            )
+            order_details = prepare_order_details(
+                strategy_name=strategy_name,
+                symbol=symbol,
+                exchange_token=exchange_token,
+                order_type=order_type,
+                product_type=product_type,
+                trade_id=trade_id,
+                ltp=ltp,
+                setup_name=setup_name,
+            )
+            user_details = fetch_user_json_from_firebase(user)
+            place_order_single_user([user_details], order_details)
+
+
+def place_repair_order(
+    strategy_name: str,
+    users: list,
+    symbols: list,
+    qty_calculation_mode: str,
+    trade_id: str,
+    qty: float = None,
+    setup_name: str = None,
+):
+    """
+    Places orders for the order mode "Repair Order".
 
     Args:
         strategy_name (str): The name of the strategy.
@@ -901,35 +963,40 @@ def place_complete_order(
     """
     for user in users:
         for symbol in symbols:
-            exchange_token = instrument_obj().get_exchange_token_by_name(symbol, "NSE")
+            exchange = instrument_obj().get_segment_by_symbol(symbol)
+            exchange_token = instrument_obj().get_exchange_token_by_name(
+                symbol, exchange
+            )
             strategy_obj = StrategyBase.load_from_db(strategy_name)
             order_type = strategy_obj.GeneralParams.OrderType
             product_type = strategy_obj.GeneralParams.ProductType
             strategy_type = strategy_obj.GeneralParams.StrategyType
             num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
+            if num_stocks is None:
+                num_stocks = 1
 
-            ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+            ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
             ltp = round(ltp * 20) / 20
 
             update_strategy_qty(
-                strategy_name,
-                user,
-                qty_calculation_mode,
-                qty,
-                setup_name,
-                ltp,
-                strategy_type,
-                num_stocks,
+                strategy_name=strategy_name,
+                user=user,
+                qty_calculation_mode=qty_calculation_mode,
+                qty=qty,
+                ltp=ltp,
+                strategy_type=strategy_type,
+                num_stocks=num_stocks,
+                setup_name=setup_name,
             )
             order_details = prepare_order_details(
-                strategy_name,
-                symbol,
-                exchange_token,
-                order_type,
-                product_type,
-                trade_id,
-                setup_name,
-                ltp,
+                strategy_name=strategy_name,
+                symbol=symbol,
+                exchange_token=exchange_token,
+                order_type=order_type,
+                product_type=product_type,
+                trade_id=trade_id,
+                ltp=ltp,
+                setup_name=setup_name,
             )
             user_details = fetch_user_json_from_firebase(user)
             place_order_single_user([user_details], order_details)

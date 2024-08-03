@@ -30,6 +30,8 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     update_qty_user_firebase,
     fetch_qty_amplifier,
     fetch_strategy_amplifier,
+    get_order_mode,
+    get_transaction_type,
 )
 
 logger = LoggerSetup()
@@ -744,10 +746,10 @@ def update_strategy_qty(
     user: str,
     qty_calculation_mode: str,
     qty: int,
-    setup_name: str,
     ltp: float,
     strategy_type: str,
     num_stocks: int,
+    setup_name: str = None,
 ):
     """
     Updates the quantity of the strategy.
@@ -758,23 +760,26 @@ def update_strategy_qty(
     qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
     strategy_amplifier = fetch_strategy_amplifier(strategy_name)
     segment = fetch_segment_from_strategy(strategy_name)
-
     if qty_calculation_mode == "Auto":
         update_qty_user_firebase(
-            strategy_name=setup_name.upper(),
+            strategy_name=strategy_name,
             avg_sl_points_or_ltp=ltp,
             qty_amplifier=qty_amplifier,
             strategy_amplifier=strategy_amplifier,
             asset_segment=segment,
-            asset_term=strategy_name,
+            asset_term=setup_name,
             num_stocks=num_stocks,
         )
     elif qty_calculation_mode == "Manual":
+        if segment == EQUITY:
+            path = f"Strategies/{segment}/{strategy_name}/{setup_name}"
+        elif segment == DERIVATIVES:
+            path = f"Strategies/{segment}/{strategy_name}"
         update_fields_firebase(
             CLIENTS_COLLECTION,
             user,
             {"Qty": qty},
-            f"Strategies/{segment}/{strategy_name}/{setup_name}",
+            path,
         )
 
 
@@ -785,26 +790,45 @@ def prepare_order_details(
     order_type: str,
     product_type: str,
     trade_id: str,
-    setup_name: str,
     ltp: float,
+    setup_name: str = None,
 ):
     """
     Prepares the order details for the strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+        symbol (str): The symbol of the stock.
+        exchange_token (str): The exchange token of the stock.
+        order_type (str): The order type of the stock.
+        product_type (str): The product type of the stock.
+        trade_id (str): The trade_id of the stock.
+        setup_name (str): The setup name of the stock.
+        ltp (float): The ltp of the stock.
+
+    Returns:
+        list: The order details for the strategy.
     """
+    order_mode = get_order_mode(trade_id)
+    transaction_type = get_transaction_type(trade_id)
+    if setup_name:
+        setup_name = setup_name.upper()
+    else:
+        setup_name = None
     order_details = [
         {
             "strategy": strategy_name,
             "signal": "Long",
             "base_symbol": symbol,
             "exchange_token": exchange_token,
-            "transaction_type": "BUY",
+            "transaction_type": transaction_type,
             "order_type": order_type,
             "product_type": product_type,
-            "order_mode": "MainEntry",
+            "order_mode": order_mode,
             "trade_id": trade_id,
             "limit_prc": ltp,
             "trade_mode": os.getenv("TRADE_MODE"),
-            "setup": setup_name.upper(),
+            "setup": setup_name,
         }
     ]
     return order_details

@@ -822,7 +822,7 @@ def fetch_complete_order_symbols(strategy_name: str):
         list: A list of today's orders.
     """
     try:
-        return app.process_complete_order(strategy_name)
+        return app.fetch_today_order(strategy_name)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error processing complete order: {str(e)}"
@@ -837,14 +837,63 @@ def place_complete_order(
     qty_calculation_mode: str,
     trade_id: str,
     qty: float = None,
+    setup_name: str = None,
 ):
+    """_summary_
+
+    Args:
+        strategy_name (str): The name of the strategy.(Ex: ExpiryTrader, LongTerm)
+        users (list): The list of users.
+        symbols (list): The list of symbols.
+        qty_calculation_mode (str): _description_
+        trade_id (str): The trade id of the stock.
+        qty (float, optional): The quantity of the stock. Defaults to None.
+
+    Raises:
+        HTTPException: If there's an error processing the complete order.
+
+    Returns:
+        dict: A message indicating successful update.
+    """
     try:
         return app.place_complete_order(
-            strategy_name, users, symbols, qty_calculation_mode, trade_id, qty
+            strategy_name=strategy_name,
+            users=users,
+            symbols=symbols,
+            qty_calculation_mode=qty_calculation_mode,
+            trade_id=trade_id,
+            qty=qty,
+            setup_name=setup_name,
         )
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error processing complete order: {str(e)}"
+        )
+
+
+@app_admin.post("/place-repair-order")
+def place_repair_order(
+    strategy_name: str,
+    users: list,
+    symbols: list,
+    qty_calculation_mode: str,
+    trade_id: str,
+    qty: float = None,
+    setup_name: str = None,
+):
+    try:
+        return app.place_repair_order(
+            strategy_name=strategy_name,
+            users=users,
+            symbols=symbols,
+            qty_calculation_mode=qty_calculation_mode,
+            trade_id=trade_id,
+            qty=qty,
+            setup_name=setup_name,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error processing repair order: {str(e)}"
         )
 
 
