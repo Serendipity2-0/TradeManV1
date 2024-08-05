@@ -2,7 +2,7 @@ import os, sys
 from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, List
 from fastapi import HTTPException
 from datetime import datetime
 
@@ -825,9 +825,13 @@ def fetch_users_for_strategy(strategy_name: str):
     """
     try:
         if strategy_name in EQUITY_STRATEGY_LIST:
-            return fetch_strategy_users(strategy_name, asset_segment=EQUITY)
+            users = fetch_strategy_users(strategy_name, asset_segment=EQUITY)
+            tr_no_list = [user["Tr_No"] for user in users]
+            return tr_no_list
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
-            return fetch_strategy_users(strategy_name, asset_segment=DERIVATIVES)
+            users = fetch_strategy_users(strategy_name, asset_segment=DERIVATIVES)
+            tr_no_list = [user["Tr_No"] for user in users]
+            return tr_no_list
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching users for strategy: {str(e)}"
