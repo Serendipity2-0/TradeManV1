@@ -18,6 +18,7 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     read_stock_data_from_db,
     calculate_ema,
 )
+from Executor.NSEStrategies.Equity.MidTerm.MidTerm import midterm_obj
 
 # Initialize logger
 logger = LoggerSetup()
@@ -26,6 +27,27 @@ MID_TFEMA = "Mid_tfEma"
 
 EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
 FINANCIAL_DB_PATH = os.getenv("FINANCIAL_DB_PATH")
+
+#config
+# Accessing the values from midterm_obj for TFMOMENTUM parameters
+TFMOMENTUM_SMA_VALUE = midterm_obj.ExtraInformation.TFMomentumSMAValue
+TFMOMENTUM_RSI_UPPER_THRESHOLD = midterm_obj.ExtraInformation.TFMomentumRSIUpperThreshold
+TFMOMENTUM_RSI_LOWER_THRESHOLD = midterm_obj.ExtraInformation.TFMomentumRSILowerThreshold
+TFMOMENTUM_GROSS_PROFIT_GROWTH = midterm_obj.ExtraInformation.TFMomentumGrossProfitGrowth
+TFMOMENTUM_NET_INCOME = midterm_obj.ExtraInformation.TFMomentumNetIncome
+TFMOMENTUM_TOTAL_REVENUE = midterm_obj.ExtraInformation.TFMomentumTotalRevenue
+TFMOMENTUM_EMA_THRESHOLD = midterm_obj.ExtraInformation.TFMomentumEMAThreshold
+
+# Accessing the values from midterm_obj for TFEMA parameters
+TFEMA_SHORT_EMA_VALUE = midterm_obj.ExtraInformation.TFEMAShortValue
+TFEMA_SMALL_EMA_VALUE = midterm_obj.ExtraInformation.TFEMASmallValue
+TFEMA_MEDIUM_EMA_VALUE = midterm_obj.ExtraInformation.TFEMAMediumValue
+TFEMA_LARGE_EMA_VALUE = midterm_obj.ExtraInformation.TFEMALargeValue
+TFEMA_SMA_VALUE = midterm_obj.ExtraInformation.TFEMASMAValue
+TFEMA_RSI_UPPER_THRESHOLD = midterm_obj.ExtraInformation.TFEMARSIUpperThreshold
+TFEMA_MARKET_CAP_THRESHOLD = midterm_obj.ExtraInformation.TFEMAMarketCapThreshold
+TFEMA_VOLUME_MULTIPLIER = midterm_obj.ExtraInformation.TFEMAVolumeMultiplier
+TFEMA_ROE_THRESHOLD = midterm_obj.ExtraInformation.TFEMAROEThreshold
 
 
 def get_midterm_stocks_df():
@@ -58,7 +80,7 @@ def perform_tfmomentum_strategy():
 
             # Convert list data to DataFrame for easier processing (example for daily data)
             stock_data_df = pd.DataFrame(stock_data["daily_data"])
-            stock_data_df["SMA_20"] = calculate_sma(stock_data_df["Close"], 20)
+            stock_data_df["SMA_20"] = calculate_sma(stock_data_df["Close"], TFMOMENTUM_SMA_VALUE)
             stock_data_df["RSI_14"] = indicator_rsi(stock_data_df, 14, "Close")
             df = pd.DataFrame(
                 {
@@ -80,12 +102,12 @@ def perform_tfmomentum_strategy():
             combined_stock_df[MID_TFMOMENTUM] = 0
             # Define the criteria as a separate variable for readability
             criteria = (
-                (combined_stock_df["RSI_14"] >= 50)
-                & (combined_stock_df["RSI_14"] <= 55)
-                & (combined_stock_df["Gross Profit Growth"] > 10**9)
-                & (combined_stock_df["Net Income"] > 10**8)
-                & (combined_stock_df["SMA_20"] > 200)
-                & (combined_stock_df["Total Revenue"] > 10**9)
+                (combined_stock_df["RSI_14"] >= TFMOMENTUM_RSI_LOWER_THRESHOLD)
+                & (combined_stock_df["RSI_14"] <= TFMOMENTUM_RSI_UPPER_THRESHOLD)
+                & (combined_stock_df["Gross Profit Growth"] > TFMOMENTUM_GROSS_PROFIT_GROWTH)
+                & (combined_stock_df["Net Income"] > TFMOMENTUM_NET_INCOME)
+                & (combined_stock_df["SMA_20"] > TFMOMENTUM_EMA_THRESHOLD)
+                & (combined_stock_df["Total Revenue"] > TFMOMENTUM_TOTAL_REVENUE)
             )
             # Apply the criteria
             combined_stock_df.loc[criteria, MID_TFMOMENTUM] = 1
@@ -119,21 +141,21 @@ def perform_tfema_strategy():
                 continue
 
             stock_data_df = pd.DataFrame(stock_data["daily_data"])
-            stock_data_df["EMA_9"] = calculate_ema(stock_data_df["Close"], 9)
-            stock_data_df["EMA_21"] = calculate_ema(stock_data_df["Close"], 21)
-            stock_data_df["EMA_63"] = calculate_ema(stock_data_df["Close"], 63)
-            stock_data_df["EMA_200"] = calculate_ema(stock_data_df["Close"], 200)
+            stock_data_df["SHORT_EMA"] = calculate_ema(stock_data_df["Close"], TFEMA_SHORT_EMA_VALUE)
+            stock_data_df["SMALL_EMA"] = calculate_ema(stock_data_df["Close"], TFEMA_SMALL_EMA_VALUE)
+            stock_data_df["MEDIUM_EMA"] = calculate_ema(stock_data_df["Close"], TFEMA_MEDIUM_EMA_VALUE)
+            stock_data_df["LARGE_EMA"] = calculate_ema(stock_data_df["Close"], TFEMA_LARGE_EMA_VALUE)
             stock_data_df["RSI_14"] = indicator_rsi(stock_data_df, 14, "Close")
-            stock_data_df["SMA_20_Volume"] = calculate_sma(stock_data_df["Volume"], 20)
+            stock_data_df["SMA_20_Volume"] = calculate_sma(stock_data_df["Volume"], TFEMA_SMA_VALUE)
 
             # Combine the latest technical indicators with financial data
             df = pd.DataFrame(
                 {
                     "Symbol": [stock_code],
-                    "EMA_9": [stock_data_df["EMA_9"].iloc[-1]],
-                    "EMA_21": [stock_data_df["EMA_21"].iloc[-1]],
-                    "EMA_63": [stock_data_df["EMA_63"].iloc[-1]],
-                    "EMA_200": [stock_data_df["EMA_200"].iloc[-1]],
+                    "SHORT_EMA": [stock_data_df["SHORT_EMA"].iloc[-1]],
+                    "SMALL_EMA": [stock_data_df["SMALL_EMA"].iloc[-1]],
+                    "MEDIUM_EMA": [stock_data_df["MEDIUM_EMA"].iloc[-1]],
+                    "LARGE_EMA": [stock_data_df["LARGE_EMA"].iloc[-1]],
                     "RSI_14": [stock_data_df["RSI_14"].iloc[-1]],
                     "SMA_20_Volume": [stock_data_df["SMA_20_Volume"].iloc[-1]],
                     "Close": [stock_data_df["Close"].iloc[-1]],
@@ -148,14 +170,14 @@ def perform_tfema_strategy():
             combined_stock_df[MID_TFEMA] = 0
             # Define the criteria as a separate variable for readability
             criteria = (
-                (combined_stock_df["Close"] > combined_stock_df["EMA_9"])
-                & (combined_stock_df["EMA_9"] > combined_stock_df["EMA_21"])
-                & (combined_stock_df["EMA_21"] > combined_stock_df["EMA_63"])
-                & (combined_stock_df["EMA_63"] > combined_stock_df["EMA_200"])
-                & (combined_stock_df["RSI_14"] >= 55)
-                & (combined_stock_df["Volume"] > 2 * combined_stock_df["SMA_20_Volume"])
-                & (combined_stock_df["Market Cap"] >= 999)
-                & (combined_stock_df["Return on Equity"] >= 16)
+                (combined_stock_df["Close"] > combined_stock_df["SHORT_EMA"])
+                & (combined_stock_df["SHORT_EMA"] > combined_stock_df["SMALL_EMA"])
+                & (combined_stock_df["SMALL_EMA"] > combined_stock_df["MEDIUM_EMA"])
+                & (combined_stock_df["MEDIUM_EMA"] > combined_stock_df["LARGE_EMA"])
+                & (combined_stock_df["RSI_14"] >= TFEMA_RSI_UPPER_THRESHOLD)
+                & (combined_stock_df["Volume"] > TFEMA_VOLUME_MULTIPLIER * combined_stock_df["SMA_20_Volume"])
+                & (combined_stock_df["Market Cap"] >= TFEMA_MARKET_CAP_THRESHOLD)
+                & (combined_stock_df["Return on Equity"] >= TFEMA_ROE_THRESHOLD)
             )
             # Apply the criteria
             combined_stock_df.loc[criteria, MID_TFEMA] = 1

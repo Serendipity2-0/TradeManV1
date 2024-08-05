@@ -18,6 +18,7 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     check_if_above_50ema,
     read_stock_data_from_db,
 )
+from Executor.NSEStrategies.Equity.ShortTerm.ShortTerm import shortterm_obj
 
 EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
 logger = LoggerSetup()
@@ -25,6 +26,16 @@ SHORT_MOMENTUM = "Short_Momentum"
 SHORT_EMABBCONFLUENCE = "Short_EMABBConfluence"
 SHORT_MEANREVERSION = "Short_MeanReversion"
 
+
+#config
+
+MEANREVERSION_RSI_LENGTH_VALUE = shortterm_obj.ExtraInformation.MeanReversionRSILength
+MEANREVERSION_BB_WINDOW_VALUE = shortterm_obj.ExtraInformation.MeanReversionBBWindow
+MEANREVERSION_RSI_UPPER_THRESHOLD = shortterm_obj.ExtraInformation.MeanReversionRSIUpperThreshold
+
+MOMENTUM_RSI_LENGTH_VALUE = shortterm_obj.ExtraInformation.MomentumRSILength
+MOMENTUM_BB_WINDOW_VALUE = shortterm_obj.ExtraInformation.MomentumBBWindow
+MOMENTUM_RSI_UPPER_THRESHOLD = shortterm_obj.ExtraInformation.MomentumRSIUpperThreshold
 
 def perform_EmaBB_Confluence_strategy(stock_data_dict):
     """
@@ -177,14 +188,14 @@ def perform_mean_reversion_strategy(stock_data_dict):
                 continue
 
             # Calculate RSI for daily data
-            rsi_length_input = 14
+            rsi_length_input = MEANREVERSION_RSI_LENGTH_VALUE
             rsi_source_input = "Close"
             rsi_values = indicator_rsi(
                 stock_data_daily, rsi_length_input, rsi_source_input
             )
 
             # Calculate Bollinger Bands for daily and weekly data
-            bb_window = 20
+            bb_window = MEANREVERSION_BB_WINDOW_VALUE
             stock_data_daily = indicator_bollinger_bands(stock_data_daily, bb_window)
             stock_data_weekly = indicator_bollinger_bands(stock_data_weekly, bb_window)
 
@@ -197,7 +208,7 @@ def perform_mean_reversion_strategy(stock_data_dict):
 
             # Check the mean reversion condition
             if (
-                rsi_values.iloc[-1] < 40
+                rsi_values.iloc[-1] < MEANREVERSION_RSI_UPPER_THRESHOLD
                 and latest_daily_data["Above_50_EMA"]
                 and latest_weekly_data["MA"] < latest_weekly_data["Close"]
                 and stock_data_daily["Lower_band"].iloc[-2]
@@ -316,14 +327,14 @@ def perform_momentum_strategy(stock_data_dict):
                 continue
 
             # Calculate RSI for daily data
-            rsi_length_input = 14
+            rsi_length_input = MOMENTUM_RSI_LENGTH_VALUE
             rsi_source_input = "Close"
             rsi_values = indicator_rsi(
                 stock_data_daily, rsi_length_input, rsi_source_input
             )
 
             # Calculate Bollinger Bands for daily data
-            bb_window = 20
+            bb_window = MOMENTUM_BB_WINDOW_VALUE
             stock_data_daily = indicator_bollinger_bands(stock_data_daily, bb_window)
 
             # Check if LTP is above 50 EMA for daily data
@@ -359,7 +370,7 @@ def perform_momentum_strategy(stock_data_dict):
             ratio_ATH_LTP = all_time_high / last_traded_price
             # Check the momentum strategy condition
             if (
-                rsi_values.iloc[-1] > 50
+                rsi_values.iloc[-1] > MOMENTUM_RSI_UPPER_THRESHOLD
                 and latest_daily_data["Above_50_EMA"]
                 and latest_daily_data["Upper_band"] < latest_daily_data["Close"]
                 and macd.iloc[-1] > signal_line.iloc[-1]
