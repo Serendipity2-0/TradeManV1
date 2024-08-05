@@ -5,26 +5,20 @@ import os, sys
 
 DIR = os.getcwd()
 sys.path.append(DIR)
-zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
+primary_broker = os.getenv("PRIMARY_BROKER")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    fetch_primary_accounts_from_firebase,
+    get_primary_account_obj,
 )
-from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
-    create_kite_obj,
-)
+
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
-primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
 
-kite = create_kite_obj(
-    api_key=primary_account_session_id["Broker"]["ApiKey"],
-    access_token=primary_account_session_id["Broker"]["SessionId"],
-)
+kite = get_primary_account_obj(primary_broker)
 
 
 def monitor():

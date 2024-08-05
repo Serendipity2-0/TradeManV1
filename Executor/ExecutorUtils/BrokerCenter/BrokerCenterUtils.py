@@ -26,6 +26,12 @@ import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as al
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_adapter as firstock_adapter
 
+BROKER_ADAPTERS = {
+    ZERODHA: zerodha_adapter,
+    ALICEBLUE: alice_adapter,
+    FIRSTOCK: firstock_adapter,
+}
+
 
 async def place_order_for_brokers(order_details, user_credentials):
     """
@@ -245,23 +251,6 @@ def fetch_users_for_strategies_from_firebase(strategy_name):
     return users
 
 
-def fetch_primary_accounts_from_firebase():
-    """
-    Fetches the primary account details from Admin collection of Firebase.
-
-    Returns:
-        dict: Details of the primary account for the available brokers.
-    """
-    try:
-        account_details = firebase_utils.fetch_collection_data_firebase(ADMIN_FB_DB)
-        primary_accounts = []
-        for broker in account_details["primary_accounts"]:
-            primary_accounts.append(account_details["primary_accounts"][broker])
-        return primary_accounts
-    except Exception as e:
-        logger.error(f"Error while fetching primary account from Firebase: {e}")
-
-
 def fetch_freecash_for_user(user):
     """
     Retrieves the cash margin available for a user based on their broker.
@@ -289,7 +278,61 @@ def fetch_freecash_for_user(user):
         return 0.0
 
 
-def download_csv_for_brokers(primary_account):
+def fetch_primary_accounts_from_firebase():
+    """
+    Fetches the primary account details from Admin collection of Firebase.
+
+    Returns:
+        dict: Details of the primary account for the available brokers.
+    """
+    try:
+        account_details = firebase_utils.fetch_collection_data_firebase(ADMIN_FB_DB)
+        primary_accounts = []
+        for broker in account_details["primary_accounts"]:
+            primary_accounts.append(account_details["primary_accounts"][broker])
+        return primary_accounts
+    except Exception as e:
+        logger.error(f"Error while fetching primary account from Firebase: {e}")
+
+
+def get_primary_account_obj(broker):
+    """
+    Fetches the primary account object for the specified broker account.
+
+    Args:
+        broker (str): The name of the broker.
+
+    Returns:
+        object: Primary account object, or None if not found or on error.
+    """
+    try:
+        primary_accounts = fetch_primary_accounts_from_firebase()
+        account = next(
+            (user for user in primary_accounts if user["BrokerName"] == broker), None
+        )
+
+        if account and broker in BROKER_ADAPTERS:
+            return BROKER_ADAPTERS[broker].create_broker_obj(user_details=account)
+    except Exception as e:
+        logger.error(f"Error fetching primary account object for {broker}: {e}")
+    return None
+
+
+def fetch_primary_broker_list():
+    """
+    Fetches a list of primary brokers from Firebase.
+
+    Returns:
+        list: A list of primary brokers.
+    """
+    primary_brokers = fetch_primary_accounts_from_firebase()
+    brokers = []
+    for broker in primary_brokers:
+        brokers.append(broker["BrokerName"])
+    return brokers
+
+
+def download_csv_for_brokers(broker):
     """
     Downloads CSV data for a given broker's primary account.
 
@@ -299,12 +342,11 @@ def download_csv_for_brokers(primary_account):
     Returns:
         str: Path to the downloaded CSV file.
     """
-    if primary_account["Broker"]["BrokerName"] == ZERODHA:
-        return zerodha_adapter.get_csv_kite(primary_account)  # Get CSV for this user
-    elif primary_account["Broker"]["BrokerName"] == ALICEBLUE:
-        return alice_adapter.get_ins_csv_alice(primary_account)  # Get CSV for this user
-    # elif primary_account["Broker"]["BrokerName"] == FIRSTOCK:
-    #     return firstock_adapter.get_csv_firstock(primary_account)  # Get CSV for this user
+    adapter = BROKER_ADAPTERS.get(broker)
+    if adapter:
+        return adapter.get_ins_csv()
+    else:
+        raise ValueError(f"Unsupported broker: {broker}")
 
 
 def fetch_holdings_value_for_user_broker(user):
@@ -876,22 +918,6 @@ def calculate_user_net_values(user, categorized_df):
         return alice_adapter.calculate_alice_net_values(user, categorized_df)
     elif user["Broker"]["BrokerName"] == FIRSTOCK:
         return firstock_adapter.calculate_firstock_net_values(user, categorized_df)
-
-
-def get_primary_account_obj():
-    """
-    Fetches the primary account object for the primary broker account.
-
-    Returns:
-        object: Primary account object.
-    """
-    zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
-    primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
-    obj = zerodha_adapter.create_kite_obj(
-        api_key=primary_account_session_id["Broker"]["ApiKey"],
-        access_token=primary_account_session_id["Broker"]["SessionId"],
-    )
-    return obj
 
 
 def get_broker_pnl(user):

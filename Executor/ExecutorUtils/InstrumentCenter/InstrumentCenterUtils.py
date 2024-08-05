@@ -544,14 +544,8 @@ def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
     Returns:
         float: The last traded price of the instrument.
     """
-    zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
-    primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(
-        zerodha_primary
-    )
-    kite = KiteConnect(api_key=primary_account_session_id["Broker"]["ApiKey"])
-    kite.set_access_token(
-        access_token=primary_account_session_id["Broker"]["SessionId"]
-    )
+    primary_broker = os.getenv("PRIMARY_BROKER")
+    kite = BrokerCenterUtils.get_primary_account_obj(primary_broker)
     try:
         if exchange_token:
             if segment:
@@ -584,14 +578,8 @@ def get_single_quote(kite_token=None, exchange_token=None, segment=None):
     Returns:
         float: The last traded price of the instrument from the quote method.
     """
-    zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
-    primary_account_session_id = BrokerCenterUtils.fetch_primary_accounts_from_firebase(
-        zerodha_primary
-    )
-    kite = KiteConnect(api_key=primary_account_session_id["Broker"]["ApiKey"])
-    kite.set_access_token(
-        access_token=primary_account_session_id["Broker"]["SessionId"]
-    )
+    primary_broker = os.getenv("PRIMARY_BROKER")
+    kite = BrokerCenterUtils.get_primary_account_obj(primary_broker)
 
     if exchange_token:
         if segment:

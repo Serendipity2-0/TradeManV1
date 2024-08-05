@@ -24,6 +24,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 )
 
 logger = LoggerSetup()
+ALICEBLUE_BROKER = os.getenv("ALICEBLUE_BROKER")
 
 
 class AsyncAliceBlue(Aliceblue):
@@ -144,13 +145,13 @@ class AsyncAliceBlue(Aliceblue):
         if req_type == "POST":
             try:
                 response = await self.aysnc_post(method, json=data, headers=_headers)
-            except (aiohttp.ClientConnectionError, aiohttp.ClientTimeout) as exception:
-                return {"stat": "Not_ok", "emsg": exception, "encKey": None}
+            except aiohttp.ClientConnectionError as connection_error:
+                return {"stat": "Not_ok", "emsg": str(connection_error), "encKey": None}
 
             if response["status"] == 200:
                 return json.loads(response["text"])
             else:
-                emsg = str(response["status"]) + " - " + response["reason"]
+                emsg = f"{response['status']} - {response['reason']}"
                 return {"stat": "Not_ok", "emsg": emsg, "encKey": None}
 
 
@@ -189,12 +190,10 @@ def alice_fetch_free_cash(user_details):
 
 def merge_ins_csv_files():
     """
-    The function `merge_ins_csv_files` reads and merges specific columns from NFO, BFO, and NSE CSV
-    files, then saves the merged data to a new CSV file.
-    :return: The function `merge_ins_csv_files` returns the merged DataFrame containing the columns
-    specified in the `columns_to_keep` list. If the merging process is successful, it saves the merged
-    DataFrame to a CSV file named "merged_alice_ins.csv" and returns the merged DataFrame. If an error
-    occurs during the merging process, it logs the error and returns `None`.
+    Merges instrument CSV files for AliceBlue.
+
+    Returns:
+        DataFrame: Merged instrument DataFrame.
     """
     columns_to_keep = [
         "Exch",
@@ -216,23 +215,23 @@ def merge_ins_csv_files():
     ins_files = ["NFO.csv", "BFO.csv", "NSE.csv"]
     file_paths = [os.path.join(folder_path, file) for file in ins_files]
 
-    nfo_df = pd.read_csv(file_paths[0])
-    bfo_df = pd.read_csv(file_paths[1])
-    nse_df = pd.read_csv(file_paths[2])
-
-    nse_df["Option Type"] = None
-    nse_df["Strike Price"] = None
-    nse_df["Expiry Date"] = None
-
-    nfo_df_filtered = nfo_df[columns_to_keep]
-    nse_df_filtered = nse_df[columns_to_keep]
-    bfo_df_filtered = bfo_df[columns_to_keep]
-
     try:
+        dataframes = []
+        for file_path in file_paths:
+            df = pd.read_csv(file_path)
+
+            # Add missing columns to NSE DataFrame
+            if "NSE.csv" in file_path:
+                df["Option Type"] = None
+                df["Strike Price"] = None
+                df["Expiry Date"] = None
+
+            # Filter columns and drop entirely empty columns
+            df_filtered = df[columns_to_keep].dropna(how="all", axis=1)
+            dataframes.append(df_filtered)
+
         # Merge the DataFrames
-        merged_df = pd.concat(
-            [nfo_df_filtered, nse_df_filtered, bfo_df_filtered], ignore_index=True
-        )
+        merged_df = pd.concat(dataframes, ignore_index=True)
         merged_df["Token"] = merged_df["Token"].astype(str)
         merged_df.to_csv("merged_alice_ins.csv", index=False)
         return merged_df
@@ -242,7 +241,7 @@ def merge_ins_csv_files():
 
 
 # This function downloads the instrument csv files from Aliceblue trading platform
-def get_ins_csv_alice(user_details):
+def get_ins_csv():
     """
     The function `get_ins_csv_alice` fetches instruments for ALICE using user details provided and
     merges the instrument CSV files.
@@ -254,15 +253,13 @@ def get_ins_csv_alice(user_details):
     after fetching instruments for NFO, BFO, and NSE using the provided user details. If an error occurs
     during the process, it will return `None`.
     """
-    logger.debug(
-        f"Fetching instruments for ALICE using {user_details['Broker']['BrokerUsername']}"
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+        get_primary_account_obj,
     )
-    alice = Aliceblue(
-        user_id=user_details["Broker"]["BrokerUsername"],
-        api_key=user_details["Broker"]["ApiKey"],
-        session_id=user_details["Broker"]["SessionId"],
-    )
+
+    logger.debug(f"Fetching instruments for {ALICEBLUE_BROKER}")
     try:
+        alice = get_primary_account_obj(ALICEBLUE_BROKER)
         alice.get_contract_master("NFO")
         alice.get_contract_master("BFO")
         alice.get_contract_master("NSE")
@@ -353,7 +350,7 @@ def simplify_aliceblue_order(detail):
         return None
 
 
-def create_alice_obj(user_details):
+def create_broker_obj(user_details):
     """
     The function `create_alice_obj` creates an instance of the Aliceblue class using user details such
     as BrokerUsername, ApiKey, and SessionId.
@@ -363,7 +360,7 @@ def create_alice_obj(user_details):
     :return: An Aliceblue object with the user details provided, including BrokerUsername, ApiKey, and
     SessionId.
     """
-    return AsyncAliceBlue(
+    return Aliceblue(
         user_id=user_details["BrokerUsername"],
         api_key=user_details["ApiKey"],
         session_id=user_details["SessionId"],
@@ -383,7 +380,7 @@ def aliceblue_todays_tradebook(user):
     `None`.
     """
     try:
-        alice = create_alice_obj(user)
+        alice = create_broker_obj(user)
         orders = alice.get_order_history("")
         if isinstance(orders, dict):
             if orders.get("stat") == "Not_Ok":
@@ -517,7 +514,7 @@ async def ant_place_orders_for_users(orders_to_place, users_credentials):
         "message": None,
     }
 
-    alice = create_alice_obj(users_credentials)
+    alice = create_broker_obj(users_credentials)
     strategy = orders_to_place["strategy"]
     exchange_token = orders_to_place["exchange_token"]
     qty = orders_to_place.get("qty", 1)
@@ -636,7 +633,7 @@ def ant_modify_orders_for_users(order_details, user_credentials):
     """
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
 
-    alice = create_alice_obj(user_credentials)
+    alice = create_broker_obj(user_credentials)
     order_id_dict = retrieve_order_id(
         order_details.get("username"),
         order_details.get("strategy"),
@@ -756,7 +753,7 @@ def ant_create_cancel_orders(trade, user):
     :return: None
     """
     try:
-        alice = create_alice_obj(user_details=user["Broker"])
+        alice = create_broker_obj(user_details=user["Broker"])
         alice.cancel_order(trade["Nstordno"])
     except Exception as e:
         logger.error(f"Error cancelling order: {e}")
@@ -883,7 +880,7 @@ def fetch_alice_open_orders(user):
     the error and return `None`.
     """
     try:
-        alice = create_alice_obj(user["Broker"])
+        alice = create_broker_obj(user["Broker"])
         Net_position = alice.get_netwise_positions()
         open_position = Alice_Wrapper.open_net_position(Net_position)
         return open_position
@@ -905,7 +902,7 @@ def get_alice_pnl(user):
     occurs during the process, it logs the error and returns `None`.
     """
     try:
-        alice = create_alice_obj(user["Broker"])
+        alice = create_broker_obj(user["Broker"])
         positions = alice.get_netwise_positions()
         total_pnl = sum(float(position["MtoM"]) for position in positions)
         return total_pnl
