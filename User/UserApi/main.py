@@ -489,8 +489,8 @@ def modify_strategy_params(
     1. For variables that are lists, the response should be sent as a list.
         For example, if the section is "Instruments", the response should be sent as a list of instruments.
         {"Instruments": ["NSE", "BSE"]}
-    2. If the section is "MarketInfoParams", the response should be sent as a dictionary.
-        {"EntryParams": {"EntryTime": "09:15", "ExitTime": "15:30"}}
+    2. If the section is "EntryParams", the response should be sent as a dictionary.
+        {"EntryTime": "09:15", "ExitTime": "15:30"}
     3. If the section is "Root-level values", the response should be sent as a dictionary.
         Example: section : Description and request body should be like this
         {"Description": "New Description"}
@@ -608,6 +608,8 @@ def get_user_risk_params(
     ),
 ):
     """
+    NOTE: only derivatives strategy has risk percentage at user level. for equity risk please refer the strategy params
+
     Fetch current strategy parameters for one or multiple users.
 
     This endpoint retrieves the current strategy parameters including risk percentage,
@@ -634,7 +636,7 @@ def get_user_risk_params(
 
 
 @app_admin.put("/user-strategy-risk-params")
-def modify_user_strategy_params(
+def update_user_risk_params(
     strategy: str = Query(..., description="The trading strategy to update"),
     trader_numbers: List[str] = Query(
         ..., description="List of trader numbers to update, or ['all'] for all traders"
@@ -642,21 +644,17 @@ def modify_user_strategy_params(
     risk_percentage: float = Query(
         ..., ge=0.0, le=10.0, description="Risk percentage to set"
     ),
-    sector: Optional[str] = Query(None, description="Sector for PyStocks strategy"),
-    cap: Optional[str] = Query(None, description="Cap for PyStocks strategy"),
 ):
     """
+    NOTE: only derivatives strategy has risk percentage at user level. for equity risk please refer the strategy params
     Modify strategy parameters for one or multiple users.
 
-    This endpoint allows updating the risk percentage and, for PyStocks strategy,
-    the sector and cap for one or multiple users.
+    This endpoint allows updating the risk percentage for a given strategy under derivatives and user in the Firebase database.
 
     Args:
         strategy (str): The trading strategy to update.
         trader_numbers (List[str]): List of trader numbers to update, or ['all'] for all traders.
         risk_percentage (float): Risk percentage to set (between 0.0 and 10.0).
-        sector (Optional[str]): Sector for PyStocks strategy.
-        cap (Optional[str]): Cap for PyStocks strategy.
 
     Returns:
         dict: A message indicating successful update.
@@ -665,9 +663,7 @@ def modify_user_strategy_params(
         HTTPException: If there's an error updating the database or if the input is invalid.
     """
     try:
-        return app.update_user_risk_params(
-            strategy, trader_numbers, risk_percentage, sector, cap
-        )
+        return app.update_user_risk_params(strategy, trader_numbers, risk_percentage)
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -733,7 +729,7 @@ def get_user_details_by_username(username: str):
 def update_user_section(user_id: str, section: str, details: dict):
     """
     Update a specific section of user details.
-    NOTE: For fields Active and Tr_No, the request should be sent as dict like this {"Active": True} or {"Tr_No": "Tr1"}
+    NOTE: For fields Active and Tr_No, the request should be sent as dict like this {"Active": true} or {"Tr_No": "Tr1"}
 
     Args:
         user_id (str): The ID of the user to update.

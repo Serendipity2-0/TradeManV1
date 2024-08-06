@@ -430,6 +430,9 @@ def update_market_info_params(updated_market_info):
     Returns:
     dict: A message indicating successful update.
     """
+    if isinstance(updated_market_info, schemas.MarketInfoParams):
+        updated_market_info = updated_market_info.dict()
+
     # Update the database
     update_collection(MARKET_INFO_FB_COLLECTION, updated_market_info)
 
@@ -458,7 +461,7 @@ def get_market_info_params():
 
 def update_strategy_qty_amplifier(strategy, amplifier):
     """
-    Update StrategyQtyAmplifier for a specific strategy or all strategies.
+    Update StrategyQtyAmplifier for a specific strategy or all strategies inside the market info params of the strategy.
 
     This function updates the StrategyQtyAmplifier for a specific strategy or all strategies in the Firebase database.
     It also logs the changes and sends a notification via Discord.
@@ -637,41 +640,39 @@ def get_user_risk_params(strategy, trader_numbers):
         user_data = fetch_collection_data_firebase(
             CLIENTS_COLLECTION, document=trader_number
         )
-        if (
-            user_data
-            and "Strategies" in user_data
-            and strategy in user_data["Strategies"]
-        ):
-            strategy_data = user_data["Strategies"][strategy]
-            result[trader_number] = {
-                "RiskPerTrade": strategy_data.get("RiskPerTrade", "N/A"),
-                "Sector": strategy_data.get("Sector", "N/A")
-                if strategy == "PyStocks"
-                else "N/A",
-                "Cap": strategy_data.get("Cap", "N/A")
-                if strategy == "PyStocks"
-                else "N/A",
-            }
+        if user_data and "Strategies" in user_data:
+            if strategy in EQUITY_STRATEGY_LIST:
+                result[trader_number] = {
+                    "RiskPerTrade": "Equity risk is at strategy level"
+                }
+            elif strategy in DERIVATIVES_STRATEGY_LIST:
+                if strategy in user_data["Strategies"].get("Derivatives", {}):
+                    strategy_data = user_data["Strategies"]["Derivatives"][strategy]
+                    result[trader_number] = {
+                        "RiskPerTrade": strategy_data.get("RiskPerTrade", "N/A"),
+                    }
+                else:
+                    result[
+                        trader_number
+                    ] = "No data available for this derivative strategy"
+            else:
+                result[trader_number] = "Strategy type not recognized"
         else:
             result[trader_number] = "No data available"
 
     return result
 
 
-def update_user_risk_params(
-    strategy, trader_numbers, risk_percentage, sector=None, cap=None
-):
+def update_user_risk_params(strategy, trader_numbers, risk_percentage):
     """
     Update risk percentage and sector/cap for a specific strategy and user.
 
-    This function updates the risk percentage and sector/cap for a given strategy and user in the Firebase database.
+    This function updates the risk percentage for a given strategy and user in the Firebase database.
 
     Args:
         strategy (str): The name of the strategy to update.
         trader_numbers (List[str]): List of trader numbers to update, or ['all'] for all traders.
         risk_percentage (float): Risk percentage to set (between 0.0 and 10.0).
-        sector (Optional[str]): Sector for PyStocks strategy.
-        cap (Optional[str]): Cap for PyStocks strategy.
 
     Returns:
         dict: A message indicating successful update.
@@ -696,26 +697,30 @@ def update_user_risk_params(
                 detail=f"Invalid trader numbers: {', '.join(invalid_traders)}",
             )
 
-    update_fields = {"RiskPerTrade": risk_percentage}
-    if strategy == "PyStocks":
-        if not sector or not cap:
-            raise HTTPException(
-                status_code=400,
-                detail="Sector and Cap are required for PyStocks strategy",
-            )
-        update_fields.update({"Sector": sector, "Cap": cap})
+    update_fields = {}
+    update_path = ""
 
-    for trader_number in trader_numbers:
-        update_path = f"Strategies/{strategy}/"
-        update_fields_firebase(
-            CLIENTS_COLLECTION, trader_number, update_fields, update_path
+    if strategy in EQUITY_STRATEGY_LIST:
+        message = f"Equity risk is at strategy level. No changes made for {strategy}."
+    elif strategy in DERIVATIVES_STRATEGY_LIST:
+        update_fields = {"RiskPerTrade": risk_percentage}
+        update_path = f"Strategies/{DERIVATIVES}/{strategy}/"
+
+        for trader_number in trader_numbers:
+            update_fields_firebase(
+                CLIENTS_COLLECTION, trader_number, update_fields, update_path
+            )
+
+        message = f"Params {list(update_fields.keys())} changed for {strategy} for {trader_numbers}"
+    else:
+        raise HTTPException(
+            status_code=400, detail=f"Unrecognized strategy type: {strategy}"
         )
 
-    message = f"Params {list(update_fields.keys())} changed for {strategy} for {trader_numbers}"
     log_changes_via_webapp(update_fields, section_info=message)
     discord_admin_bot(message)
 
-    return {"message": "User strategy parameters updated successfully!"}
+    return {"message": message}
 
 
 def get_user_list_from_db():
