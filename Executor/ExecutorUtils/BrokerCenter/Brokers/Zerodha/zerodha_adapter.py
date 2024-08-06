@@ -6,6 +6,7 @@ from six.moves.urllib.parse import urljoin
 import aiohttp
 import json
 import kiteconnect.exceptions as ex
+from kiteconnect import KiteTicker
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -21,6 +22,7 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
+ZERODHA_BROKER = os.getenv("ZERODHA_BROKER")
 
 
 class async_KiteConnect(KiteConnect):
@@ -207,7 +209,7 @@ class async_KiteConnect(KiteConnect):
             )
 
 
-def create_kite_obj(user_details=None, api_key=None, access_token=None):
+def create_broker_obj(user_details=None, api_key=None, access_token=None):
     if api_key and access_token:
         return KiteConnect(api_key=api_key, access_token=access_token)
     elif user_details:
@@ -274,7 +276,7 @@ def zerodha_fetch_free_cash(user_details):
         return 0
 
 
-def get_csv_kite(user_details):
+def get_ins_csv():
     """
     Fetches instrument data from Kite and returns it as a pandas DataFrame.
 
@@ -287,22 +289,19 @@ def get_csv_kite(user_details):
     Raises:
         Exception: If fetching instruments fails.
     """
-    logger.debug(
-        f"Fetching instruments for KITE using {user_details['Broker']['BrokerUsername']}"
+    from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+        get_primary_account_obj,
     )
+
+    logger.debug(f"Fetching instruments for {ZERODHA_BROKER}")
     try:
-        kite = KiteConnect(
-            api_key=user_details["Broker"]["ApiKey"],
-            access_token=user_details["Broker"]["SessionId"],
-        )
+        kite = get_primary_account_obj(ZERODHA_BROKER)
         instrument_dump = kite.instruments()
         instrument_df = pd.DataFrame(instrument_dump)
         instrument_df["exchange_token"] = instrument_df["exchange_token"].astype(str)
         return instrument_df
     except Exception as e:
-        logger.error(
-            f"Error fetching instruments for KITE: {e} for {user_details['Broker']['BrokerUsername']}"
-        )
+        logger.error(f"Error fetching instruments for KITE: {e}")
         return None
 
 
@@ -665,7 +664,7 @@ def kite_modify_orders_for_users(order_details, users_credentials):
     """
     from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import retrieve_order_id
 
-    kite = create_kite_obj(
+    kite = create_broker_obj(
         user_details=users_credentials
     )  # Create a KiteConnect instance with user's broker credentials
     order_id_dict = retrieve_order_id(
@@ -747,7 +746,7 @@ def kite_create_cancel_order(trade, user):
         Exception: If cancelling the order fails.
     """
     try:
-        kite = create_kite_obj(user_details=user["Broker"])
+        kite = create_broker_obj(user_details=user["Broker"])
         kite.cancel_order(variety=kite.VARIETY_REGULAR, order_id=trade["order_id"])
     except Exception as e:
         logger.error(f"Error cancelling order: {e}")
@@ -963,24 +962,12 @@ def get_kite_order_tax(order, broker):
         get_single_ltp,
     )
     from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-        fetch_primary_accounts_from_firebase,
+        get_primary_account_obj,
     )
 
     try:
-        zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
         basket_order = []
-        primary_account_session_id = fetch_primary_accounts_from_firebase(
-            zerodha_primary
-        )
-
-        # kite = create_async_kite_obj(
-        #     api_key=primary_account_session_id["Broker"]["ApiKey"],
-        #     access_token=primary_account_session_id["Broker"]["SessionId"],
-        # )
-        kite = create_kite_obj(
-            api_key=primary_account_session_id["Broker"]["ApiKey"],
-            access_token=primary_account_session_id["Broker"]["SessionId"],
-        )
+        kite = get_primary_account_obj(ZERODHA_BROKER)
         exchange_token = order["exchange_token"]
         product = order.get("product_type")
         transaction_type = order.get("transaction_type")
@@ -1063,7 +1050,7 @@ def get_margin_utilized(user_credentials):
     Raises:
         Exception: If there is an error in fetching the margin details.
     """
-    kite = create_kite_obj(user_details=user_credentials)
+    kite = create_broker_obj(user_details=user_credentials)
     live_bal = kite.margins().get("equity", {}).get("available", {}).get("live_balance")
     opening_bal = (
         kite.margins().get("equity", {}).get("available", {}).get("opening_balance")
@@ -1085,8 +1072,16 @@ def get_broker_payin(user):
     Raises:
         Exception: If there is an error in fetching the payin amount.
     """
-    kite = create_kite_obj(user_details=user["Broker"])
+    kite = create_broker_obj(user_details=user["Broker"])
     payin = float(
         kite.margins().get("equity", {}).get("available", {}).get("intraday_payin", 0)
     )
     return payin
+
+
+def get_kiteticker_obj(user_details):
+    kite = KiteTicker(
+        api_key=user_details["ApiKey"],
+        access_token=user_details["SessionId"],
+    )
+    return kite

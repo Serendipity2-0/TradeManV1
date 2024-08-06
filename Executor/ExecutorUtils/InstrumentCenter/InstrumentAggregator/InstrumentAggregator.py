@@ -13,31 +13,33 @@ load_dotenv(ENV_PATH)
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
 import Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter as sql_utils
 
-zerodha_primary_account = broker_center_utils.fetch_primary_accounts_from_firebase(
-    os.getenv("ZERODHA_PRIMARY_ACCOUNT")
-)
-aliceblue_primary_account = broker_center_utils.fetch_primary_accounts_from_firebase(
-    os.getenv("ALICEBLUE_PRIMARY_ACCOUNT")
-)
 
-try:
-    zerodha_ins_df = broker_center_utils.download_csv_for_brokers(
-        zerodha_primary_account
-    )
-    aliceblue_ins_df = broker_center_utils.download_csv_for_brokers(
-        aliceblue_primary_account
-    )
-except Exception as e:
-    print(f"Error in downloading instruments: {e}")
+ZERODHA = os.getenv("ZERODHA_BROKER")
+ALICEBLUE = os.getenv("ALICEBLUE_BROKER")
 
 
-def merge_ins_df(zerodha_ins_df, aliceblue_ins_df):
+def download_instruments():
     """
-    Merge Zerodha and AliceBlue instrument dataframes on the 'Token' column.
+    Downloads instrument data for primary brokers concurrently.
+
+    Returns:
+        dict: A dictionary with broker names as keys and their respective DataFrames as values.
+    """
+    primary_brokers = broker_center_utils.fetch_primary_broker_list()
+    broker_dfs = {}
+
+    for broker in primary_brokers:
+        broker_dfs[broker] = broker_center_utils.download_csv_for_brokers(broker)
+
+    return broker_dfs
+
+
+def merge_ins_df(broker_dfs):
+    """
+    Merge instrument dataframes from multiple brokers on the 'Token' column.
 
     Args:
-        zerodha_ins_df (pd.DataFrame): DataFrame containing Zerodha instrument data.
-        aliceblue_ins_df (pd.DataFrame): DataFrame containing AliceBlue instrument data.
+        broker_dfs (dict): A dictionary with broker names as keys and their respective DataFrames as values.
 
     Returns:
         pd.DataFrame: Merged DataFrame with combined instrument data.
@@ -57,21 +59,25 @@ def merge_ins_df(zerodha_ins_df, aliceblue_ins_df):
         "exchange",
     ]
 
-    # Filter the instruments DataFrame
-    instruments_df_filtered = zerodha_ins_df[columns_to_keep_instruments]
+    # Filter the instruments DataFrame from Zerodha
+    zerodha_ins_df = broker_dfs.get(ZERODHA)
+    if zerodha_ins_df is not None:
+        instruments_df_filtered = zerodha_ins_df[columns_to_keep_instruments]
 
-    # Merge using 'Token' from merged_df and 'exchange_token' from instruments_df
-    final_merged_df = pd.merge(
-        aliceblue_ins_df,
-        instruments_df_filtered,
-        left_on="Token",
-        right_on="exchange_token",
-        how="left",
-    )
+    # Merge with other brokers
+    merged_df = instruments_df_filtered
+    for broker, df in broker_dfs.items():
+        if broker != ZERODHA:
+            merged_df = pd.merge(
+                df,
+                merged_df,
+                left_on="Token",
+                right_on="exchange_token",
+                how="left",
+            )
+            merged_df.drop("Token", axis=1, inplace=True)
 
-    # Drop the 'Token' column
-    final_merged_df.drop("Token", axis=1, inplace=True)
-    return final_merged_df
+    return merged_df
 
 
 def aggregate_ins():
@@ -82,7 +88,8 @@ def aggregate_ins():
         None
     """
     try:
-        merged_ins_df = merge_ins_df(zerodha_ins_df, aliceblue_ins_df)
+        broker_dfs = download_instruments()
+        merged_ins_df = merge_ins_df(broker_dfs)
         conn = sql_utils.get_db_connection(os.getenv("SQLITE_INS_PATH"))
         decimal_cols = []
         sql_utils.dump_df_to_sqlite(

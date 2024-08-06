@@ -16,11 +16,11 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
     update_fields_firebase,
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    fetch_primary_accounts_from_firebase,
+    get_primary_account_obj,
     STRATEGY_FB_DB,
 )
 from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
-    create_kite_obj,
+    create_broker_obj,
 )
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -76,11 +76,8 @@ def get_average_range_and_update_json(days):
     days (int): The number of days to consider for calculating the average range.
     """
     # fetch primary account
-    primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
-    kite = create_kite_obj(
-        api_key=primary_account_session_id["Broker"]["ApiKey"],
-        access_token=primary_account_session_id["Broker"]["SessionId"],
-    )
+    primary_account = os.getenv("ZERODHA_BROKER")
+    kite = get_primary_account_obj(primary_account)
 
     previous_dates = get_previous_dates(days)
     indices_tokens = strategy_obj.GeneralParams.IndicesTokens
@@ -169,11 +166,8 @@ def get_high_low_range_and_update_json():
     Calculate and update the high-low range in the JSON file for the current day.
     """
     # today = dt.date.today().strftime('%Y-%m-%d')
-    primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
-    kite = create_kite_obj(
-        api_key=primary_account_session_id["Broker"]["ApiKey"],
-        access_token=primary_account_session_id["Broker"]["SessionId"],
-    )
+    primary_account = os.getenv("ZERODHA_BROKER")
+    kite = get_primary_account_obj(primary_account)
     today = dt.datetime.now().date()
     start_time = dt.datetime.combine(today, dt.time(9, 15))
     end_time = dt.datetime.combine(today, dt.time(10, 30))
