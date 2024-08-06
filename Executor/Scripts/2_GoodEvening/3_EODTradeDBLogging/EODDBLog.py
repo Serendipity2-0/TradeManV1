@@ -70,6 +70,11 @@ def update_signal_info():
                 STRATEGY_FB_DB_COLLECTION, strategy_name
             )
             today_orders = strategy_info.get("TodayOrders", {})
+            if not today_orders:
+                logger.warning(
+                    f"No orders found for {strategy_name} today. Skipping..."
+                )
+                continue
             for order, values in today_orders.items():
                 if values.get("StrategyInfo"):
                     strategy_info_dict = values.get("StrategyInfo")
@@ -81,6 +86,7 @@ def update_signal_info():
                     append_df_to_sqlite(signal_info_db_conn, df, strategy_name, [])
         except Exception as e:
             logger.error(f"Error updating signal info for {strategy_name}: {e}")
+            logger.error(traceback.format_exc())
             continue
 
 
@@ -162,7 +168,7 @@ def update_signals_firebase():
             logger.error(
                 f"Error processing strategy {strategy_name} for user {user}: {e}"
             )
-
+            logger.error(traceback.format_exc())
     return strategy_user_dict
 
     # fetch the users for the strategy
@@ -867,7 +873,7 @@ def main():
     3. Updates signal information in Firebase.
     4. Clears today's orders from Firebase.
     """
-    # download_json(CLIENTS_USER_FB_DB_COLLECTION, "before_eod_db_log")
+    download_firebase_json(CLIENTS_USER_FB_DB_COLLECTION, "before_eod_db_log")
     process_n_log_trade()
     sleep(5)
     fetch_and_prepare_holdings_data()
