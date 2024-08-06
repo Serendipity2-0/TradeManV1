@@ -28,6 +28,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
     fetch_collection_data_firebase,
     update_collection,
     update_fields_firebase,
+    delete_fields_firebase,
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_users_for_strategies_from_firebase,
@@ -1011,3 +1012,8 @@ def place_repair_order(
             )
             user_details = fetch_user_json_from_firebase(user)
             place_order_single_user([user_details], order_details)
+
+
+def delete_user(tr_no: str):
+    CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
+    delete_fields_firebase(CLIENTS_USER_FB_DB, tr_no)

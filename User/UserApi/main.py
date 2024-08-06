@@ -893,6 +893,27 @@ def place_repair_order(
         )
 
 
+@app_admin.delete("/delete-user/{tr_no}")
+def delete_user(tr_no: str):
+    """
+    Delete a user from Firebase.
+
+    Args:
+        user_id (str): The ID of the user to delete.
+
+    Raises:
+        HTTPException: If there's an error deleting the user.
+
+    Returns:
+        dict: A message indicating successful deletion.
+    """
+    try:
+        app.delete_user(tr_no)
+        return {"message": f"User {tr_no} successfully deleted."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
+
+
 app_fastapi.include_router(app_user, prefix="/v1/user", tags=["user"])
 app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 
