@@ -779,7 +779,9 @@ def fetch_user_details_by_username(username: str):
     return user_details
 
 
-def update_user_section(user_id: str, section: str, details: dict):
+def update_user_section(
+    user_id: str, section: str, details: dict, sub_section: str = None
+):
     """
     Update user details by replacing the existing details with the new details.
 
@@ -807,7 +809,12 @@ def update_user_section(user_id: str, section: str, details: dict):
     # Parse values in the details dictionary
     parsed_details = {key: parse_value(value) for key, value in details.items()}
 
-    update_fields_firebase(CLIENTS_COLLECTION, f"{user_id}/{section}", parsed_details)
+    if sub_section:
+        path = f"{user_id}/{section}/{sub_section}"
+    else:
+        path = f"{user_id}/{section}"
+
+    update_fields_firebase(CLIENTS_COLLECTION, path, parsed_details)
     log_changes_via_webapp({section: parsed_details})
     discord_admin_bot(f"Section {section} updated for user {user_id}")
     return {"message": f"{section} for user {user_id} updated successfully!"}
