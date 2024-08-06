@@ -392,6 +392,12 @@ def get_individual_strategy_data(
         else:
             logger.error(f"Strategy not found: {strategy_name}")
             return None
+    except pd.io.sql.DatabaseError as e:
+        if "no such table" in str(e):
+            return {"items": pd.DataFrame(), "total_items": 0}
+        else:
+            logger.error(f"Error calculating individual strategy data: {e}")
+            raise
     except Exception as e:
         logger.error(f"Error calculating individual strategy data: {e}")
         raise
@@ -441,6 +447,12 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
         else:
             logger.error(f"Strategy not found: {strategy_name}")
             return None
+    except pd.io.sql.DatabaseError as e:
+        if "no such table" in str(e):
+            return {"items": pd.DataFrame()}
+        else:
+            logger.error(f"Error retrieving strategy graph data: {e}")
+            raise
     except Exception as e:
         logger.error(f"Error retrieving strategy graph data: {e}")
         raise
