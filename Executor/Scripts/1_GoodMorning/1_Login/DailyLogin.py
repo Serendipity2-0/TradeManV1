@@ -47,15 +47,18 @@ def main():
         )
 
     today_active_users = broker_center_utils.fetch_active_users_from_firebase()
+    primary_accounts = broker_center_utils.fetch_primary_accounts_from_firebase()
 
     logger.info(f"Total active users today: {len(today_active_users)}")
+    logger.info(f"Total primary accounts: {len(primary_accounts)}")
 
     for user in today_active_users:
         logger.debug(
             f"Active user: {user['Broker']['BrokerName']}: {user['Profile']['Name']}"
         )
 
-    broker_center_utils.all_broker_login(today_active_users)
+    broker_center_utils.all_broker_login(primary_accounts, "Primary")
+    broker_center_utils.all_broker_login(today_active_users, "Client")
 
 
 if __name__ == "__main__":

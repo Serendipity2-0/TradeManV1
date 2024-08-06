@@ -16,51 +16,21 @@ beat_schedule = {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.good_morning_scripts",
         "schedule": crontab(hour=8, minute=30, day_of_week="1-6"),  # Monday to saturday
     },
-    "run_amipy_every_day_at_9am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.amipy",
-        "schedule": crontab(hour=9, minute=00, day_of_week="1-5"),  # Monday to Friday
+    "run_fast_api_server_every_day_at_001am": {
+        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.fast_api_server",
+        "schedule": crontab(hour=0, minute=1, day_of_week="*"),  # every day
     },
-    "run_expirytrader_every_day_at_916am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.expiry_trader",
-        "schedule": crontab(hour=9, minute=16, day_of_week="1-5"),  # Monday to Friday
+    "run_equity_entry_every_day_at_930am": {
+        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.equity_entry",
+        "schedule": crontab(hour=9, minute=30, day_of_week="1-5"),  # Monday to Friday
     },
-    "run_namaha_every_day_at_917am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.namaha",
-        "schedule": crontab(hour=9, minute=17, day_of_week="1-5"),  # Monday to Friday
-    },
-    "run_overnight_futures_exit_every_day_at_919am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.overnight_exit",
-        "schedule": crontab(hour=9, minute=19, day_of_week="2-5"),  # Tuesday to Friday
-    },
-    "run_pystocks_entry_every_day_at_920am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.pystocks_entry",
+    "run_equity_stoploss_every_day_at_935am": {
+        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.equity_stoploss",
         "schedule": crontab(hour=9, minute=35, day_of_week="1-5"),  # Monday to Friday
-    },
-    "run_pystocks_exit_every_day_at_935am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.pystocks_exit",
-        "schedule": crontab(hour=9, minute=35, day_of_week="1-5"),  # Monday to Friday
-    },
-    "run_golden_coin_every_day_at_942am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.golden_coin",
-        "schedule": crontab(hour=9, minute=42, day_of_week="1-5"),  # Monday to Friday
-    },
-    "run_om_every_day_at_943am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.om",
-        "schedule": crontab(hour=9, minute=43, day_of_week="1-5"),  # Monday to Friday
-    },
-    "run_mpwizard_every_day_at_10am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.mpwizard",
-        "schedule": crontab(hour=10, minute=00, day_of_week="1-5"),  # Monday to Friday
     },
     "run_sweep_orders_every_day_at_313pm": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.sweep_orders",
         "schedule": crontab(hour=15, minute=13, day_of_week="1-5"),  # Monday to Friday
-    },
-    "run_overnight_futures_entry_every_day_at_316pm": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.overnight_entry",
-        "schedule": crontab(
-            hour=15, minute=16, day_of_week="1-4"
-        ),  # Monday to Thursday
     },
     "run_tradebook_validator_every_day_at_335pm": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.tradebook_validator",
@@ -77,14 +47,6 @@ beat_schedule = {
     "run_eod_daily_reports_every_day_at_4pm": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.eod_daily_reports",
         "schedule": crontab(hour=16, minute=20, day_of_week="1-5"),  # Monday to Friday
-    },
-    "revoke_amipy_every_day_at_3_15pm": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.revoke_amipy_task",
-        "schedule": crontab(hour=15, minute=30, day_of_week="1-5"),  # Monday to Friday
-    },
-    "revoke_mpwizard_every_day_at_3_16pm": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.revoke_mpwizard_task",
-        "schedule": crontab(hour=15, minute=31, day_of_week="1-5"),  # Monday to Friday
     },
 }
 

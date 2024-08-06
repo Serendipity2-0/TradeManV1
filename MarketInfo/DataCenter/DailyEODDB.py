@@ -17,10 +17,7 @@ logger = LoggerSetup()
 from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    fetch_primary_accounts_from_firebase,
-)
-from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
-    create_kite_obj,
+    get_primary_account_obj,
 )
 from Executor.ExecutorUtils.ExeUtils import holidays
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
@@ -28,10 +25,9 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
 )
 
 strategy_obj = StrategyBase.load_from_db("ExpiryTrader")
-primary_account = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
 
-primary_account_details = fetch_primary_accounts_from_firebase(primary_account)
-kite = create_kite_obj(primary_account_details["Broker"])
+primary_account = os.getenv("ZERODHA_BROKER")
+kite = get_primary_account_obj(primary_account)
 
 symbols_list = ["NIFTY", "BANKNIFTY", "FINNIFTY", "SENSEX", "MIDCPNIFTY"]
 segments = ["NFO-OPT", "BFO-OPT"]
@@ -83,7 +79,6 @@ def store_data_in_postgres(trading_symbol_list, all_data, cursor):
         table_name = table_name.replace(" ", "").replace("(", "").replace(")", "")
 
     logger.info(f"Storing data in table {table_name}...")
-    # table_name = trading_symbol_list[0].replace("-", "_").lower()
     create_table_query = f"CREATE TABLE IF NOT EXISTS {table_name} (date TIMESTAMP, open REAL, high REAL, low REAL, close REAL, volume INT);"
     cursor.execute(create_table_query)
 

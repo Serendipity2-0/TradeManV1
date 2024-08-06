@@ -5,8 +5,6 @@ import asyncio
 from datetime import timedelta, datetime, date
 from time import sleep
 
-from kiteconnect import KiteConnect
-from kiteconnect import KiteTicker
 
 import dash
 import dash_bootstrap_components as dbc
@@ -32,27 +30,21 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 logger = LoggerSetup()
 
 
-zerodha_primary = os.getenv("ZERODHA_PRIMARY_ACCOUNT")
-
 from Executor.NSEStrategies.NSEStrategiesUtil import (
     StrategyBase,
     base_symbol_token,
-    update_signal_firebase,
-    update_next_trade_id_firebase,
-)
-from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
-    create_kite_obj,
-)
-from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
-    fetch_collection_data_firebase,
-    update_fields_firebase,
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_primary_accounts_from_firebase,
+    get_primary_account_obj,
 )
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     discord_bot,
 )
+from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
+    get_kiteticker_obj,
+)
+
 
 strategy_obj = StrategyBase.load_from_db("AmiPy")
 strategy_name = strategy_obj.StrategyName
@@ -79,11 +71,8 @@ entry_time = pd.Timestamp(entry).time()
 last_buy_time = pd.Timestamp(last).time()
 sqroff_time = pd.Timestamp(sqroff).time()
 
-primary_account_session_id = fetch_primary_accounts_from_firebase(zerodha_primary)
-kite = create_kite_obj(
-    api_key=primary_account_session_id["Broker"]["ApiKey"],
-    access_token=primary_account_session_id["Broker"]["SessionId"],
-)
+primary_broker = os.getenv("PRIMARY_BROKER")
+kite = get_primary_account_obj(primary_broker)
 
 
 # Define your global DataFrame
@@ -642,11 +631,12 @@ def on_connect(ws, response):  # noqa
     ws.set_mode(ws.MODE_LTP, trading_tokens)
 
 
-# Initialise
-kws = KiteTicker(
-    api_key=primary_account_session_id["Broker"]["ApiKey"],
-    access_token=primary_account_session_id["Broker"]["SessionId"],
+primary_accounts = fetch_primary_accounts_from_firebase()
+primary_broker_account = next(
+    (user for user in primary_accounts if user["BrokerName"] == primary_broker), None
 )
+kws = get_kiteticker_obj(primary_broker_account)
+
 # Assign the callbacks.
 kws.on_ticks = on_ticks
 kws.on_connect = on_connect

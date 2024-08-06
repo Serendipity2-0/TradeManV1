@@ -37,7 +37,3 @@ def main():
         tfmomentum_stocks_df,
         tfema_stocks_df,
     )
-
-
-if __name__ == "__main__":
-    main()

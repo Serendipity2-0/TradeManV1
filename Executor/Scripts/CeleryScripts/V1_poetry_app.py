@@ -42,10 +42,12 @@ AMIPY = "amipy"
 OVERNIGHT_FUTURES = "overnight_futures"
 EXPIRY_TRADER = "expiry_trader"
 NAMAHA = "namaha"
+EQUITY_ENTRY = "equity_entry"
 MPWIZARD = "mpwizard"
 GOLDEN_COIN = "golden_coin"
 OM = "om"
 PYSTOCKS = "pystocks"
+EQUITY_EXIT = "equity_exit"
 
 
 def setup_logger(name, log_file, level=logging.DEBUG):  # Set level to DEBUG
@@ -170,12 +172,21 @@ def good_morning_scripts():
     )
     scripts = [
         "Executor/Scripts/1_GoodMorning/1_Login/DailyLogin.py",
-        "Executor/Scripts/1_GoodMorning/2_FundsValidator/FundValidator.py",
-        "Executor/Scripts/1_GoodMorning/3_MarketInfoUpdate/MarketInfoUpdate.py",
         "Executor/Scripts/1_GoodMorning/4_DailyInstrumentAggregator/DailyInstrumentAggregator.py",
-        "Executor/Scripts/1_GoodMorning/5_TelegramOrderBot/TelegramOrderBot.py",
+        "Executor/Scripts/1_GoodMorning/4_DailyInstrumentAggregator/DailyEquityCalc.py",
     ]
     return run_multiple_scripts(scripts, good_morning_logger)
+
+
+@app.task(bind=True)
+def fast_api_server(self):
+    fast_api_server_logger = setup_logger(
+        "fast_api_server", f"{log_dir}/fast_api_server.log"
+    )
+    task_id = self.request.id
+    redis_client.set("fast_api_server_task_id", task_id)
+    while True:
+        return run_script("User/UserApi/main.py", 17, fast_api_server_logger)
 
 
 @app.task(bind=True)
@@ -190,69 +201,23 @@ def amipy(self):
 
 
 @app.task
-def overnight_exit():
-    overnight_futures_logger = setup_logger(
-        OVERNIGHT_FUTURES, f"{log_dir}/{OVERNIGHT_FUTURES}.log"
-    )
+def equity_entry():
+    equity_entry_logger = setup_logger(EQUITY_ENTRY, f"{log_dir}/{EQUITY_ENTRY}.log")
     return run_script(
-        "Executor/NSEStrategies/Derivatives/OvernightFutures/Screenipy_futures_morning.py",
-        10,
-        overnight_futures_logger,
-    )
-
-
-@app.task
-def expiry_trader():
-    expirytrader_logger = setup_logger(EXPIRY_TRADER, f"{log_dir}/{EXPIRY_TRADER}.log")
-    return run_script(
-        "Executor/NSEStrategies/Derivatives/ExpiryTrader/ExpiryTrader.py",
+        "Executor/NSEStrategies/Equity/Equity.py",
         15,
-        expirytrader_logger,
+        equity_entry_logger,
     )
 
 
 @app.task
-def namaha():
-    namaha_logger = setup_logger(NAMAHA, f"{log_dir}/{NAMAHA}.log")
-    return run_script(
-        "Executor/NSEStrategies/Derivatives/Namaha/Namaha.py", 15, namaha_logger
-    )
-
-
-@app.task
-def pystocks_entry():
-    pystocks_logger = setup_logger(PYSTOCKS, f"{log_dir}/{PYSTOCKS}.log")
-    return run_script(
-        "Executor/NSEStrategies/Derivatives/PyStocks/PyStocksMain.py",
-        15,
-        pystocks_logger,
-    )
-
-
-@app.task
-def pystocks_exit():
-    pystocks_logger = setup_logger(PYSTOCKS, f"{log_dir}/{PYSTOCKS}.log")
+def equity_exit():
+    equity_exit_logger = setup_logger(EQUITY_EXIT, f"{log_dir}/{EQUITY_EXIT}.log")
     return run_script(
         "Executor/NSEStrategies/Derivatives/PyStocks/PyStocksStoploss.py",
         15,
-        pystocks_logger,
+        equity_exit_logger,
     )
-
-
-@app.task
-def golden_coin():
-    golden_coin_logger = setup_logger(GOLDEN_COIN, f"{log_dir}/{GOLDEN_COIN}.log")
-    return run_script(
-        "Executor/NSEStrategies/Derivatives/GoldenCoin/GoldenCoin.py",
-        15,
-        golden_coin_logger,
-    )
-
-
-@app.task
-def om():
-    om_logger = setup_logger(OM, f"{log_dir}/{OM}.log")
-    return run_script("Executor/NSEStrategies/Derivatives/Om/Om.py", 15, om_logger)
 
 
 @app.task(bind=True)
@@ -275,18 +240,6 @@ def sweep_orders():
         "Executor/Scripts/2_GoodEvening/1_SweepOrders/SweepOrders.py",
         16,
         sweep_orders_logger,
-    )
-
-
-@app.task
-def overnight_entry():
-    overnight_futures_logger = setup_logger(
-        OVERNIGHT_FUTURES, f"{log_dir}/{OVERNIGHT_FUTURES}.log"
-    )
-    return run_script(
-        "Executor/NSEStrategies/Derivatives/OvernightFutures/Screenipy_futures_afternoon.py",
-        16,
-        overnight_futures_logger,
     )
 
 
