@@ -730,9 +730,7 @@ def get_user_details_by_username(username: str):
 
 
 @app_admin.post("/update-user-section")
-def update_user_section(
-    user_id: str, section: str, details: dict, sub_section: str = None
-):
+def update_user_section(user_id: str, section: str, details: dict):
     """
     Update a specific section of user details.
     NOTE: For fields Active and Tr_No, the request should be sent as dict like this {"Active": True} or {"Tr_No": "Tr1"}
@@ -746,9 +744,7 @@ def update_user_section(
         dict: A message indicating successful update and the updated section.
     """
     try:
-        updated_section = app.update_user_section(
-            user_id, section, details, sub_section
-        )
+        updated_section = app.update_user_section(user_id, section, details)
         return {
             "message": f"Successfully updated {section} for user {user_id}",
             "updated_section": updated_section,
