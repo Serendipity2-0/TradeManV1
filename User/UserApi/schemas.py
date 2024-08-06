@@ -43,6 +43,7 @@ class Portfolio_(BaseModel):
 
 
 class Accounts_(BaseModel):
+    CurrentBaseCapital: float = Field(..., alias="CurrentBaseCapital", example=100000.0)
     Equity: Optional[Equity_] = Field(
         default=None,
         example={

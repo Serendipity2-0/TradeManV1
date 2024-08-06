@@ -712,7 +712,18 @@ def process_holdings_orders(
             trading_symbol = instru().get_trading_symbol_by_exchange_token(
                 str(order.get("exchange_token")), exchange
             )
+            # Check if avg_prc is empty or not a valid float
+            if not order.get("avg_prc") or not order["avg_prc"].strip():
+                logger.warning(f"Invalid avg_prc for order: {order}")
+                continue  # Skip this order and move to the next one
 
+            try:
+                entry_price = float(order["avg_prc"])
+            except ValueError:
+                logger.error(f"Unable to convert avg_prc to float: {order['avg_prc']}")
+                continue  # Skip this order and move to the next one
+
+            setup_name = order.get("setup")
             entry_price = float(order["avg_prc"])
             qty = order.get("qty", 0)
             margin_utilized = (

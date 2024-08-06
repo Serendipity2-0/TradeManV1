@@ -151,7 +151,7 @@ def update_strategies(user_id: str, strategy_details: schemas.Strategies_):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app_user.get("/register/tr-no")
+@app_user.post("/register/tr-no")
 def update_tr_no(tr_no: str):
     """
     This is the route for updating the trader number for a new user.
