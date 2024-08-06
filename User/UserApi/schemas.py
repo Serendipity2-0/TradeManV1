@@ -4,58 +4,41 @@ from typing import Optional
 from typing import List, Dict
 from datetime import datetime
 
-# Dynamic date format for alias fields
-today_date = datetime.now().strftime("%d%b%y")
-
 
 class Equity_(BaseModel):
     CapitalAllocation: int = Field(..., example=100)
-    Equity_FreeCash: float = Field(
-        ..., alias=f"{today_date}_Equity_FreeCash", example=141558.6
-    )
-    Equity_Holdings: float = Field(
-        ..., alias=f"{today_date}_Equity_Holdings", example=81028
-    )
+    Equity_FreeCash: float = Field(..., alias="Equity_FreeCash", example=141558.6)
+    Equity_Holdings: float = Field(..., alias="Equity_Holdings", example=81028)
     Equity_AccountValue: float = Field(
-        ..., alias=f"{today_date}_Equity_AccountValue", example=141558.6
+        ..., alias="Equity_AccountValue", example=141558.6
     )
 
 
 class Debt_(BaseModel):
     CapitalAllocation: int = Field(..., example=50)
-    Debt_FreeCash: float = Field(
-        ..., alias=f"{today_date}_Debt_FreeCash", example=50000.0
-    )
-    Debt_Holdings: float = Field(
-        ..., alias=f"{today_date}_Debt_Holdings", example=25000
-    )
-    Debt_AccountValue: float = Field(
-        ..., alias=f"{today_date}_Debt_AccountValue", example=100000.0
-    )
+    Debt_FreeCash: float = Field(..., alias="Debt_FreeCash", example=50000.0)
+    Debt_Holdings: float = Field(..., alias="Debt_Holdings", example=25000)
+    Debt_AccountValue: float = Field(..., alias="Debt_AccountValue", example=100000.0)
 
 
 class Derivatives_(BaseModel):
     CapitalAllocation: int = Field(..., example=150)
     Derivatives_FreeCash: float = Field(
-        ..., alias=f"{today_date}_Derivatives_FreeCash", example=75000.0
+        ..., alias="Derivatives_FreeCash", example=75000.0
     )
     Derivatives_Holdings: float = Field(
-        ..., alias=f"{today_date}_Derivatives_Holdings", example=30000
+        ..., alias="Derivatives_Holdings", example=30000
     )
     Derivatives_AccountValue: float = Field(
-        ..., alias=f"{today_date}_Derivatives_AccountValue", example=100000.0
+        ..., alias="Derivatives_AccountValue", example=100000.0
     )
 
 
 class Portfolio_(BaseModel):
-    Portfolio_FreeCash: float = Field(
-        ..., alias=f"{today_date}_Portfolio_FreeCash", example=75000.0
-    )
-    Portfolio_Holdings: float = Field(
-        ..., alias=f"{today_date}_Portfolio_Holdings", example=30000
-    )
+    Portfolio_FreeCash: float = Field(..., alias="Portfolio_FreeCash", example=75000.0)
+    Portfolio_Holdings: float = Field(..., alias="Portfolio_Holdings", example=30000)
     Portfolio_AccountValue: float = Field(
-        ..., alias=f"{today_date}_Portfolio_AccountValue", example=100000.0
+        ..., alias="Portfolio_AccountValue", example=100000.0
     )
 
 
@@ -64,27 +47,27 @@ class Accounts_(BaseModel):
         default=None,
         example={
             "CapitalAllocation": 100,
-            f"{today_date}_Equity_FreeCash": 141558.6,
-            f"{today_date}_Equity_Holdings": 81028,
-            f"{today_date}_Equity_AccountValue": 141558.6,
+            "Equity_FreeCash": 141558.6,
+            "Equity_Holdings": 81028,
+            "Equity_AccountValue": 141558.6,
         },
     )
     Debt: Optional[Debt_] = Field(
         default=None,
         example={
             "CapitalAllocation": 50,
-            f"{today_date}_Debt_FreeCash": 50000.0,
-            f"{today_date}_Debt_Holdings": 25000,
-            f"{today_date}_Debt_AccountValue": 100000.0,
+            "Debt_FreeCash": 50000.0,
+            "Debt_Holdings": 25000,
+            "Debt_AccountValue": 100000.0,
         },
     )
     Derivatives: Optional[Derivatives_] = Field(
         default=None,
         example={
             "CapitalAllocation": 150,
-            f"{today_date}_Derivatives_FreeCash": 75000.0,
-            f"{today_date}_Derivatives_Holdings": 30000,
-            f"{today_date}_Derivatives_AccountValue": 100000.0,
+            "Derivatives_FreeCash": 75000.0,
+            "Derivatives_Holdings": 30000,
+            "Derivatives_AccountValue": 100000.0,
         },
     )
     Portfolio: Portfolio_

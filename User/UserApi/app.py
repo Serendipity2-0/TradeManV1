@@ -128,6 +128,20 @@ def store_strategies_data(user_id, data):
     return user_data_collection[user_id]
 
 
+def store_tr_no(user_id, data):
+    """
+    This function stores the trader number for a user in the user_data_collection dictionary.
+
+    Args:
+    user_id (str): The user ID.
+    data (str): The trader number to be stored.
+    """
+    if user_id not in user_data_collection:
+        user_data_collection[user_id] = {}
+    user_data_collection[user_id]["Tr_No"] = data
+    return user_data_collection[user_id]
+
+
 def store_active_status(user_id, data):
     """
     This function stores the active status for a user in the user_data_collection dictionary.
