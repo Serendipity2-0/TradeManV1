@@ -2,7 +2,7 @@ import os, sys
 from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, List
 from fastapi import HTTPException
 from datetime import datetime
 
@@ -807,7 +807,9 @@ def update_user_section(user_id: str, section: str, details: dict):
     # Parse values in the details dictionary
     parsed_details = {key: parse_value(value) for key, value in details.items()}
 
-    update_fields_firebase(CLIENTS_COLLECTION, f"{user_id}/{section}", parsed_details)
+    path = f"{user_id}/{section}"
+
+    update_fields_firebase(CLIENTS_COLLECTION, path, parsed_details)
     log_changes_via_webapp({section: parsed_details})
     discord_admin_bot(f"Section {section} updated for user {user_id}")
     return {"message": f"{section} for user {user_id} updated successfully!"}
@@ -825,9 +827,13 @@ def fetch_users_for_strategy(strategy_name: str):
     """
     try:
         if strategy_name in EQUITY_STRATEGY_LIST:
-            return fetch_strategy_users(strategy_name, asset_segment=EQUITY)
+            users = fetch_strategy_users(strategy_name, asset_segment=EQUITY)
+            tr_no_list = [user["Tr_No"] for user in users]
+            return tr_no_list
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
-            return fetch_strategy_users(strategy_name, asset_segment=DERIVATIVES)
+            users = fetch_strategy_users(strategy_name, asset_segment=DERIVATIVES)
+            tr_no_list = [user["Tr_No"] for user in users]
+            return tr_no_list
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching users for strategy: {str(e)}"

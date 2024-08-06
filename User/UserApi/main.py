@@ -794,7 +794,7 @@ def get_order_modes():
         )
 
 
-@app_admin.get("qty-calculation-mode")
+@app_admin.get("/qty-calculation-mode")
 def get_qty_calculation_mode():
     """
     Fetches the qty calculation mode.
