@@ -69,6 +69,12 @@ def update_signal_info():
             strategy_info = fetch_collection_data_firebase(
                 STRATEGY_FB_DB_COLLECTION, strategy_name
             )
+            if strategy_info is None:
+                logger.warning(
+                    f"No data found for strategy {strategy_name}. Skipping..."
+                )
+                continue
+
             today_orders = strategy_info.get("TodayOrders", {})
             if not today_orders:
                 logger.warning(
@@ -79,7 +85,8 @@ def update_signal_info():
                 if values.get("StrategyInfo"):
                     strategy_info_dict = values.get("StrategyInfo")
                     df = pd.DataFrame([strategy_info_dict])
-                    # Move trade_id column to the first column
+                    if "trade_id" not in df.columns:
+                        df["trade_id"] = None  # or some default value
                     df = df[
                         ["trade_id"] + [col for col in df.columns if col != "trade_id"]
                     ]

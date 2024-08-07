@@ -32,7 +32,6 @@ from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import 
     send_file_via_telegram,
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
-from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 from Executor.ExecutorUtils.ReportUtils.MarketMovementData import (
     main as fetch_market_movement_data,
 )
@@ -268,6 +267,7 @@ def create_consolidated_report(active_users, active_strategies):
         logger.info(f"consolidated_data: {consolidated_data}")
     except Exception as e:
         logger.error(f"Error in generating consolidated report data: {e}")
+        logger.error(traceback.format_exc())
 
 
 # Main function to generate and send the report

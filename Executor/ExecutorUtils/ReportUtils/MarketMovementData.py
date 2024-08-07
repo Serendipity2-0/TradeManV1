@@ -22,7 +22,8 @@ import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as Instrume
 instrument_obj = InstrumentCenterUtils.Instrument()
 
 logger = LoggerSetup()
-kite_obj = get_primary_account_obj()
+primary_broker = os.getenv("PRIMARY_BROKER")
+kite_obj = get_primary_account_obj(primary_broker)
 
 
 def fetch_historical_data(instrument_token, from_date, to_date):
