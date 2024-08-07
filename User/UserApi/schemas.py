@@ -150,3 +150,23 @@ class MarketInfoParams(BaseModel):
 
 class OrderChoice(BaseModel):
     choice: str
+
+
+class RepairOrderInput(BaseModel):
+    strategy_name: str
+    users: List[str]
+    symbols: List[str]
+    qty_calculation_mode: str
+    trade_id: str
+    qty: Optional[float] = None
+    setup_name: Optional[str] = None
+
+
+class CompleteOrderInput(BaseModel):
+    strategy_name: str
+    users: List[str]
+    symbols: List[str]
+    qty_calculation_mode: str
+    trade_id: str
+    qty: Optional[float] = None
+    setup_name: Optional[str] = None

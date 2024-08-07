@@ -925,45 +925,49 @@ def place_complete_order(
         trade_id (str): The trade id.
         setup_name (str): The setup name.
     """
-    for user in users:
-        for symbol in symbols:
-            exchange = instrument_obj().get_segment_by_symbol(symbol)
-            exchange_token = instrument_obj().get_exchange_token_by_name(
-                symbol, exchange
-            )
-            strategy_obj = StrategyBase.load_from_db(strategy_name)
-            order_type = strategy_obj.GeneralParams.OrderType
-            product_type = strategy_obj.GeneralParams.ProductType
-            strategy_type = strategy_obj.GeneralParams.StrategyType
-            num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
-            if num_stocks is None:
-                num_stocks = 1
+    try:
+        for user in users:
+            for symbol in symbols:
+                exchange = instrument_obj().get_segment_by_symbol(symbol)
+                exchange_token = instrument_obj().get_exchange_token_by_name(
+                    symbol, exchange
+                )
+                strategy_obj = StrategyBase.load_from_db(strategy_name)
+                order_type = strategy_obj.GeneralParams.OrderType
+                product_type = strategy_obj.GeneralParams.ProductType
+                strategy_type = strategy_obj.GeneralParams.StrategyType
+                num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
+                if num_stocks is None:
+                    num_stocks = 1
 
-            ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
-            ltp = round(ltp * 20) / 20
+                ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
+                ltp = round(ltp * 20) / 20
 
-            update_strategy_qty(
-                strategy_name=strategy_name,
-                user=user,
-                qty_calculation_mode=qty_calculation_mode,
-                qty=qty,
-                ltp=ltp,
-                strategy_type=strategy_type,
-                num_stocks=num_stocks,
-                setup_name=setup_name,
-            )
-            order_details = prepare_order_details(
-                strategy_name=strategy_name,
-                symbol=symbol,
-                exchange_token=exchange_token,
-                order_type=order_type,
-                product_type=product_type,
-                trade_id=trade_id,
-                ltp=ltp,
-                setup_name=setup_name,
-            )
-            user_details = fetch_user_json_from_firebase(user)
-            place_order_single_user([user_details], order_details)
+                update_strategy_qty(
+                    strategy_name=strategy_name,
+                    user=user,
+                    qty_calculation_mode=qty_calculation_mode,
+                    qty=qty,
+                    ltp=ltp,
+                    strategy_type=strategy_type,
+                    num_stocks=num_stocks,
+                    setup_name=setup_name,
+                )
+                order_details = prepare_order_details(
+                    strategy_name=strategy_name,
+                    symbol=symbol,
+                    exchange_token=exchange_token,
+                    order_type=order_type,
+                    product_type=product_type,
+                    trade_id=trade_id,
+                    ltp=ltp,
+                    setup_name=setup_name,
+                )
+                user_details = fetch_user_json_from_firebase(user)
+                place_order_single_user([user_details], order_details)
+            return {"message": "Order placed successfully!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def place_repair_order(
@@ -987,45 +991,49 @@ def place_repair_order(
         trade_id (str): The trade id.
         setup_name (str): The setup name.
     """
-    for user in users:
-        for symbol in symbols:
-            exchange = instrument_obj().get_segment_by_symbol(symbol)
-            exchange_token = instrument_obj().get_exchange_token_by_name(
-                symbol, exchange
-            )
-            strategy_obj = StrategyBase.load_from_db(strategy_name)
-            order_type = strategy_obj.GeneralParams.OrderType
-            product_type = strategy_obj.GeneralParams.ProductType
-            strategy_type = strategy_obj.GeneralParams.StrategyType
-            num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
-            if num_stocks is None:
-                num_stocks = 1
+    try:
+        for user in users:
+            for symbol in symbols:
+                exchange = instrument_obj().get_segment_by_symbol(symbol)
+                exchange_token = instrument_obj().get_exchange_token_by_name(
+                    symbol, exchange
+                )
+                strategy_obj = StrategyBase.load_from_db(strategy_name)
+                order_type = strategy_obj.GeneralParams.OrderType
+                product_type = strategy_obj.GeneralParams.ProductType
+                strategy_type = strategy_obj.GeneralParams.StrategyType
+                num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
+                if num_stocks is None:
+                    num_stocks = 1
 
-            ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
-            ltp = round(ltp * 20) / 20
+                ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
+                ltp = round(ltp * 20) / 20
 
-            update_strategy_qty(
-                strategy_name=strategy_name,
-                user=user,
-                qty_calculation_mode=qty_calculation_mode,
-                qty=qty,
-                ltp=ltp,
-                strategy_type=strategy_type,
-                num_stocks=num_stocks,
-                setup_name=setup_name,
-            )
-            order_details = prepare_order_details(
-                strategy_name=strategy_name,
-                symbol=symbol,
-                exchange_token=exchange_token,
-                order_type=order_type,
-                product_type=product_type,
-                trade_id=trade_id,
-                ltp=ltp,
-                setup_name=setup_name,
-            )
-            user_details = fetch_user_json_from_firebase(user)
-            place_order_single_user([user_details], order_details)
+                update_strategy_qty(
+                    strategy_name=strategy_name,
+                    user=user,
+                    qty_calculation_mode=qty_calculation_mode,
+                    qty=qty,
+                    ltp=ltp,
+                    strategy_type=strategy_type,
+                    num_stocks=num_stocks,
+                    setup_name=setup_name,
+                )
+                order_details = prepare_order_details(
+                    strategy_name=strategy_name,
+                    symbol=symbol,
+                    exchange_token=exchange_token,
+                    order_type=order_type,
+                    product_type=product_type,
+                    trade_id=trade_id,
+                    ltp=ltp,
+                    setup_name=setup_name,
+                )
+                user_details = fetch_user_json_from_firebase(user)
+                place_order_single_user([user_details], order_details)
+        return {"message": "Order placed successfully!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def delete_user(tr_no: str):

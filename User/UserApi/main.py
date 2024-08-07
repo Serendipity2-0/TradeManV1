@@ -889,15 +889,7 @@ def fetch_complete_order_symbols(strategy_name: str):
 
 
 @app_admin.post("/place-complete-order")
-def place_complete_order(
-    strategy_name: str,
-    users: list,
-    symbols: list,
-    qty_calculation_mode: str,
-    trade_id: str,
-    qty: float = None,
-    setup_name: str = None,
-):
+def place_complete_order(complete_order_input: schemas.CompleteOrderInput):
     """_summary_
 
     Args:
@@ -916,13 +908,13 @@ def place_complete_order(
     """
     try:
         return app.place_complete_order(
-            strategy_name=strategy_name,
-            users=users,
-            symbols=symbols,
-            qty_calculation_mode=qty_calculation_mode,
-            trade_id=trade_id,
-            qty=qty,
-            setup_name=setup_name,
+            strategy_name=complete_order_input.strategy_name,
+            users=complete_order_input.users,
+            symbols=complete_order_input.symbols,
+            qty_calculation_mode=complete_order_input.qty_calculation_mode,
+            trade_id=complete_order_input.trade_id,
+            qty=complete_order_input.qty,
+            setup_name=complete_order_input.setup_name,
         )
     except Exception as e:
         raise HTTPException(
@@ -931,24 +923,27 @@ def place_complete_order(
 
 
 @app_admin.post("/place-repair-order")
-def place_repair_order(
-    strategy_name: str,
-    users: list,
-    symbols: list,
-    qty_calculation_mode: str,
-    trade_id: str,
-    qty: float = None,
-    setup_name: str = None,
-):
+def place_repair_order(repair_order_input: schemas.RepairOrderInput):
+    """
+    Place a repair order for a given strategy.
+
+    This endpoint allows placing a repair order for a given strategy.
+
+    Args:
+        repair_order_input (schemas.RepairOrderInput): The input for the repair order.
+
+    Returns:
+        dict: A message indicating successful update.
+    """
     try:
         return app.place_repair_order(
-            strategy_name=strategy_name,
-            users=users,
-            symbols=symbols,
-            qty_calculation_mode=qty_calculation_mode,
-            trade_id=trade_id,
-            qty=qty,
-            setup_name=setup_name,
+            strategy_name=repair_order_input.strategy_name,
+            users=repair_order_input.users,
+            symbols=repair_order_input.symbols,
+            qty_calculation_mode=repair_order_input.qty_calculation_mode,
+            trade_id=repair_order_input.trade_id,
+            qty=repair_order_input.qty,
+            setup_name=repair_order_input.setup_name,
         )
     except Exception as e:
         raise HTTPException(
@@ -982,7 +977,7 @@ app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 
 
 def main_api():
-    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=False)
+    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=True)
 
 
 if __name__ == "__main__":
