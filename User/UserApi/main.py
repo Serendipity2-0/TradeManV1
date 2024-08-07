@@ -788,6 +788,55 @@ def fetch_users_for_strategy(strategy: str):
         )
 
 
+@app_admin.get("/aum")
+def get_aum():
+    """
+    Calculates the Assets Under Management (AUM) for all active users.
+
+    Returns:
+        dict: A dictionary containing the AUM for Equity, Debt, Derivatives, and Portfolio.
+    """
+    try:
+        aum = app.get_aum_from_firebase()
+        return aum
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating AUM: {str(e)}")
+
+
+@app_admin.get("/total-base-capital")
+def get_total_base_capital():
+    """
+    Calculates the total CurrentBaseCapital for all active users.
+
+    Returns:
+        dict: A dictionary containing the total base capital.
+    """
+    try:
+        total_base_capital = app.get_total_base_capital_from_firebase()
+        return total_base_capital
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error calculating total base capital: {str(e)}"
+        )
+
+
+@app_admin.get("/active-users-data")
+def get_active_users_data_endpoint():
+    """
+    Retrieves data for all active users including their account values and holdings.
+
+    Returns:
+        dict: A dictionary containing the DataFrame of active users' data and any warnings.
+    """
+    try:
+        data = app.get_active_users_data_from_firebase()
+        return data.to_dict(orient="records")
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching active users data: {str(e)}"
+        )
+
+
 @app_admin.get("/order-modes")
 def get_order_modes():
     """
@@ -823,7 +872,7 @@ def get_qty_calculation_mode():
 @app_admin.get("/fetch-complete-order")
 def fetch_complete_order_symbols(strategy_name: str):
     """
-    Fetch complete order symbols.
+    Fetch complete order symbols from the strategy collection.
 
     Args:
         strategy_name (str): The name of the strategy.

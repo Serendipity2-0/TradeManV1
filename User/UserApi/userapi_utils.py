@@ -844,3 +844,93 @@ def prepare_order_details(
         }
     ]
     return order_details
+
+
+def calculate_aum():
+    """
+    Calculates the Assets Under Management (AUM) for all active users.
+
+    Returns:
+        dict: A dictionary containing the AUM for Equity, Debt, Derivatives, and Portfolio.
+    """
+    users_data = fetch_collection_data_firebase(CLIENTS_COLLECTION)
+    aum = {"Equity": 0, "Debt": 0, "Derivatives": 0, "Portfolio": 0}
+
+    for user_id, user_data in users_data.items():
+        if user_data.get("Active", False):
+            accounts = user_data.get("Accounts", {})
+            aum["Equity"] += accounts.get("Equity", {}).get("Equity_FreeCash", 0)
+            aum["Debt"] += accounts.get("Debt", {}).get("Debt_FreeCash", 0)
+            aum["Derivatives"] += accounts.get("Derivatives", {}).get(
+                "Derivatives_FreeCash", 0
+            )
+            aum["Portfolio"] += accounts.get("Portfolio", {}).get(
+                "Portfolio_FreeCash", 0
+            )
+
+    return aum
+
+
+def get_total_base_capital():
+    """
+    Calculates the total CurrentBaseCapital for all active users.
+
+    Returns:
+        float: The total base capital.
+    """
+    users_data = fetch_collection_data_firebase(CLIENTS_COLLECTION)
+    total_base_capital = 0
+
+    for user_id, user_data in users_data.items():
+        if user_data.get("Active", False):
+            total_base_capital += user_data.get("Accounts", {}).get(
+                "CurrentBaseCapital", 0
+            )
+
+    return total_base_capital
+
+
+def calculate_active_users_data():
+    """
+    Retrieves data for all active users including their account values and holdings.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the active users' data.
+    """
+    users_data = fetch_collection_data_firebase(CLIENTS_COLLECTION)
+    active_users = []
+
+    for tr_no, user_data in users_data.items():
+        if user_data.get("Active", False):
+            accounts = user_data.get("Accounts", {})
+            equity = accounts.get("Equity", {})
+            debt = accounts.get("Debt", {})
+            derivatives = accounts.get("Derivatives", {})
+            portfolio = accounts.get("Portfolio", {})
+
+            equity_holdings = equity.get("Equity_Holdings", 0)
+            debt_holdings = debt.get("Debt_Holdings", 0)
+            derivatives_holdings = derivatives.get("Derivatives_Holdings", 0)
+            portfolio_holdings = portfolio.get("Portfolio_Holdings", 0)
+            total_holdings = (
+                equity_holdings
+                + debt_holdings
+                + derivatives_holdings
+                + portfolio_holdings
+            )
+
+            user_row = {
+                "Tr_no": tr_no,
+                "Name": user_data.get("Profile", {}).get("Name", ""),
+                "Equity_AccountValue": equity.get("Equity_AccountValue", 0),
+                "Debt_AccountValue": debt.get("Debt_AccountValue", 0),
+                "Derivatives_AccountValue": derivatives.get(
+                    "Derivatives_AccountValue", 0
+                ),
+                "Portfolio_AccountValue": portfolio.get("Portfolio_AccountValue", 0),
+                "Total_Holdings": total_holdings,
+            }
+
+            active_users.append(user_row)
+
+    return pd.DataFrame(active_users)

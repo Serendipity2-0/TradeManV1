@@ -1029,5 +1029,41 @@ def place_repair_order(
 
 
 def delete_user(tr_no: str):
+    """
+    Deletes a user from the database.
+
+    Args:
+        tr_no (str): The trader number of the user to delete.
+    """
     CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
     delete_fields_firebase(CLIENTS_USER_FB_DB, tr_no)
+
+
+def get_aum_from_firebase():
+    """
+    Calculates the Assets Under Management (AUM) for all active users.
+
+    Returns:
+        dict: A dictionary containing the AUM for Equity, Debt, Derivatives, and Portfolio.
+    """
+    return calculate_aum()
+
+
+def get_total_base_capital_from_firebase():
+    """
+    Calculates the total CurrentBaseCapital for all active users.
+
+    Returns:
+        dict: A dictionary containing the total base capital.
+    """
+    return get_total_base_capital()
+
+
+def get_active_users_data_from_firebase():
+    """
+    Retrieves data for all active users from Firebase.
+
+    Returns:
+        dict: A dictionary containing active users' data.
+    """
+    return calculate_active_users_data()
