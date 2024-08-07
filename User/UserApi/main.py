@@ -151,6 +151,20 @@ def update_strategies(user_id: str, strategy_details: schemas.Strategies_):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@app_user.post("/register/tr-no")
+def update_tr_no(tr_no: str):
+    """
+    This is the route for updating the trader number for a new user.
+    It takes the trader number as input and stores it in the user_data_collection dictionary.
+    We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
+    """
+    try:
+        response = app.update_tr_no(tr_no)
+        return {"message": "Trader number updated successfully", "response": response}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app_user.post("/register")
 def register_user(user_id: str):
     """
@@ -489,8 +503,8 @@ def modify_strategy_params(
     1. For variables that are lists, the response should be sent as a list.
         For example, if the section is "Instruments", the response should be sent as a list of instruments.
         {"Instruments": ["NSE", "BSE"]}
-    2. If the section is "MarketInfoParams", the response should be sent as a dictionary.
-        {"EntryParams": {"EntryTime": "09:15", "ExitTime": "15:30"}}
+    2. If the section is "EntryParams", the response should be sent as a dictionary.
+        {"EntryTime": "09:15", "ExitTime": "15:30"}
     3. If the section is "Root-level values", the response should be sent as a dictionary.
         Example: section : Description and request body should be like this
         {"Description": "New Description"}
@@ -608,6 +622,8 @@ def get_user_risk_params(
     ),
 ):
     """
+    NOTE: only derivatives strategy has risk percentage at user level. for equity risk please refer the strategy params
+
     Fetch current strategy parameters for one or multiple users.
 
     This endpoint retrieves the current strategy parameters including risk percentage,
@@ -634,7 +650,7 @@ def get_user_risk_params(
 
 
 @app_admin.put("/user-strategy-risk-params")
-def modify_user_strategy_params(
+def update_user_risk_params(
     strategy: str = Query(..., description="The trading strategy to update"),
     trader_numbers: List[str] = Query(
         ..., description="List of trader numbers to update, or ['all'] for all traders"
@@ -642,21 +658,17 @@ def modify_user_strategy_params(
     risk_percentage: float = Query(
         ..., ge=0.0, le=10.0, description="Risk percentage to set"
     ),
-    sector: Optional[str] = Query(None, description="Sector for PyStocks strategy"),
-    cap: Optional[str] = Query(None, description="Cap for PyStocks strategy"),
 ):
     """
+    NOTE: only derivatives strategy has risk percentage at user level. for equity risk please refer the strategy params
     Modify strategy parameters for one or multiple users.
 
-    This endpoint allows updating the risk percentage and, for PyStocks strategy,
-    the sector and cap for one or multiple users.
+    This endpoint allows updating the risk percentage for a given strategy under derivatives and user in the Firebase database.
 
     Args:
         strategy (str): The trading strategy to update.
         trader_numbers (List[str]): List of trader numbers to update, or ['all'] for all traders.
         risk_percentage (float): Risk percentage to set (between 0.0 and 10.0).
-        sector (Optional[str]): Sector for PyStocks strategy.
-        cap (Optional[str]): Cap for PyStocks strategy.
 
     Returns:
         dict: A message indicating successful update.
@@ -665,9 +677,7 @@ def modify_user_strategy_params(
         HTTPException: If there's an error updating the database or if the input is invalid.
     """
     try:
-        return app.update_user_risk_params(
-            strategy, trader_numbers, risk_percentage, sector, cap
-        )
+        return app.update_user_risk_params(strategy, trader_numbers, risk_percentage)
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -733,7 +743,7 @@ def get_user_details_by_username(username: str):
 def update_user_section(user_id: str, section: str, details: dict):
     """
     Update a specific section of user details.
-    NOTE: For fields Active and Tr_No, the request should be sent as dict like this {"Active": True} or {"Tr_No": "Tr1"}
+    NOTE: For fields Active and Tr_No, the request should be sent as dict like this {"Active": true} or {"Tr_No": "Tr1"}
 
     Args:
         user_id (str): The ID of the user to update.
@@ -778,6 +788,55 @@ def fetch_users_for_strategy(strategy: str):
         )
 
 
+@app_admin.get("/aum")
+def get_aum():
+    """
+    Calculates the Assets Under Management (AUM) for all active users.
+
+    Returns:
+        dict: A dictionary containing the AUM for Equity, Debt, Derivatives, and Portfolio.
+    """
+    try:
+        aum = app.get_aum_from_firebase()
+        return aum
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating AUM: {str(e)}")
+
+
+@app_admin.get("/total-base-capital")
+def get_total_base_capital():
+    """
+    Calculates the total CurrentBaseCapital for all active users.
+
+    Returns:
+        dict: A dictionary containing the total base capital.
+    """
+    try:
+        total_base_capital = app.get_total_base_capital_from_firebase()
+        return total_base_capital
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error calculating total base capital: {str(e)}"
+        )
+
+
+@app_admin.get("/active-users-data")
+def get_active_users_data_endpoint():
+    """
+    Retrieves data for all active users including their account values and holdings.
+
+    Returns:
+        dict: A dictionary containing the DataFrame of active users' data and any warnings.
+    """
+    try:
+        data = app.get_active_users_data_from_firebase()
+        return data.to_dict(orient="records")
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching active users data: {str(e)}"
+        )
+
+
 @app_admin.get("/order-modes")
 def get_order_modes():
     """
@@ -813,7 +872,7 @@ def get_qty_calculation_mode():
 @app_admin.get("/fetch-complete-order")
 def fetch_complete_order_symbols(strategy_name: str):
     """
-    Fetch complete order symbols.
+    Fetch complete order symbols from the strategy collection.
 
     Args:
         strategy_name (str): The name of the strategy.
@@ -830,15 +889,7 @@ def fetch_complete_order_symbols(strategy_name: str):
 
 
 @app_admin.post("/place-complete-order")
-def place_complete_order(
-    strategy_name: str,
-    users: list,
-    symbols: list,
-    qty_calculation_mode: str,
-    trade_id: str,
-    qty: float = None,
-    setup_name: str = None,
-):
+def place_complete_order(complete_order_input: schemas.CompleteOrderInput):
     """_summary_
 
     Args:
@@ -857,13 +908,13 @@ def place_complete_order(
     """
     try:
         return app.place_complete_order(
-            strategy_name=strategy_name,
-            users=users,
-            symbols=symbols,
-            qty_calculation_mode=qty_calculation_mode,
-            trade_id=trade_id,
-            qty=qty,
-            setup_name=setup_name,
+            strategy_name=complete_order_input.strategy_name,
+            users=complete_order_input.users,
+            symbols=complete_order_input.symbols,
+            qty_calculation_mode=complete_order_input.qty_calculation_mode,
+            trade_id=complete_order_input.trade_id,
+            qty=complete_order_input.qty,
+            setup_name=complete_order_input.setup_name,
         )
     except Exception as e:
         raise HTTPException(
@@ -872,24 +923,27 @@ def place_complete_order(
 
 
 @app_admin.post("/place-repair-order")
-def place_repair_order(
-    strategy_name: str,
-    users: list,
-    symbols: list,
-    qty_calculation_mode: str,
-    trade_id: str,
-    qty: float = None,
-    setup_name: str = None,
-):
+def place_repair_order(repair_order_input: schemas.RepairOrderInput):
+    """
+    Place a repair order for a given strategy.
+
+    This endpoint allows placing a repair order for a given strategy.
+
+    Args:
+        repair_order_input (schemas.RepairOrderInput): The input for the repair order.
+
+    Returns:
+        dict: A message indicating successful update.
+    """
     try:
         return app.place_repair_order(
-            strategy_name=strategy_name,
-            users=users,
-            symbols=symbols,
-            qty_calculation_mode=qty_calculation_mode,
-            trade_id=trade_id,
-            qty=qty,
-            setup_name=setup_name,
+            strategy_name=repair_order_input.strategy_name,
+            users=repair_order_input.users,
+            symbols=repair_order_input.symbols,
+            qty_calculation_mode=repair_order_input.qty_calculation_mode,
+            trade_id=repair_order_input.trade_id,
+            qty=repair_order_input.qty,
+            setup_name=repair_order_input.setup_name,
         )
     except Exception as e:
         raise HTTPException(
@@ -897,12 +951,33 @@ def place_repair_order(
         )
 
 
+@app_admin.delete("/delete-user/{tr_no}")
+def delete_user(tr_no: str):
+    """
+    Delete a user from Firebase.
+
+    Args:
+        user_id (str): The ID of the user to delete.
+
+    Raises:
+        HTTPException: If there's an error deleting the user.
+
+    Returns:
+        dict: A message indicating successful deletion.
+    """
+    try:
+        app.delete_user(tr_no)
+        return {"message": f"User {tr_no} successfully deleted."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
+
+
 app_fastapi.include_router(app_user, prefix="/v1/user", tags=["user"])
 app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 
 
 def main_api():
-    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=False)
+    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=True)
 
 
 if __name__ == "__main__":

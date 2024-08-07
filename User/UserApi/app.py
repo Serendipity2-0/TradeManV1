@@ -28,6 +28,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
     fetch_collection_data_firebase,
     update_collection,
     update_fields_firebase,
+    delete_fields_firebase,
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_users_for_strategies_from_firebase,
@@ -124,6 +125,20 @@ def store_strategies_data(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Strategies"] = data
+    return user_data_collection[user_id]
+
+
+def store_tr_no(user_id, data):
+    """
+    This function stores the trader number for a user in the user_data_collection dictionary.
+
+    Args:
+    user_id (str): The user ID.
+    data (str): The trader number to be stored.
+    """
+    if user_id not in user_data_collection:
+        user_data_collection[user_id] = {}
+    user_data_collection[user_id]["Tr_No"] = data
     return user_data_collection[user_id]
 
 
@@ -430,6 +445,9 @@ def update_market_info_params(updated_market_info):
     Returns:
     dict: A message indicating successful update.
     """
+    if isinstance(updated_market_info, schemas.MarketInfoParams):
+        updated_market_info = updated_market_info.dict()
+
     # Update the database
     update_collection(MARKET_INFO_FB_COLLECTION, updated_market_info)
 
@@ -458,7 +476,7 @@ def get_market_info_params():
 
 def update_strategy_qty_amplifier(strategy, amplifier):
     """
-    Update StrategyQtyAmplifier for a specific strategy or all strategies.
+    Update StrategyQtyAmplifier for a specific strategy or all strategies inside the market info params of the strategy.
 
     This function updates the StrategyQtyAmplifier for a specific strategy or all strategies in the Firebase database.
     It also logs the changes and sends a notification via Discord.
@@ -637,41 +655,39 @@ def get_user_risk_params(strategy, trader_numbers):
         user_data = fetch_collection_data_firebase(
             CLIENTS_COLLECTION, document=trader_number
         )
-        if (
-            user_data
-            and "Strategies" in user_data
-            and strategy in user_data["Strategies"]
-        ):
-            strategy_data = user_data["Strategies"][strategy]
-            result[trader_number] = {
-                "RiskPerTrade": strategy_data.get("RiskPerTrade", "N/A"),
-                "Sector": strategy_data.get("Sector", "N/A")
-                if strategy == "PyStocks"
-                else "N/A",
-                "Cap": strategy_data.get("Cap", "N/A")
-                if strategy == "PyStocks"
-                else "N/A",
-            }
+        if user_data and "Strategies" in user_data:
+            if strategy in EQUITY_STRATEGY_LIST:
+                result[trader_number] = {
+                    "RiskPerTrade": "Equity risk is at strategy level"
+                }
+            elif strategy in DERIVATIVES_STRATEGY_LIST:
+                if strategy in user_data["Strategies"].get("Derivatives", {}):
+                    strategy_data = user_data["Strategies"]["Derivatives"][strategy]
+                    result[trader_number] = {
+                        "RiskPerTrade": strategy_data.get("RiskPerTrade", "N/A"),
+                    }
+                else:
+                    result[
+                        trader_number
+                    ] = "No data available for this derivative strategy"
+            else:
+                result[trader_number] = "Strategy type not recognized"
         else:
             result[trader_number] = "No data available"
 
     return result
 
 
-def update_user_risk_params(
-    strategy, trader_numbers, risk_percentage, sector=None, cap=None
-):
+def update_user_risk_params(strategy, trader_numbers, risk_percentage):
     """
     Update risk percentage and sector/cap for a specific strategy and user.
 
-    This function updates the risk percentage and sector/cap for a given strategy and user in the Firebase database.
+    This function updates the risk percentage for a given strategy and user in the Firebase database.
 
     Args:
         strategy (str): The name of the strategy to update.
         trader_numbers (List[str]): List of trader numbers to update, or ['all'] for all traders.
         risk_percentage (float): Risk percentage to set (between 0.0 and 10.0).
-        sector (Optional[str]): Sector for PyStocks strategy.
-        cap (Optional[str]): Cap for PyStocks strategy.
 
     Returns:
         dict: A message indicating successful update.
@@ -696,26 +712,30 @@ def update_user_risk_params(
                 detail=f"Invalid trader numbers: {', '.join(invalid_traders)}",
             )
 
-    update_fields = {"RiskPerTrade": risk_percentage}
-    if strategy == "PyStocks":
-        if not sector or not cap:
-            raise HTTPException(
-                status_code=400,
-                detail="Sector and Cap are required for PyStocks strategy",
-            )
-        update_fields.update({"Sector": sector, "Cap": cap})
+    update_fields = {}
+    update_path = ""
 
-    for trader_number in trader_numbers:
-        update_path = f"Strategies/{strategy}/"
-        update_fields_firebase(
-            CLIENTS_COLLECTION, trader_number, update_fields, update_path
+    if strategy in EQUITY_STRATEGY_LIST:
+        message = f"Equity risk is at strategy level. No changes made for {strategy}."
+    elif strategy in DERIVATIVES_STRATEGY_LIST:
+        update_fields = {"RiskPerTrade": risk_percentage}
+        update_path = f"Strategies/{DERIVATIVES}/{strategy}/"
+
+        for trader_number in trader_numbers:
+            update_fields_firebase(
+                CLIENTS_COLLECTION, trader_number, update_fields, update_path
+            )
+
+        message = f"Params {list(update_fields.keys())} changed for {strategy} for {trader_numbers}"
+    else:
+        raise HTTPException(
+            status_code=400, detail=f"Unrecognized strategy type: {strategy}"
         )
 
-    message = f"Params {list(update_fields.keys())} changed for {strategy} for {trader_numbers}"
     log_changes_via_webapp(update_fields, section_info=message)
     discord_admin_bot(message)
 
-    return {"message": "User strategy parameters updated successfully!"}
+    return {"message": message}
 
 
 def get_user_list_from_db():
@@ -905,45 +925,49 @@ def place_complete_order(
         trade_id (str): The trade id.
         setup_name (str): The setup name.
     """
-    for user in users:
-        for symbol in symbols:
-            exchange = instrument_obj().get_segment_by_symbol(symbol)
-            exchange_token = instrument_obj().get_exchange_token_by_name(
-                symbol, exchange
-            )
-            strategy_obj = StrategyBase.load_from_db(strategy_name)
-            order_type = strategy_obj.GeneralParams.OrderType
-            product_type = strategy_obj.GeneralParams.ProductType
-            strategy_type = strategy_obj.GeneralParams.StrategyType
-            num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
-            if num_stocks is None:
-                num_stocks = 1
+    try:
+        for user in users:
+            for symbol in symbols:
+                exchange = instrument_obj().get_segment_by_symbol(symbol)
+                exchange_token = instrument_obj().get_exchange_token_by_name(
+                    symbol, exchange
+                )
+                strategy_obj = StrategyBase.load_from_db(strategy_name)
+                order_type = strategy_obj.GeneralParams.OrderType
+                product_type = strategy_obj.GeneralParams.ProductType
+                strategy_type = strategy_obj.GeneralParams.StrategyType
+                num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
+                if num_stocks is None:
+                    num_stocks = 1
 
-            ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
-            ltp = round(ltp * 20) / 20
+                ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
+                ltp = round(ltp * 20) / 20
 
-            update_strategy_qty(
-                strategy_name=strategy_name,
-                user=user,
-                qty_calculation_mode=qty_calculation_mode,
-                qty=qty,
-                ltp=ltp,
-                strategy_type=strategy_type,
-                num_stocks=num_stocks,
-                setup_name=setup_name,
-            )
-            order_details = prepare_order_details(
-                strategy_name=strategy_name,
-                symbol=symbol,
-                exchange_token=exchange_token,
-                order_type=order_type,
-                product_type=product_type,
-                trade_id=trade_id,
-                ltp=ltp,
-                setup_name=setup_name,
-            )
-            user_details = fetch_user_json_from_firebase(user)
-            place_order_single_user([user_details], order_details)
+                update_strategy_qty(
+                    strategy_name=strategy_name,
+                    user=user,
+                    qty_calculation_mode=qty_calculation_mode,
+                    qty=qty,
+                    ltp=ltp,
+                    strategy_type=strategy_type,
+                    num_stocks=num_stocks,
+                    setup_name=setup_name,
+                )
+                order_details = prepare_order_details(
+                    strategy_name=strategy_name,
+                    symbol=symbol,
+                    exchange_token=exchange_token,
+                    order_type=order_type,
+                    product_type=product_type,
+                    trade_id=trade_id,
+                    ltp=ltp,
+                    setup_name=setup_name,
+                )
+                user_details = fetch_user_json_from_firebase(user)
+                place_order_single_user([user_details], order_details)
+            return {"message": "Order placed successfully!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def place_repair_order(
@@ -967,42 +991,87 @@ def place_repair_order(
         trade_id (str): The trade id.
         setup_name (str): The setup name.
     """
-    for user in users:
-        for symbol in symbols:
-            exchange = instrument_obj().get_segment_by_symbol(symbol)
-            exchange_token = instrument_obj().get_exchange_token_by_name(
-                symbol, exchange
-            )
-            strategy_obj = StrategyBase.load_from_db(strategy_name)
-            order_type = strategy_obj.GeneralParams.OrderType
-            product_type = strategy_obj.GeneralParams.ProductType
-            strategy_type = strategy_obj.GeneralParams.StrategyType
-            num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
-            if num_stocks is None:
-                num_stocks = 1
+    try:
+        for user in users:
+            for symbol in symbols:
+                exchange = instrument_obj().get_segment_by_symbol(symbol)
+                exchange_token = instrument_obj().get_exchange_token_by_name(
+                    symbol, exchange
+                )
+                strategy_obj = StrategyBase.load_from_db(strategy_name)
+                order_type = strategy_obj.GeneralParams.OrderType
+                product_type = strategy_obj.GeneralParams.ProductType
+                strategy_type = strategy_obj.GeneralParams.StrategyType
+                num_stocks = strategy_obj.ExtraInformation.StocksPerStrategy
+                if num_stocks is None:
+                    num_stocks = 1
 
-            ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
-            ltp = round(ltp * 20) / 20
+                ltp = get_single_ltp(exchange_token=exchange_token, segment=exchange)
+                ltp = round(ltp * 20) / 20
 
-            update_strategy_qty(
-                strategy_name=strategy_name,
-                user=user,
-                qty_calculation_mode=qty_calculation_mode,
-                qty=qty,
-                ltp=ltp,
-                strategy_type=strategy_type,
-                num_stocks=num_stocks,
-                setup_name=setup_name,
-            )
-            order_details = prepare_order_details(
-                strategy_name=strategy_name,
-                symbol=symbol,
-                exchange_token=exchange_token,
-                order_type=order_type,
-                product_type=product_type,
-                trade_id=trade_id,
-                ltp=ltp,
-                setup_name=setup_name,
-            )
-            user_details = fetch_user_json_from_firebase(user)
-            place_order_single_user([user_details], order_details)
+                update_strategy_qty(
+                    strategy_name=strategy_name,
+                    user=user,
+                    qty_calculation_mode=qty_calculation_mode,
+                    qty=qty,
+                    ltp=ltp,
+                    strategy_type=strategy_type,
+                    num_stocks=num_stocks,
+                    setup_name=setup_name,
+                )
+                order_details = prepare_order_details(
+                    strategy_name=strategy_name,
+                    symbol=symbol,
+                    exchange_token=exchange_token,
+                    order_type=order_type,
+                    product_type=product_type,
+                    trade_id=trade_id,
+                    ltp=ltp,
+                    setup_name=setup_name,
+                )
+                user_details = fetch_user_json_from_firebase(user)
+                place_order_single_user([user_details], order_details)
+        return {"message": "Order placed successfully!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def delete_user(tr_no: str):
+    """
+    Deletes a user from the database.
+
+    Args:
+        tr_no (str): The trader number of the user to delete.
+    """
+    CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
+    delete_fields_firebase(CLIENTS_USER_FB_DB, tr_no)
+
+
+def get_aum_from_firebase():
+    """
+    Calculates the Assets Under Management (AUM) for all active users.
+
+    Returns:
+        dict: A dictionary containing the AUM for Equity, Debt, Derivatives, and Portfolio.
+    """
+    return calculate_aum()
+
+
+def get_total_base_capital_from_firebase():
+    """
+    Calculates the total CurrentBaseCapital for all active users.
+
+    Returns:
+        dict: A dictionary containing the total base capital.
+    """
+    return get_total_base_capital()
+
+
+def get_active_users_data_from_firebase():
+    """
+    Retrieves data for all active users from Firebase.
+
+    Returns:
+        dict: A dictionary containing active users' data.
+    """
+    return calculate_active_users_data()

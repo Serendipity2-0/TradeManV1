@@ -116,9 +116,16 @@ def read_strategy_table(conn, strategy_name):
     Returns:
         pd.DataFrame: The DataFrame containing the strategy table data.
     """
-    query = f"SELECT * FROM {strategy_name}"
-    df = pd.read_sql(query, conn)
-    return df
+    try:
+        query = f"SELECT * FROM {strategy_name}"
+        df = pd.read_sql(query, conn)
+        return df
+    except pd.io.sql.DatabaseError:
+        logger.warning(f"Table '{strategy_name}' does not exist in the database.")
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"An error occurred while reading the table {strategy_name}: {e}")
+        return None
 
 
 def create_holding_strategy_table(conn, table_name):

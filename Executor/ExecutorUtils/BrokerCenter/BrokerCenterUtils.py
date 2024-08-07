@@ -554,6 +554,11 @@ def create_counter_order_details(tradebook, user):
     """
     counter_order_details = []
     try:
+        if not tradebook:
+            logger.warning(
+                f"Tradebook is empty for user {user['Broker']['BrokerUsername']}"
+            )
+            return []
         for trade in tradebook:
             if user["Broker"]["BrokerName"] == ZERODHA:
                 if trade["status"] == "TRIGGER PENDING" and trade["product"] == "MIS":
@@ -588,6 +593,7 @@ def create_counter_order_details(tradebook, user):
         logger.error(
             f"Error while creating counter orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}"
         )
+        logger.error(traceback.format_exc())
         return []
 
 
@@ -603,6 +609,11 @@ def create_hedge_counter_order_details(tradebook, user, open_orders):
     Returns:
         list: List of hedge counter order details.
     """
+    if not tradebook:
+        logger.warning(
+            f"Tradebook is empty for user {user['Broker']['BrokerUsername']}"
+        )
+        return []
     hedge_counter_order = []
     if user["Broker"]["BrokerName"] == ZERODHA:
         try:

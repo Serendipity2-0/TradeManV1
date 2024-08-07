@@ -56,7 +56,12 @@ def calculate_sum_trade_points(table_name, conn):
 
     for period_name, (start_date, end_date) in periods.items():
         period_df = df[(df["exit_time"] >= start_date) & (df["exit_time"] < end_date)]
+        # Check if trade_points is a string and convert to float if necessary
+        period_df["trade_points"] = period_df["trade_points"].apply(
+            lambda x: float(x) if isinstance(x, str) else x
+        )
         sum_points = period_df["trade_points"].sum()
+
         results[period_name] = "{:,.2f}".format(sum_points)
 
     return results
@@ -69,8 +74,10 @@ conn = sqlite3.connect(db_path)
 # Retrieve all table names
 tables_query = "SELECT name FROM sqlite_master WHERE type='table';"
 tables = pd.read_sql_query(tables_query, conn)["name"].tolist()
-# Remove Error table from the list
-tables.remove("Error")
+
+# Check if "Error" table exists before attempting to remove it
+if "Error" in tables:
+    tables.remove("Error")
 
 # Calculate metrics for each table and collect them in a list
 data_dict = [calculate_sum_trade_points(table, conn) for table in tables]
@@ -88,8 +95,9 @@ def main():
     """
     # Create DataFrame from the collected data
     df = pd.DataFrame(data_dict)
-
-    # Reordering DataFrame columns to match the requested format
-    df = df[["Strategy", "Today", "Week", "Month", "Year"]]
+    # Check if all required columns are present
+    required_columns = ["Strategy", "Today", "Week", "Month", "Year"]
+    existing_columns = [col for col in required_columns if col in df.columns]
+    df = df[existing_columns]
 
     return df

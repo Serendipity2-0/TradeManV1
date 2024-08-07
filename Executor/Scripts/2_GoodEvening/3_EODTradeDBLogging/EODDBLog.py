@@ -69,18 +69,31 @@ def update_signal_info():
             strategy_info = fetch_collection_data_firebase(
                 STRATEGY_FB_DB_COLLECTION, strategy_name
             )
+            if strategy_info is None:
+                logger.warning(
+                    f"No data found for strategy {strategy_name}. Skipping..."
+                )
+                continue
+
             today_orders = strategy_info.get("TodayOrders", {})
+            if not today_orders:
+                logger.warning(
+                    f"No orders found for {strategy_name} today. Skipping..."
+                )
+                continue
             for order, values in today_orders.items():
                 if values.get("StrategyInfo"):
                     strategy_info_dict = values.get("StrategyInfo")
                     df = pd.DataFrame([strategy_info_dict])
-                    # Move trade_id column to the first column
+                    if "trade_id" not in df.columns:
+                        df["trade_id"] = None  # or some default value
                     df = df[
                         ["trade_id"] + [col for col in df.columns if col != "trade_id"]
                     ]
                     append_df_to_sqlite(signal_info_db_conn, df, strategy_name, [])
         except Exception as e:
             logger.error(f"Error updating signal info for {strategy_name}: {e}")
+            logger.error(traceback.format_exc())
             continue
 
 
@@ -162,7 +175,7 @@ def update_signals_firebase():
             logger.error(
                 f"Error processing strategy {strategy_name} for user {user}: {e}"
             )
-
+            logger.error(traceback.format_exc())
     return strategy_user_dict
 
     # fetch the users for the strategy
@@ -712,7 +725,18 @@ def process_holdings_orders(
             trading_symbol = instru().get_trading_symbol_by_exchange_token(
                 str(order.get("exchange_token")), exchange
             )
+            # Check if avg_prc is empty or not a valid float
+            if not order.get("avg_prc") or not order["avg_prc"].strip():
+                logger.warning(f"Invalid avg_prc for order: {order}")
+                continue  # Skip this order and move to the next one
 
+            try:
+                entry_price = float(order["avg_prc"])
+            except ValueError:
+                logger.error(f"Unable to convert avg_prc to float: {order['avg_prc']}")
+                continue  # Skip this order and move to the next one
+
+            setup_name = order.get("setup")
             entry_price = float(order["avg_prc"])
             qty = order.get("qty", 0)
             margin_utilized = (
@@ -856,7 +880,7 @@ def main():
     3. Updates signal information in Firebase.
     4. Clears today's orders from Firebase.
     """
-    # download_json(CLIENTS_USER_FB_DB_COLLECTION, "before_eod_db_log")
+    download_firebase_json(CLIENTS_USER_FB_DB_COLLECTION, "before_eod_db_log")
     process_n_log_trade()
     sleep(5)
     fetch_and_prepare_holdings_data()

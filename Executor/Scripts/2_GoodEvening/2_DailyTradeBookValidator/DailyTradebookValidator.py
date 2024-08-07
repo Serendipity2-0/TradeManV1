@@ -285,39 +285,67 @@ def clear_extra_orders_firebase():
     """
     Clears extra orders from Firebase for all active users by performing the following steps:
     1. Fetches active users from Firebase.
-    2. Iterates through each strategy for each user.
-    3. Identifies orders without 'avg_prc' and deletes them from Firebase.
-    4. Logs the progress and any errors encountered during the process.
+    2. Iterates through each strategy (Equity, Derivatives) for each user.
+    3. For Equity, navigates through the nested structure to find TradeState.
+    4. For Derivatives, directly accesses TradeState if present.
+    5. Identifies orders with 'avg_prc' equal to '' and deletes them from Firebase.
+    6. Logs the progress and any errors encountered during the process.
     """
     active_users = BrokerCenterUtils.fetch_active_users_from_firebase()
-    for user in active_users:
-        logger.debug(
-            f"Clearing extra orders for user: {user['Broker']['BrokerUsername']}"
-        )
-        strategies = user.get("Strategies", {})
-        if strategies:
-            for strategy_key, strategy_data in strategies.items():
-                logger.debug(f"Clearing extra orders for strategy: {strategy_key}")
-                trade_state = strategy_data.get("TradeState", {})
-                orders_from_firebase = trade_state.get("orders", [])
-                orders_to_delete = [
-                    i
-                    for i, order in enumerate(orders_from_firebase)
-                    if order is not None and not order.get("avg_prc")
-                ]
-                for i in orders_to_delete:
-                    order_path = f"Strategies/{strategy_key}/TradeState/orders/{i}"
-                    logger.debug(f"Deleting order at path: {order_path}")
-                    try:
-                        delete_fields_firebase(
-                            BrokerCenterUtils.CLIENTS_USER_FB_DB,
-                            user["Tr_No"],
-                            order_path,
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f"Error deleting order at path: {order_path}. Error: {str(e)}"
-                        )
+    try:
+        for user in active_users:
+            logger.debug(
+                f"Clearing extra orders for user: {user['Broker']['BrokerUsername']}"
+            )
+            strategies = user.get("Strategies", {})
+            if strategies:
+                for strategy_key, strategy_data in strategies.items():
+                    logger.debug(f"Clearing extra orders for strategy: {strategy_key}")
+
+                    def process_trade_state(trade_state, path_prefix):
+                        orders_from_firebase = trade_state.get("orders", [])
+                        orders_to_delete = [
+                            i
+                            for i, order in enumerate(orders_from_firebase)
+                            if order is not None and order.get("avg_prc") == ""
+                        ]
+                        for i in orders_to_delete:
+                            order_path = f"{path_prefix}/orders/{i}"
+                            logger.debug(f"Deleting order at path: {order_path}")
+                            try:
+                                delete_fields_firebase(
+                                    BrokerCenterUtils.CLIENTS_USER_FB_DB,
+                                    user["Tr_No"],
+                                    order_path,
+                                )
+                            except Exception as e:
+                                logger.error(
+                                    f"Error deleting order at path: {order_path}. Error: {str(e)}"
+                                )
+
+                    if strategy_key == "Equity":
+                        for term_key, term_data in strategy_data.items():
+                            for setup_key, setup_data in term_data.items():
+                                if (
+                                    isinstance(setup_data, dict)
+                                    and "TradeState" in setup_data
+                                ):
+                                    trade_state = setup_data.get("TradeState", {})
+                                    path_prefix = f"Strategies/Equity/{term_key}/{setup_key}/TradeState"
+                                    process_trade_state(trade_state, path_prefix)
+                    elif strategy_key == "Derivatives":
+                        for setup_key, setup_data in strategy_data.items():
+                            if (
+                                isinstance(setup_data, dict)
+                                and "TradeState" in setup_data
+                            ):
+                                trade_state = setup_data.get("TradeState", {})
+                                path_prefix = (
+                                    f"Strategies/Derivatives/{setup_key}/TradeState"
+                                )
+                                process_trade_state(trade_state, path_prefix)
+    except Exception as e:
+        logger.error(f"Error in clear_extra_orders_firebase: {e}")
 
 
 def main():
