@@ -131,27 +131,29 @@ def compare_freecash(broker_free_cash, db_free_cash):
 
     """
     from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-        discord_admin_bot,
+        send_admin_message_via_discord,
     )
 
     tolerable_difference = os.getenv("ACC_DIFF_TOLERANCE")
-    discord_admin_bot(f"Today's number of users = {len(broker_free_cash)}")
+    send_admin_message_via_discord(f"Today's number of users = {len(broker_free_cash)}")
 
     for user in broker_free_cash:
         try:
             message = f"Trader Number - {user} : Broker Freecash - {round(broker_free_cash[user],2)} : Difference - {round(broker_free_cash[user] - db_free_cash[user],2)}"
-            discord_admin_bot(message)
+            send_admin_message_via_discord(message)
             sleep(0.3)
         except KeyError:
             logger.error(f"Trader Number - {user} : Free cash not found in DB")
-            discord_admin_bot(f"Trader Number - {user} : Free cash not found in DB")
+            send_admin_message_via_discord(
+                f"Trader Number - {user} : Free cash not found in DB"
+            )
 
         if (
             abs(broker_free_cash[user] - db_free_cash[user])
             > float(tolerable_difference) * db_free_cash[user]
         ):
             logger.error(f"Free cash for {user} is not matching")
-            discord_admin_bot(
+            send_admin_message_via_discord(
                 f"Free cash for {user} is not matching, BrokerFreeCash - {round(broker_free_cash[user],2)}, DBFreeCash - {round(db_free_cash[user],2)}"
             )
         else:

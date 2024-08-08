@@ -20,7 +20,7 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 )
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    send_messsage_via_discord,
 )
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_user_credentials_firebase,
@@ -216,7 +216,7 @@ async def place_order_with_tax(order, user_credentials, tr_no, strategy):
         push_orders_firebase(CLIENTS_USER_FB_DB, tr_no, status, update_path)
 
         if status.get("message", "") == "Order placement failed":
-            discord_bot(
+            send_messsage_via_discord(
                 f"Order failed for user {order['username']} in strategy {strategy}",
                 strategy,
             )

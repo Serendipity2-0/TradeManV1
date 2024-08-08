@@ -21,7 +21,7 @@ DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 import User.UserApi.schemas as schemas
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_admin_bot,
+    send_admin_message_via_discord,
 )
 from User.UserApi.userapi_utils import *
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
@@ -456,7 +456,7 @@ def update_market_info_params(updated_market_info):
 
     # Send Discord notification
     message = f"Market info updated for {updated_market_info}"
-    discord_admin_bot(message)
+    send_admin_message_via_discord(message)
 
     return {"message": "Market info updated successfully!"}
 
@@ -556,7 +556,7 @@ def modify_strategy_params(strategy_name, section, updated_params):
     if section in root_level_fields:
         update_fields_firebase(STRATEGIES_FB_COLLECTION, strategy_name, updated_params)
         log_changes_via_webapp({section: updated_params})
-        discord_admin_bot(f"{section} updated for {strategy_name}")
+        send_admin_message_via_discord(f"{section} updated for {strategy_name}")
         return {"message": f"{section} for {strategy_name} updated successfully!"}
 
     # Handle the Instruments list
@@ -565,7 +565,7 @@ def modify_strategy_params(strategy_name, section, updated_params):
             raise HTTPException(status_code=400, detail="Instruments must be a list.")
         update_fields_firebase(STRATEGIES_FB_COLLECTION, strategy_name, updated_params)
         log_changes_via_webapp({"Instruments": updated_params})
-        discord_admin_bot(f"Instruments list updated for {strategy_name}")
+        send_admin_message_via_discord(f"Instruments list updated for {strategy_name}")
         return {"message": f"Instruments for {strategy_name} updated successfully!"}
 
     # Handle nested objects
@@ -584,7 +584,7 @@ def modify_strategy_params(strategy_name, section, updated_params):
 
     # Send Discord notification
     message = f"Params {updated_params} changed for {strategy_name} in {section}"
-    discord_admin_bot(message)
+    send_admin_message_via_discord(message)
 
     return {"message": f"{section} for {strategy_name} updated successfully!"}
 
@@ -733,7 +733,7 @@ def update_user_risk_params(strategy, trader_numbers, risk_percentage):
         )
 
     log_changes_via_webapp(update_fields, section_info=message)
-    discord_admin_bot(message)
+    send_admin_message_via_discord(message)
 
     return {"message": message}
 
@@ -817,7 +817,7 @@ def update_user_section(user_id: str, section: str, details: dict):
         # Handle root-level updates
         update_fields_firebase(CLIENTS_COLLECTION, user_id, parse_value(details))
         log_changes_via_webapp({section: details})
-        discord_admin_bot(f"{section} updated for user {user_id}")
+        send_admin_message_via_discord(f"{section} updated for user {user_id}")
         return {"message": f"{section} for user {user_id} updated successfully!"}
 
     # Handle nested dictionary updates
@@ -831,7 +831,7 @@ def update_user_section(user_id: str, section: str, details: dict):
 
     update_fields_firebase(CLIENTS_COLLECTION, path, parsed_details)
     log_changes_via_webapp({section: parsed_details})
-    discord_admin_bot(f"Section {section} updated for user {user_id}")
+    send_admin_message_via_discord(f"Section {section} updated for user {user_id}")
     return {"message": f"{section} for user {user_id} updated successfully!"}
 
 

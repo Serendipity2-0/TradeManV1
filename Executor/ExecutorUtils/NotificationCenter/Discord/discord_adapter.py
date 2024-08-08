@@ -13,7 +13,7 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 logger = LoggerSetup()
 
 
-def discord_bot(message, strategy):
+def send_messsage_via_discord(message, strategy):
     """
     Send a message to a Discord channel using a bot.
 
@@ -56,7 +56,7 @@ def discord_bot(message, strategy):
         logger.error(f"Error in sending message to Discord: {e}")
 
 
-def discord_admin_bot(message):
+def send_admin_message_via_discord(message):
     """
     Send a message to the admin Discord channel using a bot.
 

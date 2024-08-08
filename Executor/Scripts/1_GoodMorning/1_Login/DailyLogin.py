@@ -10,7 +10,7 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_admin_bot,
+    send_admin_message_via_discord,
 )
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -42,7 +42,7 @@ def main():
         logger.warning(
             f"Using Non Production Environment Using {CLIENTS_USER_FB_DB} and {STRATEGY_FB_DB} collections."
         )
-        discord_admin_bot(
+        send_admin_message_via_discord(
             f"Using Non Production Environment Using {CLIENTS_USER_FB_DB} and {STRATEGY_FB_DB} collections."
         )
 
@@ -51,14 +51,22 @@ def main():
 
     logger.info(f"Total active users today: {len(today_active_users)}")
     logger.info(f"Total primary accounts: {len(primary_accounts)}")
+    send_admin_message_via_discord(
+        f"Total active users today: {len(today_active_users)}"
+    )
 
     for user in today_active_users:
         logger.debug(
             f"Active user: {user['Broker']['BrokerName']}: {user['Profile']['Name']}"
         )
 
-    broker_center_utils.all_broker_login(primary_accounts, "Primary")
-    broker_center_utils.all_broker_login(today_active_users, "Client")
+    try:
+        broker_center_utils.all_broker_login(primary_accounts, "Primary")
+        broker_center_utils.all_broker_login(today_active_users, "Client")
+        send_admin_message_via_discord("All brokers logged in successfully")
+    except Exception as e:
+        logger.error(f"Error in logging in brokers: {e}")
+        send_admin_message_via_discord(f"Error in logging in brokers: {e}")
 
 
 if __name__ == "__main__":

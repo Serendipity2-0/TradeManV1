@@ -32,7 +32,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 import Executor.ExecutorUtils.ExeUtils as ExeUtils
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    send_messsage_via_discord,
 )
 
 
@@ -70,7 +70,7 @@ def message_for_orders(trade_type, prediction, main_trade_symbol, hedge_trade_sy
         f"Hedge Trade {hedge_trade_symbol} \n"
     )
     logger.info(message)
-    discord_bot(message, strategy_name)
+    send_messsage_via_discord(message, strategy_name)
 
 
 hedge_transaction_type = expiry_trader_obj.get_general_params().HedgeTransactionType

@@ -39,7 +39,7 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     get_primary_account_obj,
 )
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    send_messsage_via_discord,
 )
 from Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter import (
     get_kiteticker_obj,
@@ -531,7 +531,7 @@ def updateSignalDf(last_signal, trade_state):
             signal_prc = str(last_signal["close"])
             message = f"Signal: {trade_type}\nStrikePrc: {strike_prc} \nDate: {trade_date}\nTime: {trade_time}\nClose: {signal_prc}"
             logger.info(message)
-            discord_bot(message, "AmiPy")
+            send_messsage_via_discord(message, "AmiPy")
     except Exception as e:
         logger.error(f"Error in sending telegram message: {e}")
 

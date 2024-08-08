@@ -16,7 +16,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.ExeUtils import holidays
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    send_messsage_via_discord,
 )
 from Executor.NSEStrategies.NSEStrategiesUtil import (
     assign_trade_id,
@@ -123,7 +123,7 @@ def main():
 
     logger.debug(orders_to_place)
     place_order_strategy_users(strategy_name, orders_to_place, "Holdings")
-    discord_bot(f"Exit Orders placed for {strategy_name}", strategy_name)
+    send_messsage_via_discord(f"Exit Orders placed for {strategy_name}", strategy_name)
 
 
 if __name__ == "__main__":

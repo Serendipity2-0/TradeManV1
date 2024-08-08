@@ -34,7 +34,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     fetch_strategy_amplifier,
 )
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    send_messsage_via_discord,
 )
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 
@@ -469,7 +469,7 @@ class OrderMonitor:
 
             if message:
                 logger.debug(message)
-                discord_bot(message, strategy_obj.StrategyName)
+                send_messsage_via_discord(message, strategy_obj.StrategyName)
 
             self.indices_triggered_today.add(name)
             self.orders_placed_today += 1
@@ -545,7 +545,7 @@ class OrderMonitor:
                 )
                 message = f"New target for {trading_symbol} set to {new_target} and new limit price set to {new_limit_prc} and new trigger price is {new_trigger_prc}."
                 logger.debug(message)
-                discord_bot(message, strategy_obj.StrategyName)
+                send_messsage_via_discord(message, strategy_obj.StrategyName)
             else:
                 logger.debug(
                     "No order details available to update target and limit prices."
@@ -557,7 +557,7 @@ class OrderMonitor:
             )
             message = f"Stoploss reached for {trading_symbol}."
             logger.debug(message)
-            discord_bot(message, strategy_obj.StrategyName)
+            send_messsage_via_discord(message, strategy_obj.StrategyName)
 
     def monitor_index(self):
         """
