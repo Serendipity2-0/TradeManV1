@@ -89,10 +89,12 @@ def login_in_zerodha(user_details):
 
     driver.close()
 
-    kite = KiteConnect(api_key=api_key)
-    data = kite.generate_session(request_token, api_secret=api_secret)
-    kite_access_token = data["access_token"]
-    kite.set_access_token(kite_access_token)
-    logger.info(f"Session ID for {user_id}: {kite_access_token}")
-
-    return kite_access_token
+    try:
+        kite = KiteConnect(api_key=api_key)
+        data = kite.generate_session(request_token, api_secret=api_secret)
+        kite_access_token = data["access_token"]
+        kite.set_access_token(kite_access_token)
+        logger.info(f"Session ID for {user_id}: {kite_access_token}")
+        return kite_access_token
+    except Exception as e:
+        raise Exception(f"Error fetching login for Zerodha: {e}")

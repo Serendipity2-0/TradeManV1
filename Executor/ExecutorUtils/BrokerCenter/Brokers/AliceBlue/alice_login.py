@@ -160,11 +160,15 @@ def login_in_aliceblue(user_details):
     else:
         userSessionID = twoFa["userSessionID"]
 
-    alice = Aliceblue(
-        user_id=user_details["BrokerUsername"], api_key=user_details["ApiKey"]
-    )
-    logger.info(userSessionID)
-    alice_session_id = alice.get_session_id()["sessionID"]
-    logger.info(f"Session Id for {user_details['BrokerUsername']}: {alice_session_id}")
-
-    return alice_session_id
+    try:
+        alice = Aliceblue(
+            user_id=user_details["BrokerUsername"], api_key=user_details["ApiKey"]
+        )
+        logger.info(userSessionID)
+        alice_session_id = alice.get_session_id()["sessionID"]
+        logger.info(
+            f"Session Id for {user_details['BrokerUsername']}: {alice_session_id}"
+        )
+        return alice_session_id
+    except Exception as e:
+        raise Exception(f"Error fetching login for AliceBlue: {e}")
