@@ -971,6 +971,18 @@ def place_repair_order(repair_order_input: schemas.RepairOrderInput):
         )
 
 
+@app_admin.get("/error-logs")
+def get_error_logs():
+    """
+    Fetches the error logs from the log file.
+
+    Returns:
+        dict: A dictionary containing the error logs.
+    """
+    result = app.get_error_logs()
+    return result.to_dict(orient="records")
+
+
 @app_admin.delete("/delete-user/{tr_no}")
 def delete_user(tr_no: str):
     """

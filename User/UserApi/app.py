@@ -1177,3 +1177,13 @@ def get_active_users_data_from_firebase():
         dict: A dictionary containing active users' data.
     """
     return calculate_active_users_data()
+
+
+def get_error_logs():
+    """
+    Retrieves the error logs from the log file.
+
+    Returns:
+        dict: A dictionary containing the error logs.
+    """
+    return read_n_process_err_log()
