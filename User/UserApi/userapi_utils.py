@@ -934,3 +934,39 @@ def calculate_active_users_data():
             active_users.append(user_row)
 
     return pd.DataFrame(active_users)
+
+
+def get_firebase_holdings(tr_no: str, strategy_name: str):
+    """
+    Retrieves the holdings from the firebase for a specific user.
+
+    Args:
+        tr_no (str): The trader number of the user.
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        list: A list of orders for the strategy.
+    """
+    user_details = fetch_collection_data_firebase(CLIENTS_COLLECTION, document=tr_no)
+
+    if strategy_name in EQUITY_STRATEGY_LIST:
+        equity_strategy = user_details["Strategies"]["Equity"]
+        if strategy_name in EQUITY_STRATEGY_LIST:
+            all_orders = []
+            for setup in equity_strategy[strategy_name]:
+                if setup != "AllocationPercent":
+                    setup_data = equity_strategy[strategy_name][setup]
+                    if isinstance(setup_data, dict) and "TradeState" in setup_data:
+                        all_orders.extend(setup_data["TradeState"].get("orders", []))
+            return all_orders
+        else:
+            return (
+                equity_strategy[strategy_name].get("TradeState", {}).get("orders", [])
+            )
+
+    if strategy_name in DERIVATIVES_STRATEGY_LIST:
+        return user_details["Strategies"]["Derivatives"][strategy_name].get(
+            "orders", []
+        )
+
+    return []

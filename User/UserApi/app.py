@@ -5,6 +5,7 @@ import pandas as pd
 from typing import Dict, Any, List
 from fastapi import HTTPException
 from datetime import datetime
+import traceback
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -430,6 +431,43 @@ def get_users_holdings(tr_no: str, mode: str):
     """
     holdings = get_users_db_holdings(tr_no, mode)
     return holdings
+
+
+def get_tradestate(tr_no: str, strategy_name: str):
+    """
+    Retrieves the trade state (holdings with today's date) for a specific user.
+
+    Args:
+    tr_no (str): The trader number of the user.
+
+    Returns:
+    dict: A dictionary containing the trade state data.
+    """
+    try:
+
+        firebase_holdings = get_firebase_holdings(tr_no, strategy_name)
+        # Convert to DataFrame
+        df = pd.DataFrame(firebase_holdings)
+
+        # Filter for today's date
+        today = date.today().strftime("%Y-%m-%d")
+        df["time_stamp"] = pd.to_datetime(df["time_stamp"]).dt.strftime("%Y-%m-%d")
+        df_today = df[df["time_stamp"] == today]
+
+        # If there are no trades for today, return an empty DataFrame
+        if df_today.empty:
+            return {"message": "No trades found for today", "data": []}
+
+        # Convert DataFrame to dict for JSON serialization
+        result = df_today.to_dict(orient="records")
+
+        return {"message": "Trade state retrieved successfully", "data": result}
+
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500, detail=f"Error retrieving trade state: {str(e)}"
+        )
 
 
 def update_market_info_params(updated_market_info):

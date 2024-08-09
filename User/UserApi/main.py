@@ -459,6 +459,26 @@ def get_users_holdings(tr_no: str, mode: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app_user.get("/tradestate")
+def get_tradestate(tr_no: str, strategy_name: str):
+    """
+    Retrieves the trade state (holdings with today's date) for a specific user.
+
+    Args:
+    tr_no (str): The trader number of the user.
+
+    Returns:
+    dict: A dictionary containing the trade state data.
+    """
+    try:
+        trade_state = app.get_tradestate(tr_no, strategy_name)
+        return trade_state
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app_admin.get("/strategy-params/{strategy_name}")
 def get_strategy_params(
     strategy_name: str = Path(..., description="Name of the strategy"),
