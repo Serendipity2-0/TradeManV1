@@ -522,6 +522,42 @@ def update_strategy_qty_amplifier(strategy, amplifier):
         )
 
 
+def compare_and_format_changes(
+    old_params, new_params, section, strategy_name=None, user_name=None
+):
+    """
+    Compare old and new parameters and format the changes.
+
+    Args:
+        old_params (dict): The old parameters.
+        new_params (dict): The new parameters.
+        section (str): The section being updated.
+        strategy_name (str, optional): The name of the strategy.
+        user_name (str, optional): The name of the user.
+
+    Returns:
+        str: A formatted string describing the changes, or a message if no changes were made.
+    """
+    changes = []
+    for key, new_value in new_params.items():
+        if key in old_params:
+            old_value = old_params[key]
+            if old_value != new_value:
+                if strategy_name:
+                    changes.append(
+                        f"Updated {section}.{key} from {old_value} to {new_value} for strategy {strategy_name}"
+                    )
+                else:
+                    changes.append(
+                        f"Updated {section}.{key} from {old_value} to {new_value} for user {user_name}"
+                    )
+
+    if not changes:
+        return f"No changes were made to {section} for {'strategy ' + strategy_name if strategy_name else 'user ' + user_name}. All values remain the same."
+
+    return "\n".join(changes)
+
+
 def modify_strategy_params(strategy_name, section, updated_params):
     """
     Modify strategy parameters for a specific strategy.
@@ -538,9 +574,8 @@ def modify_strategy_params(strategy_name, section, updated_params):
         section (str): The section of the strategy to modify.
         updated_params (dict): The updated parameters for the strategy.
 
-
     Returns:
-        dict: A message indicating successful update.
+        dict: A message indicating successful update or no changes.
     """
     strategies = fetch_collection_data_firebase(STRATEGIES_FB_COLLECTION)
 
@@ -554,19 +589,33 @@ def modify_strategy_params(strategy_name, section, updated_params):
     # Handle root-level values
     root_level_fields = ["Description", "NextTradeId", "StrategyName", "StrategyPrefix"]
     if section in root_level_fields:
-        update_fields_firebase(STRATEGIES_FB_COLLECTION, strategy_name, updated_params)
-        log_changes_via_webapp({section: updated_params})
-        send_admin_message_via_discord(f"{section} updated for {strategy_name}")
-        return {"message": f"{section} for {strategy_name} updated successfully!"}
+        old_params = {section: strategy_params.get(section)}
+        changes = compare_and_format_changes(
+            old_params, updated_params, section, strategy_name=strategy_name
+        )
+        if "No changes were made" not in changes:
+            update_fields_firebase(
+                STRATEGIES_FB_COLLECTION, strategy_name, updated_params
+            )
+            log_changes_via_webapp({section: updated_params})
+            send_admin_message_via_discord(changes)
+        return {"message": changes}
 
     # Handle the Instruments list
     if section == "Instruments":
         if not isinstance(updated_params["Instruments"], list):
             raise HTTPException(status_code=400, detail="Instruments must be a list.")
-        update_fields_firebase(STRATEGIES_FB_COLLECTION, strategy_name, updated_params)
-        log_changes_via_webapp({"Instruments": updated_params})
-        send_admin_message_via_discord(f"Instruments list updated for {strategy_name}")
-        return {"message": f"Instruments for {strategy_name} updated successfully!"}
+        old_params = {"Instruments": strategy_params.get("Instruments", [])}
+        changes = compare_and_format_changes(
+            old_params, updated_params, section, strategy_name=strategy_name
+        )
+        if "No changes were made" not in changes:
+            update_fields_firebase(
+                STRATEGIES_FB_COLLECTION, strategy_name, updated_params
+            )
+            log_changes_via_webapp({"Instruments": updated_params})
+            send_admin_message_via_discord(changes)
+        return {"message": changes}
 
     # Handle nested objects
     if section not in strategy_params or section == "MarketInfoParams":
@@ -575,18 +624,19 @@ def modify_strategy_params(strategy_name, section, updated_params):
         )
 
     # Update the nested object
-    update_fields_firebase(
-        STRATEGIES_FB_COLLECTION, strategy_name, {section: updated_params}
+    old_params = strategy_params.get(section, {})
+    changes = compare_and_format_changes(
+        old_params, updated_params, section, strategy_name=strategy_name
     )
 
-    # Log changes
-    log_changes_via_webapp(updated_params, section_info=section)
+    if "No changes were made" not in changes:
+        update_fields_firebase(
+            STRATEGIES_FB_COLLECTION, strategy_name, {section: updated_params}
+        )
+        log_changes_via_webapp(updated_params, section_info=section)
+        send_admin_message_via_discord(changes)
 
-    # Send Discord notification
-    message = f"Params {updated_params} changed for {strategy_name} in {section}"
-    send_admin_message_via_discord(message)
-
-    return {"message": f"{section} for {strategy_name} updated successfully!"}
+    return {"message": changes}
 
 
 def get_strategy_params(strategy_name):
@@ -801,7 +851,7 @@ def fetch_user_details_by_username(username: str):
 
 def update_user_section(user_id: str, section: str, details: dict):
     """
-    Update user details by replacing the existing details with the new details.
+    Update user details by replacing only the changed fields.
 
     Args:
         user_id (str): The ID of the user to update.
@@ -809,30 +859,48 @@ def update_user_section(user_id: str, section: str, details: dict):
         details (dict): The new details to update.
 
     Returns:
-        dict: A message indicating successful update.
+        dict: A message indicating successful update or no changes.
     """
     root_level_fields = ["Tr_No", "Active"]
 
+    # Fetch current user data
+    user_data = fetch_collection_data_firebase(CLIENTS_COLLECTION, document=user_id)
+    if not user_data:
+        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found.")
+
+    username = user_data.get("Profile", {}).get("Name", user_id)
+
     if section in root_level_fields:
         # Handle root-level updates
-        update_fields_firebase(CLIENTS_COLLECTION, user_id, parse_value(details))
-        log_changes_via_webapp({section: details})
-        send_admin_message_via_discord(f"{section} updated for user {user_id}")
-        return {"message": f"{section} for user {user_id} updated successfully!"}
+        old_params = {section: user_data.get(section)}
+        changes = compare_and_format_changes(
+            old_params, details, section, user_name=username
+        )
+        if "No changes were made" not in changes:
+            update_fields_firebase(CLIENTS_COLLECTION, user_id, parse_value(details))
+            log_changes_via_webapp({section: details})
+            send_admin_message_via_discord(changes)
+        return {"message": changes}
 
     # Handle nested dictionary updates
     if section not in ["Accounts", "Broker", "Profile", "Strategies"]:
         raise ValueError(f"Invalid section: {section}")
 
-    # Parse values in the details dictionary
-    parsed_details = {key: parse_value(value) for key, value in details.items()}
+    old_params = user_data.get(section, {})
+    changes = compare_and_format_changes(
+        old_params, details, section, user_name=username
+    )
 
-    path = f"{user_id}/{section}"
+    if "No changes were made" not in changes:
+        # Parse values in the details dictionary
+        parsed_details = {key: parse_value(value) for key, value in details.items()}
 
-    update_fields_firebase(CLIENTS_COLLECTION, path, parsed_details)
-    log_changes_via_webapp({section: parsed_details})
-    send_admin_message_via_discord(f"Section {section} updated for user {user_id}")
-    return {"message": f"{section} for user {user_id} updated successfully!"}
+        path = f"{user_id}/{section}"
+        update_fields_firebase(CLIENTS_COLLECTION, path, parsed_details)
+        log_changes_via_webapp({section: parsed_details})
+        send_admin_message_via_discord(changes)
+
+    return {"message": changes}
 
 
 def fetch_users_for_strategy(strategy_name: str):
