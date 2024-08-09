@@ -523,7 +523,7 @@ def update_strategy_qty_amplifier(strategy, amplifier):
 
 
 def compare_and_format_changes(
-    old_params, new_params, section, strategy_name=None, user_name=None
+    old_params, new_params, strategy_name=None, user_name=None
 ):
     """
     Compare old and new parameters and format the changes.
@@ -545,15 +545,15 @@ def compare_and_format_changes(
             if old_value != new_value:
                 if strategy_name:
                     changes.append(
-                        f"Updated {section}.{key} from {old_value} to {new_value} for strategy {strategy_name}"
+                        f"Updated : {strategy_name} : {key} : {old_value} to {new_value}"
                     )
                 else:
                     changes.append(
-                        f"Updated {section}.{key} from {old_value} to {new_value} for user {user_name}"
+                        f"Updated : {user_name} : {key} : {old_value} to {new_value}"
                     )
 
     if not changes:
-        return f"No changes were made to {section} for {'strategy ' + strategy_name if strategy_name else 'user ' + user_name}. All values remain the same."
+        return f"No changes were made for {'strategy ' + strategy_name if strategy_name else 'user ' + user_name}. All values remain the same."
 
     return "\n".join(changes)
 
@@ -591,7 +591,7 @@ def modify_strategy_params(strategy_name, section, updated_params):
     if section in root_level_fields:
         old_params = {section: strategy_params.get(section)}
         changes = compare_and_format_changes(
-            old_params, updated_params, section, strategy_name=strategy_name
+            old_params, updated_params, strategy_name=strategy_name
         )
         if "No changes were made" not in changes:
             update_fields_firebase(
@@ -607,7 +607,7 @@ def modify_strategy_params(strategy_name, section, updated_params):
             raise HTTPException(status_code=400, detail="Instruments must be a list.")
         old_params = {"Instruments": strategy_params.get("Instruments", [])}
         changes = compare_and_format_changes(
-            old_params, updated_params, section, strategy_name=strategy_name
+            old_params, updated_params, strategy_name=strategy_name
         )
         if "No changes were made" not in changes:
             update_fields_firebase(
@@ -626,7 +626,7 @@ def modify_strategy_params(strategy_name, section, updated_params):
     # Update the nested object
     old_params = strategy_params.get(section, {})
     changes = compare_and_format_changes(
-        old_params, updated_params, section, strategy_name=strategy_name
+        old_params, updated_params, strategy_name=strategy_name
     )
 
     if "No changes were made" not in changes:
@@ -873,9 +873,7 @@ def update_user_section(user_id: str, section: str, details: dict):
     if section in root_level_fields:
         # Handle root-level updates
         old_params = {section: user_data.get(section)}
-        changes = compare_and_format_changes(
-            old_params, details, section, user_name=username
-        )
+        changes = compare_and_format_changes(old_params, details, user_name=username)
         if "No changes were made" not in changes:
             update_fields_firebase(CLIENTS_COLLECTION, user_id, parse_value(details))
             log_changes_via_webapp({section: details})
@@ -887,9 +885,7 @@ def update_user_section(user_id: str, section: str, details: dict):
         raise ValueError(f"Invalid section: {section}")
 
     old_params = user_data.get(section, {})
-    changes = compare_and_format_changes(
-        old_params, details, section, user_name=username
-    )
+    changes = compare_and_format_changes(old_params, details, user_name=username)
 
     if "No changes were made" not in changes:
         # Parse values in the details dictionary
