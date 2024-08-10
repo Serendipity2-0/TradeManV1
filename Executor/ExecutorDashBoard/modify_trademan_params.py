@@ -16,16 +16,25 @@ ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
 STRATEGIES_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 
-from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import fetch_collection_data_firebase, update_fields_firebase, update_collection
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
+    fetch_collection_data_firebase,
+    update_fields_firebase,
+    update_collection,
+)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorDashBoard.exe_main_app_utils import log_changes
-from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import discord_admin_bot
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import fetch_active_strategies_all_users
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    send_admin_message_via_discord,
+)
+from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
+    fetch_active_strategies_all_users,
+)
 
 logger = LoggerSetup()
 
 strategies_fb_db = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 market_info_fb_db = os.getenv("MARKET_INFO_FB_COLLECTION")
+
 
 def modify_market_info():
     """
@@ -47,31 +56,37 @@ def modify_market_info():
                 # Use text_input for string values
                 updated_market_info[key] = st.text_input(key, value=value)
             # Add other types as necessary
-        
+
         submit_button = st.form_submit_button("Submit")
-    
+
     if submit_button:
         # Assuming you're updating the entire document at once
-        update_collection(market_info_fb_db,updated_market_info)
+        update_collection(market_info_fb_db, updated_market_info)
         # Log changes
         log_changes(updated_market_info)
         message = f"Market info updated for {updated_market_info}"
-        discord_admin_bot(message)
+        send_admin_message_via_discord(message)
         st.success("Market info updated successfully!")
-    
+
     active_strategies = fetch_active_strategies_all_users()
-    active_strategies_names = ["Select All"] + [strategy for strategy in active_strategies]
+    active_strategies_names = ["Select All"] + [
+        strategy for strategy in active_strategies
+    ]
 
     strategy_qty_amplifier = 1.0  # Default value
     selected_strategies = None  # Default selected strategy
 
     with st.form("strategy_form"):
         # User selects strategies
-        selected_strategies = st.selectbox("Select Strategies", options=active_strategies_names)
-        
+        selected_strategies = st.selectbox(
+            "Select Strategies", options=active_strategies_names
+        )
+
         # Input for StrategyQtyAmplifier
-        strategy_qty_amplifier = st.number_input("StrategyQtyAmplifier", value=strategy_qty_amplifier)
-        
+        strategy_qty_amplifier = st.number_input(
+            "StrategyQtyAmplifier", value=strategy_qty_amplifier
+        )
+
         # Submission button for the form
         submit_button = st.form_submit_button("Submit StrategyQtyAmplifier ")
 
@@ -80,14 +95,24 @@ def modify_market_info():
             # Apply the amplifier value to all strategies
             for strategy in active_strategies:
                 update_path = f"{strategy}/MarketInfoParams/"
-                update_fields_firebase(STRATEGIES_DB, update_path, {"StrategyQtyAmplifier": strategy_qty_amplifier})
-            st.success(f"StrategyQtyAmplifier set to {strategy_qty_amplifier} for all strategies.")
+                update_fields_firebase(
+                    STRATEGIES_DB,
+                    update_path,
+                    {"StrategyQtyAmplifier": strategy_qty_amplifier},
+                )
+            st.success(
+                f"StrategyQtyAmplifier set to {strategy_qty_amplifier} for all strategies."
+            )
         else:
             update_path = f"{selected_strategies}/MarketInfoParams/"
-            update_fields_firebase(STRATEGIES_DB, update_path, {"StrategyQtyAmplifier": strategy_qty_amplifier})
-            st.success(f"StrategyQtyAmplifier set to {strategy_qty_amplifier} for {selected_strategies}.")
-
-    
+            update_fields_firebase(
+                STRATEGIES_DB,
+                update_path,
+                {"StrategyQtyAmplifier": strategy_qty_amplifier},
+            )
+            st.success(
+                f"StrategyQtyAmplifier set to {strategy_qty_amplifier} for {selected_strategies}."
+            )
 
 
 def modify_strategy_params():
@@ -115,17 +140,21 @@ def modify_strategy_params():
                         # Your existing logic for handling parameters
                         updated_value = st.text_input(param, value=str(value))
                         updated_params[param] = updated_value
-                        
+
                     submit_key = f"submit_{section}"
                     if st.button("Submit", key=submit_key):
                         # Assuming you want to update the entire section at once
-                        update_fields_firebase(strategies_fb_db, strategy_name, {section: updated_params})
+                        update_fields_firebase(
+                            strategies_fb_db, strategy_name, {section: updated_params}
+                        )
                         # Log changes with section_info
                         log_changes(updated_params, section_info=section)
                         message = f"Params {updated_params} changed for {strategy_name} in {section}"
-                        discord_admin_bot(message)
+                        send_admin_message_via_discord(message)
                         st.success(f"{section} updated successfully!")
 
                     # Your existing logic for submitting updates
                 else:
-                    st.write(f"The section '{section}' does not contain editable parameters.")
+                    st.write(
+                        f"The section '{section}' does not contain editable parameters."
+                    )

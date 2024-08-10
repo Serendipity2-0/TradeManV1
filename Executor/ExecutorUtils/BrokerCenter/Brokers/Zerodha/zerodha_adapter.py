@@ -17,7 +17,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     calculate_transaction_type_sl,
 )
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    send_messsage_via_discord,
 )
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -622,12 +622,12 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
         order_status = get_order_status(users_credentials, order_id)
         if order_status != "PASS":
             message = f"Order placement failed: {order_status} for {orders_to_place['username']}"
-            discord_bot(message, strategy)
+            send_messsage_via_discord(message, strategy)
 
     except Exception as e:
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)
-        discord_bot(message, strategy)
+        send_messsage_via_discord(message, strategy)
         order_status = "FAIL"
 
     results = {
@@ -688,7 +688,7 @@ def kite_modify_orders_for_users(order_details, users_credentials):
     except Exception as e:
         message = f"Order placement failed: {e} for {order_details['username']}"
         logger.error(message)
-        discord_bot(message, order_details.get("strategy"))
+        send_messsage_via_discord(message, order_details.get("strategy"))
         return None
 
 

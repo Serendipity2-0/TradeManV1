@@ -14,8 +14,8 @@ load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
-    discord_admin_bot,
+    send_messsage_via_discord,
+    send_admin_message_via_discord,
 )
 from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_strategy_name_from_trade_id,
@@ -595,12 +595,12 @@ async def ant_place_orders_for_users(orders_to_place, users_credentials):
         if order_status == "FAIL":
             order_history = alice.get_order_history(order_id["NOrdNo"])
             message = f"Order placement failed, Reason: {order_history['RejReason']} for {orders_to_place['username']}"
-            discord_bot(message, strategy)
+            send_messsage_via_discord(message, strategy)
 
     except Exception as e:
         message = f"Order placement failed: {e} for {orders_to_place['username']}"
         logger.error(message)
-        discord_bot(message, strategy)
+        send_messsage_via_discord(message, strategy)
 
     results = {
         "setup": orders_to_place.get("setup", ""),
@@ -663,7 +663,7 @@ def ant_modify_orders_for_users(order_details, user_credentials):
     except Exception as e:
         message = f"Order placement failed: {e} for {order_details['username']}"
         logger.error(message)
-        discord_bot(message, order_details.get("strategy"))
+        send_messsage_via_discord(message, order_details.get("strategy"))
         return None
 
 
@@ -928,8 +928,12 @@ def get_margin_utilized(user_credentials):
     Raises:
         Exception: If there is an error in calculating the margin.
     """
-    discord_admin_bot("get_order_margin for alice blue has not been implemented yet")
+    send_admin_message_via_discord(
+        "get_order_margin for alice blue has not been implemented yet"
+    )
 
 
 def get_broker_payin(user):
-    discord_admin_bot("get_broker_payin for alice blue has not been implemented yet")
+    send_admin_message_via_discord(
+        "get_broker_payin for alice blue has not been implemented yet"
+    )

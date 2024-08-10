@@ -34,6 +34,9 @@ import Executor.ExecutorUtils.ExeUtils as ExeUtils
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_user_json_from_firebase,
 )
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    send_messsage_via_discord,
+)
 
 MID_TFMOMENTUM = "Mid_tfMomentum"
 MID_TFEMA = "Mid_tfEma"
@@ -216,7 +219,10 @@ def main():
                         [updated_user], order_to_place
                     )
                     logger.debug(f"Orders placed for {symbol}: {order_to_place}")
-
+                    send_messsage_via_discord(
+                        f"Entry MidTerm Orders placed for {symbol}: with trade_id {trade_id} at {ltp}",
+                        strategy_name,
+                    )
                     # Should come up with a better way to check for failed orders
 
                     if os.getenv("TRADE_MODE") != "PAPER":

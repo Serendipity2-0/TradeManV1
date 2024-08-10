@@ -24,7 +24,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.ExeUtils import holidays
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    send_messsage_via_discord,
 )
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     update_fields_firebase,
@@ -170,13 +170,13 @@ def message_for_orders(
 
     message = (
         f"Trade for {strategy_name}\n"
-        f"Percentage : {round((percentage[0]*100),2)}\n"
+        f"Percentage : {round((percentage[0] * 100),2)}\n"
         f"Direction : {prediction}\n"
         f"Future : {main_trade_symbol} Expiry : {monthly_expiry}\n"
         f"Hedge : {hedge_trade_symbol} Expiry : {weekly_expiry}\n"
     )
     logger.debug(message)
-    discord_bot(message, strategy_name)
+    send_messsage_via_discord(message, strategy_name)
 
 
 def signal_to_log_firebase(orders_to_place, predicition):

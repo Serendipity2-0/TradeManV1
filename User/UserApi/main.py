@@ -459,6 +459,26 @@ def get_users_holdings(tr_no: str, mode: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app_user.get("/tradestate")
+def get_tradestate(tr_no: str, strategy_name: str):
+    """
+    Retrieves the trade state (holdings with today's date) for a specific user.
+
+    Args:
+    tr_no (str): The trader number of the user.
+
+    Returns:
+    dict: A dictionary containing the trade state data.
+    """
+    try:
+        trade_state = app.get_tradestate(tr_no, strategy_name)
+        return trade_state
+    except KeyError:
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app_admin.get("/strategy-params/{strategy_name}")
 def get_strategy_params(
     strategy_name: str = Path(..., description="Name of the strategy"),
@@ -951,6 +971,18 @@ def place_repair_order(repair_order_input: schemas.RepairOrderInput):
         )
 
 
+@app_admin.get("/error-logs")
+def get_error_logs():
+    """
+    Fetches the error logs from the log file.
+
+    Returns:
+        dict: A dictionary containing the error logs.
+    """
+    result = app.get_error_logs()
+    return result.to_dict(orient="records")
+
+
 @app_admin.delete("/delete-user/{tr_no}")
 def delete_user(tr_no: str):
     """
@@ -977,7 +1009,7 @@ app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 
 
 def main_api():
-    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=True)
+    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=False)
 
 
 if __name__ == "__main__":

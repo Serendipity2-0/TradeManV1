@@ -28,7 +28,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 
 import Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils as InstrumentCenterUtils
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    send_messsage_via_discord,
 )
 from Executor.ExecutorUtils.ExeUtils import holidays
 
@@ -218,7 +218,7 @@ def send_signal_msg(base_symbol, strike_prc, option_type):
         "OM Order placed for " + base_symbol + " " + str(strike_prc) + " " + option_type
     )
     logger.info(message)
-    discord_bot(message, om_strategy_obj.StrategyName)
+    send_messsage_via_discord(message, om_strategy_obj.StrategyName)
 
 
 def main():

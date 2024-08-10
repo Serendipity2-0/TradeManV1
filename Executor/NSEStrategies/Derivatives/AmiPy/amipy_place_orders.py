@@ -31,7 +31,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    discord_bot,
+    send_messsage_via_discord,
 )
 from Executor.ExecutorUtils.InstrumentCenter.FNOInfoBase import FNOInfo
 
@@ -92,7 +92,7 @@ def message_for_orders(
     )
     logger.info(message)
 
-    discord_bot(message, strategy_obj.StrategyName)
+    send_messsage_via_discord(message, strategy_obj.StrategyName)
 
 
 def signal_to_log_firebase(orders_to_place, signal):

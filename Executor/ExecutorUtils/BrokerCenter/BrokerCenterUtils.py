@@ -18,6 +18,9 @@ DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 ADMIN_FB_DB = os.getenv("FIREBASE_ADMIN_COLLECTION")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    send_admin_message_via_discord,
+)
 
 logger = LoggerSetup()
 
@@ -121,6 +124,9 @@ def all_broker_login(active_users, account_type):
                 )
                 update_session_id(user, session_id, account_type)
             except Exception as e:
+                send_admin_message_via_discord(
+                    f"Error while logging in for Zerodha for user: {broker_username}"
+                )
                 logger.error(
                     f"Error while logging in for Zerodha: {e} for user: {broker_username}"
                 )
@@ -133,6 +139,9 @@ def all_broker_login(active_users, account_type):
                 )
                 update_session_id(user, session_id, account_type)
             except Exception as e:
+                send_admin_message_via_discord(
+                    f"Error while logging in for AliceBlue for user: {broker_username}"
+                )
                 logger.error(
                     f"Error while logging in for AliceBlue: {e} for user: {broker_username}"
                 )
@@ -144,6 +153,9 @@ def all_broker_login(active_users, account_type):
                 )
                 update_session_id(user, session_id, account_type)
             except Exception as e:
+                send_admin_message_via_discord(
+                    f"Error while logging in for Firstock for user: {broker_username}"
+                )
                 logger.error(
                     f"Error while logging in for Firstock: {e} for user: {broker_username}"
                 )

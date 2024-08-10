@@ -32,10 +32,12 @@ def login_in_firstock(user_details):
             vendorCode=user_details["ApiSecret"],
             apiKey=user_details["ApiKey"],
         )
-        logger.info(
-            f"Session Id for {user_details['BrokerUsername']}: {login.get('data', {}).get('susertoken')}"
-        )
-        return login.get("data", {}).get("susertoken")
+        if login.get("data", {}).get("susertoken"):
+            logger.info(
+                f"Session Id for {user_details['BrokerUsername']}: {login.get('data', {}).get('susertoken')}"
+            )
+            return login.get("data", {}).get("susertoken")
+        else:
+            raise Exception(f"Error fetching login for Firstock: {login}")
     except Exception as e:
-        logger.error(f"Error fetching login for Firstock: {e}")
-        return None
+        raise Exception(f"Error fetching login for Firstock: {e}")
