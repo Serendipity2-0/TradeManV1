@@ -129,13 +129,24 @@ def get_new_holdings(user_tables):
                 new_holdings = sum(
                     float(holding) for holding in holdings["margin_utilized"]
                 )
-
-        logger.info(f"new_holdings{new_holdings}")
-
         return round(float(new_holdings))
     except Exception as e:
         logger.error(f"Error in get_new_holdings: {e}")
         return round(new_holdings)
+
+
+def get_holdings_expected_tax(user_tables):
+    holdings_tax = 0
+    try:
+        for table in user_tables:
+            if list(table.keys())[0] == "Holdings":
+                holdings = table["Holdings"]
+                # iterate through the rows and convert it to float and get the sum of the "MarginUtilized" column
+                holdings_tax = sum(float(holding) for holding in holdings["tax"])
+        return round(float(holdings_tax))
+    except Exception as e:
+        logger.error(f"Error in get_new_holdings: {e}")
+        return round(holdings_tax)
 
 
 def update_account_keys_fb(tr_no, combined_account_values):
@@ -235,7 +246,12 @@ def calculate_account_values(user, today_trades, user_tables, segment=None):
     broker_payin = get_broker_payin(user)
     broker_payout = 0  # As of now only zerodha is providing broker payout
 
-    new_holdings = get_new_holdings(user_tables)
+    holdings_margin = get_new_holdings(user_tables)
+    holdings_tax = get_holdings_expected_tax(user_tables)
+    new_holdings = holdings_margin + holdings_tax
+
+    logger.info(f"new_holdings{new_holdings}")
+
     new_free_cash = (
         AccountValue + gross_pnl - expected_tax + broker_payin - new_holdings
     )

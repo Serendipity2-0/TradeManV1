@@ -755,7 +755,7 @@ def process_holdings_orders(
                 "entry_price": entry_price,
                 "qty": qty,
                 "margin_utilized": margin_utilized,
-                "tax": 0.0,
+                "tax": order.get("tax", 0.0),
                 "hedge_entry_price": avg_hedge_order_price,
             }
 
