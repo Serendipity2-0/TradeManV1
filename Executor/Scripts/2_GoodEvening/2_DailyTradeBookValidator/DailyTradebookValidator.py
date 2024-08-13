@@ -33,6 +33,7 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
 from TradebookValidatorUtils import (
     check_strategy_path,
     check_strategy_orders,
+    verify_firebase_orders,
 )
 
 EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
@@ -344,6 +345,7 @@ def clear_extra_orders_firebase():
                                     f"Strategies/Derivatives/{setup_key}/TradeState"
                                 )
                                 process_trade_state(trade_state, path_prefix)
+                verify_firebase_orders(user)
     except Exception as e:
         logger.error(f"Error in clear_extra_orders_firebase: {e}")
 
