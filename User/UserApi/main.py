@@ -152,14 +152,14 @@ def update_strategies(user_id: str, strategy_details: schemas.Strategies_):
 
 
 @app_user.post("/register/tr-no")
-def update_tr_no(tr_no: str):
+def update_tr_no(tr_no: str, strategy_details: schemas.Tr_No_):
     """
     This is the route for updating the trader number for a new user.
     It takes the trader number as input and stores it in the user_data_collection dictionary.
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
     try:
-        response = app.update_tr_no(tr_no)
+        response = app.update_tr_no(tr_no, strategy_details.dict())
         return {"message": "Trader number updated successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

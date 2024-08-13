@@ -129,7 +129,7 @@ def store_strategies_data(user_id, data):
     return user_data_collection[user_id]
 
 
-def store_tr_no(user_id, data):
+def update_tr_no(user_id, data):
     """
     This function stores the trader number for a user in the user_data_collection dictionary.
 

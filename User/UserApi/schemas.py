@@ -136,6 +136,10 @@ class ProfilePage(BaseModel):
     Strategies: Optional[List[str]] = None
 
 
+class Tr_No_(BaseModel):
+    Tr_No: str
+
+
 class ClientData(BaseModel):
     profile: ProfilePage
     strategies: Optional[List[str]] = None
