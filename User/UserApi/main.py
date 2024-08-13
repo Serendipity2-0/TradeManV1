@@ -840,7 +840,7 @@ def get_total_base_capital():
         )
 
 
-@app_admin.get("/active-users-data")
+@app_admin.get("/active-users-account-data")
 def get_active_users_data_endpoint():
     """
     Retrieves data for all active users including their account values and holdings.

@@ -926,12 +926,10 @@ def calculate_active_users_data():
             user_row = {
                 "Tr_no": tr_no,
                 "Name": user_data.get("Profile", {}).get("Name", ""),
-                "Equity_AccountValue": equity.get("Equity_AccountValue", 0),
-                "Debt_AccountValue": debt.get("Debt_AccountValue", 0),
-                "Derivatives_AccountValue": derivatives.get(
-                    "Derivatives_AccountValue", 0
-                ),
-                "Portfolio_AccountValue": portfolio.get("Portfolio_AccountValue", 0),
+                "Equity_AccountValue": equity,
+                "Debt_AccountValue": debt,
+                "Derivatives_AccountValue": derivatives,
+                "Portfolio_AccountValue": portfolio,
                 "Total_Holdings": total_holdings,
             }
 
