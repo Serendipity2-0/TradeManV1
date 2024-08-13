@@ -706,7 +706,7 @@ def update_user_risk_params(
         )
 
 
-@app_admin.get("/user-list")
+@app_admin.get("/user-list-details")
 def get_user_list_from_db():
     """
     Fetches the list of users from the database.
