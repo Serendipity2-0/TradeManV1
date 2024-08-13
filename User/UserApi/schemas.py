@@ -78,6 +78,10 @@ class Active_(RootModel[bool]):
     pass
 
 
+class Tr_No_(RootModel[str]):
+    pass
+
+
 class Broker_(BaseModel):
     ApiKey: str = Field(..., example="")
     ApiSecret: str = Field(..., example="")
@@ -134,10 +138,6 @@ class ProfilePage(BaseModel):
     Bank_Account_No: str
     BrokerName: Optional[str] = None
     Strategies: Optional[List[str]] = None
-
-
-class Tr_No_(BaseModel):
-    Tr_No: str
 
 
 class ClientData(BaseModel):
