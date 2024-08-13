@@ -129,7 +129,7 @@ def store_strategies_data(user_id, data):
     return user_data_collection[user_id]
 
 
-def store_tr_no(user_id, data):
+def update_tr_no(user_id, data):
     """
     This function stores the trader number for a user in the user_data_collection dictionary.
 
@@ -845,7 +845,11 @@ def get_user_list_from_db():
         ) in user_list.items():  # Changed to items() to get both key and value
             if "Profile" in profile and "Name" in profile["Profile"]:
                 user_names.append(
-                    {"username": profile["Profile"]["Name"], "tr_no": profile["Tr_No"]}
+                    {
+                        "username": profile["Profile"]["Name"],
+                        "tr_no": profile["Tr_No"],
+                        "active": profile["Active"],
+                    }
                 )
             else:
                 # Raising ValueError including the key of the profile

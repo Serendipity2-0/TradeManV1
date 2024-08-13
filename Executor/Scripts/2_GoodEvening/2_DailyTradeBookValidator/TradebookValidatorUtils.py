@@ -1,12 +1,23 @@
 import os
 import sys
+from datetime import datetime
+from dotenv import load_dotenv
+
 
 DIR = os.getcwd()
 sys.path.append(DIR)
 
+ENV_PATH = os.path.join(DIR, "trademan.env")
+load_dotenv(ENV_PATH)
+
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
+from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
+    send_message_to_group,
+)
+
+ERROR_GROUP_ID = os.getenv("ERROR_CHAT_ID")
 
 
 def check_strategy_path(asset_class, term, strategy_key, strategy_data, order_id):
@@ -53,15 +64,12 @@ def check_strategy_orders(user, asset_class, term, strategy_key, strategy_data, 
     :param today: Today's date string
     :return: A set of order IDs for the strategy
     """
-    logger.debug(f"Checking orders for strategy: {strategy_key}")
-    logger.debug(f"Strategy data: {strategy_data}")
 
     strategy_order_ids = set()
     if isinstance(strategy_data, dict):
         trade_state = strategy_data.get("TradeState", {})
-        logger.debug(f"Trade state: {trade_state}")
         orders_from_firebase = trade_state.get("orders", [])
-        logger.debug(f"Orders from firebase: {orders_from_firebase}")
+        logger.debug(f"len(orders_from_firebase): {len(orders_from_firebase)}")
 
         if not orders_from_firebase:
             log_message = (
@@ -87,3 +95,35 @@ def check_strategy_orders(user, asset_class, term, strategy_key, strategy_data, 
 
     logger.debug(f"Found {len(strategy_order_ids)} orders for strategy: {strategy_key}")
     return strategy_order_ids
+
+
+def verify_firebase_orders(user):
+    today = datetime.now().strftime("%Y-%m-%d")
+    for asset_class in user["Strategies"]:
+        if asset_class == "Equity":
+            for term in user["Strategies"][asset_class]:
+                for strategy in user["Strategies"][asset_class][term]:
+                    strategy_data = user["Strategies"][asset_class][term][strategy]
+                    pending_orders = check_strategy_orders(
+                        user, asset_class, term, strategy, strategy_data, today
+                    )
+                    if pending_orders:
+                        message = (
+                            f"Orders with avg_prc None found for strategy: {strategy}"
+                        )
+                        send_message_to_group(ERROR_GROUP_ID, message)
+                        logger.error(
+                            f"Orders with avg_prc None found for strategy: {strategy}"
+                        )
+        if asset_class == "Derivatives":
+            for strategy in user["Strategies"][asset_class]:
+                strategy_data = user["Strategies"][asset_class][strategy]
+                pending_orders = check_strategy_orders(
+                    user, asset_class, None, strategy, strategy_data, today
+                )
+                if pending_orders:
+                    message = f"Orders with avg_prc None found for strategy: {strategy}"
+                    send_message_to_group(ERROR_GROUP_ID, message)
+                    logger.error(
+                        f"Orders with avg_prc None found for strategy: {strategy}"
+                    )

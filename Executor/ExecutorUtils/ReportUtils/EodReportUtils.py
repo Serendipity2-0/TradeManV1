@@ -9,6 +9,8 @@ import os, sys
 from datetime import datetime
 from dotenv import load_dotenv
 import pandas as pd
+from typing import List, Dict, Any
+from decimal import Decimal
 
 # Define constants and load environment variables
 DIR = os.getcwd()
@@ -129,13 +131,24 @@ def get_new_holdings(user_tables):
                 new_holdings = sum(
                     float(holding) for holding in holdings["margin_utilized"]
                 )
-
-        logger.info(f"new_holdings{new_holdings}")
-
         return round(float(new_holdings))
     except Exception as e:
         logger.error(f"Error in get_new_holdings: {e}")
         return round(new_holdings)
+
+
+def get_holdings_expected_tax(user_tables):
+    holdings_tax = 0
+    try:
+        for table in user_tables:
+            if list(table.keys())[0] == "Holdings":
+                holdings = table["Holdings"]
+                # iterate through the rows and convert it to float and get the sum of the "MarginUtilized" column
+                holdings_tax = sum(float(holding) for holding in holdings["tax"])
+        return round(float(holdings_tax))
+    except Exception as e:
+        logger.error(f"Error in get_new_holdings: {e}")
+        return round(holdings_tax)
 
 
 def update_account_keys_fb(tr_no, combined_account_values):
@@ -235,7 +248,12 @@ def calculate_account_values(user, today_trades, user_tables, segment=None):
     broker_payin = get_broker_payin(user)
     broker_payout = 0  # As of now only zerodha is providing broker payout
 
-    new_holdings = get_new_holdings(user_tables)
+    holdings_margin = get_new_holdings(user_tables)
+    holdings_tax = get_holdings_expected_tax(user_tables)
+    new_holdings = holdings_margin + holdings_tax
+
+    logger.info(f"new_holdings{new_holdings}")
+
     new_free_cash = (
         AccountValue + gross_pnl - expected_tax + broker_payin - new_holdings
     )
@@ -301,93 +319,107 @@ def get_today_trades_for_all_users(active_users, active_strategies):
     return all_today_trades
 
 
-def today_trades_data(active_users, today_trades):
+def today_trades_data(
+    active_users: List[Dict[str, Any]], today_trades: List[Dict[str, Any]]
+) -> List[List[Any]]:
     """
     Process today's trades data for all active users.
 
     Args:
-        active_users (list): List of active users.
-        today_trades (list): List of today's trades.
+        active_users (List[Dict[str, Any]]): List of active users.
+        today_trades (List[Dict[str, Any]]): List of today's trades.
 
     Returns:
-        list: List of consolidated trade data.
+        List[List[Any]]: List of consolidated trade data.
     """
     from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
         update_fields_firebase,
     )
-    from datetime import datetime
 
     consolidated_data = []
+    today_fb_format = datetime.now().strftime("%d%b%y")
 
     for user in active_users:
-        strategy_pnl = {}
-        user_name = user["Profile"]["Name"]
-        tr_no = user["Tr_No"]
-        base_capital = user["Accounts"]["CurrentBaseCapital"]
-        base_capital_str = f"{base_capital:.2f}"
-        today_fb_format = datetime.now().strftime("%d%b%y")
-        current_capital = user["Accounts"].get(
-            f"{today_fb_format}_AccountValue", 0
-        )  # Use get for safety
-        current_capital_str = f"{current_capital:.2f}"
-        drawdown_amount = min(current_capital - base_capital, 0)
-        drawdown_amount_str = f"{drawdown_amount:.2f}"
-        drawdown_percentage = (
-            (drawdown_amount / base_capital * 100) if base_capital else 0
-        )
-        drawdown = f"{float(drawdown_amount):.2f} ({float(drawdown_percentage):.2f}%)"
-        logger.debug(f"Drawdown for {user_name} is {drawdown}")
-
-        # Initialize net_pnl_amount for each user
-        net_pnl_amount = 0  # Reset to 0 for each user
-
-        for trade in today_trades:
-            if trade["user_tr_no"] == tr_no:
-                strategy_amount = float(trade["net_pnl"])
-                strategy_percentage = (
-                    (strategy_amount / base_capital * 100) if base_capital else 0
-                )
-                strategy_pnl[
-                    trade["trade_id"]
-                ] = f"{float(strategy_amount):.2f} ({float(strategy_percentage):.2f}%)"
-
-                # Accumulate net_pnl for the user
-                net_pnl_amount += float(trade["net_pnl"])
-
-        net_pnl_percentage = (
-            (net_pnl_amount / base_capital * 100) if base_capital else 0
-        )
-        net_pnl = f"{float(net_pnl_amount):.2f} ({float(net_pnl_percentage):.2f}%)"
-        current_week_pnl_amount = (
-            user["Accounts"].get("CurrentWeekPnL", 0) + net_pnl_amount
-        )
-        current_week_pnl_percentage = (
-            (current_week_pnl_amount / base_capital * 100) if base_capital else 0
-        )
-        current_week_pnl = f"{float(current_week_pnl_amount):.2f} ({float(current_week_pnl_percentage):.2f}%)"
-
-        # Update the user's current_week_pnl in Firebase (not shown, assume similar to update_account_keys_fb)
-        update_fields_firebase(
-            CLIENTS_USER_FB_DB,
-            tr_no,
-            {"CurrentWeekCapital": current_week_pnl_amount},
-            "Accounts",
-        )
-
-        consolidated_data.append(
-            [
-                tr_no,
-                user_name,
-                base_capital_str,
-                current_capital_str,
-                drawdown_amount_str,
-                current_week_pnl,
-                net_pnl,
-                strategy_pnl,
-            ]
-        )
+        user_data = process_user_data(user, today_fb_format)
+        process_user_trades(user_data, today_trades)
+        update_firebase(user_data)
+        consolidated_data.append(create_consolidated_entry(user_data))
 
     return consolidated_data
+
+
+def process_user_data(user: Dict[str, Any], today_fb_format: str) -> Dict[str, Any]:
+    """Process and return relevant user data."""
+    accounts = user["Accounts"]
+    base_capital = Decimal(accounts["CurrentBaseCapital"])
+    current_capital = Decimal(
+        accounts.get("Portfolio", {}).get("Portfolio_AccountValue", 0)
+    )
+
+    return {
+        "tr_no": user["Tr_No"],
+        "user_name": user["Profile"]["Name"],
+        "base_capital": base_capital,
+        "current_capital": current_capital,
+        "drawdown_amount": min(current_capital - base_capital, Decimal(0)),
+        "strategy_pnl": {},
+        "net_pnl_amount": Decimal(0),
+        "current_week_pnl_amount": Decimal(accounts.get("CurrentWeekPnL", 0)),
+    }
+
+
+def process_user_trades(
+    user_data: Dict[str, Any], today_trades: List[Dict[str, Any]]
+) -> None:
+    """Process trades for a specific user."""
+    for trade in today_trades:
+        if trade["user_tr_no"] == user_data["tr_no"]:
+            strategy_amount = Decimal(trade["net_pnl"])
+            user_data["net_pnl_amount"] += strategy_amount
+            user_data["strategy_pnl"][trade["trade_id"]] = format_pnl(
+                strategy_amount, user_data["base_capital"]
+            )
+
+    user_data["current_week_pnl_amount"] += user_data["net_pnl_amount"]
+
+
+def update_firebase(user_data: Dict[str, Any]) -> None:
+    from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
+        update_fields_firebase,
+    )
+
+    """Update user data in Firebase."""
+    update_fields_firebase(
+        CLIENTS_USER_FB_DB,
+        user_data["tr_no"],
+        {"CurrentWeekCapital": float(user_data["current_week_pnl_amount"])},
+        "Accounts",
+    )
+
+
+def create_consolidated_entry(user_data: Dict[str, Any]) -> List[Any]:
+    """Create a consolidated entry for the user."""
+    return [
+        user_data["tr_no"],
+        user_data["user_name"],
+        format_decimal(user_data["base_capital"]),
+        format_decimal(user_data["current_capital"]),
+        format_decimal(user_data["drawdown_amount"]),
+        format_pnl(user_data["current_week_pnl_amount"], user_data["base_capital"]),
+        format_pnl(user_data["net_pnl_amount"], user_data["base_capital"]),
+        user_data["strategy_pnl"],
+    ]
+
+
+def format_decimal(value: Decimal) -> str:
+    """Format a Decimal to a string with two decimal places."""
+    return f"{value:.2f}"
+
+
+def format_pnl(amount: Decimal, base_capital: Decimal) -> str:
+    """Format PnL as a string with amount and percentage."""
+    percentage = (amount / base_capital * 100) if base_capital else Decimal(0)
+    return f"{format_decimal(amount)} ({format_decimal(percentage)}%)"
 
 
 def aggregate_account_values(combined_account_values):

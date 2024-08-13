@@ -4,6 +4,9 @@ import datetime as dt
 from dotenv import load_dotenv
 from datetime import datetime
 from thefirstock import thefirstock
+import pandas as pd
+import magic
+from typing import Dict, List, Callable
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -564,8 +567,112 @@ def firstock_get_ledger(user):
     logger.info("This needs to be implemented")
 
 
-def process_firstock_ledger(ledger, user):
-    logger.info("This needs to be implemented")
+def process_firstock_ledger(input_file: str) -> Dict[str, pd.DataFrame]:
+    """
+    Converts the input file to DataFrame and processes Firstock ledger data.
+
+    Args:
+        input_file (str): The file path to the input file (XLS, XLSX, HTML, or CSV).
+
+    Returns:
+        Dict[str, pd.DataFrame]: Categorized DataFrames for each transaction category.
+
+    Raises:
+        FileNotFoundError: If the input file does not exist.
+        ValueError: If the file type is unsupported or processing fails.
+    """
+    PATTERNS: Dict[str, List[str]] = {
+        "Deposits": ["Fund Transfer- Payment Gateway"],
+        "Withdrawals": ["Withdrawal"],
+        "Charges": ["DP AMC", "DP Bill"],
+        "Trades": ["ICCL-"],
+    }
+
+    def get_file_type(file_path: str) -> str:
+        return magic.Magic(mime=True).from_file(file_path)
+
+    def html_to_dataframe(input_file: str) -> pd.DataFrame:
+        tables = pd.read_html(input_file)
+        if not tables:
+            raise ValueError("No tables found in the HTML file.")
+        return tables[0]
+
+    def excel_to_dataframe(input_file: str, file_extension: str) -> pd.DataFrame:
+        engine = "openpyxl" if file_extension.lower() in [".xls", ".xlsx"] else "pyxlsb"
+        return pd.read_excel(input_file, engine=engine)
+
+    file_handlers: Dict[str, Callable[[str], pd.DataFrame]] = {
+        "html": html_to_dataframe,
+        "excel": excel_to_dataframe,
+        "csv": lambda f: pd.read_csv(f),
+    }
+
+    if not os.path.exists(input_file):
+        raise FileNotFoundError(f"The file {input_file} does not exist.")
+
+    file_type = get_file_type(input_file).lower()
+    file_extension = os.path.splitext(input_file)[1].lower()
+
+    print(f"Detected file type: {file_type}")
+    print(f"File extension: {file_extension}")
+
+    handler = next((h for t, h in file_handlers.items() if t in file_type), None)
+    if not handler:
+        raise ValueError(f"Unsupported file type: {file_type}")
+
+    try:
+        ledger_data = (
+            handler(input_file)
+            if handler != excel_to_dataframe
+            else handler(input_file, file_extension)
+        )
+        print("File converted to DataFrame successfully.")
+        print(f"Columns in the data: {ledger_data.columns.tolist()}")
+        print(f"First few rows of the data:\n{ledger_data.head()}")
+
+        if "Voucher Date" not in ledger_data.columns:
+            print("Processing data by skipping initial rows...")
+            ledger_data = ledger_data.iloc[8:19]  # Adjust these numbers if needed
+            print(f"Columns after skipping rows: {ledger_data.columns.tolist()}")
+            print(f"First few rows after skipping:\n{ledger_data.head()}")
+
+    except Exception as e:
+        raise ValueError(f"Error processing file: {str(e)}")
+
+    narration_column = next(
+        (col for col in ["Narration", "Exchange"] if col in ledger_data.columns), None
+    )
+    if not narration_column:
+        raise ValueError("Neither 'Narration' nor 'Exchange' column found in the data.")
+
+    print(f"Using '{narration_column}' column for categorization.")
+
+    def categorize_transaction(narration: str) -> str:
+        return next(
+            (
+                category
+                for category, patterns in PATTERNS.items()
+                if any(pattern in str(narration) for pattern in patterns)
+            ),
+            "Other",
+        )
+
+    ledger_data["Category"] = ledger_data[narration_column].apply(
+        categorize_transaction
+    )
+
+    categorized_dfs = {
+        category: ledger_data[ledger_data["Category"] == category]
+        for category in PATTERNS.keys()
+    }
+    categorized_dfs["Other"] = ledger_data[ledger_data["Category"] == "Other"]
+
+    for category, df in categorized_dfs.items():
+        output_file = f"firstock_{category.lower()}.csv"
+        df.to_csv(output_file, index=False)
+        print(f"Saved {category} transactions to {output_file}")
+
+    return categorized_dfs
 
 
 def calculate_firstock_net_values(user, categorized_dfs):

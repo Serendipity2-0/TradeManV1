@@ -2,7 +2,9 @@ import os
 import sys
 from datetime import datetime
 from time import sleep
-
+from typing import List, Dict, Any
+from functools import reduce
+from operator import getitem
 import pandas as pd
 from dotenv import load_dotenv
 import traceback
@@ -755,7 +757,7 @@ def process_holdings_orders(
                 "entry_price": entry_price,
                 "qty": qty,
                 "margin_utilized": margin_utilized,
-                "tax": 0.0,
+                "tax": order.get("tax", 0.0),
                 "hedge_entry_price": avg_hedge_order_price,
             }
 
@@ -870,6 +872,43 @@ def process_strategy(
             )
 
 
+def update_portfolio_values():
+    active_users = fetch_active_users_from_firebase()
+    for user in active_users:
+        logger.debug(f"User: {user['Tr_No']}")
+        portfolio_values = calculate_portfolio_values(user)
+        update_firebase_portfolio(user["Tr_No"], portfolio_values)
+
+
+def calculate_portfolio_values(user: Dict[str, Any]) -> Dict[str, float]:
+    segments = ["Equity", "Derivatives", "Debt"]
+    fields = ["FreeCash", "Holdings", "AccountValue"]
+
+    portfolio_values = {f"Portfolio_{field}": 0.0 for field in fields}
+
+    for segment in segments:
+        for field in fields:
+            portfolio_values[f"Portfolio_{field}"] += safe_get(
+                user, ["Accounts", segment, f"{segment}_{field}"], 0
+            )
+
+    return portfolio_values
+
+
+def safe_get(dct: Dict[str, Any], keys: List[str], default: Any = None) -> Any:
+    try:
+        return reduce(getitem, keys, dct)
+    except (KeyError, TypeError):
+        return default
+
+
+def update_firebase_portfolio(tr_no: str, portfolio_values: Dict[str, float]):
+    update_path = "Accounts/Portfolio"
+    update_fields_firebase(
+        CLIENTS_USER_FB_DB_COLLECTION, tr_no, portfolio_values, update_path
+    )
+
+
 def main():
     """
     The main function orchestrates the end-of-day processes for trading data.
@@ -889,6 +928,7 @@ def main():
     update_signal_info()
     clear_today_orders_firebase()
     sleep(5)
+    update_portfolio_values()
 
 
 if __name__ == "__main__":

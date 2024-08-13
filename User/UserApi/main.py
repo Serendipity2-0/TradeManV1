@@ -102,7 +102,7 @@ def update_active_status(user_id: str, active_details: schemas.Active_):
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
     try:
-        active_status = active_details.root  # Access the boolean value
+        active_status = active_details.root
         response = app.store_active_status(user_id, active_status)
         return {"message": "Active status updated successfully", "response": response}
     except Exception as e:
@@ -152,14 +152,15 @@ def update_strategies(user_id: str, strategy_details: schemas.Strategies_):
 
 
 @app_user.post("/register/tr-no")
-def update_tr_no(tr_no: str):
+def update_tr_no(user_id: str, strategy_details: schemas.Tr_No_):
     """
     This is the route for updating the trader number for a new user.
     It takes the trader number as input and stores it in the user_data_collection dictionary.
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
     try:
-        response = app.update_tr_no(tr_no)
+        tr_no = strategy_details.root
+        response = app.update_tr_no(user_id, tr_no)
         return {"message": "Trader number updated successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -706,7 +707,7 @@ def update_user_risk_params(
         )
 
 
-@app_admin.get("/user-list")
+@app_admin.get("/user-list-details")
 def get_user_list_from_db():
     """
     Fetches the list of users from the database.
@@ -840,7 +841,7 @@ def get_total_base_capital():
         )
 
 
-@app_admin.get("/active-users-data")
+@app_admin.get("/active-users-account-data")
 def get_active_users_data_endpoint():
     """
     Retrieves data for all active users including their account values and holdings.

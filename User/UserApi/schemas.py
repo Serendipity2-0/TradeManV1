@@ -78,6 +78,10 @@ class Active_(RootModel[bool]):
     pass
 
 
+class Tr_No_(RootModel[str]):
+    pass
+
+
 class Broker_(BaseModel):
     ApiKey: str = Field(..., example="")
     ApiSecret: str = Field(..., example="")
