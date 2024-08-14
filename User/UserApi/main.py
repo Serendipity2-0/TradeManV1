@@ -369,42 +369,6 @@ def get_strategy_statistics(tr_no: str, strategy_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app_user.get("/strategy-signals")
-def get_strategy_signals(
-    strategy_name: str,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-):
-    """
-    Retrieves the strategy signals for a specific strategy.
-
-    Args:
-        strategy_name (str): The name of the strategy.
-
-    Returns:
-        dict: The strategy signals for the specified strategy.
-    """
-    try:
-        return app.get_strategy_signals(strategy_name, page, page_size)
-    except KeyError:
-        raise HTTPException(status_code=404, detail="Strategy not found")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app_user.get("/strategy-signals-graph-data")
-def strategy_signals_graph_data(strategy_name: str):
-    """
-    Retrieves the strategy signals graph data for a specific strategy.
-    """
-    try:
-        return app.strategy_signals_graph_data(strategy_name)
-    except KeyError:
-        raise HTTPException(status_code=404, detail="Strategy not found")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @app_user.get("/user-broker-transactions")
 def user_broker_transactions(
     tr_no: str,
@@ -875,6 +839,42 @@ def get_total_base_capital():
         raise HTTPException(
             status_code=500, detail=f"Error calculating total base capital: {str(e)}"
         )
+
+
+@app_admin.get("/strategy-signals")
+def get_strategy_signals(
+    strategy_name: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    """
+    Retrieves the strategy signals for a specific strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        dict: The strategy signals for the specified strategy.
+    """
+    try:
+        return app.get_strategy_signals(strategy_name, page, page_size)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app_admin.get("/strategy-signals-graph-data")
+def strategy_signals_graph_data(strategy_name: str):
+    """
+    Retrieves the strategy signals graph data for a specific strategy.
+    """
+    try:
+        return app.strategy_signals_graph_data(strategy_name)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app_admin.get("/active-users-account-data")
