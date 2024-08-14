@@ -7,6 +7,8 @@ import csv
 import numpy as np
 import re
 from collections import Counter
+from typing import Dict, Any, List
+import sqlite3
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -457,6 +459,116 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
         else:
             logger.error(f"Error retrieving strategy graph data: {e}")
             raise
+    except Exception as e:
+        logger.error(f"Error retrieving strategy graph data: {e}")
+        raise
+
+
+def fetch_strategy_signals(
+    strategy_name: str, segment: str, page: int, page_size: int
+) -> Dict[str, Any]:
+    """
+    Fetches the strategy signals for a specific strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+        segment (SegmentType): The segment of the strategy ("EQUITY" or "DERIVATIVES").
+        page (int): The page number for pagination.
+        page_size (int): The number of items per page.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing the list of signals and total item count.
+
+    Raises:
+        ValueError: If an invalid segment is provided.
+        sqlite3.Error: If there's an issue with the database connection or query.
+    """
+    if segment == EQUITY:
+        signal_db_path = os.getenv("EQUITY_SIGNAL_DB_PATH")
+    elif segment == DERIVATIVES:
+        signal_db_path = os.getenv("DERIVATIVES_SIGNAL_DB_PATH")
+    else:
+        raise ValueError(f"Invalid segment: {segment}")
+
+    if not signal_db_path:
+        raise ValueError(f"Database path not found for segment: {segment}")
+
+    try:
+        conn = get_db_connection(signal_db_path)
+        with conn:
+            total_items = pd.read_sql_query(
+                f"SELECT COUNT(*) as count FROM {strategy_name}", conn
+            ).iloc[0]["count"]
+
+            offset = (page - 1) * page_size
+            data = pd.read_sql_query(
+                f"SELECT * FROM {strategy_name} LIMIT {page_size} OFFSET {offset}", conn
+            )
+
+        data = data.to_dict(orient="records")
+        return {
+            "items": data,
+            "total_items": int(total_items),
+        }
+    except sqlite3.Error as e:
+        raise sqlite3.Error(f"Database error: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+
+def signal_graph_data(strategy_name: str) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Retrieves the strategy signals graph data for a specific strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        Dict[str, List[Dict[str, Any]]]: The strategy signals graph data for the specified strategy.
+    """
+    try:
+        if strategy_name in EQUITY_STRATEGY_LIST:
+            db_path = os.getenv("EQUITY_SIGNAL_DB_PATH")
+        elif strategy_name in DERIVATIVES_STRATEGY_LIST:
+            db_path = os.getenv("DERIVATIVES_SIGNAL_DB_PATH")
+        else:
+            raise ValueError(f"Invalid strategy name: {strategy_name}")
+
+        if not db_path:
+            raise ValueError(f"Database path not found for strategy: {strategy_name}")
+
+        conn = get_db_connection(db_path)
+        try:
+            data = pd.read_sql_query(
+                f"SELECT exit_time, trade_points FROM {strategy_name}", conn
+            )
+
+            data["exit_time"] = pd.to_datetime(data["exit_time"])
+
+            # Convert DataFrame to list of dictionaries
+            combined_data = data.to_dict("records")
+
+            # Convert any numpy types to Python native types
+            for item in combined_data:
+                item["exit_time"] = item["exit_time"].isoformat()
+                if isinstance(item["trade_points"], np.number):
+                    item["trade_points"] = float(item["trade_points"])
+
+            return {"items": combined_data}
+
+        except pd.io.sql.DatabaseError as e:
+            if "no such table" in str(e):
+                logger.warning(f"No data found for strategy: {strategy_name}")
+                return {"items": []}
+            else:
+                logger.error(
+                    f"Database error while retrieving strategy graph data: {e}"
+                )
+                raise
+        finally:
+            conn.close()
+
     except Exception as e:
         logger.error(f"Error retrieving strategy graph data: {e}")
         raise
