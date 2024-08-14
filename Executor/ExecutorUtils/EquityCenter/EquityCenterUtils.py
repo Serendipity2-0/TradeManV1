@@ -5,6 +5,7 @@ import sqlite3
 import yfinance as yf
 from dotenv import load_dotenv
 import numpy as np
+import datetime as dt
 
 # Add current directory to system path
 DIR = os.getcwd()
@@ -667,3 +668,21 @@ def calculate_ema(data, window):
         pandas.Series: The EMA values.
     """
     return data.ewm(span=window, adjust=False).mean()
+
+
+def get_asm_gsm_list():
+    dir = os.getenv("ASM_GSM_LIST_DIR")
+    today = dt.datetime.now().strftime("%Y-%m-%d")
+    asm_gsm_list_path = os.path.join(dir, f"merged_asm_gsm_{today}.csv")
+    asm_gsm_list = pd.read_csv(asm_gsm_list_path)
+    symbol_list = asm_gsm_list["SYMBOL"].tolist()
+    return symbol_list
+
+
+def check_symbol_in_list(symbol_list, symbol):
+    # Convert everything to uppercase for case-insensitive comparison
+    symbol_list = [s.upper() for s in symbol_list]
+    symbol = symbol.upper()
+
+    # Check for exact match
+    return symbol in symbol_list or symbol.split("-")[0] in symbol_list

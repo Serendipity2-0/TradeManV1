@@ -38,7 +38,10 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     send_messsage_via_discord,
 )
-
+from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
+    check_symbol_in_list,
+    get_asm_gsm_list,
+)
 
 logger = LoggerSetup()
 LONG_RATIO = "Long_Ratio"
@@ -161,6 +164,9 @@ def main():
             setup_holdings = longterm_holdings[
                 longterm_holdings["setup"].isin([setup_name.upper()])
             ]
+
+            holdings_symbol_list = setup_holdings["trading_symbol"].tolist()
+
             current_holdings_count = len(setup_holdings)
             logger.debug(
                 f"Current holdings for user {user['Tr_No']} for Longterm for {setup_name}: {current_holdings_count}"
@@ -171,6 +177,14 @@ def main():
                 for index, symbol in enumerate(setup_symbol_list):
                     if needed_orders == 0:
                         break  # Stop processing if no more orders are needed
+
+                    if check_symbol_in_list(holdings_symbol_list, symbol):
+                        logger.debug(f"{symbol} is already in holdings, skipping")
+                        continue
+
+                    if check_symbol_in_list(get_asm_gsm_list(), symbol):
+                        logger.debug(f"{symbol} is in ASM/GSM list, skipping")
+                        continue
 
                     logger.info(f"Setup for {symbol}: {setup_name}")
                     new_base = longterm_obj.reload_strategy(strategy_name)
