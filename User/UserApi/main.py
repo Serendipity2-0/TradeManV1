@@ -237,8 +237,13 @@ def monthly_returns(
         total_items = monthly_data["total_items"]
         items = monthly_data["items"]
 
+        # Calculate pagination
+        start_index = (page - 1) * page_size
+        end_index = start_index + page_size
+        paginated_items = items[start_index:end_index]
+
         return {
-            "items": json.loads(items.to_json(orient="records")),
+            "items": paginated_items,
             "total_items": total_items,
             "page": page,
             "page_size": page_size,
@@ -270,8 +275,13 @@ def weekly_cummulative_returns(
         total_items = weekly_data["total_items"]
         items = weekly_data["items"]
 
+        # Calculate pagination
+        start_index = (page - 1) * page_size
+        end_index = start_index + page_size
+        paginated_items = items[start_index:end_index]
+
         return {
-            "items": json.loads(items.to_json(orient="records")),
+            "items": paginated_items,
             "total_items": total_items,
             "page": page,
             "page_size": page_size,
@@ -412,6 +422,14 @@ def user_broker_transactions(
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app_user.get("/user-segments")
+def get_user_segments(tr_no: str):
+    """
+    Fetches the segments of a user.
+    """
+    return app.get_user_segments(tr_no)
 
 
 @app_user.get("/users-strategy")

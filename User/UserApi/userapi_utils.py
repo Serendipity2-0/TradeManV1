@@ -141,7 +141,7 @@ def log_changes_via_webapp(updated_data, section_info=None):
         writer.writerow(log_entry)
 
 
-def get_user_segments(tr_no: str):
+def get_user_segments(tr_no: str) -> List[str]:
     """
     Fetches the segments for a user from the Firebase database.
 
@@ -151,8 +151,12 @@ def get_user_segments(tr_no: str):
     Returns:
     list: A list of segments for the user.
     """
-    user_data = fetch_collection_data_firebase(CLIENTS_COLLECTION, tr_no)
-    return list(user_data.get("Strategies", {}).keys())
+    try:
+        user_data = fetch_collection_data_firebase(CLIENTS_COLLECTION, tr_no)
+        return list(user_data.get("Strategies", {}).keys())
+    except Exception as e:
+        logger.error(f"Error fetching user segments for {tr_no}: {e}")
+        return []
 
 
 def create_portfolio_stats(db_path: str) -> Optional[pd.DataFrame]:
