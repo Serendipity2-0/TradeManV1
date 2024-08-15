@@ -9,7 +9,9 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-USER_DB_DIR = os.getenv("USR_TRADELOG_DB_FOLDER")
+
+USER_DB_DIR_EQUITY = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
+USER_DB_DIR_DERIVATIVES = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
@@ -62,19 +64,24 @@ def fetch_user_tables(user_db_conn):
 def calculate_pnl_summary():
     """
     Calculate the sum of net_pnl for day, week, month, and year for each table in user_tables,
-    and the overall sum across all strategies.
+    and the overall sum across all strategies for both Equity and Derivatives segments.
 
     Returns:
         tuple: Two DataFrames - one for strategy-wise PnL summary and one for overall PnL summary.
     """
     pnl_summary = []
-    overall_summaries = []  # List to hold overall summaries for each user
+    overall_summaries = []
     active_users = fetch_active_users_from_firebase()
+
     for user in active_users:
         user_name = user["Profile"]["Name"]
-        user_db_path = os.path.join(USER_DB_DIR, f"{user['Tr_No']}.db")
-        user_db_conn = get_db_connection(user_db_path)
-        user_tables = fetch_user_tables(user_db_conn)
+        user_segments = []
+
+        if "Equity" in user["Strategies"]:
+            user_segments.append(("Equity", USER_DB_DIR_EQUITY))
+        if "Derivatives" in user["Strategies"]:
+            user_segments.append(("Derivatives", USER_DB_DIR_DERIVATIVES))
+
         overall_summary = {
             "User": user_name,
             "Day": 0,
@@ -88,48 +95,54 @@ def calculate_pnl_summary():
         start_of_month = datetime(today.year, today.month, 1).date()
         start_of_year = datetime(today.year, 1, 1).date()
 
-        for table_dict in user_tables:
-            for strategy, table in table_dict.items():
-                if not table.empty:
-                    table["exit_time"] = pd.to_datetime(table["exit_time"]).dt.date
-                    table["net_pnl"] = pd.to_numeric(table["net_pnl"], errors="coerce")
+        for segment, db_dir in user_segments:
+            user_db_path = os.path.join(db_dir, f"{user['Tr_No']}_{segment.lower()}.db")
+            user_db_conn = get_db_connection(user_db_path)
+            user_tables = fetch_user_tables(user_db_conn)
 
-                    day_sum = table[table["exit_time"] == today]["net_pnl"].sum()
-                    week_sum = table[table["exit_time"] >= start_of_week][
-                        "net_pnl"
-                    ].sum()
-                    month_sum = table[table["exit_time"] >= start_of_month][
-                        "net_pnl"
-                    ].sum()
-                    year_sum = table[table["exit_time"] >= start_of_year][
-                        "net_pnl"
-                    ].sum()
+            for table_dict in user_tables:
+                for strategy, table in table_dict.items():
+                    if not table.empty:
+                        table["exit_time"] = pd.to_datetime(table["exit_time"]).dt.date
+                        table["net_pnl"] = pd.to_numeric(
+                            table["net_pnl"], errors="coerce"
+                        )
 
-                    pnl_summary.append(
-                        {
-                            "User": user_name,
-                            "Strategy": strategy,
-                            "Day": day_sum,
-                            "Week": week_sum,
-                            "Month": month_sum,
-                            "Year": year_sum,
-                        }
-                    )
+                        day_sum = table[table["exit_time"] == today]["net_pnl"].sum()
+                        week_sum = table[table["exit_time"] >= start_of_week][
+                            "net_pnl"
+                        ].sum()
+                        month_sum = table[table["exit_time"] >= start_of_month][
+                            "net_pnl"
+                        ].sum()
+                        year_sum = table[table["exit_time"] >= start_of_year][
+                            "net_pnl"
+                        ].sum()
 
-                    overall_summary["Day"] += day_sum
-                    overall_summary["Week"] += week_sum
-                    overall_summary["Month"] += month_sum
-                    overall_summary["Year"] += year_sum
+                        pnl_summary.append(
+                            {
+                                "User": user_name,
+                                "Segment": segment,
+                                "Strategy": strategy,
+                                "Day": day_sum,
+                                "Week": week_sum,
+                                "Month": month_sum,
+                                "Year": year_sum,
+                            }
+                        )
 
-                    overall_summary["Day"] = round(overall_summary["Day"], 2)
-                    overall_summary["Week"] = round(overall_summary["Week"], 2)
-                    overall_summary["Month"] = round(overall_summary["Month"], 2)
-                    overall_summary["Year"] = round(overall_summary["Year"], 2)
+                        overall_summary["Day"] += day_sum
+                        overall_summary["Week"] += week_sum
+                        overall_summary["Month"] += month_sum
+                        overall_summary["Year"] += year_sum
 
-        # After processing all strategies for a user, add the overall summary for that user to the list
+        overall_summary["Day"] = round(overall_summary["Day"], 2)
+        overall_summary["Week"] = round(overall_summary["Week"], 2)
+        overall_summary["Month"] = round(overall_summary["Month"], 2)
+        overall_summary["Year"] = round(overall_summary["Year"], 2)
+
         overall_summaries.append(overall_summary)
 
-    # Convert the summaries into DataFrames
     summary_df = pd.DataFrame(pnl_summary)
     overall_summary_df = pd.DataFrame(overall_summaries)
 
