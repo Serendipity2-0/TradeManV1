@@ -204,7 +204,7 @@ def daily_tradebook_validator():
         logger.debug(
             f"Validating tradebook for user: {user['Broker']['BrokerUsername']}"
         )
-        db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
+        db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}_UserTrades.db")
         conn = get_db_connection(db_path)
         strategies = user.get("Strategies", {})
 
