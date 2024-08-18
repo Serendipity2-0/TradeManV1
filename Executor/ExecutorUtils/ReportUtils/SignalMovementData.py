@@ -55,9 +55,11 @@ def calculate_sum_trade_points(table_name, conn):
     results = {"Strategy": table_name}
 
     for period_name, (start_date, end_date) in periods.items():
-        period_df = df[(df["exit_time"] >= start_date) & (df["exit_time"] < end_date)]
+        period_df = df[
+            (df["exit_time"] >= start_date) & (df["exit_time"] < end_date)
+        ].copy()
         # Check if trade_points is a string and convert to float if necessary
-        period_df["trade_points"] = period_df["trade_points"].apply(
+        period_df.loc[:, "trade_points"] = period_df["trade_points"].apply(
             lambda x: float(x) if isinstance(x, str) else x
         )
         sum_points = period_df["trade_points"].sum()
@@ -67,34 +69,55 @@ def calculate_sum_trade_points(table_name, conn):
     return results
 
 
-# Connect to the SQLite database
-db_path = os.getenv("SIGNAL_DB_PATH")
-conn = sqlite3.connect(db_path)
+def process_database(db_path):
+    """
+    Process a single database and return the calculated metrics for all tables.
 
-# Retrieve all table names
-tables_query = "SELECT name FROM sqlite_master WHERE type='table';"
-tables = pd.read_sql_query(tables_query, conn)["name"].tolist()
+    Args:
+        db_path (str): Path to the SQLite database.
 
-# Check if "Error" table exists before attempting to remove it
-if "Error" in tables:
-    tables.remove("Error")
+    Returns:
+        list: List of dictionaries containing calculated metrics for each table.
+    """
+    conn = sqlite3.connect(db_path)
 
-# Calculate metrics for each table and collect them in a list
-data_dict = [calculate_sum_trade_points(table, conn) for table in tables]
+    # Retrieve all table names
+    tables_query = "SELECT name FROM sqlite_master WHERE type='table';"
+    tables = pd.read_sql_query(tables_query, conn)["name"].tolist()
 
-# Close the database connection
-conn.close()
+    # Check if "Error" table exists before attempting to remove it
+    if "Error" in tables:
+        tables.remove("Error")
+
+    # Calculate metrics for each table and collect them in a list
+    data_dict = [calculate_sum_trade_points(table, conn) for table in tables]
+
+    conn.close()
+    return data_dict
 
 
 def main():
     """
-    Main function to create a DataFrame containing the sum of trade points for different strategies and time periods.
+    Main function to create a DataFrame containing the sum of trade points for different strategies and time periods,
+    combining data from both equity and derivatives databases.
 
     Returns:
         DataFrame: DataFrame containing the strategy name and sum of trade points for today, this week, this month, and this year.
     """
+    # Get database paths from environment variables
+    equity_db_path = os.getenv("EQUITY_SIGNAL_DB_PATH")
+    derivatives_db_path = os.getenv("DERIVATIVES_SIGNAL_DB_PATH")
+
+    # Process both databases
+    equity_data = process_database(equity_db_path)
+    derivatives_data = process_database(derivatives_db_path)
+
+    # Combine the results
+    all_data = equity_data + derivatives_data
+
     # Create DataFrame from the collected data
-    df = pd.DataFrame(data_dict)
+    df = pd.DataFrame(all_data)
+
     # Check if all required columns are present
     required_columns = ["Strategy", "Today", "Week", "Month", "Year"]
     existing_columns = [col for col in required_columns if col in df.columns]

@@ -55,7 +55,6 @@ from Executor.ExecutorUtils.ReportUtils.EodReportUtils import (
     aggregate_account_values,
 )
 
-CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
 CLIENTS_TRADE_SQL_DB_EQUITY = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
 CLIENTS_TRADE_SQL_DB_DERIVATIVES = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
@@ -146,7 +145,7 @@ def create_eod_report(active_users, active_strategies):
             # Check if user has equity account
             if "Equity" in user["Accounts"]:
                 equity_db_path = os.path.join(
-                    CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}_equity.db"
+                    CLIENTS_TRADE_SQL_DB_EQUITY, f"{user['Tr_No']}_equity.db"
                 )
                 equity_db_conn = get_db_connection(equity_db_path)
                 equity_tables = fetch_user_tables(equity_db_conn)
@@ -158,7 +157,7 @@ def create_eod_report(active_users, active_strategies):
             # Check if user has derivatives account
             if "Derivatives" in user["Accounts"]:
                 derivatives_db_path = os.path.join(
-                    CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}_derivatives.db"
+                    CLIENTS_TRADE_SQL_DB_DERIVATIVES, f"{user['Tr_No']}_derivatives.db"
                 )
                 derivatives_db_conn = get_db_connection(derivatives_db_path)
                 derivatives_tables = fetch_user_tables(derivatives_db_conn)
@@ -174,7 +173,7 @@ def create_eod_report(active_users, active_strategies):
                 "Equity": equity_account_values,
                 "Derivatives": derivatives_account_values,
             }
-            acc_values = aggregate_account_values(combined_account_values)
+            acc_values = aggregate_account_values(combined_account_values, user)
 
             # Update Firebase with separate keys for equity and derivatives
             update_account_keys_fb(user["Tr_No"], combined_account_values)
@@ -194,7 +193,7 @@ def create_eod_report(active_users, active_strategies):
                 derivatives_db_conn.close()
 
 
-def create_consolidated_report(active_users, active_strategies):
+def create_consolidated_report(active_users):
     try:
         # Page 1 data
         df_movements = fetch_market_movement_data()
@@ -229,7 +228,7 @@ def create_consolidated_report(active_users, active_strategies):
         df_user_pnl = user_pnl_movement_data()
 
         # Page 4 data
-        today_trades = get_today_trades_for_all_users(active_users, active_strategies)
+        today_trades = get_today_trades_for_all_users(active_users)
         consolidated_data = today_trades_data(active_users, today_trades)
 
         consolidated_df = pd.DataFrame(
@@ -288,8 +287,7 @@ def main():
     logger.debug("Sleeping for 10 seconds before creating consolidated report")
     sleep(10)
     latest_active_users = fetch_active_users_from_firebase()
-    latest_active_strategies = fetch_active_strategies_all_users()
-    create_consolidated_report(latest_active_users, latest_active_strategies)
+    create_consolidated_report(latest_active_users)
 
 
 if __name__ == "__main__":

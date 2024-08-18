@@ -7,6 +7,9 @@ import csv
 import numpy as np
 import re
 from collections import Counter
+from typing import Dict, Any, List, Optional
+import sqlite3
+import traceback
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -45,15 +48,15 @@ CLIENTS_COLLECTION = os.getenv("FIREBASE_USER_COLLECTION")
 PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
 STRATEGIES_FB_COLLECTION = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 MARKET_INFO_FB_COLLECTION = os.getenv("MARKET_INFO_FB_COLLECTION")
-USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
 USER_DB_EQUITY_PATH = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
 USER_DB_DERIVATIVES_PATH = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
+USER_DB_DEBT_PATH = os.getenv("USR_TRADELOG_DEBT_DB_FOLDER")
 EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
 DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 MODE_TO_DB = {
-    "Equity": ("equity", USER_DB_FOLDER_PATH),
-    "Derivatives": ("derivatives", USER_DB_FOLDER_PATH),
-    "Debt": ("debt", USER_DB_FOLDER_PATH),
+    "Equity": ("equity", USER_DB_EQUITY_PATH),
+    "Derivatives": ("derivatives", USER_DB_DERIVATIVES_PATH),
+    "Debt": ("debt", USER_DB_DEBT_PATH),
 }
 EQUITY = "Equity"
 DERIVATIVES = "Derivatives"
@@ -138,21 +141,42 @@ def log_changes_via_webapp(updated_data, section_info=None):
         writer.writerow(log_entry)
 
 
-def create_portfolio_stats(db_path):
+def get_user_segments(tr_no: str) -> List[str]:
     """
-    Fetches portfolio stats for all active users from a Firebase database.
+    Fetches the segments for a user from the Firebase database.
 
     Args:
-    db_path (str): The path to the Firebase database file.
+    tr_no (str): The user's ID.
 
     Returns:
-    pd.DataFrame: The portfolio stats data as a pandas DataFrame.
-    with the columns 'exit_time', 'trade_id', and 'net_pnl'.
+    list: A list of segments for the user.
+    """
+    try:
+        user_data = fetch_collection_data_firebase(CLIENTS_COLLECTION, tr_no)
+        return list(user_data.get("Strategies", {}).keys())
+    except Exception as e:
+        logger.error(f"Error fetching user segments for {tr_no}: {e}")
+        return []
+
+
+def create_portfolio_stats(db_path: str) -> Optional[pd.DataFrame]:
+    """
+    Fetches portfolio stats for a user from a specific database file.
+
+    Args:
+    db_path (str): The path to the database file.
+
+    Returns:
+    Optional[pd.DataFrame]: The portfolio stats data as a pandas DataFrame
+    with the columns 'exit_time', 'trade_id', 'net_pnl', and 'segment'.
+    Returns None if there's an error or no data.
     """
     try:
         dtd_data_list = []  # Use a list to collect DataFrame fragments
         conn = get_db_connection(db_path)
         table_names = get_db_table_names(conn)
+
+        segment = "equity" if "_equity.db" in db_path else "derivatives"
 
         user_strategy_table_names = [
             table for table in table_names if table in ACTIVE_STRATEGIES
@@ -164,23 +188,23 @@ def create_portfolio_stats(db_path):
             # Check if required columns exist in the table
             required_columns = ["exit_time", "trade_id", "net_pnl"]
             if all(item in data.columns for item in required_columns):
-                dtd_data_list.append(data[required_columns])
+                df = data[required_columns].copy()
+                df["segment"] = segment  # Add segment information
+                dtd_data_list.append(df)
             else:
                 missing_cols = set(required_columns) - set(data.columns)
                 logger.error(f"Missing columns {missing_cols} in table {table}")
 
         if dtd_data_list:  # Only concatenate if there are data frames in the list
-            dtd_data = pd.concat(
-                dtd_data_list, ignore_index=True
-            )  # Concatenate all DataFrame fragments
+            dtd_data = pd.concat(dtd_data_list, ignore_index=True)
             return dtd_data
         else:
             logger.error(
-                "No data frames to concatenate. Check table column consistency."
+                f"No data frames to concatenate in {db_path}. Check table column consistency."
             )
             return None
     except Exception as e:
-        logger.error(f"Error fetching portfolio stats: {e}")
+        logger.error(f"Error fetching portfolio stats from {db_path}: {e}")
         return None
 
 
@@ -206,6 +230,7 @@ def get_monthly_returns_data(
 
         user_stats["Year"] = user_stats["exit_time"].dt.year
         user_stats["Month"] = user_stats["exit_time"].dt.strftime("%B")
+        user_stats["net_pnl"] = pd.to_numeric(user_stats["net_pnl"], errors="coerce")
 
         monthly_absolute_returns = (
             user_stats.groupby(["Year", "Month"])["net_pnl"]
@@ -250,14 +275,16 @@ def get_monthly_returns_data(
         end_index = start_index + page_size
         paginated_data = monthly_absolute_returns.iloc[start_index:end_index]
 
-        return {"items": paginated_data, "total_items": total_items}
+        return {
+            "items": paginated_data.to_dict(orient="records"),
+            "total_items": total_items,
+        }
 
     except Exception as e:
         logger.error(f"Error calculating monthly returns: {e}")
+        logger.error(traceback.format_exc())
         return {
-            "items": pd.DataFrame(
-                columns=["Year", "Month", "Monthly Absolute Returns (Rs.)"]
-            ),
+            "items": [],
             "total_items": 0,
         }
 
@@ -277,13 +304,15 @@ def get_weekly_cumulative_returns_data(
     dict: A dictionary containing the paginated DataFrame of weekly cumulative returns and the total number of items.
     """
     try:
-        user_stats["Date"] = pd.to_datetime(user_stats["exit_time"])
+        user_stats["Date"] = pd.to_datetime(user_stats["exit_time"], errors="coerce")
+        user_stats = user_stats.dropna(subset=["Date"])
         user_stats["Year"] = user_stats["Date"].dt.year
         user_stats["Month"] = user_stats["Date"].dt.month
         user_stats["Week_Ending_Date"] = (
             user_stats["Date"]
             + pd.to_timedelta((5 - user_stats["Date"].dt.weekday) % 7, unit="d")
         ).dt.normalize()
+        user_stats["net_pnl"] = pd.to_numeric(user_stats["net_pnl"], errors="coerce")
 
         weekly_absolute_returns = (
             user_stats.groupby("Week_Ending_Date")
@@ -297,6 +326,7 @@ def get_weekly_cumulative_returns_data(
         weekly_absolute_returns = weekly_absolute_returns.sort_values(
             by="Week_Ending_Date"
         )
+
         weekly_absolute_returns["Week_Ending_Date"] = weekly_absolute_returns[
             "Week_Ending_Date"
         ].dt.strftime("%d%b%y")
@@ -305,6 +335,7 @@ def get_weekly_cumulative_returns_data(
             inplace=True,
         )
 
+        # Format currency after all calculations
         weekly_absolute_returns[
             "Weekly Absolute Returns (Rs.)"
         ] = weekly_absolute_returns["Weekly Absolute Returns (Rs.)"].apply(
@@ -323,19 +354,16 @@ def get_weekly_cumulative_returns_data(
         start_index = (page - 1) * page_size
         end_index = start_index + page_size
         paginated_data = weekly_absolute_returns.iloc[start_index:end_index]
-
-        return {"items": paginated_data, "total_items": total_items}
+        return {
+            "items": paginated_data.to_dict(orient="records"),
+            "total_items": total_items,
+        }
 
     except Exception as e:
         logger.error(f"Error calculating weekly returns: {e}")
+        logger.error(traceback.format_exc())
         return {
-            "items": pd.DataFrame(
-                columns=[
-                    "Week_Ending_Date",
-                    "Weekly Absolute Returns (Rs.)",
-                    "Cumulative Absolute Returns (Rs.)",
-                ]
-            ),
+            "items": [],
             "total_items": 0,
         }
 
@@ -457,6 +485,116 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
         else:
             logger.error(f"Error retrieving strategy graph data: {e}")
             raise
+    except Exception as e:
+        logger.error(f"Error retrieving strategy graph data: {e}")
+        raise
+
+
+def fetch_strategy_signals(
+    strategy_name: str, segment: str, page: int, page_size: int
+) -> Dict[str, Any]:
+    """
+    Fetches the strategy signals for a specific strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+        segment (SegmentType): The segment of the strategy ("EQUITY" or "DERIVATIVES").
+        page (int): The page number for pagination.
+        page_size (int): The number of items per page.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing the list of signals and total item count.
+
+    Raises:
+        ValueError: If an invalid segment is provided.
+        sqlite3.Error: If there's an issue with the database connection or query.
+    """
+    if segment == EQUITY:
+        signal_db_path = os.getenv("EQUITY_SIGNAL_DB_PATH")
+    elif segment == DERIVATIVES:
+        signal_db_path = os.getenv("DERIVATIVES_SIGNAL_DB_PATH")
+    else:
+        raise ValueError(f"Invalid segment: {segment}")
+
+    if not signal_db_path:
+        raise ValueError(f"Database path not found for segment: {segment}")
+
+    try:
+        conn = get_db_connection(signal_db_path)
+        with conn:
+            total_items = pd.read_sql_query(
+                f"SELECT COUNT(*) as count FROM {strategy_name}", conn
+            ).iloc[0]["count"]
+
+            offset = (page - 1) * page_size
+            data = pd.read_sql_query(
+                f"SELECT * FROM {strategy_name} LIMIT {page_size} OFFSET {offset}", conn
+            )
+
+        data = data.to_dict(orient="records")
+        return {
+            "items": data,
+            "total_items": int(total_items),
+        }
+    except sqlite3.Error as e:
+        raise sqlite3.Error(f"Database error: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+
+def signal_graph_data(strategy_name: str) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Retrieves the strategy signals graph data for a specific strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        Dict[str, List[Dict[str, Any]]]: The strategy signals graph data for the specified strategy.
+    """
+    try:
+        if strategy_name in EQUITY_STRATEGY_LIST:
+            db_path = os.getenv("EQUITY_SIGNAL_DB_PATH")
+        elif strategy_name in DERIVATIVES_STRATEGY_LIST:
+            db_path = os.getenv("DERIVATIVES_SIGNAL_DB_PATH")
+        else:
+            raise ValueError(f"Invalid strategy name: {strategy_name}")
+
+        if not db_path:
+            raise ValueError(f"Database path not found for strategy: {strategy_name}")
+
+        conn = get_db_connection(db_path)
+        try:
+            data = pd.read_sql_query(
+                f"SELECT exit_time, trade_points FROM {strategy_name}", conn
+            )
+
+            data["exit_time"] = pd.to_datetime(data["exit_time"])
+
+            # Convert DataFrame to list of dictionaries
+            combined_data = data.to_dict("records")
+
+            # Convert any numpy types to Python native types
+            for item in combined_data:
+                item["exit_time"] = item["exit_time"].isoformat()
+                if isinstance(item["trade_points"], np.number):
+                    item["trade_points"] = float(item["trade_points"])
+
+            return {"items": combined_data}
+
+        except pd.io.sql.DatabaseError as e:
+            if "no such table" in str(e):
+                logger.warning(f"No data found for strategy: {strategy_name}")
+                return {"items": []}
+            else:
+                logger.error(
+                    f"Database error while retrieving strategy graph data: {e}"
+                )
+                raise
+        finally:
+            conn.close()
+
     except Exception as e:
         logger.error(f"Error retrieving strategy graph data: {e}")
         raise
@@ -590,9 +728,9 @@ def get_broker_bank_transactions_data(
     """
     # TODO : Change the DB paths when the DBs are ready
     MODE_TO_DB = {
-        "Equity": ("Equity", USER_DB_FOLDER_PATH),
-        "Derivatives": ("Derivatives", USER_DB_FOLDER_PATH),
-        "Debt": ("Debt", USER_DB_FOLDER_PATH),
+        "Equity": ("equity", USER_DB_EQUITY_PATH),
+        "Derivatives": ("derivatives", USER_DB_DERIVATIVES_PATH),
+        "Debt": ("debt", USER_DB_DEBT_PATH),
     }
 
     try:

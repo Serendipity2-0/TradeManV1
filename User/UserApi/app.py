@@ -262,10 +262,19 @@ def get_portfolio_stats(tr_no: str):
     Returns:
     dict: The portfolio stats view.
     """
-    # Assume fetching user profile from a database
-    USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
-    users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
-    user_stats = create_portfolio_stats(users_db_path)
+
+    segments = get_user_segments(tr_no)
+    # create the db path for each segment and fetch the data from the db
+    user_stats = pd.DataFrame()
+    for segment in segments:
+        if segment == EQUITY:
+            db_path = os.path.join(USER_DB_EQUITY_PATH, f"{tr_no}_equity.db")
+        elif segment == DERIVATIVES:
+            db_path = os.path.join(USER_DB_DERIVATIVES_PATH, f"{tr_no}_derivatives.db")
+        else:
+            raise HTTPException(status_code=404, detail="Segment not found")
+        user_stats = pd.concat([user_stats, create_portfolio_stats(db_path)])
+
     # TODO: Check if latest account value is required for plotting the graph
 
     # Convert DataFrame to a list of dictionaries and ensure JSON serializable
@@ -299,9 +308,16 @@ def monthly_returns_data(tr_no: str, page: int, page_size: int):
     Returns:
     dict: The paginated monthly returns data.
     """
-    USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
-    users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
-    user_stats = create_portfolio_stats(users_db_path)
+    segments = get_user_segments(tr_no)
+    user_stats = pd.DataFrame()
+    for segment in segments:
+        if segment == EQUITY:
+            db_path = os.path.join(USER_DB_EQUITY_PATH, f"{tr_no}_equity.db")
+        elif segment == DERIVATIVES:
+            db_path = os.path.join(USER_DB_DERIVATIVES_PATH, f"{tr_no}_derivatives.db")
+        else:
+            raise HTTPException(status_code=404, detail="Segment not found")
+        user_stats = pd.concat([user_stats, create_portfolio_stats(db_path)])
     return get_monthly_returns_data(user_stats, page, page_size)
 
 
@@ -317,9 +333,17 @@ def weekly_cummulative_returns_data(tr_no: str, page: int, page_size: int):
     Returns:
     dict: The paginated weekly cummulative returns data.
     """
-    USER_DB_FOLDER_PATH = os.getenv("USR_TRADELOG_DB_FOLDER")
-    users_db_path = os.path.join(USER_DB_FOLDER_PATH, f"{tr_no}.db")
-    user_stats = create_portfolio_stats(users_db_path)
+    segments = get_user_segments(tr_no)
+    user_stats = pd.DataFrame()
+    for segment in segments:
+        if segment == EQUITY:
+            db_path = os.path.join(USER_DB_EQUITY_PATH, f"{tr_no}_equity.db")
+        elif segment == DERIVATIVES:
+            db_path = os.path.join(USER_DB_DERIVATIVES_PATH, f"{tr_no}_derivatives.db")
+        else:
+            raise HTTPException(status_code=404, detail="Segment not found")
+        user_stats = pd.concat([user_stats, create_portfolio_stats(db_path)])
+
     return get_weekly_cumulative_returns_data(user_stats, page, page_size)
 
 
@@ -382,6 +406,40 @@ def strategy_statistics(tr_no: str, strategy_name: str) -> Dict[str, Any]:
     except Exception as e:
         # Log the error here if needed
         raise e
+
+
+def get_strategy_signals(strategy_name: str, page: int, page_size: int):
+    """
+    Retrieves the strategy signals for a specific strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        dict: The strategy signals for the specified strategy.
+    """
+    try:
+        if strategy_name in EQUITY_STRATEGY_LIST:
+            return fetch_strategy_signals(strategy_name, EQUITY, page, page_size)
+        elif strategy_name in DERIVATIVES_STRATEGY_LIST:
+            return fetch_strategy_signals(strategy_name, DERIVATIVES, page, page_size)
+        else:
+            raise HTTPException(status_code=404, detail="Strategy not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def strategy_signals_graph_data(strategy_name: str):
+    """
+    Retrieves the strategy signals graph data for a specific strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+
+    Returns:
+        dict: The strategy signals graph data for the specified strategy.
+    """
+    return signal_graph_data(strategy_name)
 
 
 def broker_bank_transactions_data(tr_no: str, mode: str, from_date, to_date):

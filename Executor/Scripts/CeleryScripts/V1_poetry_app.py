@@ -214,7 +214,7 @@ def equity_entry():
 def equity_exit():
     equity_exit_logger = setup_logger(EQUITY_EXIT, f"{log_dir}/{EQUITY_EXIT}.log")
     return run_script(
-        "Executor/NSEStrategies/Derivatives/PyStocks/PyStocksStoploss.py",
+        "Executor/NSEStrategies/Equity/EquityStoploss.py",
         15,
         equity_exit_logger,
     )

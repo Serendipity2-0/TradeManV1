@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import pandas as pd
 from typing import List, Dict, Any
 from decimal import Decimal
+import ast
 
 # Define constants and load environment variables
 DIR = os.getcwd()
@@ -21,7 +22,8 @@ load_dotenv(ENV_PATH)
 
 CONSOLIDATED_REPORT_PATH = os.getenv("CONSOLIDATED_REPORT_PATH")
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-CLIENTS_TRADE_SQL_DB = os.getenv("USR_TRADELOG_DB_FOLDER")
+USER_DB_DIR_EQUITY = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
+USER_DB_DIR_DERIVATIVES = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 today_string = datetime.now().strftime("%Y-%m-%d")
 
@@ -32,7 +34,6 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
 from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import (
     send_message_to_group,
 )
-from Executor.ExecutorUtils.ExeUtils import get_previous_trading_day
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -289,34 +290,83 @@ def calculate_account_values(user, today_trades, user_tables, segment=None):
     return account_values
 
 
-def get_today_trades_for_all_users(active_users, active_strategies):
+def parse_list_from_env(env_var_name):
+    env_var = os.getenv(env_var_name)
+    if env_var is None:
+        return []
+    try:
+        return ast.literal_eval(env_var)
+    except (ValueError, SyntaxError):
+        # If parsing fails, split the string by comma
+        return [item.strip() for item in env_var.split(",")]
+
+
+def get_today_trades_for_all_users(active_users: List[Dict]):
     """
-    Get today's trades for all active users.
+    Get today's trades for all active users across Equity and Derivatives segments.
 
     Args:
-        active_users (list): List of active users.
-        active_strategies (list): List of active strategies.
+        active_users (List[Dict]): List of active users.
+        active_strategies (Dict[str, List[str]]): Dictionary of active strategies for each segment.
 
     Returns:
         list: List of today's trades for all users.
     """
+
+    DERIVATIVES_STRATEGY_LIST = parse_list_from_env("DERIVATIVES_STRATEGY_LIST")
+    EQUITY_STRATEGY_LIST = parse_list_from_env("EQUITY_STRATEGY_LIST")
+    active_strategies = {
+        "Equity": EQUITY_STRATEGY_LIST,
+        "Derivatives": DERIVATIVES_STRATEGY_LIST,
+    }
     all_today_trades = []
     for user in active_users:
         try:
-            user_db_path = os.path.join(CLIENTS_TRADE_SQL_DB, f"{user['Tr_No']}.db")
-            user_db_conn = get_db_connection(user_db_path)
-            user_tables = fetch_user_tables(user_db_conn)
+            user_trades = []
+            if "Equity" in user["Strategies"]:
+                user_trades.extend(
+                    get_segment_trades(user, "Equity", active_strategies["Equity"])
+                )
+            if "Derivatives" in user["Strategies"]:
+                user_trades.extend(
+                    get_segment_trades(
+                        user, "Derivatives", active_strategies["Derivatives"]
+                    )
+                )
 
-            today_trades = get_today_trades(user_tables, active_strategies)
-            for trade in today_trades:
-                trade["user_tr_no"] = user[
-                    "Tr_No"
-                ]  # Optionally tag each trade with the user's TR number for identification
-            all_today_trades.extend(today_trades)
+            all_today_trades.extend(user_trades)
 
         except Exception as e:
             logger.error(f"Error processing trades for user {user['Tr_No']}: {e}")
+
     return all_today_trades
+
+
+def get_segment_trades(
+    user: Dict, segment: str, active_strategies: List[str]
+) -> List[Dict]:
+    """
+    Get today's trades for a specific user and segment.
+
+    Args:
+        user (Dict): User information.
+        segment (str): "Equity" or "Derivatives".
+        active_strategies (List[str]): List of active strategies for the segment.
+
+    Returns:
+        List[Dict]: List of today's trades for the user in the specified segment.
+    """
+    db_dir = USER_DB_DIR_EQUITY if segment == "Equity" else USER_DB_DIR_DERIVATIVES
+    user_db_path = os.path.join(db_dir, f"{user['Tr_No']}_{segment.lower()}.db")
+    user_db_conn = get_db_connection(user_db_path)
+    user_tables = fetch_user_tables(user_db_conn)
+
+    today_trades = get_today_trades(user_tables, active_strategies)
+    for trade in today_trades:
+        trade["user_tr_no"] = user["Tr_No"]
+        trade["segment"] = segment
+
+    return today_trades
 
 
 def today_trades_data(
@@ -422,7 +472,7 @@ def format_pnl(amount: Decimal, base_capital: Decimal) -> str:
     return f"{format_decimal(amount)} ({format_decimal(percentage)}%)"
 
 
-def aggregate_account_values(combined_account_values):
+def aggregate_account_values(combined_account_values, user):
     equity = combined_account_values.get("Equity", {})
     derivatives = combined_account_values.get("Derivatives", {})
 
@@ -449,18 +499,8 @@ def aggregate_account_values(combined_account_values):
         else 0
     )
 
-    drawdowns = [equity.get("drawdown", 0), derivatives.get("drawdown", 0)]
-    avg_drawdown = sum(drawdowns) / len(drawdowns) if drawdowns else 0
-
-    drawdown_percentages = [
-        equity.get("drawdown_percentage", 0),
-        derivatives.get("drawdown_percentage", 0),
-    ]
-    avg_drawdown_percentage = (
-        sum(drawdown_percentages) / len(drawdown_percentages)
-        if drawdown_percentages
-        else 0
-    )
+    drawdown = total_account_value - user["Accounts"]["CurrentBaseCapital"]
+    drawdown_percentage = (drawdown / user["Accounts"]["CurrentBaseCapital"]) * 100
 
     return {
         "today_fb_format": today_fb_format,
@@ -469,8 +509,8 @@ def aggregate_account_values(combined_account_values):
         "new_account_value": total_account_value,
         "net_change": avg_net_change,
         "net_change_percentage": avg_net_change_percentage,
-        "drawdown": avg_drawdown,
-        "drawdown_percentage": avg_drawdown_percentage,
+        "drawdown": drawdown,
+        "drawdown_percentage": drawdown_percentage,
     }
 
 
