@@ -570,30 +570,39 @@ def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
         return 10.0
 
 
-def get_single_quote(kite_token=None, exchange_token=None, segment=None):
+def get_single_quote(exchange_token=None, segment=None):
     """
-    Get the last traded price (LTP) for a given kite token or exchange token using the quote method.
+    Get the quote for a given exchange token.
 
     Args:
-        kite_token (str, optional): The kite token of the instrument. Defaults to None.
         exchange_token (str, optional): The exchange token of the instrument. Defaults to None.
         segment (str, optional): The market segment of the instrument. Defaults to None.
 
     Returns:
-        float: The last traded price of the instrument from the quote method.
+        dict: The quote of the instrument.
     """
     primary_broker = os.getenv("PRIMARY_BROKER")
     kite = BrokerCenterUtils.get_primary_account_obj(primary_broker)
 
-    if exchange_token:
-        if segment:
-            kite_token = Instrument().get_kite_token_by_exchange_token(
-                exchange_token, segment
-            )
-        else:
-            kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
-        quote = kite.quote(kite_token)
-        return quote[str(kite_token)]["last_price"]
+    if segment:
+        kite_token = Instrument().get_kite_token_by_exchange_token(
+            exchange_token, segment
+        )
     else:
-        quote = kite.quote(kite_token)
-        return quote[str(kite_token)]["last_price"]
+        kite_token = Instrument().get_kite_token_by_exchange_token(exchange_token)
+    return kite.quote(kite_token)[str(kite_token)]
+
+
+def get_lower_circuit_limit(exchange_token=None, segment=None):
+    """
+    Get the lower circuit limit for a given exchange token.
+
+    Args:
+        exchange_token (str, optional): The exchange token of the instrument. Defaults to None.
+        segment (str, optional): The market segment of the instrument. Defaults to None.
+
+    Returns:
+        float: The lower circuit limit for the instrument.
+    """
+    quote = get_single_quote(exchange_token=exchange_token, segment=segment)
+    return quote["lower_circuit_limit"]
