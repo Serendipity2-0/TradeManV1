@@ -25,7 +25,7 @@ beat_schedule = {
         "schedule": crontab(hour=9, minute=30, day_of_week="1-5"),  # Monday to Friday
     },
     "run_equity_stoploss_every_day_at_935am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.equity_stoploss",
+        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.equity_exit",
         "schedule": crontab(hour=9, minute=35, day_of_week="1-5"),  # Monday to Friday
     },
     "run_sweep_orders_every_day_at_313pm": {

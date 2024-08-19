@@ -10,6 +10,7 @@ from collections import Counter
 from typing import Dict, Any, List, Optional
 import sqlite3
 import traceback
+import ast
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -73,6 +74,22 @@ def all_users_data():
     """
     users_data = fetch_collection_data_firebase(CLIENTS_COLLECTION)
     return users_data
+
+
+def parse_env_list(env_value):
+    """
+    Parses a list from a string in the .env file.
+
+    Args:
+    env_value (str): The string to be parsed.
+
+    Returns:
+    list: A list of strings.
+    """
+    try:
+        return ast.literal_eval(env_value)
+    except (ValueError, SyntaxError):
+        return []  # Return an empty list if parsing fails
 
 
 def get_next_trader_number():

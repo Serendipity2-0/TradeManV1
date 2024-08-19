@@ -20,6 +20,7 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
     get_single_ltp,
     Instrument,
+    get_lower_circuit_limit,
 )
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.NSEStrategies.Equity.EquityStopLoss.EquityStopLossUtils import (
@@ -28,6 +29,9 @@ from Executor.NSEStrategies.Equity.EquityStopLoss.EquityStopLossUtils import (
 from Executor.NSEStrategies.NSEStrategiesUtil import (
     assign_trade_id,
     place_order_single_user,
+)
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    send_messsage_via_discord,
 )
 from Executor.NSEStrategies.Equity.ShortTerm.ShortTerm import shortterm_obj
 from Executor.NSEStrategies.Equity.MidTerm.MidTerm import midterm_obj
@@ -83,9 +87,18 @@ def process_holdings(strategy_obj, holdings, user):
         symbol = row["trading_symbol"]
         exchange_token = Instrument().get_exchange_token_by_name(symbol, "NSE")
         ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+        lower_circuit_limit = get_lower_circuit_limit(
+            exchange_token=exchange_token, segment="NSE"
+        )
         buy_price = float(row["entry_price"])
         setup_name = row["setup"]
         sl = calculate_sl(setup_name, buy_price, risk_per_trade, ltp)
+        if sl < lower_circuit_limit:
+            message = f"{symbol} Lower circuit :{round(lower_circuit_limit, 2)} SL:{round(sl, 2)} user:{user['Tr_No']}"
+            send_messsage_via_discord(message, strategy_name)
+            logger.info("SL is less than lower circuit limit, skipping the trade.")
+            continue
+
         trade_id = row["trade_id"].split("_")[0]
 
         logger.debug("LTP", ltp, "Buy Price", buy_price, "SL", sl)
