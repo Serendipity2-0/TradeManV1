@@ -759,6 +759,17 @@ def get_strategy_list():
         )
 
 
+@app_admin.get("/complete-strategy-list")
+def get_complete_strategy_list():
+    """
+    Fetches the list of strategies from the database.
+
+    Returns:
+        list: A list of strategy names.
+    """
+    return app.get_complete_strategy_list()
+
+
 @app_admin.get("/user-details-username")
 def get_user_details_by_username(username: str):
     """
