@@ -39,8 +39,7 @@ from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     send_messsage_via_discord,
 )
 from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
-    check_symbol_in_list,
-    get_asm_gsm_list,
+    check_symbol_for_erros,
 )
 
 logger = LoggerSetup()
@@ -178,14 +177,6 @@ def main():
                     if needed_orders == 0:
                         break  # Stop processing if no more orders are needed
 
-                    if check_symbol_in_list(holdings_symbol_list, symbol):
-                        logger.debug(f"{symbol} is already in holdings, skipping")
-                        continue
-
-                    if check_symbol_in_list(get_asm_gsm_list(), symbol):
-                        logger.debug(f"{symbol} is in ASM/GSM list, skipping")
-                        continue
-
                     logger.info(f"Setup for {symbol}: {setup_name}")
                     new_base = longterm_obj.reload_strategy(strategy_name)
                     if symbol not in trade_id_mapping:
@@ -196,6 +187,13 @@ def main():
                     exchange_token = instrument_obj().get_exchange_token_by_name(
                         symbol, "NSE"
                     )
+
+                    if not check_symbol_for_erros(
+                        symbol, exchange_token, holdings_symbol_list
+                    ):
+                        logger.error(f"Symbol {symbol} has errors, skipping")
+                        continue
+
                     ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
                     ltp = round(ltp * 20) / 20
                     order_details = [

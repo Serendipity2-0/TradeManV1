@@ -15,7 +15,7 @@ sys.path.append(DIR)
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup  # noqa: E402
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
 SHORT_MOMENTUM = "Short_Momentum"
@@ -671,12 +671,16 @@ def calculate_ema(data, window):
 
 
 def get_asm_gsm_list():
-    dir = os.getenv("ASM_GSM_LIST_DIR")
-    today = dt.datetime.now().strftime("%Y-%m-%d")
-    asm_gsm_list_path = os.path.join(dir, f"merged_asm_gsm_{today}.csv")
-    asm_gsm_list = pd.read_csv(asm_gsm_list_path)
-    symbol_list = asm_gsm_list["SYMBOL"].tolist()
-    return symbol_list
+    try:
+        dir = os.getenv("ASM_GSM_LIST_DIR")
+        today = dt.datetime.now().strftime("%Y-%m-%d")
+        asm_gsm_list_path = os.path.join(dir, f"merged_asm_gsm_{today}.csv")
+        asm_gsm_list = pd.read_csv(asm_gsm_list_path)
+        symbol_list = asm_gsm_list["SYMBOL"].tolist()
+        return symbol_list
+    except Exception as e:
+        logger.error(f"Error while getting ASM/GSM list: {e}")
+        return []
 
 
 def check_symbol_in_list(symbol_list, symbol):
@@ -686,3 +690,20 @@ def check_symbol_in_list(symbol_list, symbol):
 
     # Check for exact match
     return symbol in symbol_list or symbol.split("-")[0] in symbol_list
+
+
+def check_symbol_for_erros(symbol, exchange_token, holdings_symbol_list=None):
+    try:
+        if check_symbol_in_list(holdings_symbol_list, symbol):
+            logger.debug(f"{symbol} is already in holdings, skipping")
+            return False
+        if check_symbol_in_list(get_asm_gsm_list(), symbol):
+            logger.debug(f"{symbol} is in ASM/GSM list, skipping")
+            return False
+        if exchange_token is None:
+            logger.error(f"Exchange token not found for {symbol}")
+            return False
+        return True
+    except Exception as e:
+        logger.error(f"Error while checking symbol for errors: {e}")
+        return False
