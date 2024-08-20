@@ -24,6 +24,7 @@ from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     create_counter_order_details,
     create_hedge_counter_order_details,
     get_today_open_orders_for_brokers,
+    cancel_normal_orders,
 )
 import Executor.ExecutorUtils.OrderCenter.OrderCenterUtils as OrderCenterUtils
 
@@ -47,6 +48,7 @@ def sweep_sl_order():
     for user in active_users:
         try:
             tradebook = get_today_orders_for_brokers(user)
+            cancel_normal_orders(tradebook, user)
             counter_order_detail = create_counter_order_details(tradebook, user)
             if counter_order_detail:
                 logger.debug(

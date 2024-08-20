@@ -609,6 +609,43 @@ def create_counter_order_details(tradebook, user):
         return []
 
 
+def cancel_normal_orders(tradebook, user):
+    """
+    Cancels normal orders based on the tradebook and user details.
+
+    Args:
+        tradebook (list): List of trades.
+        user (dict): User account details.
+
+    Returns:
+        list: List of canceled orders.
+    """
+    try:
+        if not tradebook:
+            logger.warning(
+                f"Tradebook is empty for user {user['Broker']['BrokerUsername']}"
+            )
+            return []
+        for trade in tradebook:
+            if user["Broker"]["BrokerName"] == ZERODHA:
+                if trade["status"] == "TRIGGER PENDING" and trade["product"] == "NRML":
+                    zerodha_adapter.kite_create_cancel_order(trade, user)
+            if user["Broker"]["BrokerName"] == ALICEBLUE:
+                if trade["Status"] == "trigger pending" and trade["Pcode"] == "NRML":
+                    alice_adapter.ant_create_cancel_orders(trade, user)
+            if user["Broker"]["BrokerName"] == FIRSTOCK:
+                if trade["status"] == "TRIGGER_PENDING" and trade["product"] == "C":
+                    print("going to cancel")
+
+                    firstock_adapter.firstock_create_cancel_order(trade, user)
+    except Exception as e:
+        logger.error(
+            f"Error while cancelling normal orders for {user['Broker']['BrokerName']} for user {user['Broker']['BrokerUsername']}: {e}"
+        )
+        logger.error(traceback.format_exc())
+        return []
+
+
 def create_hedge_counter_order_details(tradebook, user, open_orders):
     """
     Creates hedge counter order details based on the tradebook, user details, and open orders.

@@ -1067,16 +1067,7 @@ def calculate_active_users_data():
             derivatives = accounts.get("Derivatives", {})
             portfolio = accounts.get("Portfolio", {})
 
-            equity_holdings = equity.get("Equity_Holdings", 0)
-            debt_holdings = debt.get("Debt_Holdings", 0)
-            derivatives_holdings = derivatives.get("Derivatives_Holdings", 0)
-            portfolio_holdings = portfolio.get("Portfolio_Holdings", 0)
-            total_holdings = (
-                equity_holdings
-                + debt_holdings
-                + derivatives_holdings
-                + portfolio_holdings
-            )
+            total_holdings = portfolio.get("Portfolio_Holdings", 0)
 
             user_row = {
                 "Tr_no": tr_no,
