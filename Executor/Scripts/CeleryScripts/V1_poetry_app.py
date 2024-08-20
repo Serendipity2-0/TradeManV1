@@ -174,6 +174,7 @@ def good_morning_scripts():
         "Executor/Scripts/1_GoodMorning/1_Login/DailyLogin.py",
         "Executor/Scripts/1_GoodMorning/4_DailyInstrumentAggregator/DailyInstrumentAggregator.py",
         "Executor/Scripts/1_GoodMorning/4_DailyInstrumentAggregator/DailyEquityCalc.py",
+        "Executor/Scripts/1_GoodMorning/6_AsmGsmAggregator/AsmGsmAggregator.py",
     ]
     return run_multiple_scripts(scripts, good_morning_logger)
 
