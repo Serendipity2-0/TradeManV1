@@ -628,6 +628,8 @@ def calculate_strategy_statistics(df: pd.DataFrame, is_signals: bool):
     Returns:
     Dict: Calculated strategy statistics.
     """
+    if df.empty:
+        return None
     column_for_calc = "trade_points" if is_signals else "net_pnl"
 
     # Basic calculations
