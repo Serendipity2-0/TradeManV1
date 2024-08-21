@@ -6,6 +6,7 @@ import yfinance as yf
 from dotenv import load_dotenv
 import numpy as np
 import datetime as dt
+from time import sleep
 
 # Add current directory to system path
 DIR = os.getcwd()
@@ -16,6 +17,14 @@ ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+from Executor.ExecutorUtils.ExeUtils import holidays
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    send_messsage_via_discord,
+)
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
+    Instrument as instrument_obj,
+    get_single_ltp,
+)
 
 logger = LoggerSetup()
 SHORT_MOMENTUM = "Short_Momentum"
@@ -671,6 +680,12 @@ def calculate_ema(data, window):
 
 
 def get_asm_gsm_list():
+    """
+    Get the ASM/GSM list from the database.
+
+    Returns:
+        list: The ASM/GSM list.
+    """
     try:
         dir = os.getenv("ASM_GSM_LIST_DIR")
         today = dt.datetime.now().strftime("%Y-%m-%d")
@@ -684,26 +699,138 @@ def get_asm_gsm_list():
 
 
 def check_symbol_in_list(symbol_list, symbol):
-    # Convert everything to uppercase for case-insensitive comparison
+    """
+    Check if the symbol is in the list.
+
+    Args:
+        symbol_list (list): The list of symbols.
+        symbol (str): The symbol to check.
+
+    Returns:
+        bool: True if the symbol is in the list, False otherwise.
+    """
     symbol_list = [s.upper() for s in symbol_list]
     symbol = symbol.upper()
 
-    # Check for exact match
     return symbol in symbol_list or symbol.split("-")[0] in symbol_list
 
 
 def check_symbol_for_erros(symbol, exchange_token, holdings_symbol_list=None):
+    """
+    Check if the symbol is in the list.
+
+    Args:
+        symbol_list (list): The list of symbols.
+        symbol (str): The symbol to check.
+
+    Returns:
+        bool: True if the symbol is in the list, False otherwise.
+    """
     try:
-        if check_symbol_in_list(holdings_symbol_list, symbol):
-            logger.debug(f"{symbol} is already in holdings, skipping")
-            return False
+        if holdings_symbol_list is not None:
+            if check_symbol_in_list(holdings_symbol_list, symbol):
+                logger.debug(f"{symbol} is already in holdings, skipping")
+                return False
         if check_symbol_in_list(get_asm_gsm_list(), symbol):
             logger.debug(f"{symbol} is in ASM/GSM list, skipping")
             return False
         if exchange_token is None:
-            logger.error(f"Exchange token not found for {symbol}")
+            logger.debug(f"Exchange token not found for {symbol}, skipping")
             return False
         return True
     except Exception as e:
         logger.error(f"Error while checking symbol for errors: {e}")
         return False
+
+
+def is_today_holiday():
+    """
+    Check if today is a holiday.
+
+    Returns:
+        bool: True if today is a holiday, False otherwise.
+    """
+    now = dt.datetime.now()
+    return now.date() in holidays
+
+
+def should_wait_for_start_time(desired_start_time_str):
+    """
+    Check if the current time is before the desired start time.
+
+    Args:
+        desired_start_time_str (str): The desired start time in the format "HH:MM".
+
+    Returns:
+        bool: True if the current time is before the desired start time, False otherwise.
+    """
+    now = dt.datetime.now()
+    start_hour, start_minute, _ = map(int, desired_start_time_str.split(":"))
+    if now.time() < dt.time(9, 0):
+        logger.info("Time is before 9:00 AM, Waiting to execute.")
+        return True
+    wait_time = (
+        dt.datetime(now.year, now.month, now.day, start_hour, start_minute) - now
+    )
+    if wait_time.total_seconds() > 0:
+        logger.info(f"Waiting for {wait_time} before starting the bot")
+        sleep(wait_time.total_seconds())
+        return True
+    return False
+
+
+def get_selected_stocks(strategy_name, today_stocks_df):
+    """
+    Get the selected stocks for the strategy.
+
+    Args:
+        strategy_name (str): The name of the strategy.
+        today_stocks_df (DataFrame): The DataFrame of today's stocks.
+
+    Returns:
+        tuple: A tuple containing the symbol list and the strategy setups.
+    """
+    symbol_list = today_stocks_df["Symbol"].tolist()
+    strategy_prefix = strategy_name[:-4]
+    strategy_setups = [
+        col for col in today_stocks_df.columns if col.startswith(f"{strategy_prefix}_")
+    ]
+    logger.warning(f"Selected stocks for {strategy_name}: {strategy_setups}")
+    return symbol_list, strategy_setups
+
+
+def send_signals_via_discord(setup_symbol_list, setup_name, strategy_name, TRADE_MODE):
+    """
+    Send the signals via Discord.
+
+    Args:
+        setup_symbol_list (list): The list of symbols.
+        setup_name (str): The name of the setup.
+        strategy_name (str): The name of the strategy.
+        TRADE_MODE (str): The trade mode.
+
+    Returns:
+        None
+    """
+    valid_count = 0  # Counter for valid messages sent
+    for symbol in setup_symbol_list:
+        exchange_token = instrument_obj().get_exchange_token_by_name(symbol, "NSE")
+        if not check_symbol_for_erros(symbol, exchange_token):
+            continue  # Skip sending a message if the symbol has errors
+
+        ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+        ltp = round(ltp * 20) / 20  # Adjust the LTP by rounding to the nearest 0.05
+        message = (
+            f"{TRADE_MODE} Trade for {strategy_name}\n"
+            f"Setup : {setup_name}\n"
+            f"Symbol : {symbol}\n"
+            f"Ltp : {ltp} \n"
+        )
+        send_messsage_via_discord(message, strategy_name)
+        valid_count += 1
+        if valid_count >= 3:
+            break
+
+    if valid_count < 3:
+        additional_message = f"{valid_count} stocks were selected for {setup_name}."
+        send_messsage_via_discord(additional_message, strategy_name)
