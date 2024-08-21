@@ -223,18 +223,22 @@ def get_user_profile(tr_no: str):
         tr_no (str): The trader number of the user.
 
     Returns:
-        schemas.LoginUserDetails: An object containing the user's name, email, and phone number.
+        dict: A dictionary containing the user's profile data, including personal and trading information.
 
     Raises:
         KeyError: If the user with the given trader number is not found.
     """
-    # Assume fetching user profile from a database
+    # Assume fetching user profile from a database represented as a dictionary
     users_data = all_users_data()
-    for user_id, user in users_data.items():
-        if user["Tr_No"] == tr_no:
+
+    for user_key, user in users_data.items():
+        # Check if the trader number matches the one provided
+        if user_key == tr_no:
+            segments = list(user["Strategies"].keys())
             strategies = []
-            for strategy_name, strategy_data in user["Strategies"].items():
-                strategies.append(strategy_name)
+            for segment in segments:
+                strategies.extend(list(user["Strategies"][segment].keys()))
+            # Constructing the user's profile data
             profile_data = {
                 "Name": user["Profile"]["Name"],
                 "Email": user["Profile"]["Email"],
@@ -248,8 +252,9 @@ def get_user_profile(tr_no: str):
                 "Strategies": strategies,
             }
             return profile_data
-        else:
-            raise KeyError("User not found")
+
+    # If no user is found after iterating through all entries, raise KeyError
+    raise KeyError(f"User with trader number {tr_no} not found")
 
 
 def get_portfolio_stats(tr_no: str):
