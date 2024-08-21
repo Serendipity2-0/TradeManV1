@@ -369,7 +369,10 @@ def get_strategy_statistics(tr_no: str, strategy_name: str):
         statistics = app.strategy_statistics(tr_no, strategy_name)
 
         if statistics is None:
-            raise HTTPException(status_code=404, detail="Strategy not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"No data found for Strategy {strategy_name} for {tr_no}",
+            )
 
         return statistics
 
