@@ -258,7 +258,7 @@ def get_order_status(user_id, order_id):
         )
         for order in singleOrderHistory.get("data"):
             if order.get("status") == "REJECTED":
-                return "FAIL"
+                return order.get("rejectReason")
             elif (
                 order.get("status") == "COMPLETE"
                 or order.get("status") == "TRIGGER_PENDING"
