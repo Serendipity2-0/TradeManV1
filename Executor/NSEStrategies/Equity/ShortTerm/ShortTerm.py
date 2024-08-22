@@ -151,14 +151,21 @@ def manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_na
     """
     from Executor.NSEStrategies.Equity.Equity import signals_to_fb
 
-    shortterm_holdings = holdings[holdings["trade_id"].str.startswith(shortterm_prefix)]
-    setup_holdings = shortterm_holdings[
-        shortterm_holdings["setup"].isin([setup_name.upper()])
-    ]
+    if holdings.empty:
+        logger.error(f"No holdings found for user {user['Tr_No']} for {setup_name}")
+        current_holdings_count = 0
+        holdings_symbol_list = []
+    else:
+        shortterm_holdings = holdings[
+            holdings["trade_id"].str.startswith(shortterm_prefix)
+        ]
+        setup_holdings = shortterm_holdings[
+            shortterm_holdings["setup"].isin([setup_name.upper()])
+        ]
 
-    holdings_symbol_list = setup_holdings["trading_symbol"].tolist()
-    current_holdings_count = len(setup_holdings)
-    logger.warning(setup_symbol_list)
+        holdings_symbol_list = setup_holdings["trading_symbol"].tolist()
+        current_holdings_count = len(setup_holdings)
+        logger.warning(setup_symbol_list)
     logger.debug(
         f"Current holdings for user {user['Tr_No']} for Shortterm for {setup_name}: {current_holdings_count}"
     )
@@ -186,7 +193,7 @@ def manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_na
             ltp = round(ltp * 20) / 20
             order_details = [
                 {
-                    "strategy": setup_name.upper(),
+                    "strategy": strategy_name,
                     "signal": "Long",
                     "base_symbol": symbol,
                     "exchange_token": exchange_token,
@@ -204,7 +211,7 @@ def manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_na
             qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
             strategy_amplifier = fetch_strategy_amplifier(strategy_name)
             update_qty_user_firebase(
-                strategy_name=strategy_name,
+                strategy_name=setup_name.upper(),
                 avg_sl_points_or_ltp=ltp,
                 qty_amplifier=qty_amplifier,
                 strategy_amplifier=strategy_amplifier,
@@ -215,21 +222,37 @@ def manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_na
             signals_to_fb(strategy_name, order_to_place, trade_id)
             updated_user = fetch_user_json_from_firebase(user["Tr_No"])
             order_status = place_order_single_user([updated_user], order_to_place)
-            logger.debug(f"Orders placed for {symbol}: {order_to_place}")
-
-            if TRADE_MODE != "PAPER":
-                if user["Tr_No"] == os.getenv("ZERODHA_PRIMARY_ACCOUNT") and any(
-                    order["order_status"] == "FAIL" for order in order_status
-                ):
-                    # Reassign the trade ID to the next symbol if there is one
-                    if index + 1 < len(setup_symbol_list):
+            for order_detail in order_status:
+                if "PASS" in order_detail["order_status"]:
+                    logger.debug(
+                        f"Order placed successfully for {symbol}: {order_detail}"
+                    )
+                    if TRADE_MODE != "PAPER":
+                        needed_orders -= 1  # Successfully placed order, decrease needed orders in live mode
+                elif "ASM/GSM" in order_detail["order_status"]:
+                    # Handle ASM/GSM block, reassign the trade ID if more symbols are available
+                    logger.debug(f"ASM/GSM issue with {symbol}")
+                    if TRADE_MODE != "PAPER" and index + 1 < len(setup_symbol_list):
                         next_symbol = setup_symbol_list[index + 1]
                         trade_id_mapping[next_symbol] = trade_id
                         logger.debug(
                             f"Trade ID {trade_id} reassigned from {symbol} to {next_symbol}"
                         )
-
-            needed_orders -= 1
+                    elif TRADE_MODE == "PAPER":
+                        logger.debug(
+                            f"ASM/GSM issue with {symbol} in PAPER mode; no trade ID reassignment."
+                        )
+                    else:
+                        logger.error(
+                            f"No more symbols to reassign trade ID {trade_id} after ASM/GSM issue with {symbol}"
+                        )
+                else:
+                    # For other failures, treat like a success to continue the flow
+                    logger.warning(
+                        f"Order failed for {symbol} but continuing: {order_detail['order_status']}"
+                    )
+                    if TRADE_MODE != "PAPER":
+                        needed_orders -= 1  # Decrement needed orders as this is treated similar to a success in live mode
 
         logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 3")
 
