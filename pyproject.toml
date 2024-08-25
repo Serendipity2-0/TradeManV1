@@ -22,7 +22,7 @@ python-dotenv = "^1.0.1"
 pendulum = "^3.0.0"
 pandas = "^1.5.3"
 reportlab = "^3.6.0"
-fastapi = "^0.99.0"
+fastapi = "^0.112.2"
 openpyxl = "^3.1.2"
 
 [build-system]
