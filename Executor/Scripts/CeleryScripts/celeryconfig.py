@@ -16,10 +16,10 @@ beat_schedule = {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.good_morning_scripts",
         "schedule": crontab(hour=8, minute=30, day_of_week="1-6"),  # Monday to saturday
     },
-    "run_fast_api_server_every_day_at_001am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.fast_api_server",
-        "schedule": crontab(hour=0, minute=1, day_of_week="*"),  # every day
-    },
+    # "run_fast_api_server_every_day_at_001am": {
+    #     "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.fast_api_server",
+    #     "schedule": crontab(hour=0, minute=1, day_of_week="*"),  # every day
+    # },
     "run_equity_entry_every_day_at_930am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.equity_entry",
         "schedule": crontab(hour=9, minute=30, day_of_week="1-5"),  # Monday to Friday

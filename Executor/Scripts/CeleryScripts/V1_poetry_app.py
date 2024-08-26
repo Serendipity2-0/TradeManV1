@@ -179,15 +179,15 @@ def good_morning_scripts():
     return run_multiple_scripts(scripts, good_morning_logger)
 
 
-@app.task(bind=True)
-def fast_api_server(self):
-    fast_api_server_logger = setup_logger(
-        "fast_api_server", f"{log_dir}/fast_api_server.log"
-    )
-    task_id = self.request.id
-    redis_client.set("fast_api_server_task_id", task_id)
-    while True:
-        return run_script("User/UserApi/main.py", 17, fast_api_server_logger)
+# @app.task(bind=True)
+# def fast_api_server(self):
+#     fast_api_server_logger = setup_logger(
+#         "fast_api_server", f"{log_dir}/fast_api_server.log"
+#     )
+#     task_id = self.request.id
+#     redis_client.set("fast_api_server_task_id", task_id)
+#     while True:
+#         return run_script("User/UserApi/main.py", 17, fast_api_server_logger)
 
 
 @app.task(bind=True)
