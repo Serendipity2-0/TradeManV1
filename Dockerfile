@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     git \
+    libmagic1 \
     libffi-dev \
     libssl-dev \
     libxml2-dev \
