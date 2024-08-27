@@ -26,6 +26,9 @@ fastapi = "^0.112.2"
 openpyxl = "^3.1.2"
 
 uvicorn = "^0.30.6"
+celery = "5.4.0"
+gunicorn = "^23.0.0"
+psycopg2 = "^2.9.9"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
