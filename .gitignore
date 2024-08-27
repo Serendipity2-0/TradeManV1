@@ -10,7 +10,6 @@ trademan.env
 *.wav
 trail.py
 *.session
-*.sh
 *.pdf
 *.yaml
 .devcontainer/
