@@ -84,6 +84,7 @@ def store_accounts_data(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Accounts"] = data
+    logger.info(f"User details: {user_data_collection[user_id]}")
     return user_data_collection[user_id]
 
 
@@ -98,6 +99,7 @@ def store_profile_data(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Profile"] = data
+    logger.info(f"User details: {user_data_collection[user_id]}")
     return user_data_collection[user_id]
 
 
@@ -112,6 +114,7 @@ def store_broker_data(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Broker"] = data
+    logger.info(f"User details: {user_data_collection[user_id]}")
     return user_data_collection[user_id]
 
 
@@ -126,6 +129,7 @@ def store_strategies_data(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Strategies"] = data
+    logger.info(f"User details: {user_data_collection[user_id]}")
     return user_data_collection[user_id]
 
 
@@ -140,6 +144,7 @@ def update_tr_no(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Tr_No"] = data
+    logger.info(f"User details: {user_data_collection[user_id]}")
     return user_data_collection[user_id]
 
 
@@ -154,6 +159,7 @@ def store_active_status(user_id, data):
     if user_id not in user_data_collection:
         user_data_collection[user_id] = {}
     user_data_collection[user_id]["Active"] = data
+    logger.info(f"User details: {user_data_collection[user_id]}")
     return user_data_collection[user_id]
 
 
@@ -173,6 +179,7 @@ def merge_and_register_user(user_id):
         )  # Retrieve and remove from temporary storage
         try:
             # Assuming register_user is a function that takes the complete user details and saves them to the DB
+            logger.info(f"User details: {user_detail}")
             response = register_user(user_detail)
             return {"message": "User registered successfully", "details": response}
         except Exception as e:
