@@ -1093,6 +1093,20 @@ def fetch_today_order(strategy_name: str):
         return {"message": "Today's orders not processed yet!"}
 
 
+def fetch_all_instruments():
+    """
+    Fetch all instruments from the database.
+    """
+    return fetch_list_of_nse_instruments()
+
+
+def fetch_trading_symbol_by_name(name: str):
+    """
+    Fetch the trading symbol by name.
+    """
+    return fetch_tradingsymbol_by_name(name)
+
+
 def place_complete_order(
     strategy_name: str,
     users: list,

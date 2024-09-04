@@ -39,6 +39,7 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_order_mode,
     get_transaction_type,
 )
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
 logger = LoggerSetup()
 
@@ -912,6 +913,22 @@ def fetch_segment_from_strategy(strategy_name: str):
         return DERIVATIVES
     else:
         return None
+
+
+def fetch_list_of_nse_instruments():
+    """
+    Fetch the list of NSE instruments.
+    """
+    instruments = Instrument().fetch_complete_instruments_by_segment("NSE")
+    return instruments
+
+
+def fetch_tradingsymbol_by_name(name: str):
+    """
+    Fetch the trading symbol by name.
+    """
+    trading_symbol = Instrument().fetch_trading_symbol_by_name(name)
+    return trading_symbol
 
 
 def update_strategy_qty(

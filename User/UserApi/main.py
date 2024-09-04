@@ -977,6 +977,44 @@ def fetch_complete_order_symbols(strategy_name: str):
         )
 
 
+@app_admin.get("/fetch-nse-instruments")
+def fetch_nse_instruments(
+    search_term: str = Query(None, description="Search term for filtering instruments")
+):
+    """
+    Fetch instruments from the database, optionally filtered by a search term.
+    """
+    try:
+        all_instruments = app.fetch_list_of_nse_instruments()
+        print(search_term)
+        if search_term:
+            filtered_instruments = [
+                instrument
+                for instrument in all_instruments
+                if search_term.upper() in instrument.upper()
+            ]
+            return filtered_instruments
+        else:
+            return all_instruments
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching instruments: {str(e)}"
+        )
+
+
+@app_admin.get("/fetch-trading-symbol-by-name")
+def fetch_trading_symbol_by_name(name: str):
+    """
+    Fetch the trading symbol by name.
+    """
+    try:
+        return app.fetch_tradingsymbol_by_name(name)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching trading symbol by name: {str(e)}"
+        )
+
+
 @app_admin.post("/place-complete-order")
 def place_complete_order(complete_order_input: schemas.CompleteOrderInput):
     """_summary_
