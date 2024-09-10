@@ -11,9 +11,9 @@ from typing import Optional, Dict, Any, List
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-import User.UserApi.schemas as schemas
-import User.UserApi.app as app
-from User.UserApi.userapi_utils import get_next_trader_number
+import schemas
+import app
+from .userapi_utils import get_next_trader_number
 
 """
 This is the main API for the user application.

@@ -12,12 +12,6 @@ import sqlite3
 import traceback
 import ast
 
-DIR_PATH = os.getcwd()
-sys.path.append(DIR_PATH)
-
-ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
-load_dotenv(ENV_PATH)
-
 
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
@@ -40,20 +34,25 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_transaction_type,
 )
 
+from .config import settings
+
 logger = LoggerSetup()
+
+DIR_PATH = os.getcwd()
+sys.path.append(DIR_PATH)
 
 
 ACTIVE_STRATEGIES = fetch_active_strategies_all_users()
-ADMIN_DB = os.getenv("FIREBASE_ADMIN_COLLECTION")
-CLIENTS_COLLECTION = os.getenv("FIREBASE_USER_COLLECTION")
-PARAMS_UPDATE_LOG_CSV_PATH = os.getenv("PARAMS_UPDATE_LOG_CSV_PATH")
-STRATEGIES_FB_COLLECTION = os.getenv("FIREBASE_STRATEGY_COLLECTION")
-MARKET_INFO_FB_COLLECTION = os.getenv("MARKET_INFO_FB_COLLECTION")
-USER_DB_EQUITY_PATH = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
-USER_DB_DERIVATIVES_PATH = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
-USER_DB_DEBT_PATH = os.getenv("USR_TRADELOG_DEBT_DB_FOLDER")
-EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
-DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+ADMIN_DB = settings.FIREBASE_ADMIN_COLLECTION
+CLIENTS_COLLECTION = settings.FIREBASE_USER_COLLECTION
+PARAMS_UPDATE_LOG_CSV_PATH = settings.PARAMS_UPDATE_LOG_CSV_PATH
+STRATEGIES_FB_COLLECTION = settings.FIREBASE_STRATEGY_COLLECTION
+MARKET_INFO_FB_COLLECTION = settings.MARKET_INFO_FB_COLLECTION
+USER_DB_EQUITY_PATH = settings.USR_TRADELOG_EQUITY_DB_FOLDER
+USER_DB_DERIVATIVES_PATH = settings.USR_TRADELOG_DERIVATIVES_DB_FOLDER
+USER_DB_DEBT_PATH = settings.USR_TRADELOG_DEBT_DB_FOLDER
+EQUITY_STRATEGY_LIST = settings.EQUITY_STRATEGY_LIST
+DERIVATIVES_STRATEGY_LIST = settings.DERIVATIVES_STRATEGY_LIST
 MODE_TO_DB = {
     "Equity": ("equity", USER_DB_EQUITY_PATH),
     "Derivatives": ("derivatives", USER_DB_DERIVATIVES_PATH),
@@ -61,8 +60,8 @@ MODE_TO_DB = {
 }
 EQUITY = "Equity"
 DERIVATIVES = "Derivatives"
-ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
-ERROR_LOG_CSV_PATH = os.getenv("ERROR_LOG_CSV_PATH")
+ERROR_LOG_PATH = settings.ERROR_LOG_PATH
+ERROR_LOG_CSV_PATH = settings.ERROR_LOG_CSV_PATH
 
 
 def all_users_data():
@@ -256,10 +255,10 @@ def get_monthly_returns_data(
             .rename(columns={"net_pnl": "Monthly Absolute Returns (Rs.)"})
         )
 
-        monthly_absolute_returns[
-            "Monthly Absolute Returns (Rs.)"
-        ] = monthly_absolute_returns["Monthly Absolute Returns (Rs.)"].apply(
-            lambda x: format_currency(x, "INR", locale="en_IN")
+        monthly_absolute_returns["Monthly Absolute Returns (Rs.)"] = (
+            monthly_absolute_returns["Monthly Absolute Returns (Rs.)"].apply(
+                lambda x: format_currency(x, "INR", locale="en_IN")
+            )
         )
 
         # Sort the DataFrame by Year and Month
@@ -337,9 +336,9 @@ def get_weekly_cumulative_returns_data(
             .reset_index()
         )
 
-        weekly_absolute_returns[
-            "Cumulative Absolute Returns (Rs.)"
-        ] = weekly_absolute_returns["Weekly_Absolute_Returns"].cumsum()
+        weekly_absolute_returns["Cumulative Absolute Returns (Rs.)"] = (
+            weekly_absolute_returns["Weekly_Absolute_Returns"].cumsum()
+        )
         weekly_absolute_returns = weekly_absolute_returns.sort_values(
             by="Week_Ending_Date"
         )
@@ -353,15 +352,15 @@ def get_weekly_cumulative_returns_data(
         )
 
         # Format currency after all calculations
-        weekly_absolute_returns[
-            "Weekly Absolute Returns (Rs.)"
-        ] = weekly_absolute_returns["Weekly Absolute Returns (Rs.)"].apply(
-            lambda x: format_currency(x, "INR", locale="en_IN")
+        weekly_absolute_returns["Weekly Absolute Returns (Rs.)"] = (
+            weekly_absolute_returns["Weekly Absolute Returns (Rs.)"].apply(
+                lambda x: format_currency(x, "INR", locale="en_IN")
+            )
         )
-        weekly_absolute_returns[
-            "Cumulative Absolute Returns (Rs.)"
-        ] = weekly_absolute_returns["Cumulative Absolute Returns (Rs.)"].apply(
-            lambda x: format_currency(x, "INR", locale="en_IN")
+        weekly_absolute_returns["Cumulative Absolute Returns (Rs.)"] = (
+            weekly_absolute_returns["Cumulative Absolute Returns (Rs.)"].apply(
+                lambda x: format_currency(x, "INR", locale="en_IN")
+            )
         )
 
         # Calculate total number of items

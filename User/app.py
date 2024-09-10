@@ -2,7 +2,7 @@ import os, sys
 from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
-from typing import Dict, Any, List
+from typing import Dict, Any
 from fastapi import HTTPException
 from datetime import datetime
 import traceback
@@ -19,12 +19,12 @@ DERIVATIVES = "Derivatives"
 EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
 DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 # importing packages
-import User.UserApi.schemas as schemas
+import User.schemas as schemas
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
     send_admin_message_via_discord,
 )
-from User.UserApi.userapi_utils import *
+from User.userapi_utils import *
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
     fetch_collection_data_firebase,
     update_collection,
@@ -825,9 +825,9 @@ def get_user_risk_params(strategy, trader_numbers):
                         "RiskPerTrade": strategy_data.get("RiskPerTrade", "N/A"),
                     }
                 else:
-                    result[
-                        trader_number
-                    ] = "No data available for this derivative strategy"
+                    result[trader_number] = (
+                        "No data available for this derivative strategy"
+                    )
             else:
                 result[trader_number] = "Strategy type not recognized"
         else:
