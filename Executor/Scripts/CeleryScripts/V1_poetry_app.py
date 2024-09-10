@@ -8,20 +8,26 @@ import redis
 import logging
 from logging import FileHandler
 import sys, os
-from dotenv import load_dotenv
+
+from User.config import settings
 
 # Define constants and load environment variables
 DIR = os.getcwd()
 sys.path.append(DIR)  # Add the current directory to the system path
 
-ENV_PATH = os.path.join(DIR, "trademan.env")
-# ENV_PATH = '/Users/traderscafe/Desktop/TradeManV1/trademan.env'
-load_dotenv(ENV_PATH)
 
-CONDA_PATH = os.getenv("CONDA_PATH")
-CONDA_ENV_NAME = os.getenv("CONDA_ENV_NAME")
-PROJECT_PATH = os.getenv("PROJECT_PATH")
-PYTHON_ENV_PATH = os.getenv("PYTHON_ENV_PATH")
+CONDA_PATH = settings.CONDA_PATH
+CONDA_ENV_NAME = settings.CONDA_ENV_NAME
+PROJECT_PATH = settings.PROJECT_PATH
+PYTHON_ENV_PATH = settings.PYTHON_ENV_PATH
+
+# Telegram bot parameters
+TELEGRAM_BOT_TOKEN = settings.ERROR_TELEGRAM_BOT_TOKEN
+CHAT_ID = settings.ERROR_CHAT_ID
+
+# log files path
+log_dir = settings.CELERY_SCRIPTS_LOG_PATH
+
 
 # Create a Celery instance
 app = Celery("tasks")
@@ -30,12 +36,6 @@ app.config_from_object("Executor.Scripts.CeleryScripts.celeryconfig")
 # redis client
 redis_client = redis.StrictRedis(host="localhost", port=6379, db=0)
 
-# Telegram bot parameters
-TELEGRAM_BOT_TOKEN = os.getenv("ERROR_TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.getenv("ERROR_CHAT_ID")
-
-# log files path
-log_dir = os.getenv("CELERY_SCRIPTS_LOG_PATH")
 
 # Strategy Constants
 AMIPY = "amipy"
@@ -187,7 +187,7 @@ def fast_api_server(self):
     task_id = self.request.id
     redis_client.set("fast_api_server_task_id", task_id)
     while True:
-        return run_script("User/UserApi/main.py", 17, fast_api_server_logger)
+        return run_script("User/main.py", 17, fast_api_server_logger)
 
 
 @app.task(bind=True)
