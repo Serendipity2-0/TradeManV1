@@ -731,7 +731,15 @@ def place_order_strategy_users(strategy_name, orders_to_place, order_qty_mode=No
         place_order_for_strategy,
     )
 
-    strategy_users = fetch_strategy_users(strategy_name)
+    if strategy_name in EQUITY_STRATEGY_LIST:
+        strategy_users = fetch_strategy_users(strategy_name, asset_segment="Equity")
+    elif strategy_name in DERIVATIVES_STRATEGY_LIST:
+        strategy_users = fetch_strategy_users(
+            strategy_name, asset_segment="Derivatives"
+        )
+    else:
+        raise ValueError(f"Invalid strategy name: {strategy_name}")
+
     asyncio.run(
         place_order_for_strategy(strategy_users, orders_to_place, order_qty_mode)
     )
