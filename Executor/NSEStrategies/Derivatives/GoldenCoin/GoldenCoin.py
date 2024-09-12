@@ -150,8 +150,9 @@ def update_qty(base_symbol, strike_prc, option_type):
         goldencoin_strategy_obj.StrategyName,
         ltp,
         lot_size,
-        qty_amplifier,
-        strategy_amplifier,
+        asset_segment="Derivatives",
+        qty_amplifier=qty_amplifier,
+        strategy_amplifier=strategy_amplifier,
     )
 
 

@@ -40,10 +40,12 @@ def fetch_historical_data(instrument_token, from_date, to_date):
     """
     global kite_obj
     data = kite_obj.historical_data(instrument_token, from_date, to_date, "day")
-    return data
+    ltp_data = kite_obj.ltp(instrument_token)
+    ltp = ltp_data[instrument_token]["last_price"]
+    return data, ltp
 
 
-def calculate_movement(data):
+def calculate_movement(data, ltp):
     """
     Calculate the movement range and percentage movement based on historical data.
 
@@ -53,13 +55,28 @@ def calculate_movement(data):
     Returns:
         tuple: A tuple containing the movement range and percentage movement.
     """
+    global kite_obj
     if data:  # Check if data is not empty
-        opening_price = data[0]["open"]
-        closing_price = data[-1]["close"]
-        movement_range = closing_price - opening_price
-        percentage_movement = (movement_range / opening_price) * 100
+        prev_close = data[0]["close"]
+        movement_range = ltp - prev_close
+        percentage_movement = (movement_range / prev_close) * 100
         return movement_range, percentage_movement
     return 0, 0  # Return 0,0 if data is empty
+
+
+def calculate_ohlc(data):
+    """
+    Calculate the movement range and percentage movement for all base symbols.
+
+    Args:
+        data (list): A list of dictionaries containing historical data.
+
+    Returns:
+        tuple: A tuple containing the movement range and percentage movement.
+    """
+    if data:
+        return data[0]["open"], data[0]["high"], data[0]["low"], data[0]["close"]
+    return 0, 0, 0, 0
 
 
 # Initialize an empty list for storing data
@@ -67,26 +84,31 @@ data_dict = {}
 
 base_symbols = ["NIFTY", "BANKNIFTY", "FINNIFTY", "SENSEX", "MIDCPNIFTY"]
 today = datetime.date.today()
-last_week = today - datetime.timedelta(weeks=1)
-last_month = today - datetime.timedelta(days=30)
-last_year = today - datetime.timedelta(days=365)
+yesterday = today - datetime.timedelta(days=1)
 
 for symbol in base_symbols:
     # Initialize dictionary for this token
     token = instrument_obj.fetch_base_symbol_token(symbol)
     data_dict[token] = {"Token": symbol}
     periods = {
-        "Today": fetch_historical_data(token, today, today),
-        "Week": fetch_historical_data(token, last_week, today),
-        "Month": fetch_historical_data(token, last_month, today),
-        "Year": fetch_historical_data(token, last_year, today),
+        "Today": fetch_historical_data(token, yesterday, today),
     }
+
     for period_name, period_data in periods.items():
-        movement_range, percentage_movement = calculate_movement(period_data)
+        movement_range, percentage_movement = calculate_movement(
+            period_data[0], period_data[1]
+        )
+        ohlc = calculate_ohlc(period_data[0])
+
         # Store the range along with the percentage movement for the period
         data_dict[token][
             period_name
         ] = f"{movement_range:.2f} ({percentage_movement:.2f}%)"
+        # append ohlc to data_dict
+        data_dict[token]["Open"] = f"{ohlc[0]:.2f}"
+        data_dict[token]["High"] = f"{ohlc[1]:.2f}"
+        data_dict[token]["Low"] = f"{ohlc[2]:.2f}"
+        data_dict[token]["Close"] = f"{ohlc[3]:.2f}"
 
 
 def main():
@@ -100,6 +122,6 @@ def main():
     df = pd.DataFrame(list(data_dict.values()))
 
     # Reordering DataFrame columns to match the requested format
-    df = df[["Token", "Today", "Week", "Month", "Year"]]
+    df = df[["Token", "Open", "High", "Low", "Close", "Today"]]
 
     return df

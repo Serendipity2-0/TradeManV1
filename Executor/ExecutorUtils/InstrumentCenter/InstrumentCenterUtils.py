@@ -411,6 +411,12 @@ class Instrument:
             filtered_data = self._dataframe[self._dataframe["Trading Symbol"] == name]
         return filtered_data
 
+    def _filter_data_by_instrument_name(self, name):
+        """
+        Filter the dataframe based on the given instrument name.
+        """
+        return self._dataframe[self._dataframe["Instrument Name"] == name]
+
     def get_exchange_token_by_name(self, name, segment=None):
         """
         Get the exchange token based on the instrument name.
@@ -534,6 +540,32 @@ class Instrument:
         """
         # TODO: Remove this hardcoding and fetch from API
         return 546
+
+    def fetch_complete_instruments_by_segment(self, segment):
+        """
+        Fetch the complete instruments by segment.
+
+        Args:
+            segment (str): The market segment of the instrument.
+
+        Returns:
+            pd.DataFrame: The complete instruments by segment.
+        """
+        instruments = self._dataframe[self._dataframe["segment"] == segment.upper()]
+        return instruments["Instrument Name"].tolist()
+
+    def fetch_trading_symbol_by_name(self, name, segment="NSE"):
+        """
+        Fetch the trading symbol by name.
+        """
+        trading_symbol = self._filter_data_by_instrument_name(name)
+        if segment.upper() == segment:
+            trading_symbol = trading_symbol[
+                trading_symbol["segment"] == segment.upper()
+            ]
+        if trading_symbol.empty:
+            return None
+        return trading_symbol.iloc[0]["Trading Symbol"]
 
 
 def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
