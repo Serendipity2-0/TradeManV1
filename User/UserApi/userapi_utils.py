@@ -40,10 +40,12 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_transaction_type,
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+
 from Executor.ExecutorUtils.ExeUtils import (
     EQUITY_STRATEGY_LIST,
     DERIVATIVES_STRATEGY_LIST,
 )
+
 
 logger = LoggerSetup()
 
