@@ -28,6 +28,10 @@ beat_schedule = {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.equity_exit",
         "schedule": crontab(hour=9, minute=35, day_of_week="1-5"),  # Monday to Friday
     },
+    "run_golden_coin_every_day_at_1000am": {
+        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.golden_coin",
+        "schedule": crontab(hour=10, minute=0, day_of_week="1-5"),  # Monday to Friday
+    },
     "run_sweep_orders_every_day_at_313pm": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.sweep_orders",
         "schedule": crontab(hour=15, minute=13, day_of_week="1-5"),  # Monday to Friday

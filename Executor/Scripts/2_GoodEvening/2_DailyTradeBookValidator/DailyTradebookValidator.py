@@ -1,6 +1,7 @@
-import os
+import os, ast
 import sys
 from datetime import datetime
+from typing import List
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -35,12 +36,10 @@ from TradebookValidatorUtils import (
     check_strategy_orders,
     verify_firebase_orders,
 )
-
-EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
-EQUITY_STRATEGY_LIST = EQUITY_STRATEGY_LIST.split(",")
-
-DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
-DERIVATIVES_STRATEGY_LIST = DERIVATIVES_STRATEGY_LIST.split(",")
+from Executor.ExecutorUtils.ExeUtils import (
+    EQUITY_STRATEGY_LIST,
+    DERIVATIVES_STRATEGY_LIST,
+)
 
 
 def get_todays_date():

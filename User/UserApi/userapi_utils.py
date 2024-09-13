@@ -41,6 +41,12 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
 
+from Executor.ExecutorUtils.ExeUtils import (
+    EQUITY_STRATEGY_LIST,
+    DERIVATIVES_STRATEGY_LIST,
+)
+
+
 logger = LoggerSetup()
 
 
@@ -53,8 +59,7 @@ MARKET_INFO_FB_COLLECTION = os.getenv("MARKET_INFO_FB_COLLECTION")
 USER_DB_EQUITY_PATH = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
 USER_DB_DERIVATIVES_PATH = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
 USER_DB_DEBT_PATH = os.getenv("USR_TRADELOG_DEBT_DB_FOLDER")
-EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
-DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+
 MODE_TO_DB = {
     "Equity": ("equity", USER_DB_EQUITY_PATH),
     "Derivatives": ("derivatives", USER_DB_DERIVATIVES_PATH),

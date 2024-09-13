@@ -23,8 +23,6 @@ CLIENTS_TRADE_SQL_DERIVATIVES_DB = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER
 CLIENTS_TRADE_SQL_EQUITY_DB = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
 CLIENTS_USER_FB_DB_COLLECTION = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB_COLLECTION = os.getenv("FIREBASE_STRATEGY_COLLECTION")
-EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
-DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 
 from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
     fetch_active_users_from_firebase,
@@ -44,7 +42,10 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
 from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
     download_firebase_json,
 )
-
+from Executor.ExecutorUtils.ExeUtils import (
+    EQUITY_STRATEGY_LIST,
+    DERIVATIVES_STRATEGY_LIST,
+)
 from Executor.NSEStrategies.NSEStrategiesUtil import StrategyBase
 
 

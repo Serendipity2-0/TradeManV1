@@ -13,8 +13,6 @@ ALICEBLUE = os.getenv("ALICEBLUE_BROKER")
 FIRSTOCK = os.getenv("FIRSTOCK_BROKER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
-EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
-DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 ADMIN_FB_DB = os.getenv("FIREBASE_ADMIN_COLLECTION")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
@@ -28,6 +26,10 @@ import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter 
 import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
 import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_adapter as firstock_adapter
+from Executor.ExecutorUtils.ExeUtils import (
+    EQUITY_STRATEGY_LIST,
+    DERIVATIVES_STRATEGY_LIST,
+)
 
 BROKER_ADAPTERS = {
     ZERODHA: zerodha_adapter,

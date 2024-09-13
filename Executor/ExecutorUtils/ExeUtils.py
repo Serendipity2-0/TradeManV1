@@ -1,6 +1,8 @@
 import datetime as dt
 import os, sys
 from dotenv import load_dotenv
+from typing import List
+import ast
 
 # Define constants and load environment variables
 DIR = os.getcwd()
@@ -112,3 +114,19 @@ def get_second_previous_trading_day(today: dt.date):
     previous_day = dt.datetime.strptime(previous_day, "%d%b%y").date()
     second_previous_day = get_previous_trading_day(previous_day)
     return second_previous_day
+
+
+EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
+DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+
+
+def parse_env_list(value: str) -> List[str]:
+    try:
+        return ast.literal_eval(value)
+    except Exception as e:
+        logger.error(f"Error parsing env list: {e}")
+        return value.split(",") if value else []
+
+
+EQUITY_STRATEGY_LIST = parse_env_list(EQUITY_STRATEGY_LIST)
+DERIVATIVES_STRATEGY_LIST = parse_env_list(DERIVATIVES_STRATEGY_LIST)

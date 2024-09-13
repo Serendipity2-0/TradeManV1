@@ -16,8 +16,7 @@ load_dotenv(ENV_PATH)
 # Constants
 EQUITY = "Equity"
 DERIVATIVES = "Derivatives"
-EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
-DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
+
 # importing packages
 import User.UserApi.schemas as schemas
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
@@ -43,6 +42,10 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
     Instrument as instrument_obj,
     get_single_ltp,
+)
+from Executor.ExecutorUtils.ExeUtils import (
+    EQUITY_STRATEGY_LIST,
+    DERIVATIVES_STRATEGY_LIST,
 )
 
 logger = LoggerSetup()
