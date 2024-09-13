@@ -23,12 +23,13 @@ from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter im
     fetch_collection_data_firebase,
     update_fields_firebase,
 )
-from Executor.ExecutorUtils.ExeUtils import holidays
+from Executor.ExecutorUtils.ExeUtils import (
+    holidays,
+    EQUITY_STRATEGY_LIST,
+    DERIVATIVES_STRATEGY_LIST,
+)
 
 logger = LoggerSetup()
-
-EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
-DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
 
 
 # Sub-models for various parameter types

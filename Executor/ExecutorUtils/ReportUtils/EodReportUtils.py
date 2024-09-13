@@ -36,6 +36,10 @@ from Executor.ExecutorUtils.NotificationCenter.Telegram.telegram_adapter import 
 )
 from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import get_db_connection
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+from Executor.ExecutorUtils.ExeUtils import (
+    EQUITY_STRATEGY_LIST,
+    DERIVATIVES_STRATEGY_LIST,
+)
 
 logger = LoggerSetup()
 
@@ -290,17 +294,6 @@ def calculate_account_values(user, today_trades, user_tables, segment=None):
     return account_values
 
 
-def parse_list_from_env(env_var_name):
-    env_var = os.getenv(env_var_name)
-    if env_var is None:
-        return []
-    try:
-        return ast.literal_eval(env_var)
-    except (ValueError, SyntaxError):
-        # If parsing fails, split the string by comma
-        return [item.strip() for item in env_var.split(",")]
-
-
 def get_today_trades_for_all_users(active_users: List[Dict]):
     """
     Get today's trades for all active users across Equity and Derivatives segments.
@@ -313,8 +306,6 @@ def get_today_trades_for_all_users(active_users: List[Dict]):
         list: List of today's trades for all users.
     """
 
-    DERIVATIVES_STRATEGY_LIST = parse_list_from_env("DERIVATIVES_STRATEGY_LIST")
-    EQUITY_STRATEGY_LIST = parse_list_from_env("EQUITY_STRATEGY_LIST")
     active_strategies = {
         "Equity": EQUITY_STRATEGY_LIST,
         "Derivatives": DERIVATIVES_STRATEGY_LIST,

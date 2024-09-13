@@ -54,12 +54,14 @@ from Executor.ExecutorUtils.ReportUtils.EodReportUtils import (
     update_account_keys_fb,
     aggregate_account_values,
 )
+from Executor.ExecutorUtils.ExeUtils import (
+    EQUITY_STRATEGY_LIST,
+    DERIVATIVES_STRATEGY_LIST,
+)
 
 CLIENTS_TRADE_SQL_DB_EQUITY = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
 CLIENTS_TRADE_SQL_DB_DERIVATIVES = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
-DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
-EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
 today_string = datetime.now().strftime("%Y-%m-%d")
 
 
