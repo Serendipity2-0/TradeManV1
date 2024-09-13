@@ -235,6 +235,16 @@ def mpwizard(self):
 
 
 @app.task
+def golden_coin():
+    golden_coin_logger = setup_logger("golden_coin", f"{log_dir}/golden_coin.log")
+    return run_script(
+        "Executor/NSEStrategies/Derivatives/GoldenCoin/GoldenCoin.py",
+        15,
+        golden_coin_logger,
+    )
+
+
+@app.task
 def sweep_orders():
     sweep_orders_logger = setup_logger("sweep_orders", f"{log_dir}/sweep_orders.log")
     return run_script(
