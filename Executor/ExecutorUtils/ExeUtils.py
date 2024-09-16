@@ -116,17 +116,23 @@ def get_second_previous_trading_day(today: dt.date):
     return second_previous_day
 
 
-EQUITY_STRATEGY_LIST = os.getenv("EQUITY_STRATEGY_LIST")
-DERIVATIVES_STRATEGY_LIST = os.getenv("DERIVATIVES_STRATEGY_LIST")
-
-
 def parse_env_list(value: str) -> List[str]:
-    try:
-        return ast.literal_eval(value)
-    except Exception as e:
-        logger.error(f"Error parsing env list: {e}")
-        return value.split(",") if value else []
+    if not value:
+        return []
+
+    # Remove any surrounding whitespace
+    value = value.strip()
+
+    # If the value is already a valid Python literal (list), use ast.literal_eval
+    if value.startswith("[") and value.endswith("]"):
+        try:
+            return ast.literal_eval(value)
+        except Exception as e:
+            logger.warning(f"Failed to parse as literal: {e}")
+
+    # Otherwise, split by comma and strip each item
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
-EQUITY_STRATEGY_LIST = parse_env_list(EQUITY_STRATEGY_LIST)
-DERIVATIVES_STRATEGY_LIST = parse_env_list(DERIVATIVES_STRATEGY_LIST)
+DERIVATIVES_STRATEGY_LIST = parse_env_list(os.getenv("DERIVATIVES_STRATEGY_LIST", ""))
+EQUITY_STRATEGY_LIST = parse_env_list(os.getenv("EQUITY_STRATEGY_LIST", ""))
