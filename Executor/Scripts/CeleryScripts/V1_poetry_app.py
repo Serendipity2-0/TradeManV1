@@ -308,6 +308,12 @@ def revoke_mpwizard_task():
     subprocess.run(["pkill", "-f", "MPWizard.py"])
 
 
+@app.task
+def clear_celery_tasks():
+    redis_client.flushdb()
+    return "All Celery tasks cleared from Redis"
+
+
 def start_worker():
     from celery.bin import worker
 

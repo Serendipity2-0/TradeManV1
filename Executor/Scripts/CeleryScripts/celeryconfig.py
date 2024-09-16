@@ -54,4 +54,16 @@ beat_schedule = {
     },
 }
 
+# Add these configuration options
+beat_max_loop_interval = 5  # Check the schedule every 5 seconds
+beat_sync_every = 0  # Disable beat state persistence
+
+# Ignore missed tasks on startup
+beat_scheduler = "redbeat.RedBeatScheduler"
+redbeat_redis_url = "redis://127.0.0.1:6379/1"
+redbeat_lock_key = None
+
 timezone = "Asia/Kolkata"  # Set your timezone to India
+
+# Add this new configuration option
+broker_connection_retry_on_startup = True
