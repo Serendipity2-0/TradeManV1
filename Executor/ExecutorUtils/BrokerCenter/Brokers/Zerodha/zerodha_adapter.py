@@ -610,7 +610,7 @@ async def kite_place_orders_for_users(orders_to_place, users_credentials):
             price=limit_prc,
             tradingsymbol=trading_symbol,
             transaction_type=transaction_type,
-            quantity=qty,
+            quantity=int(qty),
             trigger_price=trigger_price,
             product=product_type,
             order_type=order_type,
