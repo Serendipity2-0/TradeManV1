@@ -99,14 +99,14 @@ def get_financial_data(stock_symbols):
                 logger.warning(f"No financial data found for {symbol}")
                 continue
             # Extract necessary financial information
+            cashflow = stock.cashflow
             total_revenue = info.get("totalRevenue", np.nan)
-            operating_cashflow = info.get(
-                "operatingCashflow", np.nan
-            )  # Use operatingCashflow if operatingIncome is not available
-            total_debt = info.get("totalDebt", np.nan)
+            operating_cashflow = cashflow.loc["Operating Cash Flow"].iloc[0]
+            total_debt = info.get("totalDebt", 0)
             book_value_per_share = info.get("bookValue", np.nan)
             shares_outstanding = info.get("sharesOutstanding", np.nan)
             revenue_growth = info.get("revenueGrowth", np.nan)
+
             if (
                 total_revenue is np.nan
                 or operating_cashflow is np.nan
@@ -114,7 +114,21 @@ def get_financial_data(stock_symbols):
                 or book_value_per_share is np.nan
                 or shares_outstanding is np.nan
             ):
-                logger.warning(f"No financial data found for {symbol}")
+                missing_data = []
+                if total_revenue is np.nan:
+                    missing_data.append("Total Revenue")
+                if operating_cashflow is np.nan:
+                    missing_data.append("Operating Cash Flow")
+                if total_debt is np.nan:
+                    missing_data.append("Total Debt")
+                if book_value_per_share is np.nan:
+                    missing_data.append("Book Value per Share")
+                if shares_outstanding is np.nan:
+                    missing_data.append("Shares Outstanding")
+
+                logger.warning(
+                    f"Missing financial data for {symbol}: {', '.join(missing_data)}"
+                )
                 continue
             # Calculate Operating Profit Margin
             operating_profit_margin = (

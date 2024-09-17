@@ -64,7 +64,7 @@ def calculate_movement(data, ltp):
     return 0, 0  # Return 0,0 if data is empty
 
 
-def calculate_ohlc(data):
+def calculate_ohlc(data, today):
     """
     Calculate the movement range and percentage movement for all base symbols.
 
@@ -75,7 +75,9 @@ def calculate_ohlc(data):
         tuple: A tuple containing the movement range and percentage movement.
     """
     if data:
-        return data[0]["open"], data[0]["high"], data[0]["low"], data[0]["close"]
+        for row in data:
+            if row["date"].date() == today:
+                return row["open"], row["high"], row["low"], row["close"]
     return 0, 0, 0, 0
 
 
@@ -98,7 +100,7 @@ for symbol in base_symbols:
         movement_range, percentage_movement = calculate_movement(
             period_data[0], period_data[1]
         )
-        ohlc = calculate_ohlc(period_data[0])
+        ohlc = calculate_ohlc(period_data[0], today)
 
         # Store the range along with the percentage movement for the period
         data_dict[token][

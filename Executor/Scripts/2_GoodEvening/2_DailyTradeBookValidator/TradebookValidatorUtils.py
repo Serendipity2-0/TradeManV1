@@ -111,7 +111,7 @@ def verify_firebase_orders(user):
                         message = (
                             f"Orders with avg_prc None found for strategy: {strategy}"
                         )
-                        send_message_to_group(ERROR_GROUP_ID, message)
+                        send_message_to_group(int(ERROR_GROUP_ID), message)
                         logger.error(
                             f"Orders with avg_prc None found for strategy: {strategy}"
                         )
@@ -123,7 +123,7 @@ def verify_firebase_orders(user):
                 )
                 if pending_orders:
                     message = f"Orders with avg_prc None found for strategy: {strategy}"
-                    send_message_to_group(ERROR_GROUP_ID, message)
+                    send_message_to_group(int(ERROR_GROUP_ID), message)
                     logger.error(
                         f"Orders with avg_prc None found for strategy: {strategy}"
                     )
