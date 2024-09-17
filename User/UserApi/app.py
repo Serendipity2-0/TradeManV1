@@ -952,8 +952,8 @@ def get_complete_strategy_list():
     Returns:
         list: A list of strategy names.
     """
-    equity_list = parse_env_list(os.getenv("EQUITY_STRATEGY_LIST"))
-    derivatives_list = parse_env_list(os.getenv("DERIVATIVES_STRATEGY_LIST"))
+    equity_list = EQUITY_STRATEGY_LIST
+    derivatives_list = DERIVATIVES_STRATEGY_LIST
     complete_strategy_list = equity_list + derivatives_list
     return complete_strategy_list
 
