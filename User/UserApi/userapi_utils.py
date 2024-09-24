@@ -44,6 +44,7 @@ from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instru
 from Executor.ExecutorUtils.ExeUtils import (
     EQUITY_STRATEGY_LIST,
     DERIVATIVES_STRATEGY_LIST,
+    DEBT_STRATEGY_LIST,
 )
 
 
@@ -67,6 +68,7 @@ MODE_TO_DB = {
 }
 EQUITY = "Equity"
 DERIVATIVES = "Derivatives"
+DEBT = "Debt"
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 ERROR_LOG_CSV_PATH = os.getenv("ERROR_LOG_CSV_PATH")
 
@@ -395,6 +397,8 @@ def get_individual_strategy_data(
             db_name, folder_path = MODE_TO_DB["Equity"]
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
             db_name, folder_path = MODE_TO_DB["Derivatives"]
+        elif strategy_name in DEBT_STRATEGY_LIST:
+            db_name, folder_path = MODE_TO_DB["Debt"]
         else:
             db_name, folder_path = MODE_TO_DB["Equity"]
         db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db")
@@ -416,12 +420,17 @@ def get_individual_strategy_data(
                 f"SELECT * FROM {strategy_name} LIMIT {page_size} OFFSET {offset}", conn
             )
 
-            if strategy_name == "Holdings":
+            if strategy_name == "Holdings" or strategy_name in DEBT_STRATEGY_LIST:
+                # Convert any potential NumPy types to Python native types
+                data = data.astype(object).where(pd.notnull(data), None)
+            elif (
+                strategy_name in DERIVATIVES_STRATEGY_LIST
+                or strategy_name in EQUITY_STRATEGY_LIST
+            ):
+                data["exit_time"] = pd.to_datetime(data["exit_time"])
                 # Convert any potential NumPy types to Python native types
                 data = data.astype(object).where(pd.notnull(data), None)
             else:
-                data["exit_time"] = pd.to_datetime(data["exit_time"])
-                # Convert any potential NumPy types to Python native types
                 data = data.astype(object).where(pd.notnull(data), None)
 
             return {
@@ -458,6 +467,8 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
             db_name, folder_path = MODE_TO_DB["Equity"]
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
             db_name, folder_path = MODE_TO_DB["Derivatives"]
+        elif strategy_name in DEBT_STRATEGY_LIST:
+            db_name, folder_path = MODE_TO_DB["Debt"]
         else:
             db_name, folder_path = MODE_TO_DB["Equity"]
         db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db")
@@ -834,6 +845,8 @@ def fetch_strategies_for_user(tr_no: str):
             strategies.extend(
                 [strategy for strategy in user["Strategies"]["Derivatives"]]
             )
+        if "Debt" in user["Strategies"]:
+            strategies.extend([strategy for strategy in user["Strategies"]["Debt"]])
 
     return strategies
 
@@ -900,6 +913,8 @@ def fetch_segment_from_strategy(strategy_name: str):
         return EQUITY
     elif strategy_name in DERIVATIVES_STRATEGY_LIST:
         return DERIVATIVES
+    elif strategy_name in DEBT_STRATEGY_LIST:
+        return DEBT
     else:
         return None
 

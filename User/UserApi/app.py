@@ -438,6 +438,8 @@ def get_strategy_signals(strategy_name: str, page: int, page_size: int):
             return fetch_strategy_signals(strategy_name, EQUITY, page, page_size)
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
             return fetch_strategy_signals(strategy_name, DERIVATIVES, page, page_size)
+        elif strategy_name in DEBT_STRATEGY_LIST:
+            return fetch_strategy_signals(strategy_name, DEBT, page, page_size)
         else:
             raise HTTPException(status_code=404, detail="Strategy not found")
     except Exception as e:
