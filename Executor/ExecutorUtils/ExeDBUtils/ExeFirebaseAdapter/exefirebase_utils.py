@@ -51,3 +51,51 @@ def download_firebase_json(path, status):
     file_name = f"{date_time}_{status}.json"
     with open(f"{EOD_JSON_DIR}/{file_name}", "w") as file:
         json.dump(data, file, indent=4)
+
+
+def get_tr_no_for_hl_id(hl_id, segment, strategy_name):
+    """
+    Get the trader number for a given HL ID.
+
+    Args:
+        hl_id (str): The HL ID.
+
+    Returns:
+        str: The trader number, or None if not found.
+    """
+    ref = db.reference(CLIENTS_DB)
+    data = ref.get()
+
+    try:
+        for tr_no, client_data in data.items():
+            hl_id_path = (
+                client_data.get("Strategies", {})
+                .get(segment, {})
+                .get(strategy_name, {})
+                .get("HL_ID")
+            )
+            if hl_id_path == hl_id:
+                return tr_no
+    except Exception as e:
+        print(f"Error while searching for HL_ID: {e}")
+
+    return None
+
+
+def get_principal_amount(tr_no, segment, strategy_name):
+    """
+    Fetches the principal amount for a given trader number from Firebase.
+
+    Args:
+        tr_no (str): The trader number.
+
+    Returns:
+        float: The principal amount.
+    """
+    ref = db.reference(
+        f"{CLIENTS_DB}/{tr_no}/Strategies/{segment}/{strategy_name}/PrincipalAmount"
+    )
+    principal_amount = ref.get()
+    if principal_amount is None:
+        raise ValueError(f"Principal amount not found for trader number {tr_no}")
+    return float(principal_amount)
