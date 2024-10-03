@@ -1,6 +1,9 @@
-from thefirstock import thefirstock
+import asyncio
+import os
+import sys
+
 import pyotp
-import os, sys
+from thefirstock import thefirstock
 
 DIR = os.getcwd()
 sys.path.append(DIR)
@@ -10,34 +13,35 @@ from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 logger = LoggerSetup()
 
 
-def login_in_firstock(user_details):
+async def login_in_firstock(user_details):
     """
-    The function `login_in_firstock` attempts to log in to the Firstock platform using the provided user
-    details and returns the session token if successful.
+    Asynchronously logs in to the Firstock platform using the provided user details and returns the session token if successful.
 
-    :param user_details: The `login_in_firstock` function takes a dictionary `user_details` as input,
-    which should contain the following key-value pairs:
-    :return: The function `login_in_firstock` is returning the session ID for the user's broker account.
-    It retrieves the session ID after successfully logging in to the Firstock platform using the
-    provided user details such as broker username, password, TOTP, vendor code, and API key. If the
-    login is successful, it returns the session ID (susertoken) for the user's broker account. If
+    :param user_details: Dictionary containing user details for login
+    :return: The session ID (susertoken) for the user's broker account or None if login fails
     """
     try:
         totp = pyotp.TOTP(user_details["TotpAccess"])
-        totp = totp.now()
-        login = thefirstock.firstock_login(
+        totp_code = totp.now()
+
+        # Wrap the synchronous login call in an executor to make it non-blocking
+        login = await asyncio.to_thread(
+            thefirstock.firstock_login,
             userId=user_details["BrokerUsername"],
             password=user_details["BrokerPassword"],
-            TOTP=totp,
+            TOTP=totp_code,
             vendorCode=user_details["ApiSecret"],
             apiKey=user_details["ApiKey"],
         )
+
         if login.get("data", {}).get("susertoken"):
+            session_id = login["data"]["susertoken"]
             logger.info(
-                f"Session Id for {user_details['BrokerUsername']}: {login.get('data', {}).get('susertoken')}"
+                f"Session Id for {user_details['BrokerUsername']}: {session_id}"
             )
-            return login.get("data", {}).get("susertoken")
+            return session_id
         else:
             raise Exception(f"Error fetching login for Firstock: {login}")
     except Exception as e:
-        raise Exception(f"Error fetching login for Firstock: {e}")
+        logger.error(f"Error fetching login for Firstock: {e}")
+        return None
