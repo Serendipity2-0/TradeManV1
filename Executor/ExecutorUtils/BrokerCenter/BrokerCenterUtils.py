@@ -1,6 +1,25 @@
+import asyncio
 import os
 import sys
+import traceback
+
 from dotenv import load_dotenv
+
+import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
+import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
+import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_adapter as firstock_adapter
+import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_login as firstock
+import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
+import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
+import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
+from Executor.ExecutorUtils.ExeUtils import (
+    DERIVATIVES_STRATEGY_LIST,
+    EQUITY_STRATEGY_LIST,
+)
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    send_admin_message_via_discord,
+)
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -15,27 +34,71 @@ CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
 STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
 ADMIN_FB_DB = os.getenv("FIREBASE_ADMIN_COLLECTION")
 
-from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
-from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    send_admin_message_via_discord,
-)
 
 logger = LoggerSetup()
 
-import Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter as firebase_utils
-import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_adapter as alice_adapter
-import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.zerodha_adapter as zerodha_adapter
-import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_adapter as firstock_adapter
-from Executor.ExecutorUtils.ExeUtils import (
-    EQUITY_STRATEGY_LIST,
-    DERIVATIVES_STRATEGY_LIST,
-)
 
 BROKER_ADAPTERS = {
     ZERODHA: zerodha_adapter,
     ALICEBLUE: alice_adapter,
     FIRSTOCK: firstock_adapter,
 }
+
+
+async def _login_user(user, account_type):
+    """
+    Asynchronously logs in a user to their broker.
+
+    Args:
+        user (dict): User account details.
+        account_type (str): Type of account (Primary or Client).
+
+    Returns:
+        tuple: (user, session_id)
+    """
+    broker_name = (
+        user["BrokerName"]
+        if account_type == "Primary"
+        else user["Broker"]["BrokerName"]
+    )
+    broker_username = (
+        user["BrokerUsername"]
+        if account_type == "Primary"
+        else user["Broker"]["BrokerUsername"]
+    )
+
+    try:
+        if broker_name == ZERODHA:
+            session_id = await zerodha.login_in_zerodha(
+                user if account_type == "Primary" else user["Broker"]
+            )
+        elif broker_name == ALICEBLUE:
+            session_id = await alice_blue.login_in_aliceblue(
+                user if account_type == "Primary" else user["Broker"]
+            )
+        elif broker_name == FIRSTOCK:
+            session_id = await firstock.login_in_firstock(
+                user if account_type == "Primary" else user["Broker"]
+            )
+        else:
+            logger.error(f"Broker not supported for user: {broker_username}")
+            return user, None
+
+        if session_id:
+            update_session_id(user, session_id, account_type)
+            logger.info(
+                f"Successfully logged in {broker_name} for user: {broker_username}"
+            )
+        else:
+            logger.error(f"Failed to log in {broker_name} for user: {broker_username}")
+
+        return user, session_id
+
+    except Exception as e:
+        logger.error(
+            f"Error while logging in for {broker_name} for user: {broker_username}: {e}"
+        )
+        return user, None
 
 
 async def place_order_for_brokers(order_details, user_credentials):
@@ -88,12 +151,9 @@ def modify_order_for_brokers(order_details, user_credentials):
         )
 
 
-import traceback
-
-
-def all_broker_login(active_users, account_type):
+async def all_broker_login(active_users: list[dict], account_type: str):
     """
-    Logs in all active users to their respective brokers.
+    Asynchronously logs in all active users to their respective brokers.
 
     Args:
         active_users (list): List of active user accounts.
@@ -102,68 +162,19 @@ def all_broker_login(active_users, account_type):
     Returns:
         list: List of active user accounts after login attempt.
     """
-    import Executor.ExecutorUtils.BrokerCenter.Brokers.AliceBlue.alice_login as alice_blue
-    import Executor.ExecutorUtils.BrokerCenter.Brokers.Zerodha.kite_login as zerodha
-    import Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_login as firstock
+    tasks = [_login_user(user, account_type) for user in active_users]
+    results = await asyncio.gather(*tasks)
 
-    for user in active_users:
-        broker_name = (
-            user["BrokerName"]
-            if account_type == "Primary"
-            else user["Broker"]["BrokerName"]
-        )
-        broker_username = (
-            user["BrokerUsername"]
-            if account_type == "Primary"
-            else user["Broker"]["BrokerUsername"]
-        )
-
-        if broker_name == ZERODHA:
-            logger.debug(f"Logging in for Zerodha for user: {broker_username}")
-            try:
-                session_id = zerodha.login_in_zerodha(
-                    user if account_type == "Primary" else user["Broker"]
-                )
-                update_session_id(user, session_id, account_type)
-            except Exception as e:
-                send_admin_message_via_discord(
-                    f"Error while logging in for Zerodha for user: {broker_username}"
-                )
-                logger.error(
-                    f"Error while logging in for Zerodha: {e} for user: {broker_username}"
-                )
-                logger.error(traceback.format_exc())
-        elif broker_name == ALICEBLUE:
-            logger.debug(f"Logging in for AliceBlue for user: {broker_username}")
-            try:
-                session_id = alice_blue.login_in_aliceblue(
-                    user if account_type == "Primary" else user["Broker"]
-                )
-                update_session_id(user, session_id, account_type)
-            except Exception as e:
-                send_admin_message_via_discord(
-                    f"Error while logging in for AliceBlue for user: {broker_username}"
-                )
-                logger.error(
-                    f"Error while logging in for AliceBlue: {e} for user: {broker_username}"
-                )
-        elif broker_name == FIRSTOCK:
-            logger.debug(f"Logging in for Firstock for user: {broker_username}")
-            try:
-                session_id = firstock.login_in_firstock(
-                    user if account_type == "Primary" else user["Broker"]
-                )
-                update_session_id(user, session_id, account_type)
-            except Exception as e:
-                send_admin_message_via_discord(
-                    f"Error while logging in for Firstock for user: {broker_username}"
-                )
-                logger.error(
-                    f"Error while logging in for Firstock: {e} for user: {broker_username}"
-                )
+    updated_users = []
+    for user, session_id in results:
+        if session_id:
+            updated_users.append(user)
         else:
-            logger.error(f"Broker not supported for user: {broker_username}")
-    return active_users
+            logger.warning(
+                f"Login failed for user: {user['BrokerUsername'] if account_type == 'Primary' else user['Broker']['BrokerUsername']}"
+            )
+
+    return updated_users
 
 
 def update_session_id(user, session_id, account_type):
