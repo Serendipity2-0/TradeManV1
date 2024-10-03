@@ -1,11 +1,12 @@
-from pya3 import *
-from Crypto import Random
-from Crypto.Cipher import AES
 import base64
 import hashlib
 import json
-import requests
+
+import aiohttp
 import pyotp
+from Crypto import Random
+from Crypto.Cipher import AES
+from pya3 import *
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
@@ -68,57 +69,58 @@ class CryptoJsAES:
         return CryptoJsAES.__unpad(aes.decrypt(encrypted[16:]))
 
 
-def login_in_aliceblue(user_details):
+async def login_in_aliceblue(user_details):
     BASE_URL = "https://ant.aliceblueonline.com/rest/AliceBlueAPIService"
 
     totp = pyotp.TOTP(user_details["TotpAccess"])
 
-    def getEncryptionKey():
+    async def getEncryptionKey():
         url = BASE_URL + "/customer/getEncryptionKey"
         payload = json.dumps({"userId": user_details["BrokerUsername"]})
         headers = {"Content-Type": "application/json"}
-        response = requests.post(url, headers=headers, data=payload)
-        return response.json()["encKey"]
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, data=payload) as response:
+                return (await response.json())["encKey"]
 
-    getEncryptionKey = getEncryptionKey()
+    getEncryptionKey = await getEncryptionKey()
     checksum = CryptoJsAES.encrypt(
         user_details["BrokerPassword"].encode(), getEncryptionKey.encode()
     ).decode("UTF-8")
 
-    def weblogin():
+    async def weblogin():
         url = BASE_URL + "/customer/webLogin"
         payload = json.dumps(
             {"userId": user_details["BrokerUsername"], "userData": checksum}
         )
         headers = {"Content-Type": "application/json"}
-        response = requests.post(url, headers=headers, data=payload)
-        return response.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, data=payload) as response:
+                return await response.json()
 
-    weblogin = weblogin()
+    weblogin = await weblogin()
     sCount = weblogin["sCount"]
     sIndex = weblogin["sIndex"]
 
-    def twoFa(sCount, sIndex):
+    async def twoFa(sCount, sIndex):
         url = BASE_URL + "/sso/2fa"
         payload = json.dumps(
             {
-                "answer1": user_details[
-                    "BrokerUsername"
-                ],  # TODO: Changed this to BrokerUsername as TwoFA is not required
+                "answer1": user_details["BrokerUsername"],
                 "userId": user_details["BrokerUsername"],
                 "sCount": sCount,
                 "sIndex": sIndex,
             }
         )
         headers = {"Content-Type": "application/json"}
-        response = requests.post(url, headers=headers, data=payload)
-        return response.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, data=payload) as response:
+                return await response.json()
 
-    twoFa = twoFa(sCount, sIndex)
+    twoFa = await twoFa(sCount, sIndex)
     loPreference = twoFa["loPreference"]
     totpAvailable = twoFa["totpAvailable"]
 
-    def verifyTotp(twofa):
+    async def verifyTotp(twofa):
         if twofa["loPreference"] == "TOTP" and twofa["totpAvailable"]:
             url = BASE_URL + "/sso/verifyTotp"
             payload = json.dumps(
@@ -131,31 +133,32 @@ def login_in_aliceblue(user_details):
                 + twofa["us"],
                 "Content-Type": "application/json",
             }
-            response = requests.request(
-                "POST", url, headers=headers, data=payload, verify=True
-            )
-            if response.text:  # Check if response contains any data
-                try:
-                    response_data = response.json()
-                    if response_data.get("userSessionID"):
-                        logger.success("Login Successfully")
-                        return response_data
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, headers=headers, data=payload) as response:
+                    if response.content:
+                        try:
+                            response_data = await response.json()
+                            if response_data.get("userSessionID"):
+                                logger.success("Login Successfully")
+                                return response_data
+                            else:
+                                logger.error(
+                                    "User is not enable TOTP! Please enable TOTP through mobile or web"
+                                )
+                        except json.JSONDecodeError:
+                            logger.error(
+                                f"Could not parse response as JSON: {await response.text()}"
+                            )
                     else:
                         logger.error(
-                            "User is not enable TOTP! Please enable TOTP through mobile or web"
+                            f"No data returned from server. HTTP Status Code: {response.status}"
                         )
-                except json.JSONDecodeError:
-                    logger.error(f"Could not parse response as JSON: {response.text}")
-            else:
-                logger.error(
-                    f"No data returned from server. HTTP Status Code: {response.status_code}"
-                )
         else:
             logger.error("Try TOTP auth Again")
         return None
 
     if loPreference == "TOTP" and totpAvailable:
-        verifyTotp = verifyTotp(twoFa)
+        verifyTotp = await verifyTotp(twoFa)
         userSessionID = verifyTotp["userSessionID"]
     else:
         userSessionID = twoFa["userSessionID"]
