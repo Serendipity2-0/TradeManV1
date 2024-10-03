@@ -1,6 +1,15 @@
-import os, sys
+import asyncio
+import os
+import sys
+
 import pendulum
 from dotenv import load_dotenv
+
+import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
+    send_admin_message_via_discord,
+)
 
 DIR = os.getcwd()
 sys.path.append(DIR)  # Add the current directory to the system path
@@ -9,10 +18,6 @@ sys.path.append(DIR)  # Add the current directory to the system path
 ENV_PATH = os.path.join(DIR, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
-    send_admin_message_via_discord,
-)
-from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 CLIENTS_USER_FB_DB = os.getenv("FIREBASE_USER_COLLECTION")
@@ -32,7 +37,6 @@ def main():
     The main function fetches active users from Firebase collections, logs information about them, and
     performs broker login for all active users.
     """
-    import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as broker_center_utils
 
     logger.debug(
         f"Fetching users from {CLIENTS_USER_FB_DB} and {STRATEGY_FB_DB} collections."
@@ -61,8 +65,8 @@ def main():
         )
 
     try:
-        broker_center_utils.all_broker_login(primary_accounts, "Primary")
-        broker_center_utils.all_broker_login(today_active_users, "Client")
+        asyncio.run(broker_center_utils.all_broker_login(primary_accounts, "Primary"))
+        asyncio.run(broker_center_utils.all_broker_login(today_active_users, "Client"))
         send_admin_message_via_discord("All brokers logged in successfully")
     except Exception as e:
         logger.error(f"Error in logging in brokers: {e}")
