@@ -136,3 +136,4 @@ def parse_env_list(value: str) -> List[str]:
 
 DERIVATIVES_STRATEGY_LIST = parse_env_list(os.getenv("DERIVATIVES_STRATEGY_LIST", ""))
 EQUITY_STRATEGY_LIST = parse_env_list(os.getenv("EQUITY_STRATEGY_LIST", ""))
+DEBT_STRATEGY_LIST = parse_env_list(os.getenv("DEBT_STRATEGY_LIST", ""))

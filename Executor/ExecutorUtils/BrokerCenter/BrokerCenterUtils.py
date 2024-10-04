@@ -459,7 +459,7 @@ def fetch_active_strategies_all_users():
         for user in user_details:
             if user_details[user].get("Active", False):
                 user_strategies = user_details[user].get("Strategies", {})
-                for category in ["Equity", "Derivatives"]:
+                for category in ["Equity", "Derivatives", "Debt"]:
                     if category in user_strategies:
                         strategies.update(user_strategies[category])
         return list(strategies)

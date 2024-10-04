@@ -416,7 +416,11 @@ def strategy_statistics(tr_no: str, strategy_name: str) -> Dict[str, Any]:
         df = data["items"]
         is_signals = strategy_name != "Holdings"
 
-        return calculate_strategy_statistics(df, is_signals)
+        value = calculate_strategy_statistics(df, is_signals)
+        if value is None:
+            return None
+        else:
+            return value
 
     except Exception as e:
         # Log the error here if needed
