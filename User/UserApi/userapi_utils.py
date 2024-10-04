@@ -408,10 +408,11 @@ def get_individual_strategy_data(
         else:
             db_name, folder_path = MODE_TO_DB["Equity"]
         db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db")
+        logger.info(f"DB Path: {db_path}")
 
         conn = get_db_connection(db_path)
         strategies = ACTIVE_STRATEGIES + ["Holdings"]
-
+        logger.info(f"Strategies: {strategies}")
         if strategy_name in strategies:
             # Calculate the offset
             offset = (page - 1) * page_size
@@ -435,6 +436,8 @@ def get_individual_strategy_data(
             ):
                 data["exit_time"] = pd.to_datetime(data["exit_time"])
                 # Convert any potential NumPy types to Python native types
+                data = data.astype(object).where(pd.notnull(data), None)
+            if strategy_name in DEBT_STRATEGY_LIST:
                 data = data.astype(object).where(pd.notnull(data), None)
             else:
                 data = data.astype(object).where(pd.notnull(data), None)
@@ -483,23 +486,27 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
         strategies = ACTIVE_STRATEGIES + ["Holdings"]
 
         if strategy_name in strategies:
-            # Fetch only exit_time and pnl
-            data = pd.read_sql_query(
-                f"SELECT exit_time, pnl FROM {strategy_name}", conn
-            )
+            if strategy_name not in DEBT_STRATEGY_LIST:
+                # Fetch only exit_time and pnl
+                data = pd.read_sql_query(
+                    f"SELECT exit_time, pnl FROM {strategy_name}", conn
+                )
 
-            data["exit_time"] = pd.to_datetime(data["exit_time"])
+                data["exit_time"] = pd.to_datetime(data["exit_time"])
 
-            # Convert DataFrame to list of dictionaries
-            combined_data = data.to_dict("records")
+                # Convert DataFrame to list of dictionaries
+                combined_data = data.to_dict("records")
 
-            # Convert any numpy types to Python native types
-            for item in combined_data:
-                item["exit_time"] = item["exit_time"].isoformat()
-                if isinstance(item["pnl"], np.number):
-                    item["pnl"] = float(item["pnl"])
+                # Convert any numpy types to Python native types
+                for item in combined_data:
+                    item["exit_time"] = item["exit_time"].isoformat()
+                    if isinstance(item["pnl"], np.number):
+                        item["pnl"] = float(item["pnl"])
 
-            return {"items": combined_data}
+                return {"items": combined_data}
+            else:
+                data = pd.read_sql_query(f"SELECT date FROM {strategy_name}", conn)
+                return {"items": data}
         else:
             logger.error(f"Strategy not found: {strategy_name}")
             return None
@@ -582,6 +589,8 @@ def signal_graph_data(strategy_name: str) -> Dict[str, List[Dict[str, Any]]]:
             db_path = os.getenv("EQUITY_SIGNAL_DB_PATH")
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
             db_path = os.getenv("DERIVATIVES_SIGNAL_DB_PATH")
+        elif strategy_name in DEBT_STRATEGY_LIST:
+            db_path = os.getenv("DEBT_SIGNAL_DB_PATH")
         else:
             raise ValueError(f"Invalid strategy name: {strategy_name}")
 
@@ -639,65 +648,82 @@ def calculate_strategy_statistics(df: pd.DataFrame, is_signals: bool):
         return None
     column_for_calc = "trade_points" if is_signals else "net_pnl"
 
-    # Basic calculations
-    positive_trades = df[df[column_for_calc] > 0]
-    negative_trades = df[df[column_for_calc] < 0]
+    # Check if 'trade_points' column is present in the DataFrame
+    if "trade_points" not in df.columns:
+        print("trade_points not in df.columns")
+        return None
+    try:
+        df[column_for_calc] = df[column_for_calc].astype(float)
+        positive_trades = df[df[column_for_calc] > 0.0]
+        negative_trades = df[df[column_for_calc] < 0.0]
+    except Exception as e:
+        print(e)
 
     net_trade_points = df[column_for_calc].sum()
     num_trades = len(df)
     num_wins = len(positive_trades)
     num_losses = len(negative_trades)
 
-    # Consecutive wins and losses
-    df["win"] = df[column_for_calc] > 0
-    df["group"] = (df["win"] != df["win"].shift()).cumsum()
-    consecutive_wins = (
-        df[df["win"]].groupby("group").size().max() if num_wins > 0 else 0
-    )
-    consecutive_losses = (
-        df[~df["win"]].groupby("group").size().max() if num_losses > 0 else 0
-    )
+    try:
+        cols = ["entry_price", "exit_price", "trade_points", "pnl", "net_pnl"]
+        for col in cols:
+            df[col] = df[col].astype(float)
+        # Consecutive wins and losses
+        df["win"] = df[column_for_calc] > 0
+        df["group"] = (df["win"] != df["win"].shift()).cumsum()
+        consecutive_wins = (
+            df[df["win"]].groupby("group").size().max() if num_wins > 0 else 0
+        )
+        consecutive_losses = (
+            df[~df["win"]].groupby("group").size().max() if num_losses > 0 else 0
+        )
 
-    # Advanced calculations
-    avg_profit_loss = df[column_for_calc].mean()
-    df["profit_percent"] = df[column_for_calc] / df["entry_price"] * 100
-    avg_profit_loss_percent = df["profit_percent"].mean()
-    max_trade_drawdown = df[column_for_calc].min()
-    cumulative_net_pnl = df[column_for_calc].cumsum()
-    max_system_drawdown = cumulative_net_pnl.min()
+        # Advanced calculations
+        avg_profit_loss = df[column_for_calc].mean()
+        df["profit_percent"] = df[column_for_calc] / df["entry_price"] * 100
+        avg_profit_loss_percent = df["profit_percent"].mean()
+        max_trade_drawdown = df[column_for_calc].min()
+        cumulative_net_pnl = df[column_for_calc].cumsum()
+        max_system_drawdown = cumulative_net_pnl.min()
 
-    recovery_factor = (
-        net_trade_points / -max_system_drawdown if max_system_drawdown < 0 else 0
-    )
+        recovery_factor = (
+            net_trade_points / -max_system_drawdown if max_system_drawdown < 0 else 0
+        )
 
-    annual_return = 0.1  # Assume 10% annual return or replace with actual calculation
-    max_dd_percent = max_system_drawdown / df["entry_price"].iloc[0] * 100
-    car_maxdd = annual_return / -max_dd_percent if max_dd_percent < 0 else 0
+        annual_return = (
+            0.1  # Assume 10% annual return or replace with actual calculation
+        )
+        max_dd_percent = max_system_drawdown / df["entry_price"].iloc[0] * 100
+        car_maxdd = annual_return / -max_dd_percent if max_dd_percent < 0 else 0
 
-    std_error = df[column_for_calc].std()
-    risk_reward_ratio = avg_profit_loss / std_error if std_error != 0 else 0
+        std_error = df[column_for_calc].std()
+        risk_reward_ratio = avg_profit_loss / std_error if std_error != 0 else 0
 
-    drawdown = cumulative_net_pnl.cummin() - cumulative_net_pnl
-    ulcer_index = np.sqrt(np.mean(drawdown**2))
+        drawdown = cumulative_net_pnl.cummin() - cumulative_net_pnl
+        ulcer_index = np.sqrt(np.mean(drawdown**2))
+    except Exception as e:
+        print(e)
 
-    statistics = {
-        "Net Trade Points": net_trade_points,
-        "No of Trades": num_trades,
-        "No of Wins": num_wins,
-        "No of Losses": num_losses,
-        "No of Cons Win": consecutive_wins,
-        "No of Cons Loss": consecutive_losses,
-        "Avg. Profit/Loss (Expectancy Rs)": avg_profit_loss,
-        "Avg. Profit/Loss % (Expectancy %)": avg_profit_loss_percent,
-        "Max. Trade Drawdown": max_trade_drawdown,
-        "Max. System Drawdown": max_system_drawdown,
-        "Recovery Factor": recovery_factor,
-        "CAR/MaxDD": car_maxdd,
-        "Standard Error": std_error,
-        "Risk-Reward Ratio": risk_reward_ratio,
-        "Ulcer Index": ulcer_index,
-    }
-
+    try:
+        statistics = {
+            "Net Trade Points": net_trade_points,
+            "No of Trades": num_trades,
+            "No of Wins": num_wins,
+            "No of Losses": num_losses,
+            "No of Cons Win": consecutive_wins,
+            "No of Cons Loss": consecutive_losses,
+            "Avg. Profit/Loss (Expectancy Rs)": avg_profit_loss,
+            "Avg. Profit/Loss % (Expectancy %)": avg_profit_loss_percent,
+            "Max. Trade Drawdown": max_trade_drawdown,
+            "Max. System Drawdown": max_system_drawdown,
+            "Recovery Factor": recovery_factor,
+            "CAR/MaxDD": car_maxdd,
+            "Standard Error": std_error,
+            "Risk-Reward Ratio": risk_reward_ratio,
+            "Ulcer Index": ulcer_index,
+        }
+    except Exception as e:
+        print(e)
     # Convert numpy types to Python native types
     formatted_stats = {}
     for key, value in statistics.items():

@@ -370,6 +370,7 @@ def get_strategy_statistics(tr_no: str, strategy_name: str):
         statistics = app.strategy_statistics(tr_no, strategy_name)
 
         if statistics is None:
+            statistics = {}
             raise HTTPException(
                 status_code=404,
                 detail=f"No data found for Strategy {strategy_name} for {tr_no}",
@@ -379,8 +380,8 @@ def get_strategy_statistics(tr_no: str, strategy_name: str):
 
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=404, detail="Statistics not found")
 
 
 @app_user.get("/user-broker-transactions")

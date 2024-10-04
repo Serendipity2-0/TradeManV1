@@ -84,44 +84,53 @@ def process_holdings(strategy_obj, holdings, user):
     order_type = strategy_obj.get_raw_field("GeneralParams").get("SlOrderType")
 
     for index, row in holdings.iterrows():
-        symbol = row["trading_symbol"]
-        exchange_token = Instrument().get_exchange_token_by_name(symbol, "NSE")
-        ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
-        lower_circuit_limit = get_lower_circuit_limit(
-            exchange_token=exchange_token, segment="NSE"
-        )
-        buy_price = float(row["entry_price"])
-        setup_name = row["setup"]
-        sl = calculate_sl(setup_name, buy_price, risk_per_trade, ltp)
-        if sl < lower_circuit_limit:
-            message = f"{symbol} Lower circuit :{round(lower_circuit_limit, 2)} SL:{round(sl, 2)} user:{user['Tr_No']}"
-            send_messsage_via_discord(message, strategy_name)
-            logger.info("SL is less than lower circuit limit, skipping the trade.")
+        if row["trading_symbol"] is None:
+            send_messsage_via_discord(
+                f"Invalid trading symbol: {row['trading_symbol']} for {user['Tr_No']}",
+                strategy_name,
+            )
             continue
+        try:
+            symbol = row["trading_symbol"]
+            exchange_token = Instrument().get_exchange_token_by_name(symbol, "NSE")
+            ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
+            lower_circuit_limit = get_lower_circuit_limit(
+                exchange_token=exchange_token, segment="NSE"
+            )
+            buy_price = float(row["entry_price"])
+            setup_name = row["setup"]
+            sl = calculate_sl(setup_name, buy_price, risk_per_trade, ltp)
+            if sl < lower_circuit_limit:
+                message = f"{symbol} Lower circuit :{round(lower_circuit_limit, 2)} SL:{round(sl, 2)} user:{user['Tr_No']}"
+                send_messsage_via_discord(message, strategy_name)
+                logger.info("SL is less than lower circuit limit, skipping the trade.")
+                continue
 
-        trade_id = row["trade_id"].split("_")[0]
+            trade_id = row["trade_id"].split("_")[0]
 
-        logger.debug("LTP", ltp, "Buy Price", buy_price, "SL", sl)
-        order_details = [
-            {
-                "strategy": strategy_name,
-                "signal": "Long",
-                "base_symbol": symbol,
-                "exchange_token": exchange_token,
-                "transaction_type": transaction_type,
-                "order_type": order_type,
-                "product_type": product_type,
-                "order_mode": "SL",
-                "trade_id": trade_id,
-                "trade_mode": trade_mode,
-                "limit_prc": sl,
-                "trigger_prc": sl + 0.3,
-                "setup": setup_name,
-            }
-        ]
-        order_to_place = assign_trade_id(order_details)
-        logger.debug(f"Orders to place: {order_to_place}")
-        place_order_single_user([user], order_to_place, "Holdings")
+            logger.debug("LTP", ltp, "Buy Price", buy_price, "SL", sl)
+            order_details = [
+                {
+                    "strategy": strategy_name,
+                    "signal": "Long",
+                    "base_symbol": symbol,
+                    "exchange_token": exchange_token,
+                    "transaction_type": transaction_type,
+                    "order_type": order_type,
+                    "product_type": product_type,
+                    "order_mode": "SL",
+                    "trade_id": trade_id,
+                    "trade_mode": trade_mode,
+                    "limit_prc": sl,
+                    "trigger_prc": sl + 0.3,
+                    "setup": setup_name,
+                }
+            ]
+            order_to_place = assign_trade_id(order_details)
+            logger.debug(f"Orders to place: {order_to_place}")
+            place_order_single_user([user], order_to_place, "Holdings")
+        except Exception as e:
+            logger.error(f"Error in processing holdings: {e}")
 
 
 if __name__ == "__main__":
