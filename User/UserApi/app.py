@@ -529,22 +529,39 @@ def get_tradestate(tr_no: str, strategy_name: str):
     try:
 
         firebase_holdings = get_firebase_holdings(tr_no, strategy_name)
+        # Filter out None values and records without 'time_stamp'
+        cleaned_holdings = [
+            entry for entry in firebase_holdings if entry and "time_stamp" in entry
+        ]
+
         # Convert to DataFrame
-        df = pd.DataFrame(firebase_holdings)
+        df = pd.DataFrame(cleaned_holdings)
 
-        # Filter for today's date
-        today = date.today().strftime("%Y-%m-%d")
-        df["time_stamp"] = pd.to_datetime(df["time_stamp"]).dt.strftime("%Y-%m-%d")
-        df_today = df[df["time_stamp"] == today]
+        # Proceed if 'time_stamp' column exists in the DataFrame
+        if "time_stamp" in df.columns:
+            # Filter for today's date
+            today = date.today().strftime("%Y-%m-%d")
+            df["time_stamp"] = pd.to_datetime(df["time_stamp"]).dt.strftime("%Y-%m-%d")
+            df_today = df[df["time_stamp"] == today]
 
-        # If there are no trades for today, return an empty DataFrame
-        if df_today.empty:
-            return {"message": "No trades found for today", "data": []}
+            # If there are no trades for today, return an empty DataFrame
+            if df_today.empty:
+                return {"message": "No trades found for today", "data": []}
 
-        # Convert DataFrame to dict for JSON serialization
-        result = df_today.to_dict(orient="records")
+            # Replace NaN, Inf, -Inf with None for JSON serialization
+            df_today = df_today.replace(
+                [float("inf"), float("-inf"), float("nan")], None
+            )
 
-        return {"message": "Trade state retrieved successfully", "data": result}
+            # Also ensure no NaN or problematic values in the rest of the DataFrame
+            df_today = df_today.where(pd.notnull(df_today), None)
+
+            # Convert DataFrame to dict for JSON serialization
+            result = df_today.to_dict(orient="records")
+
+            return {"message": "Trade state retrieved successfully", "data": result}
+        else:
+            return {"message": "'time_stamp' column is missing", "data": []}
 
     except Exception as e:
         logger.error(traceback.format_exc())

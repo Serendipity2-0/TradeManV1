@@ -68,9 +68,12 @@ def main():
             conn = get_db_connection(db_path)
             holdings = read_strategy_table(conn, "Holdings")
             strategy_prefix = strategy_obj.StrategyPrefix
-            strategy_holdings = holdings[
-                holdings["trade_id"].str.startswith(strategy_prefix)
-            ]
+            try:
+                strategy_holdings = holdings[
+                    holdings["trade_id"].str.startswith(strategy_prefix)
+                ]
+            except Exception as e:
+                logger.error(f"Error in fetching holdings for {strategy_prefix}: {e}")
             process_holdings(strategy_obj, strategy_holdings, user)
 
 
@@ -130,7 +133,7 @@ def process_holdings(strategy_obj, holdings, user):
             logger.debug(f"Orders to place: {order_to_place}")
             place_order_single_user([user], order_to_place, "Holdings")
         except Exception as e:
-            logger.error(f"Error in processing holdings: {e}")
+            logger.error(f"Error in placing order for {symbol}: {e}")
 
 
 if __name__ == "__main__":
