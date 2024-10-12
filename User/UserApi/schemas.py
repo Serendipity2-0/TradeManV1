@@ -2,7 +2,8 @@ from pydantic import BaseModel, RootModel
 from pydantic.fields import Field
 from typing import Optional
 from typing import List, Dict
-from datetime import datetime
+from sqlalchemy import Column, Integer, String, Float
+from User.UserApi.database import Base
 
 
 class Equity_(BaseModel):
@@ -174,3 +175,36 @@ class CompleteOrderInput(BaseModel):
     trade_id: str
     qty: Optional[float] = None
     setup_name: Optional[str] = None
+
+
+class Transaction(Base):
+    __tablename__ = "SixteenPlus"
+
+    transaction_id = Column(Integer, primary_key=True)
+    date = Column(String)
+    description = Column(String)
+    amount = Column(Float)
+    payment_mode = Column(String)
+    acc_id = Column(String)
+    department = Column(String)
+    comments = Column(String)
+    category = Column(String)
+    deducted_received_through = Column(String)
+    zoho_match = Column(String)
+    expected_payment_date = Column(String)
+    current_balance = Column(Float)
+
+
+class TransactionUpdate(BaseModel):
+    date: Optional[str] = None
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    payment_mode: Optional[str] = None
+    acc_id: Optional[str] = None
+    department: Optional[str] = None
+    comments: Optional[str] = None
+    category: Optional[str] = None
+    deducted_received_through: Optional[str] = None
+    zoho_match: Optional[str] = None
+    expected_payment_date: Optional[str] = None
+    current_balance: Optional[float] = None
