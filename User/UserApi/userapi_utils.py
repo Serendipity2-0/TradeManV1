@@ -2,7 +2,7 @@ import pandas as pd
 import os, sys
 from dotenv import load_dotenv
 from babel.numbers import format_currency
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import csv
 import numpy as np
 import re
@@ -10,7 +10,8 @@ from collections import Counter
 from typing import Dict, Any, List, Optional
 import sqlite3
 import traceback
-import ast
+from fastapi import HTTPException
+from sqlalchemy import create_engine
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -40,12 +41,17 @@ from Executor.NSEStrategies.NSEStrategiesUtil import (
     get_transaction_type,
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
-
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_utils import (
+    get_tr_no_for_hl_id,
+    get_principal_amount,
+)
+from User.UserApi import schemas
 from Executor.ExecutorUtils.ExeUtils import (
     EQUITY_STRATEGY_LIST,
     DERIVATIVES_STRATEGY_LIST,
+    DEBT_STRATEGY_LIST,
 )
-
+from User.UserApi.database import get_db_session, init_db
 
 logger = LoggerSetup()
 
@@ -59,6 +65,7 @@ MARKET_INFO_FB_COLLECTION = os.getenv("MARKET_INFO_FB_COLLECTION")
 USER_DB_EQUITY_PATH = os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER")
 USER_DB_DERIVATIVES_PATH = os.getenv("USR_TRADELOG_DERIVATIVES_DB_FOLDER")
 USER_DB_DEBT_PATH = os.getenv("USR_TRADELOG_DEBT_DB_FOLDER")
+KAAS_EXCEL_FILE_PATH = os.getenv("KAAS_EXCEL_FILE_PATH")
 
 MODE_TO_DB = {
     "Equity": ("equity", USER_DB_EQUITY_PATH),
@@ -67,6 +74,7 @@ MODE_TO_DB = {
 }
 EQUITY = "Equity"
 DERIVATIVES = "Derivatives"
+DEBT = "Debt"
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
 ERROR_LOG_CSV_PATH = os.getenv("ERROR_LOG_CSV_PATH")
 
@@ -395,13 +403,16 @@ def get_individual_strategy_data(
             db_name, folder_path = MODE_TO_DB["Equity"]
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
             db_name, folder_path = MODE_TO_DB["Derivatives"]
+        elif strategy_name in DEBT_STRATEGY_LIST:
+            db_name, folder_path = MODE_TO_DB["Debt"]
         else:
             db_name, folder_path = MODE_TO_DB["Equity"]
         db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db")
+        logger.info(f"DB Path: {db_path}")
 
         conn = get_db_connection(db_path)
         strategies = ACTIVE_STRATEGIES + ["Holdings"]
-
+        logger.info(f"Strategies: {strategies}")
         if strategy_name in strategies:
             # Calculate the offset
             offset = (page - 1) * page_size
@@ -416,12 +427,19 @@ def get_individual_strategy_data(
                 f"SELECT * FROM {strategy_name} LIMIT {page_size} OFFSET {offset}", conn
             )
 
-            if strategy_name == "Holdings":
+            if strategy_name == "Holdings" or strategy_name in DEBT_STRATEGY_LIST:
                 # Convert any potential NumPy types to Python native types
                 data = data.astype(object).where(pd.notnull(data), None)
-            else:
+            elif (
+                strategy_name in DERIVATIVES_STRATEGY_LIST
+                or strategy_name in EQUITY_STRATEGY_LIST
+            ):
                 data["exit_time"] = pd.to_datetime(data["exit_time"])
                 # Convert any potential NumPy types to Python native types
+                data = data.astype(object).where(pd.notnull(data), None)
+            if strategy_name in DEBT_STRATEGY_LIST:
+                data = data.astype(object).where(pd.notnull(data), None)
+            else:
                 data = data.astype(object).where(pd.notnull(data), None)
 
             return {
@@ -458,6 +476,8 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
             db_name, folder_path = MODE_TO_DB["Equity"]
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
             db_name, folder_path = MODE_TO_DB["Derivatives"]
+        elif strategy_name in DEBT_STRATEGY_LIST:
+            db_name, folder_path = MODE_TO_DB["Debt"]
         else:
             db_name, folder_path = MODE_TO_DB["Equity"]
         db_path = os.path.join(folder_path, f"{tr_no}_{db_name}.db")
@@ -466,23 +486,27 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
         strategies = ACTIVE_STRATEGIES + ["Holdings"]
 
         if strategy_name in strategies:
-            # Fetch only exit_time and pnl
-            data = pd.read_sql_query(
-                f"SELECT exit_time, pnl FROM {strategy_name}", conn
-            )
+            if strategy_name not in DEBT_STRATEGY_LIST:
+                # Fetch only exit_time and pnl
+                data = pd.read_sql_query(
+                    f"SELECT exit_time, pnl FROM {strategy_name}", conn
+                )
 
-            data["exit_time"] = pd.to_datetime(data["exit_time"])
+                data["exit_time"] = pd.to_datetime(data["exit_time"])
 
-            # Convert DataFrame to list of dictionaries
-            combined_data = data.to_dict("records")
+                # Convert DataFrame to list of dictionaries
+                combined_data = data.to_dict("records")
 
-            # Convert any numpy types to Python native types
-            for item in combined_data:
-                item["exit_time"] = item["exit_time"].isoformat()
-                if isinstance(item["pnl"], np.number):
-                    item["pnl"] = float(item["pnl"])
+                # Convert any numpy types to Python native types
+                for item in combined_data:
+                    item["exit_time"] = item["exit_time"].isoformat()
+                    if isinstance(item["pnl"], np.number):
+                        item["pnl"] = float(item["pnl"])
 
-            return {"items": combined_data}
+                return {"items": combined_data}
+            else:
+                data = pd.read_sql_query(f"SELECT date FROM {strategy_name}", conn)
+                return {"items": data}
         else:
             logger.error(f"Strategy not found: {strategy_name}")
             return None
@@ -565,6 +589,8 @@ def signal_graph_data(strategy_name: str) -> Dict[str, List[Dict[str, Any]]]:
             db_path = os.getenv("EQUITY_SIGNAL_DB_PATH")
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
             db_path = os.getenv("DERIVATIVES_SIGNAL_DB_PATH")
+        elif strategy_name in DEBT_STRATEGY_LIST:
+            db_path = os.getenv("DEBT_SIGNAL_DB_PATH")
         else:
             raise ValueError(f"Invalid strategy name: {strategy_name}")
 
@@ -622,65 +648,82 @@ def calculate_strategy_statistics(df: pd.DataFrame, is_signals: bool):
         return None
     column_for_calc = "trade_points" if is_signals else "net_pnl"
 
-    # Basic calculations
-    positive_trades = df[df[column_for_calc] > 0]
-    negative_trades = df[df[column_for_calc] < 0]
+    # Check if 'trade_points' column is present in the DataFrame
+    if "trade_points" not in df.columns:
+        print("trade_points not in df.columns")
+        return None
+    try:
+        df[column_for_calc] = df[column_for_calc].astype(float)
+        positive_trades = df[df[column_for_calc] > 0.0]
+        negative_trades = df[df[column_for_calc] < 0.0]
+    except Exception as e:
+        print(e)
 
     net_trade_points = df[column_for_calc].sum()
     num_trades = len(df)
     num_wins = len(positive_trades)
     num_losses = len(negative_trades)
 
-    # Consecutive wins and losses
-    df["win"] = df[column_for_calc] > 0
-    df["group"] = (df["win"] != df["win"].shift()).cumsum()
-    consecutive_wins = (
-        df[df["win"]].groupby("group").size().max() if num_wins > 0 else 0
-    )
-    consecutive_losses = (
-        df[~df["win"]].groupby("group").size().max() if num_losses > 0 else 0
-    )
+    try:
+        cols = ["entry_price", "exit_price", "trade_points", "pnl", "net_pnl"]
+        for col in cols:
+            df[col] = df[col].astype(float)
+        # Consecutive wins and losses
+        df["win"] = df[column_for_calc] > 0
+        df["group"] = (df["win"] != df["win"].shift()).cumsum()
+        consecutive_wins = (
+            df[df["win"]].groupby("group").size().max() if num_wins > 0 else 0
+        )
+        consecutive_losses = (
+            df[~df["win"]].groupby("group").size().max() if num_losses > 0 else 0
+        )
 
-    # Advanced calculations
-    avg_profit_loss = df[column_for_calc].mean()
-    df["profit_percent"] = df[column_for_calc] / df["entry_price"] * 100
-    avg_profit_loss_percent = df["profit_percent"].mean()
-    max_trade_drawdown = df[column_for_calc].min()
-    cumulative_net_pnl = df[column_for_calc].cumsum()
-    max_system_drawdown = cumulative_net_pnl.min()
+        # Advanced calculations
+        avg_profit_loss = df[column_for_calc].mean()
+        df["profit_percent"] = df[column_for_calc] / df["entry_price"] * 100
+        avg_profit_loss_percent = df["profit_percent"].mean()
+        max_trade_drawdown = df[column_for_calc].min()
+        cumulative_net_pnl = df[column_for_calc].cumsum()
+        max_system_drawdown = cumulative_net_pnl.min()
 
-    recovery_factor = (
-        net_trade_points / -max_system_drawdown if max_system_drawdown < 0 else 0
-    )
+        recovery_factor = (
+            net_trade_points / -max_system_drawdown if max_system_drawdown < 0 else 0
+        )
 
-    annual_return = 0.1  # Assume 10% annual return or replace with actual calculation
-    max_dd_percent = max_system_drawdown / df["entry_price"].iloc[0] * 100
-    car_maxdd = annual_return / -max_dd_percent if max_dd_percent < 0 else 0
+        annual_return = (
+            0.1  # Assume 10% annual return or replace with actual calculation
+        )
+        max_dd_percent = max_system_drawdown / df["entry_price"].iloc[0] * 100
+        car_maxdd = annual_return / -max_dd_percent if max_dd_percent < 0 else 0
 
-    std_error = df[column_for_calc].std()
-    risk_reward_ratio = avg_profit_loss / std_error if std_error != 0 else 0
+        std_error = df[column_for_calc].std()
+        risk_reward_ratio = avg_profit_loss / std_error if std_error != 0 else 0
 
-    drawdown = cumulative_net_pnl.cummin() - cumulative_net_pnl
-    ulcer_index = np.sqrt(np.mean(drawdown**2))
+        drawdown = cumulative_net_pnl.cummin() - cumulative_net_pnl
+        ulcer_index = np.sqrt(np.mean(drawdown**2))
+    except Exception as e:
+        print(e)
 
-    statistics = {
-        "Net Trade Points": net_trade_points,
-        "No of Trades": num_trades,
-        "No of Wins": num_wins,
-        "No of Losses": num_losses,
-        "No of Cons Win": consecutive_wins,
-        "No of Cons Loss": consecutive_losses,
-        "Avg. Profit/Loss (Expectancy Rs)": avg_profit_loss,
-        "Avg. Profit/Loss % (Expectancy %)": avg_profit_loss_percent,
-        "Max. Trade Drawdown": max_trade_drawdown,
-        "Max. System Drawdown": max_system_drawdown,
-        "Recovery Factor": recovery_factor,
-        "CAR/MaxDD": car_maxdd,
-        "Standard Error": std_error,
-        "Risk-Reward Ratio": risk_reward_ratio,
-        "Ulcer Index": ulcer_index,
-    }
-
+    try:
+        statistics = {
+            "Net Trade Points": net_trade_points,
+            "No of Trades": num_trades,
+            "No of Wins": num_wins,
+            "No of Losses": num_losses,
+            "No of Cons Win": consecutive_wins,
+            "No of Cons Loss": consecutive_losses,
+            "Avg. Profit/Loss (Expectancy Rs)": avg_profit_loss,
+            "Avg. Profit/Loss % (Expectancy %)": avg_profit_loss_percent,
+            "Max. Trade Drawdown": max_trade_drawdown,
+            "Max. System Drawdown": max_system_drawdown,
+            "Recovery Factor": recovery_factor,
+            "CAR/MaxDD": car_maxdd,
+            "Standard Error": std_error,
+            "Risk-Reward Ratio": risk_reward_ratio,
+            "Ulcer Index": ulcer_index,
+        }
+    except Exception as e:
+        print(e)
     # Convert numpy types to Python native types
     formatted_stats = {}
     for key, value in statistics.items():
@@ -834,6 +877,8 @@ def fetch_strategies_for_user(tr_no: str):
             strategies.extend(
                 [strategy for strategy in user["Strategies"]["Derivatives"]]
             )
+        if "Debt" in user["Strategies"]:
+            strategies.extend([strategy for strategy in user["Strategies"]["Debt"]])
 
     return strategies
 
@@ -900,6 +945,8 @@ def fetch_segment_from_strategy(strategy_name: str):
         return EQUITY
     elif strategy_name in DERIVATIVES_STRATEGY_LIST:
         return DERIVATIVES
+    elif strategy_name in DEBT_STRATEGY_LIST:
+        return DEBT
     else:
         return None
 
@@ -1212,3 +1259,500 @@ def read_n_process_err_log():
         error_df_sorted.to_csv(f, header=f.tell() == 0, index=False)
 
     return error_df_sorted
+
+
+def get_current_month_name():
+    """
+    Returns the current month's name.
+
+    Returns:
+        str: The current month's name.
+    """
+    return datetime.now().strftime("%B")
+
+
+def safe_str(value):
+    """
+    Converts a value to string, handling NaN values.
+
+    Args:
+        value: The value to convert to string.
+
+    Returns:
+        str: The string representation of the value, or None if the value is NaN.
+    """
+    if pd.isna(value):
+        return None
+    else:
+        return str(value)
+
+
+def safe_float(value):
+    """
+    Converts a value to float, handling NaN values.
+
+    Args:
+        value: The value to convert to float.
+
+    Returns:
+        float: The float representation of the value, or None if the value is NaN.
+    """
+    if pd.isna(value):
+        return None
+    else:
+        try:
+            return float(value)
+        except ValueError:
+            return None
+
+
+def safe_int(value):
+    """
+    Converts a value to int, handling NaN values.
+
+    Args:
+        value: The value to convert to int.
+
+    Returns:
+        int: The int representation of the value, or None if the value is NaN.
+    """
+    if pd.isna(value):
+        return None
+    else:
+        try:
+            return int(value)
+        except ValueError:
+            return None
+
+
+def read_excel_file(file_path, sheet_name):
+    """
+    Reads an Excel sheet and returns a DataFrame.
+
+    Args:
+        file_path (str): The path to the Excel file.
+        sheet_name (str): The name of the sheet to read.
+
+    Returns:
+        pd.DataFrame: The DataFrame containing the sheet data.
+    """
+    try:
+        df = pd.read_excel(file_path, sheet_name=sheet_name)
+        return df
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Excel file not found at path: {file_path}")
+    except Exception as e:
+        raise Exception(f"Error reading sheet '{sheet_name}': {str(e)}")
+
+
+def validate_columns(df, required_columns, sheet_name):
+    """
+    Validates that required columns are present in the DataFrame.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to validate.
+        required_columns (list): The list of required columns.
+        sheet_name (str): The name of the sheet.
+
+    Raises:
+        ValueError: If any required columns are missing.
+    """
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(
+            f"Required columns {missing_columns} not found in {sheet_name} sheet."
+        )
+
+
+def filter_transactions_by_month(df, month):
+    """
+    Filters transactions where 'Comments' include the specified month.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the transactions.
+        month (str): The month to filter by.
+
+    Returns:
+        pd.DataFrame: The filtered DataFrame.
+    """
+    # the comments is in this format 2024 October Interest HL - 005
+    return df[df["Description"].str.contains(month, na=False)]
+
+
+def get_engine_for_acc_id(acc_id):
+    """
+    Creates a database engine for a given AccID.
+
+    Args:
+        acc_id (str): The account ID.
+
+    Returns:
+        Engine: The database engine.
+    """
+
+    tr_no = get_tr_no_for_hl_id(acc_id, "Debt", "SixteenPlus")
+    logger.info(f"TrNo for HL ID {acc_id} is {tr_no}")
+    db_file = f"{tr_no}_debt.db"
+    # Check if the file exists, if not, create it
+    if not os.path.exists(os.path.join(USER_DB_DEBT_PATH, db_file)):
+        # Ensure the directory exists
+        os.makedirs(USER_DB_DEBT_PATH, exist_ok=True)
+        # Create an empty file
+        open(os.path.join(USER_DB_DEBT_PATH, db_file), "a").close()
+        logger.info(f"Created new database file: {db_file}")
+    else:
+        logger.info(f"Using existing database file: {db_file}")
+    engine = create_engine(f"sqlite:///{USER_DB_DEBT_PATH}/{db_file}")
+    return engine
+
+
+def parse_date(date_str: str) -> datetime:
+    """
+    Parses a date string in YYYY-MM-DD format into a datetime object.
+
+    Args:
+        date_str (str): The date string in YYYY-MM-DD format.
+
+    Returns:
+        datetime: The parsed datetime object.
+    """
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid date format: {date_str}. Expected YYYY-MM-DD.",
+        )
+
+
+def get_current_week_start_end() -> tuple[datetime, datetime]:
+    """
+    Returns the start and end dates of the current week (Monday to Sunday).
+
+    Returns:
+        tuple[datetime, datetime]: The start and end dates of the current week.
+    """
+    today = datetime.now()
+    week_start = today - timedelta(days=today.weekday())  # Monday
+    week_end = week_start + timedelta(days=6)  # Sunday
+    return week_start, week_end
+
+
+def read_and_validate_excel_data(month):
+    """
+    Reads and validates the Excel data for transactions and accounts.
+
+    Args:
+        month (str): The month to filter transactions by.
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame]: The filtered transactions and accounts DataFrames.
+    """
+    transactions_df = read_excel_file(KAAS_EXCEL_FILE_PATH, "Transactions(Past)")
+    accounts_df = read_excel_file(KAAS_EXCEL_FILE_PATH, "Accounts(Present)")
+
+    required_transaction_columns = [
+        "TrNo",
+        "Date",
+        "Description",
+        "Amount",
+        "PaymentMode",
+        "AccID",
+        "Department",
+        "Comments",
+        "Category",
+        "DeductedReceivedThrough",
+        "ZohoMatch",
+        "ExpectedPaymentDate",
+    ]
+    validate_columns(
+        transactions_df, required_transaction_columns, "Transactions(Past)"
+    )
+
+    required_account_columns = [
+        "SLNo",
+        "AccountName",
+        "Type",
+        "AccID",
+        "CurrentBalance",
+        "IntRate",
+        "NextDueDate",
+        "Bank",
+        "Tenure",
+        "EMIAmt",
+        "Comments",
+    ]
+    validate_columns(accounts_df, required_account_columns, "Accounts(Present)")
+
+    filtered_transactions = filter_transactions_by_month(transactions_df, month)
+    return filtered_transactions, accounts_df
+
+
+def update_firebase_data(tr_no, total_interest_earned, final_current_balance):
+    """
+    Updates Firebase with the total interest earned and final current balance.
+
+    Args:
+        tr_no (str): The trader number.
+        total_interest_earned (float): The total interest earned.
+        final_current_balance (float): The final current balance.
+    """
+    try:
+        # Update Interest Earned
+        update_fields_firebase(
+            CLIENTS_COLLECTION,
+            tr_no,
+            {"InterestEarned": total_interest_earned},
+            "Strategies/Debt/16+",
+        )
+
+        # Update Current Balance
+        update_fields_firebase(
+            CLIENTS_COLLECTION,
+            tr_no,
+            {"Debt_AccountValue": final_current_balance},
+            "Accounts/Debt",
+        )
+
+        logger.info(
+            f"Firebase updated for Tr_No {tr_no}: Interest Earned: {total_interest_earned}, Current Balance: {final_current_balance}"
+        )
+    except Exception as e:
+        logger.error(f"Error updating Firebase for Tr_No {tr_no}: {str(e)}")
+
+
+def process_acc_transactions(acc_id, transactions, current_balance):
+    """
+    Processes the transactions for a given account ID.
+
+    Args:
+        acc_id (str): The account ID.
+        transactions (pd.DataFrame): The transactions DataFrame.
+        current_balance (float): The current balance.
+
+    Raises:
+        ValueError: If the account ID is not found in the transactions DataFrame.
+        Exception: If there is an error processing the transactions.
+
+    Returns:
+        tuple[int, list[str], float, float]: The number of transactions imported, the list of errors, the total interest earned, and the final current balance.
+    """
+    try:
+        # Get Tr_No for the acc_id
+        tr_no = get_tr_no_for_hl_id(acc_id, "Debt", "SixteenPlus")
+        if not tr_no:
+            raise ValueError(f"Could not find Tr_No for AccID {acc_id}")
+
+        # Initialize the database for this user
+        init_db(tr_no)
+
+        # Get a session for this user
+        session = get_db_session(tr_no)
+
+        transactions_imported = 0
+        errors = []
+        final_current_balance = current_balance
+
+        # Fetch principal amount from Firebase
+        principal_amount = get_principal_amount(tr_no, "Debt", "SixteenPlus")
+        logger.info(f"Principal amount for Tr_No {tr_no} is {principal_amount}")
+
+        # Process each transaction
+        for _, transaction in transactions.iterrows():
+            try:
+                existing_transaction = (
+                    session.query(schemas.Transaction)
+                    .filter_by(transaction_id=transaction["TrNo"])
+                    .first()
+                )
+                if existing_transaction:
+                    logger.info(
+                        f"Transaction TrNo {transaction['TrNo']} already exists. Skipping."
+                    )
+                    continue
+
+                new_transaction = schemas.Transaction(
+                    transaction_id=safe_int(transaction["TrNo"]),
+                    date=safe_str(transaction["Date"]),
+                    description=safe_str(transaction["Description"]),
+                    amount=safe_float(transaction["Amount"]),
+                    payment_mode=safe_str(transaction["PaymentMode"]),
+                    acc_id=safe_str(transaction["AccID"]),
+                    department=safe_str(transaction["Department"]),
+                    comments=safe_str(transaction["Comments"]),
+                    category=safe_str(transaction["Category"]),
+                    deducted_received_through=safe_str(
+                        transaction["DeductedReceivedThrough"]
+                    ),
+                    zoho_match=safe_str(transaction["ZohoMatch"]),
+                    expected_payment_date=safe_str(transaction["ExpectedPaymentDate"]),
+                    current_balance=final_current_balance,
+                )
+                session.add(new_transaction)
+                transactions_imported += 1
+
+                # Update current balance
+                final_current_balance += new_transaction.amount
+
+            except Exception as e:
+                error_message = f"Error processing transaction TrNo {transaction.get('TrNo')}: {str(e)}"
+                logger.error(error_message)
+                errors.append(error_message)
+                continue
+
+        session.commit()
+        session.close()
+
+        # Calculate total interest earned
+        total_interest_earned = abs(final_current_balance) - principal_amount
+        logger.info(
+            f"Total interest earned for Tr_No {tr_no} is {total_interest_earned}"
+        )
+
+        return (
+            transactions_imported,
+            errors,
+            total_interest_earned,
+            abs(final_current_balance),
+        )
+
+    except Exception as e:
+        error_message = f"Error processing AccID {acc_id}: {str(e)}"
+        logger.error(error_message)
+        raise Exception(error_message)
+
+
+def process_transactions(filtered_transactions, accounts_df):
+    """
+    Processes the transactions for all accounts.
+
+    Args:
+        filtered_transactions (pd.DataFrame): The filtered transactions DataFrame.
+        accounts_df (pd.DataFrame): The accounts DataFrame.
+
+    Returns:
+        tuple[int, list[str]]: The number of transactions imported and the list of errors.
+    """
+    total_transactions_imported = 0
+    total_errors = []
+
+    for acc_id, transactions in filtered_transactions.groupby("AccID"):
+        try:
+            if pd.isna(acc_id):
+                raise ValueError("AccID is missing in transaction.")
+
+            account_info_df = accounts_df[accounts_df["AccID"] == acc_id]
+            if account_info_df.empty:
+                raise ValueError(
+                    f"Account with AccID '{acc_id}' not found in AccountsPresent sheet."
+                )
+            account_info = account_info_df.iloc[0]
+            current_balance = account_info["CurrentBalance"]
+
+            (
+                transactions_imported,
+                errors,
+                total_interest_earned,
+                final_current_balance,
+            ) = process_acc_transactions(acc_id, transactions, current_balance)
+            total_transactions_imported += transactions_imported
+            total_errors.extend(errors)
+
+            # Get Tr_No for the acc_id
+            tr_no = get_tr_no_for_hl_id(acc_id, "Debt", "SixteenPlus")
+            if tr_no:
+                update_firebase_data(
+                    tr_no, total_interest_earned, final_current_balance
+                )
+            else:
+                logger.warning(
+                    f"Could not find Tr_No for AccID {acc_id}. Firebase not updated."
+                )
+
+        except Exception as e:
+            error_message = f"Error processing AccID {acc_id}: {str(e)}"
+            logger.error(error_message)
+            total_errors.append(error_message)
+
+    return total_transactions_imported, total_errors
+
+
+def update_transaction(transaction, update_data):
+    """
+    Updates the transaction with the provided update data.
+
+    Args:
+        transaction: The transaction object to update.
+        update_data: The data to update the transaction with.
+
+    Returns:
+        None
+    """
+    update_fields = update_data.dict(exclude_unset=True)
+    for key, value in update_fields.items():
+        if hasattr(transaction, key):
+            setattr(transaction, key, value)
+        else:
+            logger.warning(
+                f"Field '{key}' is not a valid field for Transaction. Skipping."
+            )
+
+
+def get_date_range(weekStart, weekEnd):
+    """
+    Gets the start and end dates for a given week range.
+
+    Args:
+        weekStart (str): The start date of the week in YYYY-MM-DD format.
+        weekEnd (str): The end date of the week in YYYY-MM-DD format.
+
+    Returns:
+        tuple[datetime, datetime]: The start and end dates.
+    """
+    if weekStart:
+        start_date = parse_date(weekStart)
+    else:
+        start_date, _ = get_current_week_start_end()
+    if weekEnd:
+        end_date = parse_date(weekEnd)
+    else:
+        _, end_date = get_current_week_start_end()
+        if not weekStart:
+            end_date = start_date + timedelta(days=6)
+
+    if start_date > end_date:
+        raise HTTPException(
+            status_code=400, detail="weekStart cannot be after weekEnd."
+        )
+
+    return start_date, end_date
+
+
+def serialize_transactions(transactions):
+    """
+    Serializes the transactions to a list of dictionaries.
+
+    Args:
+        transactions: The transactions to serialize.
+
+    Returns:
+        list[dict]: The serialized transactions.
+    """
+    return [
+        {
+            "transaction_id": tx.transaction_id,
+            "date": tx.date,
+            "description": tx.description,
+            "amount": tx.amount,
+            "payment_mode": tx.payment_mode,
+            "acc_id": tx.acc_id,
+            "department": tx.department,
+            "comments": tx.comments,
+            "category": tx.category,
+            "deducted_received_through": tx.deducted_received_through,
+            "zoho_match": tx.zoho_match,
+            "expected_payment_date": tx.expected_payment_date,
+            "current_balance": tx.current_balance,
+        }
+        for tx in transactions
+    ]

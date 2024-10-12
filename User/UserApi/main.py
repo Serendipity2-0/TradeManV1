@@ -40,6 +40,7 @@ app_fastapi.add_middleware(
 
 app_user = APIRouter()
 app_admin = APIRouter()
+app_debt = APIRouter()
 
 
 @app_fastapi.get("/swagger", include_in_schema=False)
@@ -369,6 +370,7 @@ def get_strategy_statistics(tr_no: str, strategy_name: str):
         statistics = app.strategy_statistics(tr_no, strategy_name)
 
         if statistics is None:
+            statistics = {}
             raise HTTPException(
                 status_code=404,
                 detail=f"No data found for Strategy {strategy_name} for {tr_no}",
@@ -378,8 +380,8 @@ def get_strategy_statistics(tr_no: str, strategy_name: str):
 
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=404, detail="Statistics not found")
 
 
 @app_user.get("/user-broker-transactions")
@@ -1111,8 +1113,100 @@ def delete_user(tr_no: str):
         raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
 
 
+@app_debt.post("/transactions/import")
+async def import_transactions(month: Optional[str] = Query(None)):
+    """
+    Import transactions from an Excel file for a given month.
+
+    Args:
+        month (str, optional): The month to import transactions for. Defaults to the current month.
+
+    Returns:
+        dict: A dictionary containing the status, number of transactions imported, and any errors.
+    """
+    try:
+        import_status = app.import_transactions(month)
+        return import_status
+    except Exception as e:
+        error_message = f"An error occurred: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+
+@app_debt.put("/transactions/{trNo}/{transactionId}")
+async def update_transaction(
+    trNo: str, transactionId: int, update_data: schemas.TransactionUpdate
+):
+    """
+    Update the fields of a transaction.
+
+    Args:
+        trNo (str): The trader number.
+        transactionId (int): The transaction ID.
+        update_data (schemas.TransactionUpdate): The data to update.
+
+    Returns:
+        dict: A dictionary containing the status of the update.
+    """
+    try:
+        update_status = app.update_transaction_fields(trNo, transactionId, update_data)
+        return update_status
+    except Exception as e:
+        error_message = f"An error occurred: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+
+@app_debt.get("/transactions/{trNo}/weekly")
+async def get_weekly_transactions(
+    trNo: str,
+    weekStart: Optional[str] = Query(
+        None, description="Start date of the week in YYYY-MM-DD format"
+    ),
+    weekEnd: Optional[str] = Query(
+        None, description="End date of the week in YYYY-MM-DD format"
+    ),
+):
+    """
+    Get weekly transactions for a given trader number.
+
+    Args:
+        trNo (str): The trader number.
+        weekStart (str, optional): The start date of the week in YYYY-MM-DD format.
+        weekEnd (str, optional): The end date of the week in YYYY-MM-DD format.
+
+    Returns:
+        list: A list of transactions for the specified week.
+    """
+    try:
+        weekly_transactions = app.get_weekly_transactions(trNo, weekStart, weekEnd)
+        return weekly_transactions
+    except Exception as e:
+        error_message = f"An error occurred: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+
+@app_debt.delete("/api/transactions/{trNo}/{transactionId}")
+async def delete_transaction(trNo: str, transactionId: int):
+    """
+    Deletes a transaction from the database.
+
+    Parameters:
+    - trNo: The transaction number or account identifier.
+    - transactionId: The unique identifier of the transaction to be deleted.
+
+    Returns:
+    - JSON response indicating success or failure.
+    """
+    try:
+        delete_status = app.delete_transaction(trNo, transactionId)
+        return delete_status
+    except Exception as e:
+        error_message = f"An error occurred: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
+
 app_fastapi.include_router(app_user, prefix="/v1/user", tags=["user"])
 app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
+app_fastapi.include_router(app_debt, prefix="/v1/debt", tags=["debt"])
 
 
 def main_api():

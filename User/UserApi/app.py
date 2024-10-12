@@ -6,6 +6,8 @@ from typing import Dict, Any, List
 from fastapi import HTTPException
 from datetime import datetime
 import traceback
+from fastapi.responses import JSONResponse
+from sqlalchemy.orm import sessionmaker
 
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
@@ -16,6 +18,7 @@ load_dotenv(ENV_PATH)
 # Constants
 EQUITY = "Equity"
 DERIVATIVES = "Derivatives"
+DEBT = "Debt"
 
 # importing packages
 import User.UserApi.schemas as schemas
@@ -46,6 +49,7 @@ from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
 from Executor.ExecutorUtils.ExeUtils import (
     EQUITY_STRATEGY_LIST,
     DERIVATIVES_STRATEGY_LIST,
+    DEBT_STRATEGY_LIST,
 )
 
 logger = LoggerSetup()
@@ -416,7 +420,11 @@ def strategy_statistics(tr_no: str, strategy_name: str) -> Dict[str, Any]:
         df = data["items"]
         is_signals = strategy_name != "Holdings"
 
-        return calculate_strategy_statistics(df, is_signals)
+        value = calculate_strategy_statistics(df, is_signals)
+        if value is None:
+            return None
+        else:
+            return value
 
     except Exception as e:
         # Log the error here if needed
@@ -438,6 +446,8 @@ def get_strategy_signals(strategy_name: str, page: int, page_size: int):
             return fetch_strategy_signals(strategy_name, EQUITY, page, page_size)
         elif strategy_name in DERIVATIVES_STRATEGY_LIST:
             return fetch_strategy_signals(strategy_name, DERIVATIVES, page, page_size)
+        elif strategy_name in DEBT_STRATEGY_LIST:
+            return fetch_strategy_signals(strategy_name, DEBT, page, page_size)
         else:
             raise HTTPException(status_code=404, detail="Strategy not found")
     except Exception as e:
@@ -519,22 +529,39 @@ def get_tradestate(tr_no: str, strategy_name: str):
     try:
 
         firebase_holdings = get_firebase_holdings(tr_no, strategy_name)
+        # Filter out None values and records without 'time_stamp'
+        cleaned_holdings = [
+            entry for entry in firebase_holdings if entry and "time_stamp" in entry
+        ]
+
         # Convert to DataFrame
-        df = pd.DataFrame(firebase_holdings)
+        df = pd.DataFrame(cleaned_holdings)
 
-        # Filter for today's date
-        today = date.today().strftime("%Y-%m-%d")
-        df["time_stamp"] = pd.to_datetime(df["time_stamp"]).dt.strftime("%Y-%m-%d")
-        df_today = df[df["time_stamp"] == today]
+        # Proceed if 'time_stamp' column exists in the DataFrame
+        if "time_stamp" in df.columns:
+            # Filter for today's date
+            today = date.today().strftime("%Y-%m-%d")
+            df["time_stamp"] = pd.to_datetime(df["time_stamp"]).dt.strftime("%Y-%m-%d")
+            df_today = df[df["time_stamp"] == today]
 
-        # If there are no trades for today, return an empty DataFrame
-        if df_today.empty:
-            return {"message": "No trades found for today", "data": []}
+            # If there are no trades for today, return an empty DataFrame
+            if df_today.empty:
+                return {"message": "No trades found for today", "data": []}
 
-        # Convert DataFrame to dict for JSON serialization
-        result = df_today.to_dict(orient="records")
+            # Replace NaN, Inf, -Inf with None for JSON serialization
+            df_today = df_today.replace(
+                [float("inf"), float("-inf"), float("nan")], None
+            )
 
-        return {"message": "Trade state retrieved successfully", "data": result}
+            # Also ensure no NaN or problematic values in the rest of the DataFrame
+            df_today = df_today.where(pd.notnull(df_today), None)
+
+            # Convert DataFrame to dict for JSON serialization
+            result = df_today.to_dict(orient="records")
+
+            return {"message": "Trade state retrieved successfully", "data": result}
+        else:
+            return {"message": "'time_stamp' column is missing", "data": []}
 
     except Exception as e:
         logger.error(traceback.format_exc())
@@ -1291,3 +1318,201 @@ def get_error_logs():
         dict: A dictionary containing the error logs.
     """
     return read_n_process_err_log()
+
+
+def import_transactions(month: Optional[str]):
+    """
+    Imports transactions from an Excel file for a given month.
+
+    Args:
+        month (str, optional): The month to import transactions for. If not provided, the current month is used.
+
+    Returns:
+        dict: A dictionary containing the status of the import.
+    """
+    try:
+        month = month or get_current_month_name()
+        logger.info(f"Importing transactions for month: {month}")
+
+        filtered_transactions, accounts_df = read_and_validate_excel_data(month)
+        if filtered_transactions.empty:
+            logger.info("No transactions found for the specified month.")
+            return JSONResponse(
+                content={"status": "success", "transactions_imported": 0, "errors": []}
+            )
+
+        total_transactions_imported, total_errors = process_transactions(
+            filtered_transactions, accounts_df
+        )
+
+        response_content = {
+            "status": "success" if total_transactions_imported > 0 else "failure",
+            "transactions_imported": total_transactions_imported,
+            "errors": total_errors,
+        }
+        return JSONResponse(content=response_content)
+
+    except Exception as e:
+        error_message = f"An error occurred: {str(e)}"
+        logger.error(traceback.format_exc())
+        logger.error(error_message)
+        raise HTTPException(status_code=500, detail=error_message)
+
+
+def update_transaction_fields(trNo, transactionId, update_data):
+    """
+    Updates the fields of a transaction.
+
+    Args:
+        trNo (str): The trader number.
+        transactionId (int): The transaction ID.
+        update_data (schemas.TransactionUpdate): The data to update.
+
+    Returns:
+        dict: A dictionary containing the status of the update.
+    """
+    try:
+        session = get_db_session(trNo)
+        try:
+            transaction = (
+                session.query(schemas.Transaction)
+                .filter_by(transaction_id=transactionId)
+                .first()
+            )
+            if not transaction:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Transaction with ID {transactionId} not found.",
+                )
+
+            update_transaction(transaction, update_data)
+            session.commit()
+            logger.info(f"Transaction {transactionId} updated successfully.")
+            return JSONResponse(
+                content={
+                    "status": "success",
+                    "message": "Transaction updated successfully",
+                }
+            )
+
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=500, detail=f"Error updating transaction: {str(e)}"
+            )
+        finally:
+            session.close()
+
+    except FileNotFoundError as fnf:
+        raise HTTPException(status_code=404, detail=str(fnf))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+
+def get_weekly_transactions(trNo, weekStart, weekEnd):
+    """
+    Retrieves transactions for a given week range.
+
+    Args:
+        trNo (str): The trader number.
+        weekStart (str): The start date of the week in YYYY-MM-DD format.
+        weekEnd (str): The end date of the week in YYYY-MM-DD format.
+
+    Returns:
+        dict: A dictionary containing the status of the retrieval and the transactions.
+    """
+    try:
+        start_date, end_date = get_date_range(weekStart, weekEnd)
+        session = get_db_session(trNo)
+
+        try:
+            transactions = (
+                session.query(schemas.Transaction)
+                .filter(
+                    schemas.Transaction.date >= start_date.strftime("%Y-%m-%d"),
+                    schemas.Transaction.date <= end_date.strftime("%Y-%m-%d"),
+                )
+                .all()
+            )
+
+            transactions_list = serialize_transactions(transactions)
+
+            return JSONResponse(
+                content={"status": "success", "transactions": transactions_list}
+            )
+
+        finally:
+            session.close()
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        error_message = f"An error occurred while retrieving transactions: {str(e)}"
+        logger.error(error_message)
+        raise HTTPException(status_code=500, detail=error_message)
+
+
+def delete_transaction(trNo, transactionId):
+    """
+    Deletes a transaction from the database.
+
+    Args:
+        trNo (str): The trader number.
+        transactionId (int): The transaction ID.
+
+    Returns:
+        dict: A dictionary containing the status of the deletion.
+    """
+    try:
+        # Construct the database file name
+        acc_id = trNo  # Assuming trNo is equivalent to AccID
+        db_file = os.path.join(USER_DB_DEBT_PATH, f"{acc_id}_debt.db")
+
+        if not os.path.isfile(db_file):
+            error_message = f"Database file '{db_file}' does not exist."
+            logger.error(error_message)
+            raise HTTPException(status_code=404, detail=error_message)
+
+        # Create a database session
+        engine = create_engine(f"sqlite:///{db_file}")
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        try:
+            # Check if the transaction exists
+            transaction = (
+                session.query(schemas.Transaction)
+                .filter_by(transaction_id=transactionId)
+                .first()
+            )
+            if not transaction:
+                error_message = f"Transaction with ID {transactionId} not found."
+                logger.error(error_message)
+                raise HTTPException(status_code=404, detail=error_message)
+
+            # Delete the transaction
+            session.delete(transaction)
+            session.commit()
+            logger.info(f"Transaction {transactionId} deleted successfully.")
+            return JSONResponse(
+                content={
+                    "status": "success",
+                    "message": "Transaction deleted successfully",
+                }
+            )
+
+        except Exception as e:
+            session.rollback()
+            # Delete the transaction
+            logger.error(f"Error deleting transaction: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Error deleting transaction: {str(e)}"
+            )
+        finally:
+            session.close()
+    except Exception as e:
+        error_message = f"An error occurred while deleting transactions: {str(e)}"
+        logger.error(error_message)
+        raise HTTPException(status_code=500, detail=error_message)
