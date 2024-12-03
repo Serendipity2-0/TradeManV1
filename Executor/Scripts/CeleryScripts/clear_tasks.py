@@ -1,33 +1,31 @@
-import os
-import sys
 import redis
-from celery import Celery
-
-# Define constants and load environment variables
-DIR = os.getcwd()
-sys.path.append(DIR)  # Add the current directory to the system path
-
-# Create a Celery app instance
-app = Celery("tasks")
-app.config_from_object("Executor.Scripts.CeleryScripts.celeryconfig")
-
-# Redis client
-redis_client = redis.StrictRedis(host="localhost", port=6379, db=0)
+import os
 
 
-def clear_celery_tasks():
+def clear_tasks():
     try:
+        print("Starting clear_tasks.py")
         print("Attempting to clear Redis database...")
-        result = redis_client.flushdb()
-        print(f"Redis database cleared: {result}")
-        return "All Celery tasks cleared from Redis"
-    except redis.RedisError as e:
-        print(f"Error clearing Redis database: {e}")
-        return f"Failed to clear Celery tasks: {e}"
+
+        # Use the Redis URL from environment or fallback to the service name
+        redis_url = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
+
+        # Extract host and port from redis_url
+        if "://" in redis_url:
+            redis_url = redis_url.split("://")[-1]
+        host, port = redis_url.split(":")[0], int(redis_url.split(":")[1].split("/")[0])
+
+        r = redis.Redis(host=host, port=port)
+        r.flushall()
+        print("Successfully cleared Redis database")
+        return True
+    except Exception as e:
+        print(f"Error clearing Redis database: {str(e)}")
+        return False
 
 
 if __name__ == "__main__":
-    print("Starting clear_tasks.py")
-    result = clear_celery_tasks()
-    print(result)
+    success = clear_tasks()
     print("Finished clear_tasks.py")
+    if not success:
+        print("Failed to clear Celery tasks")
