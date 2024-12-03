@@ -25,6 +25,8 @@ services:
       - redis
     volumes:
       - .:/app
+      - app_data:/app/Data
+      - app_sample_data:/app/SampleData
     restart: unless-stopped
     networks:
       - trade_network
@@ -45,12 +47,33 @@ services:
       - redis
     volumes:
       - .:/app
+      - app_data:/app/Data
+      - app_sample_data:/app/SampleData
     restart: unless-stopped
+    networks:
+      - trade_network
+
+  fastapi:
+    build: .
+    container_name: fastapi
+    command: uvicorn User.UserApi.main:app_fastapi --host 0.0.0.0 --port 8082 --reload
+    ports:
+      - "8082:8082"
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - trademan.env
+    volumes:
+      - .:/app
+      - app_data:/app/Data
+      - app_sample_data:/app/SampleData
     networks:
       - trade_network
 
 volumes:
   redis_data:
+  app_data:
+  app_sample_data:
 
 networks:
   trade_network:
