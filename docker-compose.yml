@@ -27,6 +27,8 @@ services:
       - .:/app
       - app_data:/app/Data
       - app_sample_data:/app/SampleData
+      - trademan_db_data:/app/Data/TradeManDB
+      - trademan_signals_data:/app/Data/TradeManDB/Signals
     restart: unless-stopped
     networks:
       - trade_network
@@ -49,6 +51,8 @@ services:
       - .:/app
       - app_data:/app/Data
       - app_sample_data:/app/SampleData
+      - trademan_db_data:/app/Data/TradeManDB
+      - trademan_signals_data:/app/Data/TradeManDB/Signals
     restart: unless-stopped
     networks:
       - trade_network
@@ -67,6 +71,8 @@ services:
       - .:/app
       - app_data:/app/Data
       - app_sample_data:/app/SampleData
+      - trademan_db_data:/app/Data/TradeManDB
+      - trademan_signals_data:/app/Data/TradeManDB/Signals
     networks:
       - trade_network
 
@@ -74,6 +80,8 @@ volumes:
   redis_data:
   app_data:
   app_sample_data:
+  trademan_db_data:
+  trademan_signals_data:
 
 networks:
   trade_network:
