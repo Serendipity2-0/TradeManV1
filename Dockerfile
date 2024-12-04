@@ -63,8 +63,8 @@ RUN touch -a /app/Data/TradeManDB/Signals/signal_equity.db \
     && touch -a /app/Data/Logs/params_log.csv
 
 # Copy files
-COPY SampleData/Instruments/fno_info.csv /app/SampleData/Instruments/fno_info.csv
+# COPY SampleData/Instruments/fno_info.csv /app/SampleData/Instruments/fno_info.csv
 COPY Executor/ExecutorUtils/ExeDBUtils/ExeFirebaseAdapter/firebase_credentials.json /app/Executor/ExecutorUtils/ExeDBUtils/ExeFirebaseAdapter/
 
 # Set permissions
-RUN chmod -R 777 /app/Data /app/SampleData /app/Executor/Scripts/CeleryScripts/logs /app/Executor/ExecutorUtils/ExeDBUtils/ExeFirebaseAdapter
+RUN chmod -R 777 /app/Data /app/Executor/Scripts/CeleryScripts/logs /app/Executor/ExecutorUtils/ExeDBUtils/ExeFirebaseAdapter
