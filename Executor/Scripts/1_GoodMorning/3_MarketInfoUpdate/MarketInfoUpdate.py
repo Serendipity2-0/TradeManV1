@@ -9,46 +9,62 @@ ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+from Executor.ExecutorUtils.ExeDBUtils.MongoUtils.exemongo_adapter import (
+    update_fields_mongodb,
+    fetch_collection_data_mongodb,
+)
 
 logger = LoggerSetup()
 
-from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
-    fetch_collection_data_firebase,
-    update_fields_firebase,
-)
-
-STRATEGY_FB_DB = os.getenv("FIREBASE_STRATEGY_COLLECTION")
-MARKET_INFO_FB_COLLECTION = os.getenv("MARKET_INFO_FB_COLLECTION")
+STRATEGY_MONGO_DB = os.getenv("MONGO_STRATEGY_COLLECTION", "strategies")
+MARKET_INFO_MONGO_COLLECTION = os.getenv("MONGO_MARKET_INFO_COLLECTION", "market_info")
 
 
 def update_market_info_for_strategies():
     """
-    The function updates market information for various strategies stored in a Firebase database.
-    It fetches the latest market information and strategies data from the Firebase collections,
+    The function updates market information for various strategies stored in a MongoDB database.
+    It fetches the latest market information and strategies data from the MongoDB collections,
     updates the 'MarketInfoParams' for each strategy based on its type, and then saves the updated
-    strategy data back to the Firebase database.
+    strategy data back to the MongoDB database.
 
     The function performs the following steps:
-    1. Fetches market information from the Firebase collection specified by the environment variable
-       'MARKET_INFO_FB_COLLECTION'.
+    1. Fetches market information from the MongoDB collection specified by the environment variable
+       'MONGO_MARKET_INFO_COLLECTION'.
     2. Validates that the fetched market information is in dictionary format.
-    3. Fetches strategies data from the Firebase collection specified by the environment variable
-       'FIREBASE_STRATEGY_COLLECTION'.
+    3. Fetches strategies data from the MongoDB collection specified by the environment variable
+       'MONGO_STRATEGY_COLLECTION'.
     4. Validates that the fetched strategies data is in dictionary format.
     5. Iterates over each strategy, validates its format, and updates its 'MarketInfoParams' based on
        the strategy type ('OB', 'OS', 'Equity') with appropriate market info parameters.
     6. Adds a common 'TradeView' parameter from the market information to each strategy.
-    7. Updates the strategy data in the Firebase collection.
+    7. Updates the strategy data in the MongoDB collection.
 
     :raises ValueError: If the fetched market information or strategies data are not dictionaries.
     :raises Exception: If there is an error during the update process, an error message is logged.
     """
     try:
-        market_info = fetch_collection_data_firebase(MARKET_INFO_FB_COLLECTION)
+        # First update market info collection with the data from screenshot
+        market_info_data = {
+            "OBQtyAmplifier": 1,
+            "OSQtyAmplifier": 1,
+            "EquityQtyAmplifier": 1,
+            "TradeView": "Bullish"  # From the screenshot
+        }
+        
+        # Update market info collection
+        update_fields_mongodb(
+            MARKET_INFO_MONGO_COLLECTION,
+            "market_info",  # Document ID
+            market_info_data
+        )
+        logger.info("Market info collection updated successfully")
+
+        # Fetch market info and strategies
+        market_info = fetch_collection_data_mongodb(MARKET_INFO_MONGO_COLLECTION)
         if not isinstance(market_info, dict):
             raise ValueError("market_info should be a dictionary")
 
-        strategies = fetch_collection_data_firebase(STRATEGY_FB_DB)
+        strategies = fetch_collection_data_mongodb(STRATEGY_MONGO_DB)
         if not isinstance(strategies, dict):
             raise ValueError("strategies should be a dictionary")
 
@@ -58,15 +74,13 @@ def update_market_info_for_strategies():
                 or "StrategyType" not in strategy_data["GeneralParams"]
             ):
                 logger.error(f"Strategy data format error for key {strategy_key}")
-                continue  # Skip to next strategy if the current one has invalid format
+                continue
 
             strategy_type = strategy_data["GeneralParams"]["StrategyType"]
             if "MarketInfoParams" not in strategy_data or not isinstance(
                 strategy_data["MarketInfoParams"], dict
             ):
-                strategy_data[
-                    "MarketInfoParams"
-                ] = {}  # Initialize if not present or not a dictionary
+                strategy_data["MarketInfoParams"] = {}
 
             # Clear and update market info parameters
             strategy_data["MarketInfoParams"].clear()
@@ -74,25 +88,28 @@ def update_market_info_for_strategies():
             if strategy_type == "OB":
                 strategy_data["MarketInfoParams"]["OBQtyAmplifier"] = market_info.get(
                     "OBQtyAmplifier", 1
-                )  # Default to 1 if not found
+                )
             elif strategy_type == "OS":
                 strategy_data["MarketInfoParams"]["OSQtyAmplifier"] = market_info.get(
                     "OSQtyAmplifier", 1
                 )
             elif strategy_type == "Equity":
-                strategy_data["MarketInfoParams"][
-                    "EquityQtyAmplifier"
-                ] = market_info.get("EquityQtyAmplifier", 1)
+                strategy_data["MarketInfoParams"]["EquityQtyAmplifier"] = market_info.get(
+                    "EquityQtyAmplifier", 1
+                )
 
             # Add common TradeView parameter
-            strategy_data["MarketInfoParams"]["TradeView"] = market_info.get(
-                "TradeView"
-            )  # Default to "Neutral" if not found
+            strategy_data["MarketInfoParams"]["TradeView"] = market_info.get("TradeView")
 
-            # Update the strategy data in Firebase (uncomment this line when ready to update)
-            update_fields_firebase(STRATEGY_FB_DB, strategy_key, strategy_data)
+            # Update the strategy in MongoDB
+            update_fields_mongodb(
+                STRATEGY_MONGO_DB,
+                strategy_key,
+                strategy_data
+            )
 
         logger.success("Market info updated for all strategies.")
+
     except Exception as e:
         logger.error(f"Error in updating market info for strategies: {e}")
 
