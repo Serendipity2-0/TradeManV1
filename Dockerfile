@@ -1,5 +1,5 @@
-# Use the official Python image as the base
-FROM python:3.10-slim
+# Use Python 3.11 as base image
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -15,14 +15,14 @@ RUN apt-get update && apt-get install -y \
     libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN pip install --upgrade pip
+# Install uv
+RUN pip install uv
 
 # Copy only requirements to leverage Docker cache
-COPY requirements.txt /app/
+COPY requirements.txt pyproject.toml /app/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies using uv
+RUN uv pip install --system -r requirements.txt
 
 # Copy the entire application code
 COPY . /app/
@@ -63,7 +63,6 @@ RUN touch -a /app/Data/TradeManDB/Signals/signal_equity.db \
     && touch -a /app/Data/Logs/params_log.csv
 
 # Copy files
-# COPY SampleData/Instruments/fno_info.csv /app/SampleData/Instruments/fno_info.csv
 COPY Executor/ExecutorUtils/ExeDBUtils/ExeFirebaseAdapter/firebase_credentials.json /app/Executor/ExecutorUtils/ExeDBUtils/ExeFirebaseAdapter/
 
 # Set permissions
