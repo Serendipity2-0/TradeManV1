@@ -45,7 +45,8 @@ class ScriptExecutor:
             4: ("Weekly Reports", "WeeklyReports"),
             5: ("Celery Scripts", "CeleryScripts"),
             6: ("Restart Scripts", "RestartScripts"),
-            7: ("Migration Scripts", "migration")
+            7: ("Migration Scripts", "migration"),
+            8: ("API Testing Scripts", "logManager")
         }
         
         logger.info("ScriptExecutor initialized successfully")
@@ -135,7 +136,7 @@ class ScriptExecutor:
         while True:
             try:
                 self.display_main_menu()
-                choice = input("\nEnter your choice (0-7): ").strip()
+                choice = input("\nEnter your choice (0-8): ").strip()
                 
                 if not choice.isdigit():
                     print("Please enter a valid number")

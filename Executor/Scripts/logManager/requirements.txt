@@ -1,0 +1,16 @@
+# Core dependencies
+python-dotenv>=1.0.0  # For loading environment variables
+requests>=2.31.0      # For API testing
+docker>=6.1.2         # For Docker container management
+psycopg2-binary>=2.9.6  # For PostgreSQL database connection
+pymongo>=4.4.1        # For MongoDB database connection
+
+# Testing and development dependencies
+pytest>=7.4.0         # For unit testing
+pytest-cov>=4.1.0     # For test coverage reporting
+black>=23.7.0         # For code formatting
+flake8>=6.1.0         # For code linting
+mypy>=1.4.1          # For static type checking
+
+# Logging and monitoring
+python-json-logger>=2.0.7  # For JSON formatted logging
