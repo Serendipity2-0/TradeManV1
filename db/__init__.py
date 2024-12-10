@@ -22,12 +22,11 @@ db_config = {
         "port": os.getenv("DB_PORT", "5432"),
         "name": os.getenv("DB_NAME"),
     },
-    "mongo": {},
-    # 'mongo': {
-    #     'user': os.getenv('MONGO_USER'),
-    #     'password': os.getenv('MONGO_PASSWORD'),
-    #     'host': os.getenv('MONGO_HOST'),
-    #     'port': os.getenv('MONGO_PORT', '27017'),
-    #     'name': os.getenv('MONGO_DB'),
-    # }
+    "mongo": {
+        'user': os.getenv('MONGO_USER', 'admin'),
+        'password': os.getenv('MONGO_PASSWORD', 'admin'),
+        'host': os.getenv('MONGO_HOST', 'localhost'),
+        'port': os.getenv('MONGO_PORT', '27017'),
+        'name': os.getenv('MONGO_DB', 'trademan'),
+    }
 }

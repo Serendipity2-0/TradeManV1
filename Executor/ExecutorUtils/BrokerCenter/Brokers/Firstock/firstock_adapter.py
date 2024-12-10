@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from datetime import datetime
 from thefirstock import thefirstock
 import pandas as pd
-import magic
 from typing import Dict, List, Callable
 
 DIR_PATH = os.getcwd()
