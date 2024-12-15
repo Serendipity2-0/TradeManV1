@@ -3,7 +3,7 @@ import pandas as pd
 import sqlite3
 import datetime as dt
 from time import sleep
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Tuple
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -181,6 +181,33 @@ class StockAnalysis:
             logger.error(f"Error updating TodayStocks DB: {e}")
 
     @staticmethod
+    def get_selected_stocks(
+        strategy_name: str, 
+        today_stocks_df: pd.DataFrame
+    ) -> Tuple[List[str], List[str]]:
+        """
+        Get selected stocks for a strategy.
+
+        Args:
+            strategy_name: Name of the strategy
+            today_stocks_df: DataFrame of today's stocks
+
+        Returns:
+            tuple: (List of symbols, List of strategy setups)
+        """
+        symbol_list = today_stocks_df["Symbol"].tolist()
+        
+        # Handle both direct strategy columns and setup-specific columns
+        strategy_setups = [
+            col for col in today_stocks_df.columns 
+            if col.startswith(f"{strategy_name}") or  # Direct strategy columns
+               col.startswith(f"{strategy_name}_Setup")  # Setup-specific columns
+        ]
+        
+        logger.warning(f"Selected stocks for {strategy_name}: {strategy_setups}")
+        return symbol_list, strategy_setups
+
+    @staticmethod
     def get_asm_gsm_list() -> List[str]:
         """
         Get the ASM/GSM list from the database.
@@ -287,30 +314,6 @@ class StockAnalysis:
             return True
             
         return False
-
-    @staticmethod
-    def get_selected_stocks(
-        strategy_name: str, 
-        today_stocks_df: pd.DataFrame
-    ) -> Tuple[List[str], List[str]]:
-        """
-        Get selected stocks for a strategy.
-
-        Args:
-            strategy_name: Name of the strategy
-            today_stocks_df: DataFrame of today's stocks
-
-        Returns:
-            tuple: (List of symbols, List of strategy setups)
-        """
-        symbol_list = today_stocks_df["Symbol"].tolist()
-        strategy_prefix = strategy_name[:-4]
-        strategy_setups = [
-            col for col in today_stocks_df.columns 
-            if col.startswith(f"{strategy_prefix}_")
-        ]
-        logger.warning(f"Selected stocks for {strategy_name}: {strategy_setups}")
-        return symbol_list, strategy_setups
 
     @staticmethod
     def send_signals_via_discord(
