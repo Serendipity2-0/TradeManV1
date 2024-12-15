@@ -11,9 +11,13 @@ from pathlib import Path
 DIR = os.getcwd()
 sys.path.append(DIR)
 
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.EquityCenter.data_fetcher import DataFetcher
 from Executor.ExecutorUtils.EquityCenter.technical_indicators import TechnicalIndicators
 from Executor.ExecutorUtils.EquityCenter.stock_analysis import StockAnalysis
+from Executor.ExecutorUtils.EquityCenter.stock_validator import StockValidator
+
+logger = LoggerSetup()
 
 class TestEquityCenter:
     """Test class for EquityCenter functionality."""
@@ -26,6 +30,7 @@ class TestEquityCenter:
             'Data/Equity',
             'Data/Derivatives',
             'Data/Signals',
+            'Data/AsmGsmList'  # Added for ASM/GSM list testing
         ]
         for directory in directories:
             Path(directory).mkdir(parents=True, exist_ok=True)
@@ -37,14 +42,23 @@ class TestEquityCenter:
     @classmethod
     def generate_test_data(cls):
         """Generate test data for different databases."""
-        # Generate financial data
         cls.generate_financial_data()
-        
-        # Generate stock data
         cls.generate_stock_data()
-        
-        # Generate today's stock picks
         cls.generate_today_stock_picks()
+        cls.generate_asm_gsm_list()
+
+    @classmethod
+    def generate_asm_gsm_list(cls):
+        """Generate test ASM/GSM list."""
+        today = datetime.now().strftime("%Y-%m-%d")
+        asm_gsm_data = pd.DataFrame({
+            'SYMBOL': ['TESTSTOCK1', 'TESTSTOCK2', cls.test_symbols[0]],  # Include one test symbol
+            'SERIES': ['EQ', 'EQ', 'EQ'],
+            'DATE': [today, today, today]
+        })
+        Path('Data/AsmGsmList').mkdir(parents=True, exist_ok=True)
+        asm_gsm_data.to_csv(f'Data/AsmGsmList/merged_asm_gsm_{today}.csv', index=False)
+        logger.info(f"Generated ASM/GSM list with {len(asm_gsm_data)} symbols")
 
     @classmethod
     def generate_financial_data(cls):
@@ -75,6 +89,7 @@ class TestEquityCenter:
         conn = sqlite3.connect('Data/financial_data.db')
         df.to_sql('financials', conn, if_exists='replace', index=False)
         conn.close()
+        logger.info(f"Generated financial data for {len(financial_data)} symbols")
 
     @classmethod
     def generate_stock_data(cls):
@@ -107,7 +122,6 @@ class TestEquityCenter:
             df = pd.DataFrame(daily_data)
             conn = sqlite3.connect('Data/equity_stock_data.db')
             
-            # Create table with proper schema
             cursor = conn.cursor()
             cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS "{symbol}" (
@@ -127,22 +141,33 @@ class TestEquityCenter:
             
             df.to_sql(symbol, conn, if_exists='replace', index=False)
             conn.close()
+        
+        logger.info(f"Generated stock data for {len(cls.test_symbols)} symbols")
 
     @classmethod
     def generate_today_stock_picks(cls):
         """Generate and store test data for today's stock picks."""
         picks_data = []
         for symbol in cls.test_symbols:
-            # Generate strategy-specific setup columns
-            short_momentum_setups = {
-                'Short_Momentum_Setup1': np.random.randint(0, 2),
-                'Short_Momentum_Setup2': np.random.randint(0, 2),
-                'Short_Momentum_Setup3': np.random.randint(0, 2)
+            # Generate strategy-specific setup columns with some meaningful test data
+            momentum_setups = {
+                'Short_Momentum_Setup1': np.random.choice([0, 1], p=[0.7, 0.3]),  # 30% chance of being selected
+                'Short_Momentum_Setup2': np.random.choice([0, 1], p=[0.8, 0.2]),  # 20% chance of being selected
+                'Short_Momentum_Setup3': np.random.choice([0, 1], p=[0.9, 0.1]),  # 10% chance of being selected
+            }
+            
+            # Add some technical indicators for more detailed logging
+            technical_data = {
+                'RSI': np.random.uniform(30, 70),
+                'EMA_50': np.random.uniform(90, 110),
+                'Volume_Ratio': np.random.uniform(0.8, 1.2),
+                'Price_Change': np.random.uniform(-5, 5)
             }
             
             picks_data.append({
                 'Symbol': symbol,
-                **short_momentum_setups,  # Include strategy-specific setups
+                **momentum_setups,  # Include strategy-specific setups
+                **technical_data,   # Include technical indicators
                 'Short_MeanReversion': np.random.randint(0, 2),
                 'Short_EMABBConfluence': np.random.randint(0, 2),
                 'Mid_tfMomentum': np.random.randint(0, 2),
@@ -155,6 +180,7 @@ class TestEquityCenter:
         conn = sqlite3.connect('Data/stock_picks.db')
         df.to_sql('CombinedStocks', conn, if_exists='replace', index=False)
         conn.close()
+        logger.info(f"Generated stock picks data with {len(picks_data)} records")
 
     def test_data_fetcher(self):
         """Test DataFetcher functionality."""
@@ -184,7 +210,6 @@ class TestEquityCenter:
 
     def test_technical_indicators(self):
         """Test TechnicalIndicators functionality."""
-        # Get test data
         conn = sqlite3.connect('Data/equity_stock_data.db')
         test_data = pd.read_sql_query(
             f"""
@@ -220,6 +245,26 @@ class TestEquityCenter:
 
         print("TechnicalIndicators tests passed successfully!")
 
+    def test_stock_validator(self):
+        """Test StockValidator functionality."""
+        validator = StockValidator()
+        
+        # Test ASM/GSM list functionality
+        asm_gsm_list = validator.get_asm_gsm_list()
+        assert len(asm_gsm_list) > 0, "ASM/GSM list should not be empty"
+        
+        # Test symbol in list check
+        assert validator.check_symbol_in_list(self.test_symbols, self.test_symbols[0]), \
+            "Should find symbol in list"
+        assert not validator.check_symbol_in_list(self.test_symbols, "NONEXISTENT"), \
+            "Should not find nonexistent symbol"
+        
+        # Test holiday check
+        is_holiday = validator.is_today_holiday()
+        assert isinstance(is_holiday, bool), "Holiday check should return boolean"
+        
+        print("StockValidator tests passed successfully!")
+
     def test_stock_analysis(self):
         """Test StockAnalysis functionality."""
         analyzer = StockAnalysis()
@@ -229,6 +274,9 @@ class TestEquityCenter:
         today_stocks_df = pd.read_sql("SELECT * FROM CombinedStocks", conn)
         conn.close()
 
+        logger.info("\nFull test data:")
+        logger.info(f"\n{today_stocks_df.to_string()}")
+
         # Test getting selected stocks
         symbol_list, strategy_setups = analyzer.get_selected_stocks(
             "Short_Momentum", 
@@ -237,9 +285,10 @@ class TestEquityCenter:
         assert len(symbol_list) > 0, "Should return symbols"
         assert len(strategy_setups) > 0, "Should return strategy setups"
 
-        # Test holiday check
-        is_holiday = analyzer.is_today_holiday()
-        assert isinstance(is_holiday, bool), "Holiday check should return boolean"
+        # Verify strategy setup details are logged
+        for setup in strategy_setups:
+            selected_stocks = today_stocks_df[today_stocks_df[setup] == 1]["Symbol"].tolist()
+            logger.info(f"Selected stocks for {setup}: {selected_stocks}")
 
         print("StockAnalysis tests passed successfully!")
 
@@ -249,6 +298,7 @@ def run_tests():
     test.setup_class()
     test.test_data_fetcher()
     test.test_technical_indicators()
+    test.test_stock_validator()
     test.test_stock_analysis()
     print("\nAll tests completed successfully!")
 
