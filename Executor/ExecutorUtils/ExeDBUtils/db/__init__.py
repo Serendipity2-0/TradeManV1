@@ -6,10 +6,10 @@ It provides a configuration dictionary that can be imported and used in other mo
 import os
 from dotenv import load_dotenv
 
-# Get the directory of the current file
-DIR = os.path.dirname(os.path.abspath(__file__))
+# Get the project root directory (4 levels up from this file)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 # Construct the path to the environment file
-ENV_PATH = os.path.join(DIR, "..", "trademan.env")
+ENV_PATH = os.path.join(PROJECT_ROOT, "trademan.env")
 
 # Load environment variables from the specified file
 load_dotenv(ENV_PATH)

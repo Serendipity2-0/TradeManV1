@@ -90,6 +90,7 @@ def firstock_fetch_free_cash(user_details):
     logger.debug(f"Fetching free cash for {user_details['BrokerUsername']}")
     limits = thefirstock.firstock_Limits(userId=user_details["BrokerUsername"])
     free_cash = limits.get("data", {}).get("cash", 0)
+    logger.debug(f"data: {limits}")
     return float(free_cash)
 
 

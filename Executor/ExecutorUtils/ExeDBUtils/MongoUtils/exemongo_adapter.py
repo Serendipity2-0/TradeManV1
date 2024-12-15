@@ -15,7 +15,7 @@ sys.path.append(DIR_PATH)
 ENV_PATH = os.path.join(DIR_PATH, "trademan.env")
 load_dotenv(ENV_PATH)
 
-from db import db_config
+from Executor.ExecutorUtils.ExeDBUtils.db import db_config
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 
 logger = LoggerSetup()
