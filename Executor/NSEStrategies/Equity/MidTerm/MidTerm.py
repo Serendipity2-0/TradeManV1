@@ -19,20 +19,20 @@ from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
 )
 from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
     Instrument as instrument_obj,
-    get_single_ltp,
 )
+from Executor.ExecutorUtils.InstrumentCenter.ltp_utils import get_single_ltp
 from Executor.NSEStrategies.NSEStrategiesUtil import (
-    update_qty_user_firebase,
     assign_trade_id,
-    place_order_single_user,
     fetch_qty_amplifier,
     fetch_strategy_amplifier,
     fetch_strategy_users,
     StrategyBase,
 )
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    fetch_user_json_from_firebase,
+from Executor.ExecutorUtils.ExeDBUtils.MongoUtils.exemongo_adapter import (
+    update_fields_mongodb,
+    get_client_by_tr_no,
 )
+from Executor.ExecutorUtils.OrderCenter.order_utils import place_order_single_user_sync
 from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     check_symbol_for_erros,
     is_today_holiday,
@@ -46,6 +46,7 @@ MID_TFEMA = "Mid_tfEma"
 
 logger = LoggerSetup()
 TODAY_STOCK_DATA_DB_PATH = os.getenv("TODAY_STOCK_DATA_DB_PATH")
+STRATEGIES_DB = os.getenv("MONGO_STRATEGY_COLLECTION", "strategies")
 
 
 class MidTerm(StrategyBase):
@@ -144,6 +145,61 @@ def process_holdings_for_user(user, setup_symbol_list, setup_name):
         )
 
 
+def update_qty_user_mongodb(strategy_name, avg_sl_points_or_ltp, qty_amplifier, strategy_amplifier, asset_segment, asset_term, num_stocks):
+    """
+    Update quantity information in MongoDB.
+
+    Args:
+        strategy_name (str): Name of the strategy
+        avg_sl_points_or_ltp (float): Average stop loss points or last traded price
+        qty_amplifier (float): Quantity amplifier
+        strategy_amplifier (float): Strategy amplifier
+        asset_segment (str): Asset segment
+        asset_term (str): Asset term
+        num_stocks (int): Number of stocks
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        data = {
+            "avg_sl_points_or_ltp": avg_sl_points_or_ltp,
+            "qty_amplifier": qty_amplifier,
+            "strategy_amplifier": strategy_amplifier,
+            "asset_segment": asset_segment,
+            "asset_term": asset_term,
+            "num_stocks": num_stocks
+        }
+        return update_fields_mongodb(STRATEGIES_DB, strategy_name, data, "quantity_info")
+    except Exception as e:
+        logger.error(f"Error updating quantity info in MongoDB: {e}")
+        return False
+
+
+def signals_to_mongodb(strategy_name, order_details, trade_id):
+    """
+    Update signals in MongoDB.
+
+    Args:
+        strategy_name (str): Name of the strategy
+        order_details (list): List of order details
+        trade_id (str): Trade ID
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        data = {
+            "order_details": order_details,
+            "trade_id": trade_id,
+            "timestamp": pd.Timestamp.now().isoformat()
+        }
+        return update_fields_mongodb(STRATEGIES_DB, strategy_name, data, "signals")
+    except Exception as e:
+        logger.error(f"Error updating signals in MongoDB: {e}")
+        return False
+
+
 def manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_name):
     """
     Manage the holdings and place the orders.
@@ -157,8 +213,6 @@ def manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_na
     Returns:
         None
     """
-    from Executor.NSEStrategies.Equity.Equity import signals_to_fb
-
     if holdings.empty:
         logger.error(f"No holdings found for user {user['Tr_No']} for {setup_name}")
         current_holdings_count = 0
@@ -215,7 +269,7 @@ def manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_na
             order_to_place = assign_trade_id(order_details)
             qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
             strategy_amplifier = fetch_strategy_amplifier(strategy_name)
-            update_qty_user_firebase(
+            update_qty_user_mongodb(
                 strategy_name=setup_name.upper(),
                 avg_sl_points_or_ltp=ltp,
                 qty_amplifier=qty_amplifier,
@@ -224,9 +278,9 @@ def manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_na
                 asset_term=strategy_name,
                 num_stocks=num_stocks,
             )
-            signals_to_fb(strategy_name, order_to_place, trade_id)
-            updated_user = fetch_user_json_from_firebase(user["Tr_No"])
-            order_status = place_order_single_user([updated_user], order_to_place)
+            signals_to_mongodb(strategy_name, order_to_place, trade_id)
+            updated_user = get_client_by_tr_no(user["Tr_No"])
+            order_status = place_order_single_user_sync([updated_user], order_to_place)
             for order_detail in order_status:
                 if "PASS" in order_detail["order_status"]:
                     logger.debug(

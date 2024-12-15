@@ -6,6 +6,10 @@ import datetime as dt
 from datetime import time
 from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
+from Executor.ExecutorUtils.ExeDBUtils.MongoUtils.exemongo_adapter import get_strategy_by_name
+from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
+
+logger = LoggerSetup()
 
 class EntryParams(BaseModel):
     EntryTime: str
@@ -41,6 +45,7 @@ class ExtraInformation(BaseModel):
     HedgeExchangeToken: Optional[int] = None
     FuturesExchangeToken: Optional[int] = None
     MultiLeg: Optional[bool] = None
+    StocksPerStrategy: Optional[int] = None
 
     class Config:
         extra = "allow"
@@ -122,3 +127,40 @@ class StrategyBase(BaseModel):
             "Instruments": self.Instruments,
             "StrategyName": strategy_name
         }
+
+    @classmethod
+    def load_from_db(cls, strategy_name: str) -> 'StrategyBase':
+        """
+        Load strategy data from MongoDB.
+
+        Args:
+            strategy_name (str): Name of the strategy to load
+
+        Returns:
+            StrategyBase: Strategy object with loaded data
+
+        Raises:
+            ValueError: If strategy data cannot be loaded
+        """
+        try:
+            strategy_data = get_strategy_by_name(strategy_name)
+            if not strategy_data:
+                raise ValueError(f"Strategy {strategy_name} not found in database")
+            
+            # Convert the data to match the model structure
+            return cls(**strategy_data)
+        except Exception as e:
+            logger.error(f"Error loading strategy {strategy_name} from database: {e}")
+            raise ValueError(f"Failed to load strategy {strategy_name}: {str(e)}")
+
+    def reload_strategy(self, strategy_name: str) -> 'StrategyBase':
+        """
+        Reload strategy data from MongoDB.
+
+        Args:
+            strategy_name (str): Name of the strategy to reload
+
+        Returns:
+            StrategyBase: New strategy object with reloaded data
+        """
+        return self.load_from_db(strategy_name)
