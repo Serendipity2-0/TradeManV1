@@ -14,6 +14,7 @@ load_dotenv(ENV_PATH)
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 import Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils as BrokerCenterUtils
 import Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter as exesql_adapter
+from .ltp_utils import get_single_ltp
 
 ins_db_path = os.getenv("SQLITE_INS_PATH")
 logger = LoggerSetup()
@@ -575,40 +576,6 @@ class Instrument:
         if trading_symbol.empty:
             return None
         return trading_symbol.iloc[0]["Trading Symbol"]
-
-
-def get_single_ltp(kite_token=None, exchange_token=None, segment=None):
-    """
-    Get the last traded price (LTP) for a given kite token or exchange token.
-
-    Args:
-        kite_token (str, optional): The kite token of the instrument. Defaults to None.
-        exchange_token (str, optional): The exchange token of the instrument. Defaults to None.
-        segment (str, optional): The market segment of the instrument. Defaults to None.
-
-    Returns:
-        float: The last traded price of the instrument.
-    """
-    primary_broker = os.getenv("PRIMARY_BROKER")
-    kite = BrokerCenterUtils.get_primary_account_obj(primary_broker)
-    try:
-        if exchange_token:
-            if segment:
-                kite_token = Instrument().get_kite_token_by_exchange_token(
-                    exchange_token, segment
-                )
-            else:
-                kite_token = Instrument().get_kite_token_by_exchange_token(
-                    exchange_token
-                )
-            ltp = kite.ltp(kite_token)
-            return ltp[str(kite_token)]["last_price"]
-        else:
-            ltp = kite.ltp(kite_token)
-            return ltp[str(kite_token)]["last_price"]
-    except Exception as e:
-        logger.error(f"An error occurred while fetching LTP: {e}")
-        return 10.0
 
 
 def get_single_quote(exchange_token=None, segment=None):

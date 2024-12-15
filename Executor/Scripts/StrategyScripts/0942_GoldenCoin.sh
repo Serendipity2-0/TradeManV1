@@ -1,21 +1,20 @@
 #!/bin/bash
 
+# Source conda configuration
+source ~/miniconda3/etc/profile.d/conda.sh
+
 # Define maximum number of attempts
 max_attempts=1
 
 # Counter for the number of attempts
 attempt=0
 
-# Telegram bot parameters
-telegram_bot_token='5994380365:AAFv0GSI78IxP6nI7g_xJPoqY3zWSfDHndQ'
-chat_id='-367108102'
-
 # Run the script
 while true; do
     # Check if the current hour is greater than 16 (4 pm)
     current_hour=$(date +%H)
-    if ((current_hour >= 15)); then
-        echo "The script will not retry after 3 pm."
+    if ((current_hour >= 23)); then
+        echo "The script will not retry after 11 pm."
         break
     fi
 
@@ -23,23 +22,15 @@ while true; do
     ((attempt++))
     echo "Attempt: $attempt"
     
-    # Source conda, activate the environment and run the script
-    source /Users/traderscafe/miniconda3/etc/profile.d/conda.sh && \
-    conda activate tradingenv && \
-    cd /Users/traderscafe/Desktop/TradeManV1/ && \
-    /Users/traderscafe/miniconda3/envs/tradingenv/bin/python Executor/Strategies/GoldenCoin/GoldenCoin.py && \
+    # Change directory, activate conda environment and run the script
+    cd /Users/omkar/Desktop/TradeManV1 && \
+    conda activate macenv && \
+    python Executor/NSEStrategies/Derivatives/GoldenCoin/GoldenCoin.py && \
     echo "Program started successfully" && break
 
-    # If the command failed and we've reached the maximum number of attempts, send a message and exit
-    if ((attempt==max_attempts)); then
-        echo "The script AmiPy has some errors. Please Check !!!"
-        
-        # Send a message on Telegram
-        curl -s -X POST https://api.telegram.org/bot$telegram_bot_token/sendMessage -d chat_id=$chat_id -d text="AmiPy errors. Please Check !!!"
-
-        exit 1
+    # Break if max attempts reached
+    if ((attempt >= max_attempts)); then
+        echo "Maximum attempts reached. Exiting."
+        break
     fi
-
-    # Wait before retrying the command
-    sleep 5
 done
