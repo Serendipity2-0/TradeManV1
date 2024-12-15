@@ -1,16 +1,6 @@
 import pandas as pd
-import os
-from dotenv import load_dotenv
-import sys
 import sqlite3
 
-# Set up directory and load environment variables
-DIR = os.getcwd()
-sys.path.append(DIR)
-ENV_PATH = os.path.join(DIR, "trademan.env")
-load_dotenv(ENV_PATH)
-
-# Import custom utilities
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     calculate_sma,
@@ -18,39 +8,40 @@ from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
     read_stock_data_from_db,
     calculate_ema,
 )
-from Executor.NSEStrategies.Equity.MidTerm.MidTerm import midterm_obj
+from Executor.NSEStrategies.Equity.MidTerm.MidTermConfig import (
+    MID_TFMOMENTUM,
+    MID_TFEMA,
+    EQUITY_STOCK_DATA_DB_PATH,
+    FINANCIAL_DB_PATH,
+    TFMOMENTUM_SMA_VALUE,
+    TFMOMENTUM_RSI_UPPER_THRESHOLD,
+    TFMOMENTUM_RSI_LOWER_THRESHOLD,
+    TFMOMENTUM_GROSS_PROFIT_GROWTH,
+    TFMOMENTUM_NET_INCOME,
+    TFMOMENTUM_TOTAL_REVENUE,
+    TFMOMENTUM_EMA_THRESHOLD,
+    TFEMA_SHORT_EMA_VALUE,
+    TFEMA_SMALL_EMA_VALUE,
+    TFEMA_MEDIUM_EMA_VALUE,
+    TFEMA_LARGE_EMA_VALUE,
+    TFEMA_SMA_VALUE,
+    TFEMA_RSI_UPPER_THRESHOLD,
+    TFEMA_MARKET_CAP_THRESHOLD,
+    TFEMA_VOLUME_MULTIPLIER,
+    TFEMA_ROE_THRESHOLD,
+)
 
 # Initialize logger
 logger = LoggerSetup()
-MID_TFMOMENTUM = "Mid_tfMomentum"
-MID_TFEMA = "Mid_tfEma"
-
-EQUITY_STOCK_DATA_DB_PATH = os.getenv("EQUITY_STOCK_DATA_DB_PATH")
-FINANCIAL_DB_PATH = os.getenv("FINANCIAL_DB_PATH")
-
-#config
-# Accessing the values from midterm_obj for TFMOMENTUM parameters
-TFMOMENTUM_SMA_VALUE = midterm_obj.ExtraInformation.TFMomentumSMAValue
-TFMOMENTUM_RSI_UPPER_THRESHOLD = midterm_obj.ExtraInformation.TFMomentumRSIUpperThreshold
-TFMOMENTUM_RSI_LOWER_THRESHOLD = midterm_obj.ExtraInformation.TFMomentumRSILowerThreshold
-TFMOMENTUM_GROSS_PROFIT_GROWTH = midterm_obj.ExtraInformation.TFMomentumGrossProfitGrowth
-TFMOMENTUM_NET_INCOME = midterm_obj.ExtraInformation.TFMomentumNetIncome
-TFMOMENTUM_TOTAL_REVENUE = midterm_obj.ExtraInformation.TFMomentumTotalRevenue
-TFMOMENTUM_EMA_THRESHOLD = midterm_obj.ExtraInformation.TFMomentumEMAThreshold
-
-# Accessing the values from midterm_obj for TFEMA parameters
-TFEMA_SHORT_EMA_VALUE = midterm_obj.ExtraInformation.TFEMAShortValue
-TFEMA_SMALL_EMA_VALUE = midterm_obj.ExtraInformation.TFEMASmallValue
-TFEMA_MEDIUM_EMA_VALUE = midterm_obj.ExtraInformation.TFEMAMediumValue
-TFEMA_LARGE_EMA_VALUE = midterm_obj.ExtraInformation.TFEMALargeValue
-TFEMA_SMA_VALUE = midterm_obj.ExtraInformation.TFEMASMAValue
-TFEMA_RSI_UPPER_THRESHOLD = midterm_obj.ExtraInformation.TFEMARSIUpperThreshold
-TFEMA_MARKET_CAP_THRESHOLD = midterm_obj.ExtraInformation.TFEMAMarketCapThreshold
-TFEMA_VOLUME_MULTIPLIER = midterm_obj.ExtraInformation.TFEMAVolumeMultiplier
-TFEMA_ROE_THRESHOLD = midterm_obj.ExtraInformation.TFEMAROEThreshold
 
 
 def get_midterm_stocks_df():
+    """
+    Get stocks for both mid-term strategies.
+
+    Returns:
+        tuple: (tfmomentum_stocks_df, tfema_stocks_df)
+    """
     tfmomentum_stocks_df = perform_tfmomentum_strategy()
     tfema_stocks_df = perform_tfema_strategy()
     return tfmomentum_stocks_df, tfema_stocks_df
@@ -59,6 +50,9 @@ def get_midterm_stocks_df():
 def perform_tfmomentum_strategy():
     """
     Main function to orchestrate the fetching and processing of stock data.
+
+    Returns:
+        DataFrame: DataFrame containing filtered stocks based on TFMomentum strategy
     """
     try:
         # Fetch stock data from the database
@@ -121,6 +115,9 @@ def perform_tfmomentum_strategy():
 def perform_tfema_strategy():
     """
     Apply a strategy based on multiple EMA filters and other financial metrics.
+
+    Returns:
+        DataFrame: DataFrame containing filtered stocks based on TFEMA strategy
     """
     try:
         # Fetch stock data
