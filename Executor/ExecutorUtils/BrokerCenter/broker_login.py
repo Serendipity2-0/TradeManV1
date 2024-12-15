@@ -17,7 +17,7 @@ ZERODHA = os.getenv("ZERODHA_BROKER")
 ALICEBLUE = os.getenv("ALICEBLUE_BROKER")
 FIRSTOCK = os.getenv("FIRSTOCK_BROKER")
 CLIENTS_USER_DB = os.getenv("MONGO_USER_COLLECTION", "clients")
-ADMIN_DB = os.getenv("MONGO_ADMIN_COLLECTION", "admin")
+ADMIN_DB = os.getenv("MONGO_ADMIN_COLLECTION", "v1admin")
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.ExecutorUtils.NotificationCenter.Discord.discord_adapter import (
@@ -156,6 +156,7 @@ def fetch_primary_accounts():
         dict: Details of the primary account for the available brokers.
     """
     try:
+        logger.debug(f"Fetching primary accounts from MongoDB: {ADMIN_DB}")
         account_details = mongo_utils.fetch_collection_data_mongodb(ADMIN_DB)
         primary_accounts = []
         if account_details:
