@@ -13,7 +13,7 @@ def plotly_plot(resultdf):
     shapes = []
     colors = ["white", "#C23B22", "#5F9EA0", "#F5DEB3", "black"]
     holidayz = [
-        datetime.strptime(date_str, "%Y-%m-%d").date()
+        pd.Timestamp(date_str, tz='UTC').date()
         for date_str in ["2023-05-01", "2023-06-16", "2023-06-29"]
     ]
 

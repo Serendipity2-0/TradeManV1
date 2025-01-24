@@ -76,7 +76,7 @@ def callputmergeddf(hist_data, tokens):
     nf_put_df["instrument_token"] = tokens[2]
     trans_df = nf_call_df.add(nf_put_df, fill_value=0)
     # Convert the index to a datetime object
-    trans_df.index = pd.to_datetime(trans_df.index)
+    trans_df.index = pd.to_datetime(trans_df.index, utc=True)
 
     return trans_df
 

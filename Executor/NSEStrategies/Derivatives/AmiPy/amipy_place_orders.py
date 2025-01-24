@@ -13,11 +13,22 @@ load_dotenv(ENV_PATH)
 ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH", "default_log.log")
 TRADE_MODE = os.getenv("TRADE_MODE")
 
-logging.basicConfig(
-    filename=ERROR_LOG_PATH,
-    level=logging.ERROR,
-    format="%(asctime)s:%(levelname)s:%(message)s",
-)
+# Ensure log directory exists
+log_dir = os.path.dirname(ERROR_LOG_PATH)
+try:
+    os.makedirs(log_dir, exist_ok=True)
+    logging.basicConfig(
+        filename=ERROR_LOG_PATH,
+        level=logging.ERROR,
+        format="%(asctime)s:%(levelname)s:%(message)s",
+    )
+except (OSError, PermissionError) as e:
+    # Fallback to console logging if file logging fails
+    print(f"Warning: Could not set up file logging ({str(e)}). Falling back to console logging.")
+    logging.basicConfig(
+        level=logging.ERROR,
+        format="%(asctime)s:%(levelname)s:%(message)s",
+    )
 
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
 from Executor.NSEStrategies.NSEStrategiesUtil import (

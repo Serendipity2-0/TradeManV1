@@ -161,6 +161,7 @@ def get_ltp():
     global nifty_token, strike_prc
     nifty_ltp = kite.ltp("NSE:NIFTY 50")
     strike_prc = round(nifty_ltp["NSE:NIFTY 50"]["last_price"] / 100) * 100
+    logger.info(f"Nifty LTP: {nifty_ltp}")
     return strike_prc
 
 
@@ -183,7 +184,7 @@ current_time = datetime.datetime.now().time()
 target_time = datetime.time(9, 19)
 
 
-if current_time < datetime.time(9, 0):
+if current_time < datetime.time(17, 0):
     strike_prc = get_ltp()
     amipy_orders.place_orders(strike_prc, "Short")
 elif current_time > target_time:
@@ -215,7 +216,7 @@ for token in trading_tokens:
     hist_data[token] = pd.DataFrame(
         kite.historical_data(token, from_date, to_date, interval)
     )
-    hist_data[token]["date"] = pd.to_datetime(hist_data[token]["date"])
+    hist_data[token]["date"] = pd.to_datetime(hist_data[token]["date"], utc=True)
     hist_data[token].set_index("date", inplace=True)
     hist_data[token].sort_index(inplace=True)
     hist_data[token]["instrument_token"] = token
@@ -548,14 +549,7 @@ def on_ticks(ws, ticks):
     """
     global hist_data, signalsdf, last_signal_t
     # print('Received ticks:', ticks)
-    current_minute = (
-        datetime.datetime.now()
-        .replace(second=0, microsecond=0)
-        .astimezone()
-        .strftime("%Y-%m-%d %H:%M:%S%z")[:-2]
-        + ":"
-        + datetime.datetime.now().astimezone().strftime("%z")[-2:]
-    )
+    current_minute = pd.Timestamp.now(tz='UTC').floor('T')
 
     for tick in ticks:
         # print('Processing tick:', tick)
@@ -765,7 +759,7 @@ def update_graph_scatter(n):
 
 if current_time > datetime.time(9, 0):
     #  __name__ == '__main__':
-    app.run_server(host="0.0.0.0", port="8051", debug=True, use_reloader=False)
+    app.run_server(host="0.0.0.0", port="8055", debug=True, use_reloader=False)
 
     print("Waiting for ticks...")
 
