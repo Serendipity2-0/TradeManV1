@@ -1209,9 +1209,9 @@ app_fastapi.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
 app_fastapi.include_router(app_debt, prefix="/v1/debt", tags=["debt"])
 
 
-# def main_api():
-#     uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=False)
+def main_api():
+    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=False)
 
 
-# if __name__ == "__main__":
-#     main_api()
+if __name__ == "__main__":
+    main_api()

@@ -1,300 +1,330 @@
+"""
+MidTerm strategy module for equity trading.
+This module implements mid-term trading strategy by:
+1. Getting active users from MongoDB
+2. Selecting top 3 stocks based on EMA signals
+3. Placing orders through FirstStock broker
+"""
+
+
 import os
 import sys
-import sqlite3
-import pandas as pd
-from dotenv import load_dotenv
 
-DIR = os.getcwd()
-sys.path.append(DIR)
-ENV_PATH = os.path.join(DIR, "trademan.env")
-load_dotenv(ENV_PATH)
 
-TRADE_MODE = os.getenv("TRADE_MODE")
+DIR_PATH = os.getcwd()
+sys.path.append(DIR_PATH)
 
+
+import logging
+from datetime import datetime
+from typing import List, Dict, Optional
+
+
+from Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock import firstock_adapter
+from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import Instrument
+
+
+from Executor.ExecutorUtils.ExeDBUtils.ExeFirebaseAdapter.exefirebase_adapter import (
+    fetch_collection_data_firebase,
+    update_fields_firebase,
+)
+
+from Executor.ExecutorUtils.EquityCenter.EQBase import EQBaseFilter
+from Executor.ExecutorUtils.OrderCenter.OrderCenterUtils import place_order_for_brokers
 from Executor.ExecutorUtils.LoggingCenter.logger_utils import LoggerSetup
-from Executor.ExecutorUtils.ExeDBUtils.SQLUtils.exesql_adapter import (
-    read_strategy_table as read_strategy_table,
-    get_db_connection,
-    create_holding_strategy_table,
-)
-from Executor.ExecutorUtils.InstrumentCenter.InstrumentCenterUtils import (
-    Instrument as instrument_obj,
-    get_single_ltp,
-)
-from Executor.NSEStrategies.NSEStrategiesUtil import (
-    update_qty_user_firebase,
-    assign_trade_id,
-    place_order_single_user,
-    fetch_qty_amplifier,
-    fetch_strategy_amplifier,
-    fetch_strategy_users,
-    StrategyBase,
-)
-from Executor.ExecutorUtils.BrokerCenter.BrokerCenterUtils import (
-    fetch_user_json_from_firebase,
-)
-from Executor.ExecutorUtils.EquityCenter.EquityCenterUtils import (
-    check_symbol_for_erros,
-    is_today_holiday,
-    should_wait_for_start_time,
-    get_selected_stocks,
-    send_signals_via_discord,
+from Executor.ExecutorUtils.BrokerCenter.Brokers.Firstock.firstock_adapter import (
+   firstock_place_equity_orders,
 )
 
-MID_TFMOMENTUM = "Mid_tfMomentum"
-MID_TFEMA = "Mid_tfEma"
-
-logger = LoggerSetup()
-TODAY_STOCK_DATA_DB_PATH = os.getenv("TODAY_STOCK_DATA_DB_PATH")
+user_db_collection = os.getenv("FIREBASE_USER_COLLECTION")
 
 
-class MidTerm(StrategyBase):
-    def get_general_params(self):
-        return self.GeneralParams
-
-    def get_entry_params(self):
-        return self.EntryParams
-
-    def get_exit_params(self):
-        return self.ExitParams
-
-    def get_raw_field(self, field_name: str):
-        return super().get_raw_field(field_name)
+class MidTermStrategy:
+   """
+   MidTerm trading strategy implementation.
 
 
-midterm_obj = MidTerm.load_from_db("MidTerm")
-strategy_name = midterm_obj.StrategyName
-order_type = midterm_obj.GeneralParams.OrderType
-product_type = midterm_obj.GeneralParams.ProductType
-strategy_type = midterm_obj.GeneralParams.StrategyType
-desired_start_time_str = midterm_obj.get_entry_params().EntryTime
-midterm_prefix = midterm_obj.StrategyPrefix
-num_stocks = midterm_obj.ExtraInformation.StocksPerStrategy
-transaction_type = midterm_obj.GeneralParams.TransactionType
+   This class handles:
+   - User configuration from MongoDB
+   - Stock selection using EMA-based signals
+   - Order placement through FirstStock broker
+   """
 
 
-def get_today_stocks():
-    """
-    Get today's stocks.
-
-    Returns:
-        pandas.DataFrame: DataFrame containing today's stocks.
-    """
-    try:
-        conn = sqlite3.connect(TODAY_STOCK_DATA_DB_PATH)
-
-        # Load the data from the identified table "CombinedStocks"
-        df = pd.read_sql_query("SELECT * FROM CombinedStocks", conn)
-
-        # Filter the rows where any column name starting with "Mid_" is equal to 1
-        midterm_stocks_df = df[df.filter(regex="Mid_").eq(1).any(axis=1)]
-
-        # Sort by AthLtpRatio in descending order and get the top 5 stocks
-        midterm_stocks = midterm_stocks_df.sort_values(
-            by="AthLtpRatio", ascending=False
-        )
-        return midterm_stocks
-    except Exception as e:
-        logger.error(f"Error getting today's stocks{e}")
-        return pd.DataFrame()
+   def __init__(self):
+       """Initialize MidTerm strategy with necessary components."""
+       self.logger = LoggerSetup()
+       self.eq_filter = EQBaseFilter()
 
 
-def process_users(setup_name, setup_symbol_list):
-    """
-    Process the users for the strategy.
-
-    Args:
-        setup_name (str): The name of the setup.
-        setup_symbol_list (list): The list of symbols.
-
-    Returns:
-        None
-    """
-    users = fetch_strategy_users(setup_name.upper(), "Equity", strategy_name)
-    for user in users:
-        process_holdings_for_user(user, setup_symbol_list, setup_name)
+       # Add strategy-specific log file
+       log_file = f"Data/Logs/midterm_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+       self.logger.add(
+           log_file,
+           format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+           level="DEBUG",
+       )
 
 
-def process_holdings_for_user(user, setup_symbol_list, setup_name):
-    """
-    Process the holdings for the user.
-
-    Args:
-        user (dict): The user dictionary.
-        setup_symbol_list (list): The list of symbols.
-        setup_name (str): The name of the setup.
-
-    Returns:
-        None
-    """
-    db_path = os.path.join(
-        os.getenv("USR_TRADELOG_EQUITY_DB_FOLDER"), f"{user['Tr_No']}_equity.db"
-    )
-    conn = get_db_connection(db_path)
-    try:
-        holdings = read_strategy_table(conn, "Holdings")
-    except Exception:
-        create_holding_strategy_table(conn, "Holdings")
-        holdings = read_strategy_table(conn, "Holdings")
-    try:
-        manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_name)
-    except Exception as e:
-        logger.error(
-            f"Error processing holdings for user {user['Tr_No']} for {setup_name}: {e}"
-        )
+       self.logger.info("Initialized MidTerm Strategy")
 
 
-def manage_holdings_and_place_orders(user, holdings, setup_symbol_list, setup_name):
-    """
-    Manage the holdings and place the orders.
-
-    Args:
-        user (dict): The user dictionary.
-        holdings (DataFrame): The holdings DataFrame.
-        setup_symbol_list (list): The list of symbols.
-        setup_name (str): The name of the setup.
-
-    Returns:
-        None
-    """
-    from Executor.NSEStrategies.Equity.Equity import signals_to_fb
-
-    if holdings.empty:
-        logger.error(f"No holdings found for user {user['Tr_No']} for {setup_name}")
-        current_holdings_count = 0
-        holdings_symbol_list = []
-    else:
-        midterm_holdings = holdings[holdings["trade_id"].str.startswith(midterm_prefix)]
-        setup_holdings = midterm_holdings[
-            midterm_holdings["setup"].isin([setup_name.upper()])
-        ]
-        holdings_symbol_list = setup_holdings["trading_symbol"].tolist()
-        current_holdings_count = len(setup_holdings)
-        logger.warning(setup_symbol_list)
-    logger.debug(
-        f"Current holdings for user {user['Tr_No']} for Midterm for {setup_name}: {current_holdings_count}"
-    )
-
-    if current_holdings_count < 3:
-        needed_orders = 3 - current_holdings_count
-        trade_id_mapping = {}
-        for index, symbol in enumerate(setup_symbol_list):
-            if needed_orders == 0:
-                break  # Stop processing if no more orders are needed
-
-            logger.info(f"Setup for {symbol}: {setup_name}")
-            new_base = midterm_obj.reload_strategy(strategy_name)
-            if symbol not in trade_id_mapping:
-                trade_id_mapping[symbol] = new_base.NextTradeId
-
-            trade_id = trade_id_mapping[symbol]
-            exchange_token = instrument_obj().get_exchange_token_by_name(symbol, "NSE")
-
-            if not check_symbol_for_erros(symbol, exchange_token, holdings_symbol_list):
-                logger.error(f"Symbol {symbol} has errors, skipping")
-                continue
-
-            ltp = get_single_ltp(exchange_token=exchange_token, segment="NSE")
-            ltp = round(ltp * 20) / 20
-            order_details = [
-                {
-                    "strategy": strategy_name,
-                    "signal": "Long",
-                    "base_symbol": symbol,
-                    "exchange_token": exchange_token,
-                    "transaction_type": transaction_type,
-                    "order_type": order_type,
-                    "product_type": product_type,
-                    "order_mode": "MainEntry",
-                    "trade_id": trade_id,
-                    "limit_prc": ltp,
-                    "trade_mode": os.getenv("TRADE_MODE"),
-                    "setup": setup_name.upper(),
-                }
-            ]
-            order_to_place = assign_trade_id(order_details)
-            qty_amplifier = fetch_qty_amplifier(strategy_name, strategy_type)
-            strategy_amplifier = fetch_strategy_amplifier(strategy_name)
-            update_qty_user_firebase(
-                strategy_name=setup_name.upper(),
-                avg_sl_points_or_ltp=ltp,
-                qty_amplifier=qty_amplifier,
-                strategy_amplifier=strategy_amplifier,
-                asset_segment=strategy_type,
-                asset_term=strategy_name,
-                num_stocks=num_stocks,
-            )
-            signals_to_fb(strategy_name, order_to_place, trade_id)
-            updated_user = fetch_user_json_from_firebase(user["Tr_No"])
-            order_status = place_order_single_user([updated_user], order_to_place)
-            for order_detail in order_status:
-                if "PASS" in order_detail["order_status"]:
-                    logger.debug(
-                        f"Order placed successfully for {symbol}: {order_detail}"
-                    )
-                    if TRADE_MODE != "PAPER":
-                        needed_orders -= 1  # Successfully placed order, decrease needed orders in live mode
-                elif "ASM/GSM" in order_detail["order_status"]:
-                    # Handle ASM/GSM block, reassign the trade ID if more symbols are available
-                    logger.debug(f"ASM/GSM issue with {symbol}")
-                    if TRADE_MODE != "PAPER" and index + 1 < len(setup_symbol_list):
-                        next_symbol = setup_symbol_list[index + 1]
-                        trade_id_mapping[next_symbol] = trade_id
-                        logger.debug(
-                            f"Trade ID {trade_id} reassigned from {symbol} to {next_symbol}"
-                        )
-                    elif TRADE_MODE == "PAPER":
-                        logger.debug(
-                            f"ASM/GSM issue with {symbol} in PAPER mode; no trade ID reassignment."
-                        )
-                    else:
-                        logger.error(
-                            f"No more symbols to reassign trade ID {trade_id} after ASM/GSM issue with {symbol}"
-                        )
-                else:
-                    # For other failures, treat like a success to continue the flow
-                    logger.warning(
-                        f"Order failed for {symbol} but continuing: {order_detail['order_status']}"
-                    )
-                    if TRADE_MODE != "PAPER":
-                        needed_orders -= 1  # Decrement needed orders as this is treated similar to a success in live mode
-
-        logger.debug(f"Updated holdings count for user {user['Tr_No']} should be 3")
+   def get_active_users(self) -> List[Dict]:
+       """
+       Get active users from MongoDB who have enabled MidTerm strategy.
 
 
-def main():
-    """
-    Main function to run the strategy.
+       Returns:
+           List[Dict]: List of active user configurations
+       """
+       try:
+           self.logger.info("Fetching active users from Firebase")
+           users_data = fetch_collection_data_firebase(user_db_collection)
 
-    Returns:
-        None
-    """
-    if is_today_holiday():
-        logger.info("Skipping execution as today is a holiday.")
-        return
 
-    if should_wait_for_start_time(desired_start_time_str):
-        return
+           if not users_data:
+               self.logger.warning("No users found in firebase")
+               return []
 
-    selected_stocks_df = get_today_stocks()
-    symbol_list, short_term_setups = get_selected_stocks(
-        strategy_name, selected_stocks_df
-    )
-    if not symbol_list:
-        logger.info("No stocks selected for today in MidTerm")
-        return
-    else:
-        logger.info(f"Stocks selected for today for MidTerm: {symbol_list}")
 
-    for setup_name in short_term_setups:
-        setup_symbol_list = selected_stocks_df[selected_stocks_df[setup_name] == 1][
-            "Symbol"
-        ].tolist()
-        send_signals_via_discord(
-            setup_symbol_list, setup_name, strategy_name, TRADE_MODE
-        )
-        process_users(setup_name, setup_symbol_list)
+           # Filter active users with MidTerm strategy enabled
+           active_users = []
+           for user in users_data.values():
+               midterm_config = (
+                   user.get("Strategies", {}).get("Equity", {}).get("MidTerm", {})
+               )
+               if user.get("Active", False) and midterm_config:
+                   self.logger.info(
+                       f"Found active user {user.get('Tr_No')} with MidTerm strategy"
+                   )
+                   active_users.append(user)
+
+
+           self.logger.info(
+               f"Found {len(active_users)} active users with MidTerm strategy"
+           )
+           return active_users
+
+
+       except Exception as e:
+           self.logger.error(f"Error fetching active users: {e}")
+           return []
+
+
+   def get_top_stocks(self, sector: str) -> List[Dict]:
+       """
+       Get top 3 stocks based on EMA signals for given sector.
+
+
+       Args:
+           sector (str): Sector to analyze
+
+
+       Returns:
+           List[Dict]: List of top 3 stocks with their details
+       """
+       try:
+           self.logger.info(f"Getting top stocks for sector: {sector}")
+           stocks_df = self.eq_filter.get_ema_filtered_stocks(sector, limit=3)
+
+
+           if stocks_df.empty:
+               self.logger.warning(f"No stocks found for sector {sector}")
+               return []
+
+
+           # Convert DataFrame to list of dicts
+           stocks = stocks_df.to_dict("records")
+           self.logger.info(
+               f"Selected top {len(stocks)} stocks: {[s['Symbol'] for s in stocks]}"
+           )
+           return stocks
+
+
+       except Exception as e:
+           self.logger.error(f"Error getting top stocks: {e}")
+           return []
+
+
+   async def place_orders(self, user: Dict, stocks: List[Dict]) -> bool:
+       """
+       Place orders for given stocks through the user's configured broker.
+
+
+       Args:
+           user (Dict): User configuration and credentials
+           stocks (List[Dict]): List of stocks to place orders for
+
+
+       Returns:
+           bool: True if all orders placed successfully, False otherwise
+       """
+       try:
+           self.logger.info(f"Placing orders for user {user.get('Tr_No')}")
+
+
+           # Get MidTerm strategy configuration
+           midterm_config = user["Strategies"]["Equity"]["Midterm"]
+           user_id = user["Broker"]["BrokerUsername"]
+           quantity = midterm_config.get("Qty", 1)
+           self.logger.info(f"Placing {quantity} orders for user {user.get('Tr_No')}")
+
+
+           for stock in stocks:
+               try:
+                   eq_symbol = stock["Symbol"]
+
+
+                   exchange_token, trading_symbol = firstock_adapter.search_instrument(
+                       eq_symbol, user_id
+                   )
+
+
+                   ltp = firstock_adapter.get_eq_quote(trading_symbol, user_id)
+                   price = float(ltp["data"]["lastTradedPrice"])
+
+
+                   print("price:", price)
+
+
+                   self.logger.info(
+                       f"Found exchange token {exchange_token} and trading symbol {trading_symbol} for {eq_symbol}"
+                   )
+
+
+                   order_details = {
+                       "broker": user["Broker"]["BrokerName"],
+                       "remarks": "MidTerm",
+                       "username": user.get("Tr_No"),
+                       "setup": "MidTerm_" + stock["Symbol"],
+                       "trading_symbol": trading_symbol,
+                       "exchange_token": str(exchange_token),
+                       "quantity": str(quantity),
+                       "price": str(price),
+                       "price_type": "LMT",
+                       "transaction_type": "B",
+                       "product": "C",
+                       "retention": "DAY",
+                       "trigger_price": str(price + 1),
+                       "trade_id": f"MT_{stock['Symbol']}_5",
+                   }
+
+
+                   # Place order using broker_orders module
+                   response = await firstock_place_equity_orders(
+                       order_details, user_id
+                   )
+
+
+                   if response:
+                       self.logger.info(
+                           f"Order placed successfully for {stock['Symbol']} - "
+                           f"User: {user.get('Tr_No')} - Quantity: {quantity}"
+                       )
+                   else:
+                       self.logger.error(
+                           f"Failed to place order for {stock['Symbol']} - "
+                           f"User: {user.get('Tr_No')}"
+                       )
+                       return False
+
+
+               except Exception as e:
+                   self.logger.error(
+                       f"Error processing order for {stock['Symbol']}: {e}"
+                   )
+                   continue
+
+
+           return True
+
+
+       except Exception as e:
+           self.logger.error(f"Error placing orders: {e}")
+           return False
+
+
+   async def execute_strategy(self):
+       """Execute the complete MidTerm strategy workflow."""
+       try:
+           self.logger.info("Starting MidTerm strategy execution")
+
+
+           # 1. Get active users
+           active_users = self.get_active_users()
+           if not active_users:
+               self.logger.warning("No active users found, stopping execution")
+               return
+
+
+           # 2. Get top stocks and place orders for each user
+           for user in active_users:
+               # Get user's configured sector and normalize it
+               configured_sector = user["Strategies"]["Equity"]["MidTerm"].get(
+                   "Sector", "NIFTY 50"
+               )
+               normalized_sector = configured_sector.strip()
+               if normalized_sector.lower() == "industrial":
+                   normalized_sector = "Industrials"
+
+
+               # Get available sectors
+               available_sectors = self.eq_filter.get_available_sectors()
+               self.logger.info(f"Available sectors: {available_sectors}")
+
+
+               # Use configured sector if available, otherwise fallback to NIFTY 50
+               sector = (
+                   normalized_sector
+                   if normalized_sector in available_sectors
+                   else "NIFTY 50"
+               )
+               if sector != normalized_sector:
+                   self.logger.warning(
+                       f"Configured sector '{configured_sector}' not found, using '{sector}' instead"
+                   )
+
+
+               self.logger.info(f"Using sector: {sector}")
+
+
+               # Get top stocks for sector
+               top_stocks = self.get_top_stocks(sector)
+               if not top_stocks:
+                   self.logger.warning(
+                       f"No suitable stocks found for sector {sector}, skipping user {user.get('Tr_No')}"
+                   )
+                   continue
+
+
+               # Place orders for user
+               success = await self.place_orders(user, top_stocks)
+               if success:
+                   self.logger.info(
+                       f"Successfully executed strategy for user {user.get('Tr_No')}"
+                   )
+               else:
+                   self.logger.error(
+                       f"Strategy execution failed for user {user.get('Tr_No')}"
+                   )
+
+
+           self.logger.info("Completed MidTerm strategy execution")
+
+
+       except Exception as e:
+           self.logger.error(f"Error executing strategy: {e}")
+
+
 
 
 if __name__ == "__main__":
-    main()
+   # Initialize and run strategy
+   strategy = MidTermStrategy()
+   import asyncio
+
+
+   asyncio.run(strategy.execute_strategy())
+
+
+

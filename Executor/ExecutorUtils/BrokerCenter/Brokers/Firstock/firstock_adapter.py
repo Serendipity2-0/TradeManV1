@@ -719,3 +719,21 @@ def get_broker_payin(user):
     limits = thefirstock.firstock_Limits(userId=user["Broker"]["BrokerUsername"])
     payin = float(limits.get("data", {}).get("payin", 0))
     return payin
+
+async def firstock_place_equity_orders(orders_to_place, user_id):
+   print("orders_to_place:", orders_to_place)
+   response = await firstock_placeOrder(
+       exchange="NSE",
+       tradingSymbol=orders_to_place["trading_symbol"],
+       quantity=orders_to_place["quantity"],
+       product=orders_to_place["product"],
+       transactionType=orders_to_place["transaction_type"],
+       priceType=orders_to_place["price_type"],
+       remarks=orders_to_place["remarks"],
+       userId=user_id,
+       price=orders_to_place["price"],
+       retention=orders_to_place["retention"],
+       triggerPrice=orders_to_place["trigger_price"],
+   )
+   print("response:", response)
+   return response

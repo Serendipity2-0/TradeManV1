@@ -184,7 +184,7 @@ current_time = datetime.datetime.now().time()
 target_time = datetime.time(9, 19)
 
 
-if current_time < datetime.time(17, 0):
+if current_time < datetime.time(15, 0):
     strike_prc = get_ltp()
     amipy_orders.place_orders(strike_prc, "Short")
 elif current_time > target_time:
