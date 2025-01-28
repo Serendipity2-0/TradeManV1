@@ -737,3 +737,58 @@ async def firstock_place_equity_orders(orders_to_place, user_id):
    )
    print("response:", response)
    return response
+
+def search_instrument(symbol, user_id):
+   """
+   Search for an instrument using Firstock's search API.
+
+
+   Args:
+       symbol (str): The symbol to search for
+       user_id (str): The user ID to authenticate with Firstock API
+
+
+   Returns:
+       str: Exchange token if found, None otherwise
+   """
+   try:
+       logger.debug(f"Searching for instrument: {symbol}")
+
+
+       try:
+           result = thefirstock.firstock_SearchScrips(userId=user_id, stext=symbol)
+           logger.debug(f"Search result status: {result}")
+
+
+           if not result:
+               logger.warning("Search API returned no result")
+               return None
+
+
+       except Exception as e:
+           logger.error(f"Error calling SearchScrips API: {str(e)}")
+           return None
+
+
+       # Get NSE equity instruments
+       instruments = result.get("values", [])
+       for instrument in instruments:
+           # Look for exact symbol match in NSE equity segment
+           if (
+               instrument.get("exchange") == "NSE"
+               and
+               # check for contains symbol in "tradingSymbol"
+               symbol in instrument.get("tradingSymbol")
+           ):
+               instrument_token = instrument.get("token")
+               print("instrument_token:", instrument_token)
+               return instrument_token
+
+
+       logger.warning(f"No matching NSE equity instrument found for symbol: {symbol}")
+       return None
+
+
+   except Exception as e:
+       logger.error(f"Error searching for instrument {symbol}: {e}")
+       return None

@@ -164,7 +164,7 @@ class MidTermStrategy:
 
 
            # Get MidTerm strategy configuration
-           midterm_config = user["Strategies"]["Equity"]["Midterm"]
+           midterm_config = user["Strategies"]["Equity"]["MidTerm"]
            user_id = user["Broker"]["BrokerUsername"]
            quantity = midterm_config.get("Qty", 1)
            self.logger.info(f"Placing {quantity} orders for user {user.get('Tr_No')}")
@@ -264,8 +264,8 @@ class MidTermStrategy:
                    "Sector", "NIFTY 50"
                )
                normalized_sector = configured_sector.strip()
-               if normalized_sector.lower() == "industrial":
-                   normalized_sector = "Industrials"
+               if normalized_sector.lower() == "Consumer Cyclical":
+                   normalized_sector = "Consumer Cyclical"
 
 
                # Get available sectors

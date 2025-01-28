@@ -11,8 +11,27 @@ from typing import Optional, Dict, Any, List
 DIR_PATH = os.getcwd()
 sys.path.append(DIR_PATH)
 
-import User.UserApi.schemas as schemas
-import User.UserApi.app as app
+from User.UserApi import schemas
+from User.UserApi.app import (
+    check_credentials, store_profile_data, store_broker_data,
+    store_accounts_data, store_strategies_data, update_tr_no,
+    merge_and_register_user, get_user_profile, get_portfolio_stats,
+    monthly_returns_data, weekly_cummulative_returns_data,
+    individual_strategy_data, strategy_graph_data, strategy_statistics,
+    broker_bank_transactions_data, get_user_segments, get_strategies_for_user,
+    get_users_holdings, get_tradestate, get_strategy_params, modify_strategy_params,
+    update_market_info_params, get_market_info_params, update_strategy_qty_amplifier,
+    get_user_risk_params, update_user_risk_params, get_user_list_from_db,
+    get_strategy_list, get_complete_strategy_list, fetch_user_details_by_username,
+    update_user_section, fetch_users_for_strategy, get_aum_from_firebase,
+    get_total_base_capital_from_firebase, get_strategy_signals,
+    strategy_signals_graph_data, get_active_users_data_from_firebase,
+    get_order_modes, get_qty_calculation_mode, fetch_today_order,
+    fetch_list_of_nse_instruments, fetch_tradingsymbol_by_name,
+    place_complete_order, place_repair_order, get_error_logs, delete_user,
+    import_transactions, update_transaction_fields, get_weekly_transactions,
+    delete_transaction
+)
 from User.UserApi.userapi_utils import get_next_trader_number
 
 """
@@ -1210,7 +1229,7 @@ app_fastapi.include_router(app_debt, prefix="/v1/debt", tags=["debt"])
 
 
 def main_api():
-    uvicorn.run("main:app_fastapi", host="0.0.0.0", port=8082, reload=False)
+    uvicorn.run(app_fastapi, host="0.0.0.0", port=8082)
 
 
 if __name__ == "__main__":
