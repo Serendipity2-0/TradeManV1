@@ -1,5 +1,7 @@
 from loguru import logger
-import os, sys
+import os
+import sys
+import traceback
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -16,7 +18,7 @@ class LoggerSetup:
 
     This class ensures that only one instance of the logger is created and configured
     with the specified settings. The logger writes logs to the file specified in the
-    environment variable "ERROR_LOG_PATH" or a relative path if not specified.
+    environment variable "ERROR_LOG_PATH" or a default path if not specified.
 
     Attributes:
         _instance (LoggerSetup): Singleton instance of LoggerSetup.
@@ -35,43 +37,55 @@ class LoggerSetup:
 
     @staticmethod
     def _setup_logger():
-        ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH")
+        # Ensure log directory exists with proper permissions
+        log_dir = os.path.join(DIR_PATH, "Data", "ErrorLogs")
+        os.makedirs(log_dir, exist_ok=True)
+        
+        # Set default log path
+        DEFAULT_LOG_PATH = os.path.join(log_dir, "trademan_error.log")
+        
+        # Try environment variable first, fallback to default
+        ERROR_LOG_PATH = os.getenv("ERROR_LOG_PATH", DEFAULT_LOG_PATH)
 
-        if ERROR_LOG_PATH:
+        try:
+            # Ensure the log file is writable
+            logger.add(
+                ERROR_LOG_PATH,
+                level="TRACE",
+                rotation="00:00",
+                enqueue=True,
+                backtrace=True,
+                diagnose=True,
+                format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}"
+            )
+            
+            # Set file permissions to be readable/writable by owner
             try:
-                logger.add(
-                    ERROR_LOG_PATH,
-                    level="TRACE",
-                    rotation="00:00",
-                    enqueue=True,
-                    backtrace=True,
-                    diagnose=True,
-                )
-            except Exception as e:
-                # Fallback to console logging if the file logging setup fails
-                logger.add(sys.stderr, level="WARNING")
-                logger.warning(
-                    f"Failed to add file logger at {ERROR_LOG_PATH}: {str(e)}"
-                )
-                logger.warning("Logging will proceed with standard error output.")
-        else:
-            # Fallback to relative path logging
-            RELATIVE_LOG_PATH = os.path.join(DIR_PATH, "relative_error.log")
-            try:
-                logger.add(
-                    RELATIVE_LOG_PATH,
-                    level="TRACE",
-                    rotation="00:00",
-                    enqueue=True,
-                    backtrace=True,
-                    diagnose=True,
-                )
-                logger.info(
-                    f"ERROR_LOG_PATH is not set. Logging to relative path: {RELATIVE_LOG_PATH}"
-                )
-            except Exception as e:
-                logger.add(sys.stderr, level="WARNING")
-                logger.warning(
-                    f"Failed to add file logger at {RELATIVE_LOG_PATH}: {str(e)}"
-                )
-                logger.warning("Logging will proceed with standard error output.")
+                os.chmod(ERROR_LOG_PATH, 0o644)
+            except Exception as perm_error:
+                logger.warning(f"Could not set log file permissions: {perm_error}")
+
+        except PermissionError:
+            # Fallback to stderr if permission denied
+            logger.add(
+                sys.stderr, 
+                level="WARNING",
+                format="<red>PERMISSION ERROR:</red> {message}"
+            )
+            logger.warning(
+                f"Permission denied writing to log file: {ERROR_LOG_PATH}. "
+                "Logging to standard error output."
+            )
+        
+        except Exception as e:
+            # Catch-all for other potential logging setup errors
+            logger.add(
+                sys.stderr, 
+                level="WARNING",
+                format="<red>LOGGING SETUP ERROR:</red> {message}"
+            )
+            logger.warning(
+                f"Failed to set up file logging: {e}. "
+                "Logging to standard error output. "
+                f"Error details: {traceback.format_exc()}"
+            )
