@@ -1,5 +1,7 @@
 Description: TradeMan
 
+repo location: /Users/omkar/Desktop/TradeManV1/
+
 TradeMan.env
 
 1. **User**

@@ -146,9 +146,10 @@ def job():
 
     nifty_ltp_dict = kite.ltp(nifty_token)
     nifty_ltp = nifty_ltp_dict[str(nifty_token[0])]
-    logger.info(f"Nifty LTP: {nifty_ltp}")
+    logger.info(f"Nifty LTP1: {nifty_ltp}")
 
-    strike_prc = round(nifty_ltp["last_price"] / 100) * 100
+    print("nifty_ltp['last_price']", nifty_ltp["last_price"])
+    strike_prc = round(nifty_ltp["NSE:NIFTY 50"]["last_price"] / 100) * 100
     return strike_prc
 
 
@@ -160,6 +161,7 @@ def get_ltp():
     """
     global nifty_token, strike_prc
     nifty_ltp = kite.ltp("NSE:NIFTY 50")
+    print("nifty_ltp['last_price']", nifty_ltp["NSE:NIFTY 50"]["last_price"])
     strike_prc = round(nifty_ltp["NSE:NIFTY 50"]["last_price"] / 100) * 100
     logger.info(f"Nifty LTP: {nifty_ltp}")
     return strike_prc
