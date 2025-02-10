@@ -16,3 +16,4 @@ trail.py
 .devcontainer/
 supervisord.conf
 .pre-commit-config.yaml
+.codegen
