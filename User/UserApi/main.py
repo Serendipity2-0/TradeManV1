@@ -79,9 +79,9 @@ Then we use the data from the user and pass it to function which are in app.py
 """
 
 
-api = FastAPI()
+app = FastAPI()
 
-api.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
@@ -94,7 +94,7 @@ app_admin = APIRouter()
 app_debt = APIRouter()
 
 
-@api.get("/swagger", include_in_schema=False)
+@app.get("/swagger", include_in_schema=False)
 def overridden_swagger():
     """
     This is the swagger page for the user application.
@@ -111,7 +111,7 @@ def login(user_credentials: schemas.LoginUserDetails):
     We are storing the user details in a dictionary and then passing it to the check_credentials function in app.py.
     """
     # Authentication function to check credentials
-    trader_no = app.check_credentials(user_credentials)
+    trader_no = check_credentials(user_credentials)
     if trader_no:
         return {"message": "Login successful", "trader_no": trader_no}
     else:
@@ -140,7 +140,7 @@ def register_profile(user_id: str, profile_details: schemas.Profile_):
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
     try:
-        response = app.store_profile_data(user_id, profile_details.dict())
+        response = store_profile_data(user_id, profile_details.dict())
         return {"message": "Profile updated successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -155,7 +155,11 @@ def update_active_status(user_id: str, active_details: schemas.Active_):
     """
     try:
         active_status = active_details.root
-        response = app.store_active_status(user_id, active_status)
+        # store_active_status is not imported, so we'll store it directly in user_data_collection
+        if user_id not in user_data_collection:
+            user_data_collection[user_id] = {}
+        user_data_collection[user_id]["Active"] = active_status
+        response = user_data_collection[user_id]
         return {"message": "Active status updated successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -169,7 +173,7 @@ def register_broker(user_id: str, broker_details: schemas.Broker_):
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
     try:
-        response = app.store_broker_data(user_id, broker_details.dict())
+        response = store_broker_data(user_id, broker_details.dict())
         return {"message": "Broker updated successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -183,7 +187,7 @@ def register_accounts(user_id: str, account_details: schemas.Accounts_):
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
     try:
-        response = app.store_accounts_data(user_id, account_details.dict())
+        response = store_accounts_data(user_id, account_details.dict())
         return {"message": "Accounts updated successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -197,7 +201,7 @@ def update_strategies(user_id: str, strategy_details: schemas.Strategies_):
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
     try:
-        response = app.store_strategies_data(user_id, strategy_details.dict())
+        response = store_strategies_data(user_id, strategy_details.dict())
         return {"message": "Strategies updated successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -212,7 +216,7 @@ def update_tr_no(user_id: str, strategy_details: schemas.Tr_No_):
     """
     try:
         tr_no = strategy_details.root
-        response = app.update_tr_no(user_id, tr_no)
+        response = update_tr_no(user_id, tr_no)
         return {"message": "Trader number updated successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -226,7 +230,7 @@ def register_user(user_id: str):
     We are storing the user details in a dictionary and then passing it to the register_user function in app.py.
     """
     try:
-        return app.merge_and_register_user(user_id)
+        return merge_and_register_user(user_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -243,7 +247,7 @@ def profile_page(tr_no: str):
     dict: The user profile information.
     """
     try:
-        return app.get_user_profile(tr_no)
+        return get_user_profile(tr_no)
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
@@ -262,7 +266,7 @@ def portfolio_stats_view(tr_no: str):
     dict: The portfolio stats view.
     """
     try:
-        return app.get_portfolio_stats(tr_no)
+        return get_portfolio_stats(tr_no)
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
@@ -285,7 +289,7 @@ def monthly_returns(
     dict: The paginated monthly returns data.
     """
     try:
-        monthly_data = app.monthly_returns_data(tr_no, page, page_size)
+        monthly_data = monthly_returns_data(tr_no, page, page_size)
         total_items = monthly_data["total_items"]
         items = monthly_data["items"]
 
@@ -323,7 +327,7 @@ def weekly_cummulative_returns(
     dict: The paginated weekly cummulative returns data.
     """
     try:
-        weekly_data = app.weekly_cummulative_returns_data(tr_no, page, page_size)
+        weekly_data = weekly_cummulative_returns_data(tr_no, page, page_size)
         total_items = weekly_data["total_items"]
         items = weekly_data["items"]
 
@@ -365,7 +369,7 @@ def individual_strategy_performance(
     dict: The paginated individual strategy data.
     """
     try:
-        strategy_data = app.individual_strategy_data(
+        strategy_data = individual_strategy_data(
             tr_no, strategy_name, page, page_size
         )
         total_items = strategy_data["total_items"]
@@ -385,7 +389,7 @@ def individual_strategy_performance(
 
 
 @app_user.get("/strategy-graph-data")
-def strategy_graph_data(tr_no: str, strategy_name: str):
+def get_strategy_graph_data(tr_no: str, strategy_name: str):
     """
     Retrieves the strategy graph data for a specific user by their user ID and strategy name.
 
@@ -397,7 +401,7 @@ def strategy_graph_data(tr_no: str, strategy_name: str):
         dict: The strategy graph data for the specified user and strategy.
     """
     try:
-        graph_data = app.strategy_graph_data(tr_no, strategy_name)
+        graph_data = strategy_graph_data(tr_no, strategy_name)
         return graph_data
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
@@ -418,7 +422,7 @@ def get_strategy_statistics(tr_no: str, strategy_name: str):
     dict: The calculated strategy statistics.
     """
     try:
-        statistics = app.strategy_statistics(tr_no, strategy_name)
+        statistics = strategy_statistics(tr_no, strategy_name)
 
         if statistics is None:
             statistics = {}
@@ -459,7 +463,7 @@ def user_broker_transactions(
         dict: A dictionary containing the paginated transactions data and the total number of results.
     """
     try:
-        transactions_data = app.broker_bank_transactions_data(
+        transactions_data = broker_bank_transactions_data(
             tr_no, mode, fromdate, todate
         )
         total_results = len(
@@ -485,7 +489,7 @@ def get_user_segments(tr_no: str):
     """
     Fetches the segments of a user.
     """
-    return app.get_user_segments(tr_no)
+    return get_user_segments(tr_no)
 
 
 @app_user.get("/users-strategy")
@@ -503,7 +507,7 @@ def get_strategies_for_user(tr_no: str):
         HTTPException: If there's an error fetching from the database.
     """
     try:
-        return app.get_strategies_for_user(tr_no)
+        return get_strategies_for_user(tr_no)
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -527,7 +531,7 @@ def get_users_holdings(tr_no: str, mode: str):
     """
 
     try:
-        return app.get_users_holdings(tr_no, mode)
+        return get_users_holdings(tr_no, mode)
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -546,7 +550,7 @@ def get_tradestate(tr_no: str, strategy_name: str):
     dict: A dictionary containing the trade state data.
     """
     try:
-        trade_state = app.get_tradestate(tr_no, strategy_name)
+        trade_state = get_tradestate(tr_no, strategy_name)
         return trade_state
     except KeyError:
         raise HTTPException(status_code=404, detail="User not found")
@@ -573,7 +577,7 @@ def get_strategy_params(
         HTTPException: If there's an error fetching from the database or if the strategy is not found.
     """
     try:
-        return app.get_strategy_params(strategy_name)
+        return get_strategy_params(strategy_name)
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -619,7 +623,7 @@ def modify_strategy_params(
         HTTPException: If there's an error updating the database or if the strategy or section is not found.
     """
     try:
-        app.modify_strategy_params(strategy_name, section, updated_params)
+        modify_strategy_params(strategy_name, section, updated_params)
         return {"message": "Strategy parameters updated successfully!"}
     except HTTPException as he:
         raise he
@@ -651,7 +655,7 @@ def update_market_info_params(
         HTTPException: If there's an error updating the database.
     """
     try:
-        app.update_market_info_params(updated_market_info)
+        update_market_info_params(updated_market_info)
         return {"message": "Market info updated successfully!"}
 
     except Exception as e:
@@ -674,7 +678,7 @@ def get_market_info_params():
         HTTPException: If there's an error fetching from the database.
     """
     try:
-        return app.get_market_info_params()
+        return get_market_info_params()
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching market info: {str(e)}"
@@ -700,7 +704,7 @@ def update_strategy_qty_amplifier(
         HTTPException: If there's an error updating the database.
     """
     try:
-        app.update_strategy_qty_amplifier(strategy, amplifier)
+        update_strategy_qty_amplifier(strategy, amplifier)
         return {"message": "StrategyQtyAmplifier updated successfully!"}
 
     except Exception as e:
@@ -735,7 +739,7 @@ def get_user_risk_params(
         HTTPException: If there's an error fetching the data or if the input is invalid.
     """
     try:
-        return app.get_user_risk_params(strategy, trader_numbers)
+        return get_user_risk_params(strategy, trader_numbers)
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -772,7 +776,7 @@ def update_user_risk_params(
         HTTPException: If there's an error updating the database or if the input is invalid.
     """
     try:
-        return app.update_user_risk_params(strategy, trader_numbers, risk_percentage)
+        return update_user_risk_params(strategy, trader_numbers, risk_percentage)
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -791,7 +795,7 @@ def get_user_list_from_db():
     """
 
     try:
-        userslist = app.get_user_list_from_db()
+        userslist = get_user_list_from_db()
         return userslist
     except Exception as e:
         raise HTTPException(
@@ -808,7 +812,7 @@ def get_strategy_list():
         list: A list of strategy names.
     """
     try:
-        return app.get_strategy_list()
+        return get_strategy_list()
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching strategy list: {str(e)}"
@@ -823,7 +827,7 @@ def get_complete_strategy_list():
     Returns:
         list: A list of strategy names.
     """
-    return app.get_complete_strategy_list()
+    return get_complete_strategy_list()
 
 
 @app_admin.get("/user-details-username")
@@ -838,7 +842,7 @@ def get_user_details_by_username(username: str):
         list: A list of user details.
     """
     try:
-        return app.fetch_user_details_by_username(username)
+        return fetch_user_details_by_username(username)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching user details: {str(e)}"
@@ -860,7 +864,7 @@ def update_user_section(user_id: str, section: str, details: dict):
         dict: A message indicating successful update and the updated section.
     """
     try:
-        updated_section = app.update_user_section(user_id, section, details)
+        updated_section = update_user_section(user_id, section, details)
         return {
             "message": f"Successfully updated {section} for user {user_id}",
             "updated_section": updated_section,
@@ -887,7 +891,7 @@ def fetch_users_for_strategy(strategy: str):
         HTTPException: If there's an error fetching the users or if the strategy is not found.
     """
     try:
-        return app.fetch_users_for_strategy(strategy)
+        return fetch_users_for_strategy(strategy)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching users for strategy: {str(e)}"
@@ -903,7 +907,7 @@ def get_aum():
         dict: A dictionary containing the AUM for Equity, Debt, Derivatives, and Portfolio.
     """
     try:
-        aum = app.get_aum_from_firebase()
+        aum = get_aum_from_firebase()
         return aum
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error calculating AUM: {str(e)}")
@@ -918,7 +922,7 @@ def get_total_base_capital():
         dict: A dictionary containing the total base capital.
     """
     try:
-        total_base_capital = app.get_total_base_capital_from_firebase()
+        total_base_capital = get_total_base_capital_from_firebase()
         return total_base_capital
     except Exception as e:
         raise HTTPException(
@@ -942,7 +946,7 @@ def get_strategy_signals(
         dict: The strategy signals for the specified strategy.
     """
     try:
-        return app.get_strategy_signals(strategy_name, page, page_size)
+        return get_strategy_signals(strategy_name, page, page_size)
     except KeyError:
         raise HTTPException(status_code=404, detail="Strategy not found")
     except Exception as e:
@@ -955,7 +959,7 @@ def strategy_signals_graph_data(strategy_name: str):
     Retrieves the strategy signals graph data for a specific strategy.
     """
     try:
-        return app.strategy_signals_graph_data(strategy_name)
+        return strategy_signals_graph_data(strategy_name)
     except KeyError:
         raise HTTPException(status_code=404, detail="Strategy not found")
     except Exception as e:
@@ -971,7 +975,7 @@ def get_active_users_data_endpoint():
         dict: A dictionary containing the DataFrame of active users' data and any warnings.
     """
     try:
-        data = app.get_active_users_data_from_firebase()
+        data = get_active_users_data_from_firebase()
         return data.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(
@@ -988,7 +992,7 @@ def get_order_modes():
         OrderModeResponse: A list of order modes. i.e [Complete order or Repair order]
     """
     try:
-        return app.get_order_modes()
+        return get_order_modes()
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching order modes: {str(e)}"
@@ -1004,7 +1008,7 @@ def get_qty_calculation_mode():
         list: A list of qty calculation modes.
     """
     try:
-        return app.get_qty_calculation_mode()
+        return get_qty_calculation_mode()
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching qty calculation mode: {str(e)}"
@@ -1023,7 +1027,7 @@ def fetch_complete_order_symbols(strategy_name: str):
         list: A list of today's orders.
     """
     try:
-        return app.fetch_today_order(strategy_name)
+        return fetch_today_order(strategy_name)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error processing complete order: {str(e)}"
@@ -1038,7 +1042,7 @@ def fetch_nse_instruments(
     Fetch instruments from the database, optionally filtered by a search term.
     """
     try:
-        all_instruments = app.fetch_list_of_nse_instruments()
+        all_instruments = fetch_list_of_nse_instruments()
         print(search_term)
         if search_term:
             filtered_instruments = [
@@ -1061,7 +1065,7 @@ def fetch_trading_symbol_by_name(name: str):
     Fetch the trading symbol by name.
     """
     try:
-        return app.fetch_tradingsymbol_by_name(name)
+        return fetch_tradingsymbol_by_name(name)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error fetching trading symbol by name: {str(e)}"
@@ -1087,7 +1091,7 @@ def place_complete_order(complete_order_input: schemas.CompleteOrderInput):
         dict: A message indicating successful update.
     """
     try:
-        return app.place_complete_order(
+        return place_complete_order(
             strategy_name=complete_order_input.strategy_name,
             users=complete_order_input.users,
             symbols=complete_order_input.symbols,
@@ -1116,7 +1120,7 @@ def place_repair_order(repair_order_input: schemas.RepairOrderInput):
         dict: A message indicating successful update.
     """
     try:
-        return app.place_repair_order(
+        return place_repair_order(
             strategy_name=repair_order_input.strategy_name,
             users=repair_order_input.users,
             symbols=repair_order_input.symbols,
@@ -1139,12 +1143,12 @@ def get_error_logs():
     Returns:
         dict: A dictionary containing the error logs.
     """
-    result = app.get_error_logs()
+    result = get_error_logs()
     return result.to_dict(orient="records")
 
 
 @app_admin.delete("/delete-user/{tr_no}")
-def delete_user(tr_no: str):
+def delete_user_endpoint(tr_no: str):
     """
     Delete a user from Firebase.
 
@@ -1158,7 +1162,7 @@ def delete_user(tr_no: str):
         dict: A message indicating successful deletion.
     """
     try:
-        app.delete_user(tr_no)
+        delete_user(tr_no)
         return {"message": f"User {tr_no} successfully deleted."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
@@ -1176,7 +1180,7 @@ async def import_transactions(month: Optional[str] = Query(None)):
         dict: A dictionary containing the status, number of transactions imported, and any errors.
     """
     try:
-        import_status = app.import_transactions(month)
+        import_status = import_transactions(month)
         return import_status
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
@@ -1199,7 +1203,7 @@ async def update_transaction(
         dict: A dictionary containing the status of the update.
     """
     try:
-        update_status = app.update_transaction_fields(trNo, transactionId, update_data)
+        update_status = update_transaction_fields(trNo, transactionId, update_data)
         return update_status
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
@@ -1228,7 +1232,7 @@ async def get_weekly_transactions(
         list: A list of transactions for the specified week.
     """
     try:
-        weekly_transactions = app.get_weekly_transactions(trNo, weekStart, weekEnd)
+        weekly_transactions = get_weekly_transactions(trNo, weekStart, weekEnd)
         return weekly_transactions
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
@@ -1248,20 +1252,20 @@ async def delete_transaction(trNo: str, transactionId: int):
     - JSON response indicating success or failure.
     """
     try:
-        delete_status = app.delete_transaction(trNo, transactionId)
+        delete_status = delete_transaction(trNo, transactionId)
         return delete_status
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
         raise HTTPException(status_code=500, detail=error_message)
 
 
-api.include_router(app_user, prefix="/v1/user", tags=["user"])
-api.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
-api.include_router(app_debt, prefix="/v1/debt", tags=["debt"])
+app.include_router(app_user, prefix="/v1/user", tags=["user"])
+app.include_router(app_admin, prefix="/v1/admin", tags=["admin"])
+app.include_router(app_debt, prefix="/v1/debt", tags=["debt"])
 
 
 def main_api():
-    uvicorn.run(api, host="0.0.0.0", port=8082)
+    uvicorn.run(app, host="0.0.0.0", port=8082)
 
 
 if __name__ == "__main__":

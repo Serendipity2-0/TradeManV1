@@ -1,84 +1,75 @@
+version: '3.8'
+
 services:
   redis:
-    image: redis:6.2
-    container_name: redis
+    image: redis:latest
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes --bind 0.0.0.0
     networks:
-      - trade_network
-
-  celery_worker:
-    build: .
-    container_name: celery_worker
-    entrypoint: ["/app/Executor/Scripts/CeleryScripts/entrypoint.sh"]
-    command: celery -A Executor.Scripts.CeleryScripts.V1_poetry_app worker --loglevel=info
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - REDBEAT_REDIS_URL=redis://redis:6379/1
-      - REDBEAT_REDIS_OPTIONS='{"host":"redis","port":6379,"db":1}'
-    env_file:
-      - trademan.env
-    depends_on:
-      - redis
-    volumes:
-      - .:/app
-      - app_data:/app/Data
-      - trademan_db_data:/app/Data/TradeManDB
-      - trademan_signals_data:/app/Data/TradeManDB/Signals
-    restart: unless-stopped
-    networks:
-      - trade_network
-
-  celery_beat:
-    build: .
-    container_name: celery_beat
-    entrypoint: ["/app/Executor/Scripts/CeleryScripts/entrypoint.sh"]
-    command: celery -A Executor.Scripts.CeleryScripts.V1_poetry_app beat --loglevel=info
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - REDBEAT_REDIS_URL=redis://redis:6379/1
-      - REDBEAT_REDIS_OPTIONS='{"host":"redis","port":6379,"db":1}'
-    env_file:
-      - trademan.env
-    depends_on:
-      - redis
-    volumes:
-      - .:/app
-      - app_data:/app/Data
-      - trademan_db_data:/app/Data/TradeManDB
-      - trademan_signals_data:/app/Data/TradeManDB/Signals
-    restart: unless-stopped
-    networks:
-      - trade_network
+      - app_network
 
   fastapi:
     build: .
-    container_name: fastapi
-    command: uvicorn User.UserApi.main:app_fastapi --host 0.0.0.0 --port 8082 --reload
+    command: python User/UserApi/main.py
+    volumes:
+      - .:/app
+      - ./Data/Logs:/app/Data/Logs
     ports:
       - "8082:8082"
     environment:
-      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+      - DOCKER_ENV=true
     env_file:
       - trademan.env
+    depends_on:
+      - redis
+    networks:
+      - app_network
+    working_dir: /app
+
+  celery_worker:
+    build: .
+    command: celery -A Executor.Scripts.CeleryScripts.V1_poetry_app worker --loglevel=INFO -P solo
     volumes:
       - .:/app
-      - app_data:/app/Data
-      - trademan_db_data:/app/Data/TradeManDB
-      - trademan_signals_data:/app/Data/TradeManDB/Signals
+      - ./Data/Logs:/app/Data/Logs
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DOCKER_ENV=true
+      - C_FORCE_ROOT=true
+    env_file:
+      - trademan.env
+    depends_on:
+      - redis
     networks:
-      - trade_network
+      - app_network
+    working_dir: /app
+
+  celery_beat:
+    build: .
+    command: celery -A Executor.Scripts.CeleryScripts.V1_poetry_app beat --loglevel=INFO
+    volumes:
+      - .:/app
+      - ./Data/Logs:/app/Data/Logs
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DOCKER_ENV=true
+      - C_FORCE_ROOT=true
+    env_file:
+      - trademan.env
+    depends_on:
+      - redis
+      - celery_worker
+    networks:
+      - app_network
+    working_dir: /app
+
+networks:
+  app_network:
+    driver: bridge
 
 volumes:
   redis_data:
-  app_data:
-  trademan_db_data:
-  trademan_signals_data:
-
-networks:
-  trade_network:
-    driver: bridge

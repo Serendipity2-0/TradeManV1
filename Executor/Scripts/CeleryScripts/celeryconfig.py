@@ -2,8 +2,13 @@
 from celery.schedules import crontab
 
 # Redis configuration
-broker_url = "redis://redis:6379/0"
-result_backend = "redis://redis:6379/0"
+broker_url = "redis://redis:6379/0"  # Uses Docker service name 'redis'
+result_backend = "redis://redis:6379/0"  # Uses Docker service name 'redis'
+
+# Additional Redis configuration for Docker
+broker_connection_retry = True
+broker_connection_retry_on_startup = True
+broker_connection_max_retries = None  # Keep retrying indefinitely
 
 # Celery Beat Schedule
 """
@@ -14,11 +19,7 @@ This is the same format as used by the crontab command.
 beat_schedule = {
     "run_good_morning_scripts_every_day_at_830am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.good_morning_scripts",
-        "schedule": crontab(hour=8, minute=30, day_of_week="1-6"),  # Monday to saturday
-    },
-    "run_fast_api_server_every_day_at_001am": {
-        "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.fast_api_server",
-        "schedule": crontab(hour=0, minute=1, day_of_week="*"),  # every day
+        "schedule": crontab(hour=15, minute=9, day_of_week="1-6"),  # Monday to saturday
     },
     "run_equity_entry_every_day_at_930am": {
         "task": "Executor.Scripts.CeleryScripts.V1_poetry_app.equity_entry",
@@ -64,6 +65,3 @@ redbeat_redis_url = "redis://redis:6379/1"
 redbeat_lock_key = None
 
 timezone = "Asia/Kolkata"  # Set your timezone to India
-
-# Add this new configuration option
-broker_connection_retry_on_startup = True

@@ -50,17 +50,47 @@ PYSTOCKS = "pystocks"
 EQUITY_EXIT = "equity_exit"
 
 
-def setup_logger(name, log_file, level=logging.DEBUG):  # Set level to DEBUG
+def setup_logger(name, log_file, level=logging.DEBUG):
+    """
+    Sets up a logger with file handler and custom formatting.
+    
+    Args:
+        name (str): Name of the logger
+        log_file (str): Path to the log file
+        level (int): Logging level (default: DEBUG)
+    
+    Returns:
+        logging.Logger: Configured logger instance
+    """
+    # Create log directory if it doesn't exist
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    
+    # Create and configure file handler
     handler = FileHandler(log_file)
     handler.setLevel(level)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    
+    # Create a detailed formatter
+    formatter = logging.Formatter(
+        fmt="%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
     handler.setFormatter(formatter)
 
+    # Get or create logger
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    if not logger.handlers:
-        logger.addHandler(handler)
-    logger.debug(f"Logger {name} setup at {log_file} with level {level}")
+    
+    # Remove existing handlers to avoid duplicates
+    logger.handlers.clear()
+    logger.addHandler(handler)
+    
+    # Add stream handler for console output
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    console_handler.setLevel(level)
+    logger.addHandler(console_handler)
+    
+    logger.info(f"Logger '{name}' initialized - Log file: {log_file} - Level: {logging.getLevelName(level)}")
     return logger
 
 
@@ -81,10 +111,22 @@ class LoggerWriter:
 # Function to run the script
 def run_script(script_path, retry_hour, logger):
     """
-    This is the replacement for the old sh files.
-    In this function, we are running the script and handling the retry logic.
-    This function is called by the celery task.
-    This function stores the output of the files in a log file.
+    Executes a Python script using conda environment with retry logic.
+    
+    Args:
+        script_path (str): Path to the Python script to execute
+        retry_hour (int): Hour after which retries should stop (24-hour format)
+        logger (logging.Logger): Logger instance for recording execution details
+    
+    Returns:
+        str: Execution status ('success', 'failed', or 'failed after retry_hour')
+    
+    This function replaces the old shell scripts by:
+    1. Activating the specified conda environment
+    2. Running the script with proper Python interpreter
+    3. Handling retries until retry_hour
+    4. Logging all output and errors
+    5. Sending Telegram notifications on failures
     """
     max_attempts = 1
     attempt = 0
@@ -104,11 +146,17 @@ def run_script(script_path, retry_hour, logger):
 
         try:
             logger.debug(f"Running script {script_path}")
+            # Check if we're running in Docker
+            in_docker = os.environ.get('DOCKER_ENV', 'false') == 'true'
+            
+            command = (f"python {script_path}" if in_docker else
+                      f"source {CONDA_PATH}/etc/profile.d/conda.sh && "
+                      f"conda activate {CONDA_ENV_NAME} && "
+                      f"cd {PROJECT_PATH} && "
+                      f"{PYTHON_ENV_PATH} {script_path}")
+            
             with subprocess.Popen(
-                f"source {CONDA_PATH}/etc/profile.d/conda.sh && "
-                f"conda activate {CONDA_ENV_NAME} && "
-                f"cd {PROJECT_PATH} && "
-                f"{PYTHON_ENV_PATH} {script_path}",
+                command,
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -154,11 +202,25 @@ def run_script(script_path, retry_hour, logger):
 
 
 def run_multiple_scripts(script_paths, logger):
-    # here we are running a set of scripts and logging the output in a log file
+    """
+    Executes multiple Python scripts sequentially.
+    
+    Args:
+        script_paths (list): List of script paths to execute
+        logger (logging.Logger): Logger instance for recording execution details
+    
+    Returns:
+        str: Execution status message
+    """
+    logger.info(f"Starting execution of {len(script_paths)} scripts")
     for script_path in script_paths:
+        logger.info(f"Executing script: {script_path}")
         result = run_script(script_path, 20, logger)
         if "failed" in result:
+            logger.error(f"Script execution failed: {script_path}")
             return result
+        logger.info(f"Successfully executed: {script_path}")
+    logger.info("All scripts executed successfully")
     return "All scripts executed successfully."
 
 
@@ -173,7 +235,6 @@ def good_morning_scripts():
     scripts = [
         "Executor/Scripts/1_GoodMorning/1_Login/DailyLogin.py",
         "Executor/Scripts/1_GoodMorning/4_DailyInstrumentAggregator/DailyInstrumentAggregator.py",
-        "Executor/Scripts/1_GoodMorning/4_DailyInstrumentAggregator/DailyEquityCalc.py",
         "Executor/Scripts/1_GoodMorning/6_AsmGsmAggregator/AsmGsmAggregator.py",
     ]
     return run_multiple_scripts(scripts, good_morning_logger)
@@ -315,14 +376,22 @@ def clear_celery_tasks():
 
 
 def start_worker():
-    from celery.bin import worker
-
-    worker_instance = worker.worker(app=app)
-    worker_instance.run(loglevel="info", traceback=True)
+    """
+    Start the Celery worker process.
+    """
+    app.worker_main(argv=['worker', 
+                         '--loglevel=INFO',
+                         '--traceback',
+                         '-P', 'solo'])  # Use solo pool for better compatibility
 
 
 def start_beat():
-    from celery.bin import beat
-
-    beat = beat.beat(app=app)
-    beat.run(loglevel="info")
+    """
+    Start the Celery beat scheduler.
+    """
+    from celery.apps.beat import Beat
+    
+    beat = Beat(app=app,
+                loglevel='INFO',
+                traceback=True)
+    beat.run()
